@@ -36,6 +36,7 @@ from plm_assistant.modules.review.infrastructure.start_repository import SqlAlch
 from plm_assistant.modules.review.infrastructure.read_repository import SqlAlchemyReviewSnapshotReadRepository
 from plm_assistant.modules.solution.api.outline_create import create_outline_create_router
 from plm_assistant.modules.solution.api.outline_version_create import create_outline_version_create_router
+from plm_assistant.modules.solution.api.outline_version_validate import create_outline_version_validate_router
 from plm_assistant.modules.solution.api.outline_version_read import create_outline_version_read_router
 from plm_assistant.modules.solution.api.outline_version_list_cursor import OutlineVersionListCursorCodec
 from plm_assistant.modules.solution.api.section_create import create_section_create_router
@@ -59,6 +60,9 @@ from plm_assistant.modules.solution.api.section_list_cursor import SectionListCu
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.solution.application.create_outline import OutlineCreateService
 from plm_assistant.modules.solution.application.create_outline_version import OutlineVersionCreateService
+from plm_assistant.modules.solution.application.prove_outline_version_current import OutlineVersionCurrentFactsService
+from plm_assistant.modules.solution.application.prove_outline_coverage import OutlineCoverageProofService
+from plm_assistant.modules.solution.application.validate_outline_version import OutlineVersionValidationService
 from plm_assistant.modules.solution.application.read_outline_version import OutlineVersionReadService
 from plm_assistant.modules.solution.application.create_section import SectionCreateService
 from plm_assistant.modules.solution.application.create_section_version import SectionVersionCreateService
@@ -87,15 +91,25 @@ from plm_assistant.modules.solution.application.prove_outline_section_use import
 from plm_assistant.modules.solution.application.prove_outline_version_input import OutlineVersionInputProofService
 from plm_assistant.modules.solution.application.prove_reference_use import ReferenceUseProofService
 from plm_assistant.modules.requirement.application.outline_version_proof import OutlineRequirementUseProofService
+from plm_assistant.modules.requirement.application.approved_inventory import ApprovedRequirementInventoryService
+from plm_assistant.modules.requirement.application.validate_version import RequirementVersionCurrentValidator
+from plm_assistant.modules.requirement.application.workflow_qualification import RequirementWorkflowQualificationOwner
 from plm_assistant.modules.requirement.application.read_versions import RequirementVersionReadService
+from plm_assistant.modules.requirement.infrastructure.human_decision_source_proof import SqlAlchemyRequirementHumanDecisionSourceProof
 from plm_assistant.modules.requirement.infrastructure.prototype_version_proof import SqlAlchemyPrototypeApprovedRequirementVersionProof
 from plm_assistant.modules.requirement.infrastructure.version_read_repository import SqlAlchemyRequirementVersionReadRepository
+from plm_assistant.modules.requirement.infrastructure.workflow_qualification_repository import SqlAlchemyRequirementWorkflowQualificationRepository
+from plm_assistant.modules.evidence.infrastructure.requirement_source_proof import SqlAlchemyEvidenceRequirementSourceProof
+from plm_assistant.modules.handover.infrastructure.requirement_source_proof import SqlAlchemyHandoverRequirementSourceProof
+from plm_assistant.modules.survey.infrastructure.requirement_source_proof import SqlAlchemySurveyConclusionRequirementSourceProof
+from plm_assistant.modules.capability.infrastructure.requirement_source_proof import SqlAlchemyCapabilityRequirementSourceProof
 from plm_assistant.modules.solution.application.read_outline import OutlineReadService
 from plm_assistant.modules.solution.application.read_section import SectionReadService
 from plm_assistant.modules.solution.infrastructure.outline_create_repository import SqlAlchemyOutlineCreateRepository
 from plm_assistant.modules.solution.infrastructure.outline_version_base import SqlAlchemyCurrentOutlineVersionBase
 from plm_assistant.modules.solution.infrastructure.outline_version_create_repository import SqlAlchemyOutlineVersionCreateRepository
 from plm_assistant.modules.solution.infrastructure.outline_version_read_repository import SqlAlchemyOutlineVersionReadRepository
+from plm_assistant.modules.solution.infrastructure.outline_version_validation_audit_source import SqlAlchemyOutlineVersionValidationAuditSource
 from plm_assistant.modules.solution.infrastructure.section_create_repository import SqlAlchemySectionCreateRepository
 from plm_assistant.modules.solution.infrastructure.section_document_content_proof import SectionDocumentContentProofAdapter
 from plm_assistant.modules.solution.infrastructure.section_evidence_use_proof import SectionEvidenceUseProofAdapter
@@ -408,6 +422,92 @@ def create_windows_outline_version_create_router(
             receipts=SqlAlchemyIdempotencyReceipts(), audit=audit)
         return create_outline_version_create_router(
             sessions=sessions, origins=origins, creates=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_outline_version_validate_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    document_storage_root: Path, parse_result_storage_root: Path,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Mount Outline VALIDATE only with the complete current-source graph."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            document_storage_root, parse_result_storage_root,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=SqlAlchemyProjectAuthorizationRepository())
+        reference_documents = ReferenceUseDocumentProofService(
+            sources=SqlAlchemyReferenceUseDocumentSource(),
+            storage=LocalFileStorage(document_storage_root))
+        reference_parses = ReferenceUseParseProofService(
+            documents=reference_documents,
+            metadata=SqlAlchemyParseResultReadRepository(),
+            storage=LocalParseResultStorage(parse_result_storage_root))
+        reference_evidence = ReferenceUseEvidenceProofService(
+            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+            documents=reference_documents, parses=reference_parses)
+        references = ReferenceUseProofService(
+            references=SqlAlchemyCurrentReferenceUseRepository(),
+            sources=CurrentReferenceSourceAdapter(
+                documents=reference_documents, evidence=reference_evidence),
+            confirmations=SqlAlchemyCurrentGlobalConfirmationRepository())
+        fixed_evidence = SqlAlchemyEvidenceFixedSourceRepository()
+        requirement_evidence = SqlAlchemyEvidenceRequirementSourceProof(
+            fixed_evidence)
+        requirement_decisions = SqlAlchemyRequirementHumanDecisionSourceProof()
+        requirement_qualification = RequirementWorkflowQualificationOwner(
+            repository=SqlAlchemyRequirementWorkflowQualificationRepository(
+                max_roots=500),
+            current=RequirementVersionCurrentValidator(
+                survey_sources=SqlAlchemySurveyConclusionRequirementSourceProof(),
+                handover_sources=SqlAlchemyHandoverRequirementSourceProof(),
+                human_decisions=requirement_decisions,
+                project_evidence=requirement_evidence,
+                capability_sources=SqlAlchemyCapabilityRequirementSourceProof(),
+                fixed_evidence=fixed_evidence,
+            ),
+            evidence=requirement_evidence,
+            decisions=requirement_decisions,
+            reviews=SqlAlchemyReviewSnapshotReadRepository(),
+        )
+        inventory = ApprovedRequirementInventoryService(
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard, authorization=authorization,
+            qualification=requirement_qualification)
+        section_current = _windows_section_current_validator(
+            runtime=runtime, license_guard=license_guard,
+            authorization=authorization, documents=documents,
+            downloads=downloads, parse_results=parse_results)
+        current = OutlineVersionCurrentFactsService(
+            sections=OutlineSectionUseProofService(
+                sections=SqlAlchemySectionReadRepository()),
+            requirements=OutlineRequirementUseProofService(
+                approved_versions=SqlAlchemyPrototypeApprovedRequirementVersionProof()),
+            references=references,
+            coverage=OutlineCoverageProofService(
+                inventory=inventory,
+                sections=SqlAlchemySectionReadRepository(),
+                versions=SqlAlchemySectionVersionReadRepository(),
+                reviews=SqlAlchemyReviewSnapshotReadRepository(),
+                current=section_current,
+            ),
+        )
+        service = OutlineVersionValidationService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectWriteAccess(),
+            license_guard=license_guard, authorization=authorization,
+            outlines=SqlAlchemyOutlineReadRepository(),
+            versions=SqlAlchemyOutlineVersionReadRepository(), current=current,
+            receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+            audit_source=SqlAlchemyOutlineVersionValidationAuditSource(),
+        )
+        return create_outline_version_validate_router(
+            sessions=sessions, origins=origins, validations=service)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
 

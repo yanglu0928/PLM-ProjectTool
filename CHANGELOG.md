@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P03-A04 Windows11显式写入组合接入Outline VALIDATE，使用有界500根当前批准需求库存、现有Section六维/正式Review/Trace/Spec与Reference来源；默认/只读模式不开放。兼容性/升级/回滚：无Schema、冻结API/角色/License权益或数据迁移；撤显式Router恢复404，不删审计历史。验证：组合2通过/10子例、关联15通过/26子例、后端全量4014通过/3跳过/6107子例。已知问题：真实Session/PG三维完整/缺口/竞态、正式信任/客户确认、Pilot/Gate3与三平台发行未完成。
+
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P03-A03 新增冻结Outline版本`:validate`可选HTTP入口，执行可信Origin/Session/CSRF/空正文/幂等校验并返回order/source/coverage与首次审计观察。兼容性/升级/回滚：Windows11内部候选，默认未装配404，无Schema/License权益变更、无需迁移；撤可选Router即可回滚，历史不删。验证：HTTP定向8通过/26子例、后端全量4012通过/3跳过/6097子例。已知问题：Windows真实三维PG组合及装配、正式信任/客户确认、Pilot/Gate3与三平台发行未完成。
 
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P03-A02 新增Outline版本内部VALIDATE命令、项目权限、Audit/幂等收据读回；同Key重放首次观察，异Key重证现时事实。兼容性/升级/回滚：Windows11内部候选，无Schema/公开API/License权益变更、无需迁移；撤未挂载服务可回滚，已有审计史不删。验证：定向18通过/836子例、Win11/一次性PG18.6合成事实持久链exit0、后端全量4008通过/3跳过/6084子例。已知问题：真实三维PG组合、公开HTTP、正式信任/客户确认、Pilot/Gate3与三平台发行未完成。

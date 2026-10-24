@@ -11784,3 +11784,10 @@
 - Decision：仅增加可选Outline版本 VALIDATE Router，沿用Section版本的可信Origin、Session、CSRF、空查询/正文、幂等键、Trace分离与错误映射；应用默认不挂载。报告包含order/source/coverage、固定版本摘要和Audit观察身份，不把ready字段解释为客户批准。
 - Reason：先独立验收公开合同，再让Windows真实三维端口显式装配，避免默认环境把UNAVAILABLE或测试事实当作正式可用。
 - Impact/Rollback/Verification：无Schema、License或冻结路径变更；撤可选Router即可回滚，不改Audit历史。HTTP合同需覆盖授权、重放、错误、无装配404和错资源响应；真实PG组合另片验证。
+
+# DEC-20261024-1215：Outline Windows组合与真实PG三维分片验收
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A05-P03-A04`；A03公开合同已验，但无实际三维端口装配。
+- Decision：A04只完成Windows写入模式的真实端口装配及组合回归；A05单独以一次性PG覆盖完整/缺口/竞态，不能以组合构造或合成事实替代。库存严格`max_roots=500`，Section现时六维沿用既有Owner，Review/Trace/Spec不另写简化SQL。
+- Reason：装配正确与真实业务状态通过是两个独立问题，原Next WBS合写不利于客观关闭；拆分不改变Scope或Gate。
+- Impact/Rollback/Verification：无Schema/API/权限/License权益变化，撤可选Windows路由即回404；必须对依赖缺失失败关闭与全量回归留证，A05前不宣称coverage真实PG通过。

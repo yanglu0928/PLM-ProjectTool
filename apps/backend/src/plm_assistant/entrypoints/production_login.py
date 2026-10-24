@@ -79,6 +79,7 @@ from plm_assistant.entrypoints.windows_solution_reference_cursor import (
 from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_outline_create_router,
     create_windows_outline_version_create_router,
+    create_windows_outline_version_validate_router,
     create_windows_outline_version_read_router,
     create_windows_section_version_read_router,
     create_windows_section_create_router,
@@ -703,6 +704,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         plan_list_router = None
         trace_graph_router = None
         solution_outline_version_create_router = None
+        solution_outline_version_validate_router = None
         solution_outline_version_read_router = None
         solution_section_create_router = None
         solution_section_version_create_router = None
@@ -1023,6 +1025,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         license_guard=licenses.guard, audit=audit,
                         document_storage_root=settings.data_root,
                         parse_result_storage_root=settings.data_root,
+                    )
+                )
+                solution_outline_version_validate_router = (
+                    create_windows_outline_version_validate_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        document_storage_root=settings.data_root,
+                        parse_result_storage_root=settings.data_root,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
                     )
                 )
                 solution_section_create_router = create_windows_section_create_router(
@@ -1963,6 +1975,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             plan_list_router=plan_list_router,
             trace_graph_router=trace_graph_router,
             solution_outline_version_create_router=solution_outline_version_create_router,
+            solution_outline_version_validate_router=solution_outline_version_validate_router,
             solution_outline_version_read_router=solution_outline_version_read_router,
             solution_section_create_router=solution_section_create_router,
             solution_section_version_create_router=solution_section_version_create_router,
