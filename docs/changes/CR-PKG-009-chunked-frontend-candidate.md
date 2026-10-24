@@ -1,6 +1,6 @@
 # CR-PKG-009：当前前端分块构建与非发行派生包校验不兼容
 
-日期：2026-10-24；来源：`PKG-PILOT-01-A01`；状态：`RECORDED / IMPLEMENTATION_OPEN`。承接 CR-PKG-008；不改 Gate 2 冻结架构、API、Schema 或既有候选包。
+日期：2026-10-24；来源：`PKG-PILOT-01-A01`；状态：`NON_RELEASE_IMPLEMENTED_AND_VERIFIED / FORMAL_RELEASE_OPEN`。承接 CR-PKG-008；不改 Gate 2 冻结架构、API、Schema 或既有候选包。
 
 ## 冲突与证据
 
@@ -21,3 +21,7 @@
 ## 验证计划
 
 定向测试覆盖多分块通过、非白名单文件/链接/缺入口失败、父包与 wheel 哈希约束；在干净已提交源码上重新构建 wheel/dist，生成全量新非发行 ZIP，独立读回哈希与清洁暂存，不把缺失的正式公钥、法律结论、安装/升级及 Gate 说成通过。同步代码、测试、记录和版本说明到 GitHub；大型 ZIP 仅留受控本地忽略区。
+
+## 实施与结果
+
+已在提交 `0bb3ed2db7dae42dca449540a12239fcfe2a92eb` 实施方案 B；包内前端布局为 87 件。定向打包/暂存测试 5/5；新非发行 ZIP SHA-256 `da90e98b41e8684a12af83c9d03a0162292cab9288e28c220dc38dfd72a4bb6a`，22,145 件载荷，独立清洁解包及哈希读回通过。详见 [A01 证据](../progress/pkg-pilot-01-a01-current-candidate-precheck.md)。这只关闭分块不兼容与候选完整性，不关闭正式安装、信任或法律验收。
