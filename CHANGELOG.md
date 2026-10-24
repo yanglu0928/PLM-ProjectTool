@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P03-A05-P02新增同库完整来源隔离验收：正式Requirement/Section Owner合成升版与统一Review/Trace后，Outline order/source/coverage全PASS；撤Trace异Key coverage FAIL、旧Key观察不漂移；双并发同Key仅一持久观察。兼容性/升级/回滚：Windows11/PG18.6测试证据，无正式程序/Schema/API/权限/License变化或数据升级；撤脚本即可，临时库清理。验证：脚本exit0，Audit/Receipt各3；前片后端全量4014通过/3跳过/6107子例，本片无程序变更未重复全量。已知问题：仅合成客户确认及测试信任；Outline正式Review、完整纵向链、真实公钥/服务账户、Pilot/Gate3、Windows Server 2025及Debian 13正式发行未验。
+
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P03-A05初验增一次性Win11/PG18.6真实来源脚本：不完整合成需求夹具下Outline order/source PASS、coverage UNAVAILABLE且不可送审；同Key回放、异Key重证、Audit/Receipt及跨项目/CSRF拒绝。兼容性/升级/回滚：仅测试脚本与记录，无程序/Schema/API/权限/License变更，撤脚本不影响数据；临时数据库清理。验证：脚本exit0；前片后端全量4014通过/3跳过/6107子例，本片无程序变更未重复全量。已知问题：正式需求资格同库夹具、三维完整PASS/缺口/竞态、客户实签/正式信任、Pilot/Gate3与三平台发行未完成。
 
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P03-A04 Windows11显式写入组合接入Outline VALIDATE，使用有界500根当前批准需求库存、现有Section六维/正式Review/Trace/Spec与Reference来源；默认/只读模式不开放。兼容性/升级/回滚：无Schema、冻结API/角色/License权益或数据迁移；撤显式Router恢复404，不删审计历史。验证：组合2通过/10子例、关联15通过/26子例、后端全量4014通过/3跳过/6107子例。已知问题：真实Session/PG三维完整/缺口/竞态、正式信任/客户确认、Pilot/Gate3与三平台发行未完成。

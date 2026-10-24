@@ -11798,3 +11798,24 @@
 - Decision：本片从既有合成客户Section批准夹具建立真实Outline DRAFT，调用Windows显式路由观察order/source/coverage；变更Trace或资格后用新Key重证，旧Key只看初始Audit。若既有夹具缺完整Requirement源资格，记录失败来源并补独立正式Owner夹具，不用伪造事实返回值或关闭Gate。
 - Reason：程序包能否给用户试用取决于现时事实链，不取决于合同形状或合成Facts的持久成功。
 - Impact/Rollback/Verification：仅测试数据在一次性PG中创建并清理，无客户材料/秘密外发；失败则停止本项并处理前置或产品缺陷，其他独立WBS可继续。
+
+# DEC-20261024-1217：同库验收以正式Owner补齐需求和章节新版本
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A05-P03-A05-P02`；A05旧Section夹具的需求v1只有根/版本表，没有资格子项，库存Owner拒绝。
+- Decision：保留旧v1历史，使用正式Requirement创建/Review Owner新增v2并通过合成客户评审；再用正式Section创建/Review/Trace Owner生成引用v2的新章节版，最后运行Outline验证。不改旧版批准状态或内容指纹，不降级库存检查；旧测试夹具声明数缺口按后续DEC-1218仅在隔离库补行。仅隔离临时库可用合成账户/文档。
+- Reason：新版本路径与实际升级一致，且可复查每个Owner的拒绝/批准；直接补写旧v1子表会造成不真实的批准历史。
+- Impact/Rollback/Verification：仅验证脚本与一次性数据，无Schema/API/权限/License变化；脚本可撤，临时库清理。要求真实Owner返回完整三维PASS、Trace撤销后的新Key不再ready、旧Key观察不漂移；失败时保持本项未通过。
+
+# DEC-20261024-1218：一次性旧需求夹具补齐已声明来源以便正式升版
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A05-P03-A05-P02`；Section历史夹具的合成Requirement v1声明`source_count=1`却无来源子行。正式Owner创建的v2三类声明/实数均为1且当前issues为空，但客户合成评审提交在supersede旧v1时触发数据库延迟完整性检查并回滚（P0001）。
+- Decision：仅在一次性PG的测试数据准备阶段，为旧v1插入与既有项目合格Evidence一致的1条`PROJECT_EVIDENCE`来源及其Evidence引用，使已声明计数闭合；不修改v1指纹/批准状态、不把v1当正式需求资格。v2仍必须由正式创建与Review Owner独立生成和批准。若当前Owner/库存仍拒绝，维持未通过。
+- Reason：不补旧测试夹具就无法验证正式v2的升版/下游链；关闭DB完整性触发器或改产品判定会掩盖真实错误。该测试数据修正不属于生产历史迁移方案。
+- Impact/Rollback/Verification：只影响用后即删的合成数据库，不修改Schema、正式程序或客户数据；撤脚本即回滚。重新运行评审与库存、Outline三维及撤Trace复验，并保留原A05旧夹具失败关闭记录。
+
+# DEC-20261024-1219：同库新章节采用显式无需专项规格
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A05-P03-A05-P02`；历史章节绑定的已批准专项规格固定了旧需求版。新章节引用正式批准的需求v2，复用旧规格时资格Owner返回`SOURCE_UNAVAILABLE`。
+- Decision：验收夹具中的新需求归类为标准功能，新章节通过正式创建Owner明确写入`NONE_REQUIRED`及理由，不复制不匹配的旧规格固定引用；Section送审/客户合成审批、Trace与Outline覆盖仍由现时Owner重新证明。历史已批准章节及专项规格保持原状。
+- Reason：版本固定引用不得“自动跟随”新版需求；标准功能无需专项规格的显式分支由冻结设计和已实现规则允许。此决定仅选择与合成测试语义一致的输入，不调整生产资格规则。
+- Impact/Rollback/Verification：只改变一次性PG验收输入，无Schema/API/正式数据变化；脚本可撤。新Section正式Owner/Review批准及Outline三维全PASS、追溯撤销后覆盖FAIL，均须独立观测；不代表真实客户批准或Pilot通过。
