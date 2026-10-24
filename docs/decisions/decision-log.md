@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261025-HND-A02-P04：复用固定包并组合独立合成前置
+
+- Date/WBS：2026-10-25 / `HND-05-A02-P04`。
+- Decision：从已同步的 P03 干净提交重建 Windows 11 非发行候选，只为验收组合已存在的项目文档/交接、PROJECT Evidence、GLOBAL 文档/Evidence、双 Reviewer 已批准能力夹具，再运行交接 DRAFT 版本真实 Edge/HTTPS/PG 和负例。首次三个完整运行的夹具依次重复 GLOBAL 创建、漏部署 Admin 角色、漏首份 GLOBAL 固定文档；逐项保留失败，修正夹具编排后第四轮全链退出0。产品 API、Schema、权限及候选 ZIP 均未因夹具失败修改。
+- Reason：前置独立验收各自可通过，但组合时不能重做已创建实体或省略其必要来源/权限；错误的是验收编排，不可据此放宽权限、伪造来源或把未到达的交接创建记 PASS。
+- Impact/Rollback：仅新增本轮测试脚本及进度证据，无业务迁移；撤脚本不影响包与已存在产品代码。固定候选 SHA `3e84a42c3c22fd5f02ec5a13a35bc86d28394f9d1cf9b846952bdfa8cf2cb209`、22,196件清洁解包及两卡片单版本/Audit/回执和负例通过；仅 Windows 11 合成信任切片，Pilot/Release/Gate 仍未通过。
+
 ## DEC-20261025-HND-A02-P03：交接版本使用有来源的卡片式人工编辑
 
 - Date/WBS：2026-10-25 / `HND-05-A02-P03`。
