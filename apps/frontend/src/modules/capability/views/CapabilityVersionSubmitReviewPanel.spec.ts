@@ -1,5 +1,7 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createMemoryHistory } from "vue-router";
+import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { AdminUserListClient } from "@/modules/auth/api/adminUserListClient";
 import { CapabilityVersionSubmitReviewClient, CapabilityReviewSubmitError } from
@@ -37,8 +39,10 @@ async function setup(admin = true) {
   ], next_cursor: null, has_more: false });
   const submitter = new CapabilityVersionSubmitReviewClient(session);
   const submit = vi.spyOn(submitter, "submit").mockResolvedValue(receipt);
+  const router = createAppRouter(createMemoryHistory());
+  await router.push(`/capability-baselines/${baselineId}`); await router.isReady();
   const wrapper = mount(CapabilityVersionSubmitReviewPanel, { props: {
-    version, session, users, submitter } });
+    version, session, users, submitter }, global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, page, submit };
 }
@@ -55,6 +59,8 @@ describe("CapabilityVersionSubmitReviewPanel", () => {
     expect(submit.mock.calls[0]![1]).toEqual([ordinaryId]);
     expect(wrapper.text()).toContain("已进入评审");
     expect(wrapper.text()).toContain("尚未批准");
+    expect(wrapper.get("a").attributes("href")).toBe(
+      `/capability-baselines/${baselineId}/versions/${versionId}/reviews/${receipt.review_id}`);
     expect(window.sessionStorage.length).toBe(0);
     wrapper.unmount();
   });

@@ -63,7 +63,7 @@ function parseBaseline(value: unknown): CapabilityBaseline {
     || typeof value.etag !== "string" || !etagPattern.test(value.etag)) unavailable();
   return Object.freeze({ ...value }) as unknown as CapabilityBaseline;
 }
-function parseVersion(value: unknown, baselineId: string): CapabilityVersion {
+export function parseVersion(value: unknown, baselineId: string): CapabilityVersion {
   const fields = ["baseline_version_id", "baseline_id", "version_no", "state", "source_collection_ref",
     "content_fingerprint", "declared_item_count", "declared_document_ref_count", "declared_evidence_ref_count",
     "supersedes_version_ref", "review_ref", "review_round_ref", "created_at"];
@@ -78,7 +78,7 @@ function parseVersion(value: unknown, baselineId: string): CapabilityVersion {
       .some(ref => ref !== null && !identifier(ref)) || !instant(value.created_at)) unavailable();
   return Object.freeze({ ...value }) as unknown as CapabilityVersion;
 }
-function parseItem(value: unknown, baselineId: string, versionId: string): CapabilityItem {
+export function parseItem(value: unknown, baselineId: string, versionId: string): CapabilityItem {
   const fields = ["capability_item_id", "baseline_version_id", "baseline_id", "ordinal", "capability_code",
     "domain_name", "module_name", "feature_name", "name", "description", "boundary", "prerequisites",
     "interface_refs", "state", "document_version_refs", "evidence_refs"];

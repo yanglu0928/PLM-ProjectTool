@@ -137,6 +137,10 @@ onUnmounted(() => { mounted = false; reset(); unsubscribe(); });
         <template v-if="selected">
           <h3>能力条目 · 第 {{ selected.version_no }} 版</h3>
           <p v-if="selected.state !== 'APPROVED'">此版本尚非正式批准版本。</p>
+          <RouterLink v-if="selected.review_ref && selected.review_round_ref"
+            :to="{ name: 'global-capability-review', params: {
+              baselineId: selected.baseline_id, versionId: selected.baseline_version_id,
+              reviewId: selected.review_ref } }">查看本轮正式内部评审与固定版本</RouterLink>
           <CapabilityVersionValidatePanel v-if="session.view?.deployment_role === 'DEPLOYMENT_ADMIN' && selected.state === 'DRAFT'"
             :key="selected.baseline_version_id" :version="selected" :session="session" />
           <CapabilityVersionSubmitReviewPanel v-if="session.view?.deployment_role === 'DEPLOYMENT_ADMIN' && selected.state === 'DRAFT'"

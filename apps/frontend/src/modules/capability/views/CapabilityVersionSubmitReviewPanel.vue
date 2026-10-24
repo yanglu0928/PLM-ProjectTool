@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, shallowRef, toRaw } from "vue";
+import { RouterLink } from "vue-router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { AdminUserListClient, type UserCandidate } from "@/modules/auth/api/adminUserListClient";
 import type { CapabilityVersion } from "@/modules/capability/api/capabilityReadClient";
@@ -124,6 +125,9 @@ onUnmounted(() => { mounted = false; generation += 1; unsubscribe(); });
     <p v-if="loading" role="status">正在读取评审候选人…</p>
     <template v-if="submitted">
       <p role="status">已进入评审：{{ submitted.review_id }}，轮次 {{ submitted.review_round_id }}。请刷新版本详情查看状态；尚未批准。</p>
+      <RouterLink :to="{ name: 'global-capability-review', params: {
+        baselineId: submitted.baseline_id, versionId: submitted.baseline_version_id,
+        reviewId: submitted.review_id } }">打开固定版本评审链接</RouterLink>
     </template>
     <template v-else-if="pending">
       <p role="status">原送审结果未确认，评审人 {{ pending.reviewerIds.join('、') }}；请先核对评审与审计记录。</p>
