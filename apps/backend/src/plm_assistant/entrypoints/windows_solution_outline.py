@@ -77,6 +77,9 @@ from plm_assistant.modules.solution.application.structured_spec_submit_review im
 from plm_assistant.modules.solution.application.section_review_readiness import SectionReviewReadinessService
 from plm_assistant.modules.solution.application.section_review_subject import SectionReviewSubjectOwner
 from plm_assistant.modules.solution.application.section_submit_review import SectionReviewSubmissionService
+from plm_assistant.modules.solution.application.outline_review_readiness import OutlineReviewReadinessService
+from plm_assistant.modules.solution.application.outline_review_subject import OutlineReviewSubjectOwner
+from plm_assistant.modules.solution.application.outline_submit_review import OutlineReviewSubmissionService
 from plm_assistant.modules.solution.application.prove_structured_spec_sources import StructuredSpecSourceProofService
 from plm_assistant.modules.solution.application.read_section_version import SectionVersionReadService
 from plm_assistant.modules.solution.application.validate_section_version import (
@@ -130,6 +133,8 @@ from plm_assistant.modules.solution.infrastructure.structured_spec_validation_re
 from plm_assistant.modules.solution.infrastructure.structured_spec_review_repository import SqlAlchemyStructuredSpecReviewSubjectRepository
 from plm_assistant.modules.solution.infrastructure.section_review_readiness_repository import SqlAlchemySectionReviewReadinessRepository
 from plm_assistant.modules.solution.infrastructure.section_review_repository import SqlAlchemySectionReviewSubjectRepository
+from plm_assistant.modules.solution.infrastructure.outline_review_readiness_repository import SqlAlchemyOutlineReviewReadinessRepository
+from plm_assistant.modules.solution.infrastructure.outline_review_repository import SqlAlchemyOutlineReviewSubjectRepository
 from plm_assistant.modules.solution.infrastructure.section_version_validation_audit_source import (
     SqlAlchemySectionVersionValidationAuditSource,
 )
@@ -426,6 +431,72 @@ def create_windows_outline_version_create_router(
         raise ProductionSolutionOutlineStartupError() from None
 
 
+def _windows_outline_current_facts(
+    *, runtime, license_guard, authorization,
+    document_storage_root: Path, parse_result_storage_root: Path,
+    documents, downloads, parse_results, evidence_roles=None,
+) -> OutlineVersionCurrentFactsService:
+    """Share one current source graph between VALIDATE and Review."""
+    reference_documents = ReferenceUseDocumentProofService(
+        sources=SqlAlchemyReferenceUseDocumentSource(),
+        storage=LocalFileStorage(document_storage_root))
+    reference_parses = ReferenceUseParseProofService(
+        documents=reference_documents,
+        metadata=SqlAlchemyParseResultReadRepository(),
+        storage=LocalParseResultStorage(parse_result_storage_root))
+    reference_evidence = ReferenceUseEvidenceProofService(
+        evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+        documents=reference_documents, parses=reference_parses)
+    references = ReferenceUseProofService(
+        references=SqlAlchemyCurrentReferenceUseRepository(),
+        sources=CurrentReferenceSourceAdapter(
+            documents=reference_documents, evidence=reference_evidence),
+        confirmations=SqlAlchemyCurrentGlobalConfirmationRepository())
+    fixed_evidence = SqlAlchemyEvidenceFixedSourceRepository()
+    requirement_evidence = SqlAlchemyEvidenceRequirementSourceProof(
+        fixed_evidence)
+    requirement_decisions = SqlAlchemyRequirementHumanDecisionSourceProof()
+    requirement_qualification = RequirementWorkflowQualificationOwner(
+        repository=SqlAlchemyRequirementWorkflowQualificationRepository(
+            max_roots=500),
+        current=RequirementVersionCurrentValidator(
+            survey_sources=SqlAlchemySurveyConclusionRequirementSourceProof(),
+            handover_sources=SqlAlchemyHandoverRequirementSourceProof(),
+            human_decisions=requirement_decisions,
+            project_evidence=requirement_evidence,
+            capability_sources=SqlAlchemyCapabilityRequirementSourceProof(),
+            fixed_evidence=fixed_evidence,
+        ),
+        evidence=requirement_evidence,
+        decisions=requirement_decisions,
+        reviews=SqlAlchemyReviewSnapshotReadRepository(),
+    )
+    inventory = ApprovedRequirementInventoryService(
+        access=SqlAlchemyProjectReadAccess(),
+        license_guard=license_guard, authorization=authorization,
+        qualification=requirement_qualification)
+    section_current = _windows_section_current_validator(
+        runtime=runtime, license_guard=license_guard,
+        authorization=authorization, documents=documents,
+        downloads=downloads, parse_results=parse_results,
+        evidence_roles=evidence_roles)
+    current = OutlineVersionCurrentFactsService(
+        sections=OutlineSectionUseProofService(
+            sections=SqlAlchemySectionReadRepository()),
+        requirements=OutlineRequirementUseProofService(
+            approved_versions=SqlAlchemyPrototypeApprovedRequirementVersionProof()),
+        references=references,
+        coverage=OutlineCoverageProofService(
+            inventory=inventory,
+            sections=SqlAlchemySectionReadRepository(),
+            versions=SqlAlchemySectionVersionReadRepository(),
+            reviews=SqlAlchemyReviewSnapshotReadRepository(),
+            current=section_current,
+        ),
+    )
+    return current
+
+
 def create_windows_outline_version_validate_router(
     *, runtime, sessions, origins, license_guard, audit,
     document_storage_root: Path, parse_result_storage_root: Path,
@@ -441,62 +512,13 @@ def create_windows_outline_version_validate_router(
         authorization = ProjectAuthorizationService(
             unit_of_work=runtime.unit_of_work,
             repository=SqlAlchemyProjectAuthorizationRepository())
-        reference_documents = ReferenceUseDocumentProofService(
-            sources=SqlAlchemyReferenceUseDocumentSource(),
-            storage=LocalFileStorage(document_storage_root))
-        reference_parses = ReferenceUseParseProofService(
-            documents=reference_documents,
-            metadata=SqlAlchemyParseResultReadRepository(),
-            storage=LocalParseResultStorage(parse_result_storage_root))
-        reference_evidence = ReferenceUseEvidenceProofService(
-            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
-            documents=reference_documents, parses=reference_parses)
-        references = ReferenceUseProofService(
-            references=SqlAlchemyCurrentReferenceUseRepository(),
-            sources=CurrentReferenceSourceAdapter(
-                documents=reference_documents, evidence=reference_evidence),
-            confirmations=SqlAlchemyCurrentGlobalConfirmationRepository())
-        fixed_evidence = SqlAlchemyEvidenceFixedSourceRepository()
-        requirement_evidence = SqlAlchemyEvidenceRequirementSourceProof(
-            fixed_evidence)
-        requirement_decisions = SqlAlchemyRequirementHumanDecisionSourceProof()
-        requirement_qualification = RequirementWorkflowQualificationOwner(
-            repository=SqlAlchemyRequirementWorkflowQualificationRepository(
-                max_roots=500),
-            current=RequirementVersionCurrentValidator(
-                survey_sources=SqlAlchemySurveyConclusionRequirementSourceProof(),
-                handover_sources=SqlAlchemyHandoverRequirementSourceProof(),
-                human_decisions=requirement_decisions,
-                project_evidence=requirement_evidence,
-                capability_sources=SqlAlchemyCapabilityRequirementSourceProof(),
-                fixed_evidence=fixed_evidence,
-            ),
-            evidence=requirement_evidence,
-            decisions=requirement_decisions,
-            reviews=SqlAlchemyReviewSnapshotReadRepository(),
-        )
-        inventory = ApprovedRequirementInventoryService(
-            access=SqlAlchemyProjectReadAccess(),
-            license_guard=license_guard, authorization=authorization,
-            qualification=requirement_qualification)
-        section_current = _windows_section_current_validator(
+        current = _windows_outline_current_facts(
             runtime=runtime, license_guard=license_guard,
-            authorization=authorization, documents=documents,
-            downloads=downloads, parse_results=parse_results)
-        current = OutlineVersionCurrentFactsService(
-            sections=OutlineSectionUseProofService(
-                sections=SqlAlchemySectionReadRepository()),
-            requirements=OutlineRequirementUseProofService(
-                approved_versions=SqlAlchemyPrototypeApprovedRequirementVersionProof()),
-            references=references,
-            coverage=OutlineCoverageProofService(
-                inventory=inventory,
-                sections=SqlAlchemySectionReadRepository(),
-                versions=SqlAlchemySectionVersionReadRepository(),
-                reviews=SqlAlchemyReviewSnapshotReadRepository(),
-                current=section_current,
-            ),
-        )
+            authorization=authorization,
+            document_storage_root=document_storage_root,
+            parse_result_storage_root=parse_result_storage_root,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results)
         service = OutlineVersionValidationService(
             unit_of_work=runtime.unit_of_work,
             access=SqlAlchemyProjectWriteAccess(),
@@ -508,6 +530,80 @@ def create_windows_outline_version_validate_router(
         )
         return create_outline_version_validate_router(
             sessions=sessions, origins=origins, validations=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_outline_review_subject(
+    *, runtime, license_guard, audit,
+    document_storage_root: Path, parse_result_storage_root: Path,
+    documents, downloads, parse_results,
+    authorization=None, reviewers=None, terminal_context=False,
+) -> OutlineReviewSubjectOwner:
+    """Compose the SOL-03 Owner against the complete current source graph."""
+    if (type(terminal_context) is not bool or any(value is None for value in (
+            runtime, license_guard, audit, document_storage_root,
+            parse_result_storage_root, documents, downloads, parse_results))):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+        authorization = authorization or ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=project_repository)
+        reviewers = reviewers or ProjectReviewerQualificationService(
+            users=SqlAlchemyReviewUserAccess(), projects=project_repository)
+        current = _windows_outline_current_facts(
+            runtime=runtime, license_guard=license_guard,
+            authorization=authorization,
+            document_storage_root=document_storage_root,
+            parse_result_storage_root=parse_result_storage_root,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results,
+            evidence_roles=ALL_MEMBERS if terminal_context else None)
+        return OutlineReviewSubjectOwner(
+            repository=SqlAlchemyOutlineReviewSubjectRepository(),
+            reviewers=reviewers, audit=audit,
+            readiness=OutlineReviewReadinessService(
+                repository=SqlAlchemyOutlineReviewReadinessRepository(),
+                current=current))
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_outline_review_submission_service(
+    *, runtime, license_guard, audit,
+    document_storage_root: Path, parse_result_storage_root: Path,
+    documents, downloads, parse_results,
+) -> OutlineReviewSubmissionService:
+    """Internal atomic submit graph; no public route is mounted here."""
+    if any(value is None for value in (
+            runtime, license_guard, audit, document_storage_root,
+            parse_result_storage_root, documents, downloads, parse_results)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=project_repository)
+        reviewers = ProjectReviewerQualificationService(
+            users=SqlAlchemyReviewUserAccess(), projects=project_repository)
+        owner = create_windows_outline_review_subject(
+            runtime=runtime, license_guard=license_guard, audit=audit,
+            document_storage_root=document_storage_root,
+            parse_result_storage_root=parse_result_storage_root,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results,
+            authorization=authorization, reviewers=reviewers)
+        return OutlineReviewSubmissionService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectWriteAccess(),
+            license_guard=license_guard, authorization=authorization,
+            reviewers=reviewers, receipts=SqlAlchemyIdempotencyReceipts(),
+            replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
+            reviews=ProjectReviewPersistenceService(
+                creation_repository=SqlAlchemyReviewCreationRepository(),
+                round_repository=SqlAlchemyReviewStartRepository(),
+                audit=audit, subjects=owner), subjects=owner)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
 
