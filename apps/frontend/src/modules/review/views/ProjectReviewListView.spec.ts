@@ -71,6 +71,18 @@ describe("ProjectReviewListView", () => {
     wrapper.unmount();
   });
 
+  it("labels an Outline customer decision as a solution outline", async () => {
+    const outline = { ...pending,
+      subject_ref: { resource_type: "SOL-03", resource_id: other },
+      policy_code: "SOLUTION_OUTLINE_ALL_V1" };
+    const { wrapper } = await page({ list: vi.fn().mockResolvedValue({
+      items: [outline], next_cursor: null, has_more: false,
+    }) });
+    expect(wrapper.text()).toContain("评审中 · 方案大纲");
+    expect(wrapper.get(`a[href="/projects/${project}/reviews/${review}"]`).text()).toContain("打开评审");
+    wrapper.unmount();
+  });
+
   it("refreshes the pending view after a decision and keeps terminal history separate", async () => {
     const list = vi.fn().mockResolvedValueOnce({ items: [pending], next_cursor: null, has_more: false })
       .mockResolvedValueOnce({ items: [], next_cursor: null, has_more: false })

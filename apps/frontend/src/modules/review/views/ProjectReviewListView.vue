@@ -28,7 +28,8 @@ function stateLabel(value: string) {
     RETURNED: "已退回", WITHDRAWN: "已撤回" } as Record<string, string>)[value] ?? "未知";
 }
 function subjectLabel(value: string) {
-  return value === "SOL-05" ? "方案章节" : value === "SOL-06" ? "结构化专项" : value;
+  return value === "SOL-03" ? "方案大纲"
+    : value === "SOL-05" ? "方案章节" : value === "SOL-06" ? "结构化专项" : value;
 }
 async function load(replace = false) {
   if (!mayRead() || busy.value) return;
