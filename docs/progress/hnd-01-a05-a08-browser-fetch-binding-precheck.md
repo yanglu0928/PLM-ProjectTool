@@ -18,3 +18,5 @@
 交接 `#get` 改为先取局部 `fetcher` 再调用，保持原参数、响应解析、权限与异常映射不变。新增 native-like 回归测试在接收对象上下文时抛 `Illegal invocation`，直接覆盖原 mock 的遗漏。定向 28/28、前端全量 1868/1868、`vue-tsc`/`tsc` 与 Vite 生产构建通过。未更改后端、Schema、迁移或冻结 API；本项不把源代码构建成功宣称为旧包 Edge PASS。
 
 Changed：交接读取调用上下文与回归测试。Files：`handoverReadClient.ts`、`handoverReadClient.spec.ts`、本记录。Migration/API/权限：无。Tests：定向 28、前端全量 1868、typecheck/build PASS。Result：`HND_01_A05_A08_SOURCE_FIX_PASS / PACKAGED_RETEST_PENDING`。Known Issues：旧候选仍含缺陷；其他模块同类调用形态须各自实际验证。Next：新固定候选/真实 Edge 复验，正式 Pilot 仍 NOT_READY。
+
+后续复验：`PKG-PILOT-01-A04-P03-R1` 已从干净提交构建新候选，并经真实 Edge 交接入口与其余五入口/Workflow PASS；旧候选失败历史不变。此后续结果不代表完整业务链或正式 Pilot 通过。
