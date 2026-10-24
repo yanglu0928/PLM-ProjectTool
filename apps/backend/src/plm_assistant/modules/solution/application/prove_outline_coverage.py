@@ -29,6 +29,7 @@ from plm_assistant.modules.review.domain.round_progress import ReviewRoundState
 from .outline_version_history import OutlineVersionHistoryView
 from .outline_version_input import OutlineRequirementRef
 from .outline_version_validation_contract import (
+    OutlineCurrentFactQuery,
     OutlineVersionValidationContractError,
     OutlineVersionValidationSnapshot,
     ValidateOutlineVersion,
@@ -106,15 +107,20 @@ class OutlineCoverageProofService:
         self._reviews = reviews
         self._current = current
 
-    def prove(self, transaction: object, *, command: ValidateOutlineVersion,
+    def prove(self, transaction: object, *,
+              command: ValidateOutlineVersion | OutlineCurrentFactQuery,
               version: OutlineVersionHistoryView) -> CurrentOutlineCoverageProof:
-        if (transaction is None or type(command) is not ValidateOutlineVersion
+        if (transaction is None or type(command) not in (
+                ValidateOutlineVersion, OutlineCurrentFactQuery)
                 or type(version) is not OutlineVersionHistoryView
                 or (version.project_id, version.solution_outline_id,
                     version.solution_outline_version_id) != (
                         command.project_id, command.solution_outline_id,
                         command.solution_outline_version_id)
-                or version.version_state != "DRAFT"):
+                or (type(command) is ValidateOutlineVersion
+                    and version.version_state != "DRAFT")
+                or (type(command) is OutlineCurrentFactQuery
+                    and version.version_state not in ("DRAFT", "IN_REVIEW"))):
             raise OutlineCoverageProofError()
         try:
             command.__post_init__()

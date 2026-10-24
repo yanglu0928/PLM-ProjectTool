@@ -31,6 +31,7 @@ from plm_assistant.modules.solution.application.outline_version_input import (
     OutlineRequirementRef,
 )
 from plm_assistant.modules.solution.application.outline_version_validation_contract import (
+    OutlineCurrentFactQuery,
     ValidateOutlineVersion,
 )
 from plm_assistant.modules.solution.application.prove_outline_coverage import (
@@ -145,6 +146,24 @@ def test_complete_current_approved_section_union_uses_same_transaction(setup):
     s.current.facts.assert_called_once()
     assert s.current.facts.call_args.args[0] is s.tx
     assert s.current.facts.call_args.kwargs["version"] is s.version_view
+
+
+def test_internal_review_query_reproves_in_review_but_public_validate_does_not(setup):
+    s = setup
+    s.tx = object()
+    in_review = replace(s.outline_view, version_state="IN_REVIEW",
+                        review_ref=uuid.uuid4(), review_round_ref=uuid.uuid4())
+    internal = OutlineCurrentFactQuery(
+        s.command.session_token, s.trace, s.project, s.outline,
+        s.outline_version)
+    proof = s.service.prove(s.tx, command=internal, version=in_review)
+    assert proof.solution_outline_version_id == s.outline_version
+    assert s.inventory.prove_in_transaction.call_args.args[0] is s.tx
+    with pytest.raises(OutlineCoverageProofError):
+        s.service.prove(s.tx, command=s.command, version=in_review)
+    with pytest.raises(OutlineCoverageProofError):
+        s.service.prove(s.tx, command=replace(internal, project_id=uuid.uuid4()),
+                        version=in_review)
 
 
 def test_fixed_outline_must_equal_complete_approved_requirement_scope(setup):

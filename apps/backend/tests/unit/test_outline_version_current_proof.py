@@ -21,6 +21,7 @@ from plm_assistant.modules.solution.application.outline_version_input import (
     OutlineVersionDraftInput,
 )
 from plm_assistant.modules.solution.application.outline_version_validation_contract import (
+    OutlineCurrentFactQuery,
     ValidateOutlineVersion,
 )
 from plm_assistant.modules.solution.application.prove_outline_section_use import (
@@ -118,6 +119,36 @@ def test_current_coverage_requires_exact_proof_after_fixed_sources_pass(example)
     coverage.prove.return_value = replace(coverage.prove.return_value,
                                           requirement_refs=())
     assert facts(example).coverage == "UNAVAILABLE"
+
+
+def test_internal_review_query_reproves_in_review_without_http_csrf(example):
+    history = replace(example["history"], version_state="IN_REVIEW",
+                      review_ref=uuid.uuid4(), review_round_ref=uuid.uuid4())
+    command = example["command"]
+    internal = OutlineCurrentFactQuery(
+        command.session_token, command.trace_id, command.project_id,
+        command.solution_outline_id, command.solution_outline_version_id)
+    coverage = Mock()
+    coverage.prove.return_value = CurrentOutlineCoverageProof(
+        history.project_id, history.solution_outline_id,
+        history.solution_outline_version_id, history.requirement_refs,
+        (uuid.uuid4(),), b"i" * 32)
+    example["current"]._coverage = coverage
+    result = example["current"].facts(
+        example["tx"], command=internal, version=history)
+    assert (result.order, result.source, result.coverage) == (
+        "PASS", "PASS", "PASS")
+    coverage.prove.assert_called_once_with(
+        example["tx"], command=internal, version=history)
+    example["requirements"].prove.side_effect = RuntimeError("source unavailable")
+    unknown = example["current"].facts(
+        example["tx"], command=internal, version=history)
+    assert unknown.source == "UNAVAILABLE" and unknown.coverage == "UNAVAILABLE"
+    coverage.prove.assert_called_once()
+    with pytest.raises(OutlineVersionCurrentProofError):
+        example["current"].facts(
+            example["tx"], command=replace(internal, project_id=uuid.uuid4()),
+            version=history)
 
 
 def test_current_coverage_known_gap_fails_but_unknown_or_stale_source_does_not_pass(example):

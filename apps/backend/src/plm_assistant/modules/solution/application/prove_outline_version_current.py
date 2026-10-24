@@ -17,6 +17,7 @@ from .prove_outline_coverage import (
 )
 from .outline_version_input import OutlineVersionDraftInput
 from .outline_version_validation_contract import (
+    OutlineCurrentFactQuery,
     OutlineVersionValidationContractError,
     OutlineVersionValidationFacts,
     OutlineVersionValidationSnapshot,
@@ -43,7 +44,8 @@ def _id(value: object) -> bool:
 
 
 class OutlineCoveragePort(Protocol):
-    def prove(self, transaction: object, *, command: ValidateOutlineVersion,
+    def prove(self, transaction: object, *,
+              command: ValidateOutlineVersion | OutlineCurrentFactQuery,
               version: OutlineVersionHistoryView) -> CurrentOutlineCoverageProof: ...
 
 
@@ -78,9 +80,11 @@ class OutlineVersionCurrentFactsService:
         self._references = references
         self._coverage = coverage
 
-    def facts(self, transaction: object, *, command: ValidateOutlineVersion,
+    def facts(self, transaction: object, *,
+              command: ValidateOutlineVersion | OutlineCurrentFactQuery,
               version: OutlineVersionHistoryView) -> OutlineVersionValidationFacts:
-        if (transaction is None or type(command) is not ValidateOutlineVersion
+        if (transaction is None or type(command) not in (
+                ValidateOutlineVersion, OutlineCurrentFactQuery)
                 or type(version) is not OutlineVersionHistoryView
                 or (version.project_id, version.solution_outline_id,
                     version.solution_outline_version_id) != (
@@ -88,6 +92,7 @@ class OutlineVersionCurrentFactsService:
                         command.solution_outline_version_id)):
             raise OutlineVersionCurrentProofError()
         try:
+            command.__post_init__()
             OutlineVersionValidationSnapshot(
                 version.project_id, version.solution_outline_id,
                 version.solution_outline_version_id, version.version_no,

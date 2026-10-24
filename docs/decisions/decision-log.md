@@ -11826,3 +11826,10 @@
 - Decision：后续单独为Outline建立`SOL-03` Subject及建议策略`SOLUTION_OUTLINE_ALL_V1`，数据库先开放仅经受控Review结果闭合的DRAFT→IN_REVIEW→APPROVED/RETURNED、旧批准版SUPERSEDED和根指针转移；Version内容/子引用继续不可变。实际policy命名与状态表列在P04-P02编码前复核，若触及冻结合同再记CR。
 - Reason：只凭历史VALIDATE结果或直接开放UPDATE会越过现时来源/客户确认边界；独立闭合可将Review/Round/SubjectSnapshot与业务指针保持一致，且不把章节批准误当目录批准。
 - Impact/Rollback/Verification：本条仅路线决策，无运行变更；后续Schema片必须ORM+Alembic up/down、空库/有数据升级和失配/竞态负例。存在Review历史时不做破坏性回滚，需前向修复。Pilot/Gate维持未通过。
+
+# DEC-20261024-1221：Outline评审现时证明先打通IN_REVIEW只读路径
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P04-P03-A01`；P04-P03统一Subject需在送审和客户最终批准前独立重证三维。当前Coverage Owner仅接受`DRAFT`及公开`ValidateOutlineVersion`，无法合法重证`IN_REVIEW`，而旧VALIDATE Audit只是历史观察。
+- Decision：把P04-P03拆成内部现时证明A01与Subject生命周期A02。A01新增不携带HTTP幂等/CSRF的内部固定查询类型，只允许经调用方已授权事务使用；Coverage对内部查询接受`DRAFT/IN_REVIEW`，公开VALIDATE仍仅按原DRAFT覆盖规则。A02再加入锁定最新版本、确认人资格与统一Review固定快照。
+- Reason：避免伪造CSRF或复用历史报告，并保持已冻结公开验证合同不变；客户终态必须取得同事务新鲜事实。
+- Impact/Rollback/Verification：非Breaking内部接口，无Schema/API/角色/License变化；可撤内部查询和路径，历史不变。A01须测试IN_REVIEW完整PASS/缺口及公开行为不变；A02未完成前不得把Outline送审标可用。

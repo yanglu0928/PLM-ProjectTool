@@ -85,6 +85,25 @@ class ValidateOutlineVersion:
 
 
 @dataclass(frozen=True, slots=True)
+class OutlineCurrentFactQuery:
+    """Internal Review reproof identity; caller owns authorization and transaction."""
+
+    session_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    solution_outline_id: uuid.UUID
+    solution_outline_version_id: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if (type(self.session_token) is not bytes or len(self.session_token) != 32
+                or not all(_id(value) for value in (
+                    self.trace_id, self.project_id, self.solution_outline_id,
+                    self.solution_outline_version_id))):
+            raise OutlineVersionValidationContractError(
+                "invalid current Outline query")
+
+
+@dataclass(frozen=True, slots=True)
 class OutlineVersionValidationSnapshot:
     project_id: uuid.UUID
     solution_outline_id: uuid.UUID
