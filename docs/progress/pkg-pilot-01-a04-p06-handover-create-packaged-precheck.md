@@ -1,6 +1,6 @@
 # PKG-PILOT-01-A04-P06：新候选交接分析创建包内验收
 
-日期：2026-10-24；状态：`IN_PROGRESS / PILOT_NOT_READY`。
+日期：2026-10-24；状态：`SYNTHETIC_POSITIVE_EDGE_PG_PASS / NEGATIVE_MATRIX_PENDING / PILOT_NOT_READY`。
 
 |检查项|结论|
 |---|---|
@@ -13,3 +13,15 @@
 |风险|本次新增 UI 不在旧候选；来源必须由文档安全上传产生并处于 AVAILABLE，不能伪造；现有包内浏览器夹具可能不包含写流程。若完整证明无法完成，分别记录完成片与客观阻塞，不虚报 Pilot。|
 
 本项未获得正式发行公钥/服务账户/CA/法律放行；只允许一次性合成非发行验收。新候选不可称安装包或交付包，正式 Gate/Pilot 维持 `NOT_READY`。
+
+## 首轮运行记录
+
+源提交 `c52f6976adebcd48cb70a9437b2bee63896df27b` 的非发行候选 SHA `5b2ab7c225f024126ce32436ec29bf378ed5c0296173377dc2dd050fd83458e6`（654,847,549 字节、22,191 载荷）已构建并独立清洁解包通过；两个测试布局中包内 Workflow HTTPS/License/幂等/CSRF/冲突/Audit 前置通过。首轮真实 Edge 登录和项目列表 200 后，验收脚本只等待项目详情标题、未等待异步项目详情链接加载即点击文档入口，报 `missing UI action` 并退出1；未触发文档上传/交接 POST，不能把后续业务记为通过，也不能据此判产品缺入口。隔离服务/布局由烟测清理。补充实际链接就绪等待后将使用同一候选复验，保留本失败记录。
+
+## 同候选复验结果
+
+补足详情异步链接等待后，以同一 SHA 再次启动两份隔离布局；包内 PG18/API/Caddy、合成有效 License、HTTPS 登录及 Workflow GET/START/回放/CSRF/冲突/Audit 前置通过。真实 Edge 从合成项目进入文档页，在浏览器内存生成纯测试 `.txt`，完成上传意图→内容→提交，回到列表读取 `ACTIVE` 文档，再进入交接创建页选择其 `AVAILABLE` 固定版本，提交分析并打开详情。浏览器观察 14 个 API 响应，无非 2xx、加载失败或运行异常，固定标记 `PKG_PILOT_01_A04_P06_HANDOVER_EDGE_PASS`。
+
+隔离 PG 复查该项目恰一份匹配标题的文档及可用最新版本、恰一条由合成负责人创建的 `ACTIVE` HandoverAnalysis、来源集合哈希格式、单条 `HND_ANALYSIS_CREATED` Audit 与单条完成的 `V1_HND_ANALYSIS_CREATE` 持久幂等收据。随包验收器退出0；候选 SHA 前后不变，48 个合成 Vault 目标无残留、临时文件/PG/API/Caddy/Edge 进程清理通过。清洁暂存目录保留为后续只读验收输入；不上传 655MB 候选 ZIP 至 GitHub。
+
+本项仅关闭“合成正向文档→交接创建”的包内切片；前置表中无来源、跨项目等 Handover 创建负例矩阵未在本轮包内 HTTP 实测，需独立完成并记录后才能把 `PKG-PILOT-01-A04-P06` 整体标 PASS。后续分析版本/问题/调研→需求→原型→方案→计划输出、真实公钥/服务账户/CA、法律、离线安装升级、UAT/Gate/正式三平台结论均未由本轮通过。Result：`SYNTHETIC_POSITIVE_EDGE_PG_PASS / P06_OPEN`；Next：包内负例矩阵与下一纵向链切片。
