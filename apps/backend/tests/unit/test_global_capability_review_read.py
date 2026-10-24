@@ -7,7 +7,9 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 from plm_assistant.modules.auth.application.current_user import CurrentUserFacts
-from plm_assistant.modules.capability.application.read_capability import CapabilityVersionView
+from plm_assistant.modules.capability.application.read_capability import (
+    CapabilityItemView, CapabilityVersionView,
+)
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.review.application.global_capability_read import (
     GetGlobalCapabilityReview, GlobalCapabilityReviewReadError,
@@ -139,3 +141,67 @@ class GlobalCapabilityReviewReadTests(TestCase):
             self.service().get(replace(self.query, session_token=b"short"))
         self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
         self.guard.require_valid.assert_not_called()
+
+    def item(self, ordinal):
+        return CapabilityItemView(
+            uuid4(), self.version_id, self.baseline_id, ordinal,
+            f"PLM.ITEM.{ordinal}", "PLM", "Capability", "Review",
+            "Fixed item", "Fixed description", "GLOBAL boundary",
+            (), (), "AVAILABLE", (uuid4(),), (uuid4(),),
+        )
+
+    def test_assigned_ordinary_reviewer_reads_fixed_version_and_items(self):
+        self.users.current_enabled_user.return_value = CurrentUserFacts(self.actor, "NONE")
+        self.reviews.get_round.return_value = replace(
+            self.fixed, progress=ReviewRoundProgress(self.round_id, self.now, (self.actor,)),
+        )
+        fixed = self.service().fixed_version(self.query)
+        self.assertEqual(fixed.version, self.version)
+        self.assertEqual(fixed.review.review.review_id, self.review_id)
+        self.capabilities.list_items.return_value = (self.item(0), self.item(1))
+        page = self.service().fixed_items(self.query, page_size=1)
+        self.assertEqual(tuple(item.ordinal for item in page.items), (0,))
+        self.assertEqual(page.next_ordinal, 0)
+        self.capabilities.list_items.assert_called_once_with(
+            self.tx, visibility="ADMIN_HISTORY", baseline_id=self.baseline_id,
+            baseline_version_id=self.version_id, after_ordinal=None, limit=2,
+        )
+        self.capabilities.list_items.return_value = (self.item(1),)
+        next_page = self.service().fixed_items(self.query, page_size=1, after_ordinal=0)
+        self.assertEqual(tuple(item.ordinal for item in next_page.items), (1,))
+        self.assertIsNone(next_page.next_ordinal)
+
+    def test_fixed_items_rechecks_auth_binding_and_rejects_crossed_rows(self):
+        self.users.current_enabled_user.return_value = CurrentUserFacts(self.actor, "NONE")
+        with self.assertRaises(GlobalCapabilityReviewReadError) as denied:
+            self.service().fixed_items(self.query, page_size=1)
+        self.assertEqual(denied.exception.code, "RESOURCE_NOT_FOUND")
+        self.capabilities.list_items.assert_not_called()
+        self.users.current_enabled_user.return_value = CurrentUserFacts(self.actor, "DEPLOYMENT_ADMIN")
+        for rows in ((replace(self.item(0), baseline_id=uuid4()),),
+                     (self.item(1), self.item(0)),
+                     (self.item(0), self.item(0))):
+            with self.subTest(rows=rows):
+                self.capabilities.list_items.return_value = rows
+                with self.assertRaises(GlobalCapabilityReviewReadError) as caught:
+                    self.service().fixed_items(self.query, page_size=1)
+                self.assertEqual(caught.exception.code, "GLOBAL_REVIEW_UNAVAILABLE")
+        self.capabilities.get_version.return_value = replace(self.version, review_ref=uuid4())
+        self.capabilities.list_items.reset_mock()
+        with self.assertRaises(GlobalCapabilityReviewReadError) as caught:
+            self.service().fixed_items(self.query, page_size=1)
+        self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
+        self.capabilities.list_items.assert_not_called()
+
+    def test_fixed_item_page_validation_and_license_precede_database(self):
+        for size, after in ((0, None), (51, None), (1, -1), (True, None)):
+            with self.subTest(size=size, after=after):
+                with self.assertRaises(GlobalCapabilityReviewReadError) as caught:
+                    self.service().fixed_items(self.query, page_size=size, after_ordinal=after)
+                self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
+        self.guard.require_valid.assert_not_called()
+        self.guard.require_valid.side_effect = RuntimeLicenseError("LICENSE_OPERATION_DENIED")
+        with self.assertRaises(GlobalCapabilityReviewReadError) as caught:
+            self.service().fixed_version(self.query)
+        self.assertEqual(caught.exception.code, "LICENSE_OPERATION_DENIED")
+        self.sessions.authenticated_user.assert_not_called()

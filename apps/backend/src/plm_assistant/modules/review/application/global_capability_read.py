@@ -1,4 +1,4 @@
-"""Current-admin read of a fixed CAP-01 GLOBAL Review; metadata is not approval proof."""
+"""Authorized fixed CAP-01 GLOBAL Review/content read; never approval proof."""
 
 from __future__ import annotations
 
@@ -9,7 +9,9 @@ from datetime import datetime, timezone
 from typing import Protocol
 
 from plm_assistant.modules.auth.application.current_user import CurrentUserFacts
-from plm_assistant.modules.capability.application.read_capability import CapabilityVersionView
+from plm_assistant.modules.capability.application.read_capability import (
+    CapabilityItemView, CapabilityVersionView,
+)
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 
 from .read_snapshot import FixedReviewRoundSnapshot, ReviewIdentitySnapshot
@@ -42,6 +44,20 @@ class AuthorizedGlobalCapabilityReview:
         return f'"v{self.fixed_round.round_lock_version}"'
 
 
+@dataclass(frozen=True, slots=True)
+class AuthorizedGlobalCapabilityFixedVersion:
+    review: AuthorizedGlobalCapabilityReview
+    version: CapabilityVersionView
+
+
+@dataclass(frozen=True, slots=True)
+class AuthorizedGlobalCapabilityFixedItems:
+    review: AuthorizedGlobalCapabilityReview
+    version: CapabilityVersionView
+    items: tuple[CapabilityItemView, ...]
+    next_ordinal: int | None
+
+
 class _SessionPort(Protocol):
     def authenticated_user(self, transaction: object, *, session_token: bytes,
                            now: datetime) -> uuid.UUID | None: ...
@@ -70,6 +86,10 @@ class _CapabilityPort(Protocol):
     def get_version(self, transaction: object, *, visibility: str,
                     baseline_id: uuid.UUID, baseline_version_id: uuid.UUID
                     ) -> CapabilityVersionView | None: ...
+    def list_items(self, transaction: object, *, visibility: str,
+                   baseline_id: uuid.UUID, baseline_version_id: uuid.UUID,
+                   after_ordinal: int | None, limit: int
+                   ) -> tuple[CapabilityItemView, ...]: ...
 
 
 class GlobalCapabilityReviewReadService:
@@ -85,6 +105,46 @@ class GlobalCapabilityReviewReadService:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def get(self, query: GetGlobalCapabilityReview) -> AuthorizedGlobalCapabilityReview:
+        return self._run(query, lambda tx, review, version: review)
+
+    def fixed_version(self, query: GetGlobalCapabilityReview
+                      ) -> AuthorizedGlobalCapabilityFixedVersion:
+        return self._run(query, lambda tx, review, version:
+                         AuthorizedGlobalCapabilityFixedVersion(review, version))
+
+    def fixed_items(self, query: GetGlobalCapabilityReview, *, page_size: int,
+                    after_ordinal: int | None = None) -> AuthorizedGlobalCapabilityFixedItems:
+        if (type(page_size) is not int or page_size < 1 or page_size > 50
+                or after_ordinal is not None and (
+                    type(after_ordinal) is not int or after_ordinal < 0)):
+            raise GlobalCapabilityReviewReadError("VALIDATION_FAILED")
+
+        def read(tx: object, review: AuthorizedGlobalCapabilityReview,
+                 version: CapabilityVersionView) -> AuthorizedGlobalCapabilityFixedItems:
+            rows = self._capabilities.list_items(
+                tx, visibility="ADMIN_HISTORY", baseline_id=version.baseline_id,
+                baseline_version_id=version.baseline_version_id,
+                after_ordinal=after_ordinal, limit=page_size + 1,
+            )
+            if (type(rows) is not tuple or len(rows) > page_size + 1
+                    or any(type(item) is not CapabilityItemView
+                           or item.baseline_id != version.baseline_id
+                           or item.baseline_version_id != version.baseline_version_id
+                           or type(item.ordinal) is not int or item.ordinal < 0
+                           for item in rows)
+                    or any(rows[index].ordinal >= rows[index + 1].ordinal
+                           for index in range(len(rows) - 1))
+                    or after_ordinal is not None and rows and rows[0].ordinal <= after_ordinal):
+                raise GlobalCapabilityReviewReadError()
+            has_more = len(rows) > page_size
+            items = rows[:page_size]
+            return AuthorizedGlobalCapabilityFixedItems(
+                review, version, items, items[-1].ordinal if has_more else None,
+            )
+
+        return self._run(query, read)
+
+    def _run(self, query: GetGlobalCapabilityReview, operation):
         if (type(query) is not GetGlobalCapabilityReview
                 or type(query.session_token) is not bytes or len(query.session_token) != 32
                 or type(query.trace_id) is not uuid.UUID or not query.trace_id.int
@@ -139,7 +199,7 @@ class GlobalCapabilityReviewReadService:
                         or version.review_ref != review.review_id
                         or version.review_round_ref != round_id):
                     raise GlobalCapabilityReviewReadError("RESOURCE_NOT_FOUND")
-                return AuthorizedGlobalCapabilityReview(review, fixed)
+                return operation(tx, AuthorizedGlobalCapabilityReview(review, fixed), version)
         except GlobalCapabilityReviewReadError:
             raise
         except RuntimeLicenseError:

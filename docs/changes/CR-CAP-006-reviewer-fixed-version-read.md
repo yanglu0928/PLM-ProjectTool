@@ -25,3 +25,7 @@
 - 验收：内部 Owner/权限/分页/版本绑定正负例、Windows 11 隔离 PG18.6 实际 HTTP、匿名/未分配/停用/失效 License/错 Scope/签名游标重放拒绝；前端固定版本核对及 Edge 正负链另片；完整回归、Secret 检查、GitHub 同步。正式目标服务账户、真人批准与 Gate/Pilot 仍独立验收。
 
 先执行 `A04-P02-A01` 服务/安全投影，再 `A02` 默认关闭 HTTP/Windows 组合，最后 `A03` 页面与浏览器；每片按独立 WBS 验收，不以本 CR 预先标 PASS。
+
+## 实施记录
+
+- 2026-10-24 / `A04-P02-A01`：固定 Version/条目只读服务按 Review 分配资格及双向引用同事务重证，限制每页 50 条；定向13/7子例、后端全量4090/3跳过/6136子例通过。HTTP/PG/页面仍未实现，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-a01-fixed-content-service.md`。
