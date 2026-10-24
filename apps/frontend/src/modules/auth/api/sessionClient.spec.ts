@@ -74,6 +74,31 @@ describe("SessionClient", () => {
     await expect(api.login("user", "synthetic-input")).resolves.toMatchObject({ deployment_role: "DEPLOYMENT_ADMIN" });
   });
 
+  it("does not bind native fetch for Evidence eligibility writes or operation lookups", async () => {
+    const paths: string[] = [];
+    const fetcher = function (this: unknown, path: RequestInfo | URL): Promise<Response> {
+      expect(this).toBeUndefined();
+      paths.push(String(path));
+      return Promise.resolve(paths.length === 1 ? response(session()) : response({}));
+    } as typeof fetch;
+    const api = new SessionClient(fetcher);
+    await api.login("user", "synthetic-input");
+    const key = "synthetic-evidence-decision-0001";
+    await expect(api.postEvidenceEligibility(projectId, id, '"v0"', key, "{}"))
+      .resolves.toBeInstanceOf(Response);
+    await expect(api.postGlobalEvidenceEligibility(id, '"v0"', key, "{}"))
+      .resolves.toBeInstanceOf(Response);
+    await expect(api.postEvidenceEligibilityOperationLookup(projectId, id, key))
+      .resolves.toBeInstanceOf(Response);
+    await expect(api.postGlobalEvidenceEligibilityOperationLookup(id, key))
+      .resolves.toBeInstanceOf(Response);
+    expect(paths).toEqual(["/api/v1/auth/login",
+      `/api/v1/projects/${projectId}/evidence/${id}:set-eligibility`,
+      `/api/v1/global/evidence/${id}:set-eligibility`,
+      `/api/v1/projects/${projectId}/evidence/${id}:lookup-eligibility-operation`,
+      `/api/v1/global/evidence/${id}:lookup-eligibility-operation`]);
+  });
+
   it.each(["+08:00", "-04:00"])("normalizes valid database offset %s to UTC", async (offset) => {
     const { api } = client(response(session({ absolute_expires_at: `2030-01-01T12:00:00${offset}`,
       idle_expires_at: `2030-01-01T11:00:00.123456${offset}` })));

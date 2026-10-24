@@ -1412,7 +1412,8 @@ export class SessionClient {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(
+      const fetcher = this.fetcher;
+      const response = await fetcher(
         `/api/v1/projects/${projectId}/evidence/${evidenceId}:set-eligibility`, {
           method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
           headers: { Accept: "application/json", "Content-Type": "application/json",
@@ -1448,7 +1449,8 @@ export class SessionClient {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(`/api/v1/global/evidence/${evidenceId}:set-eligibility`, {
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/global/evidence/${evidenceId}:set-eligibility`, {
         method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
         headers: { Accept: "application/json", "Content-Type": "application/json",
           "X-CSRF-Token": this.#csrf, "Idempotency-Key": idempotencyKey,
@@ -1475,7 +1477,8 @@ export class SessionClient {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(
+      const fetcher = this.fetcher;
+      const response = await fetcher(
         `/api/v1/projects/${projectId}/evidence/${evidenceId}:lookup-eligibility-operation`, {
           method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
           headers: { Accept: "application/json", "Content-Type": "application/json",
@@ -1506,7 +1509,8 @@ export class SessionClient {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(
+      const fetcher = this.fetcher;
+      const response = await fetcher(
         `/api/v1/global/evidence/${evidenceId}:lookup-eligibility-operation`, {
           method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
           headers: { Accept: "application/json", "Content-Type": "application/json",

@@ -13,3 +13,9 @@
 |风险|此项不提供页段精确定位，不宣称真人资格、正式信任/安装/UAT/Gate/Pilot 或 Server 2025/Debian 13；大 ZIP 只保存在本机忽略区。|
 
 结果待实际运行填写，不预填 PASS。
+
+首次包内运行：候选清洁解包 22,196 件，Workflow 与项目文档/交接前置通过；新 Edge 页面实际提交 PROJECT Evidence POST 201，列表、Viewer 与当前资格 GET 均为 200。验收脚本在勾选“已核对”时误用标题 `#evidence-decision-title` 的后代选择器，导致浏览器脚本 `Uncaught`，资格 POST 尚未发出。修正为资格表单复选框并显式等待；候选产品 SHA 保持 `9557db0ee09f9252bd2967ed34db8a9ef626c4c1d0255cbeee202a15679346cb` 不变，临时布局/进程已清理；首轮不记 P03 PASS。
+
+第二轮同候选在 Edge 中再次完成候选创建/列表/Viewer/当前资格 GET；提交后页面进入“原操作结果未确认”安全态，网络观察中没有 `:set-eligibility` POST，整轮退出 1，临时资源清理。源码核查发现 `EvidenceEligibilityClient.current()` 特意把原生 `fetch` 提取为局部变量，防止 Edge 以类实例作 receiver；但 SessionClient 的 PROJECT/GLOBAL 资格 POST 与原号回查仍以 `this.fetcher(...)` 调用，原生浏览器会因 receiver 错误在发请求前抛错，随后被映射为不确定结果。这是已存在的运行链缺陷，不是证据资格本身失败。先增加 receiver-sensitive 回归，统一修正四个 Evidence 资格传输方法；无 API/Schema/权限变化，旧候选保留。随后从新干净提交重建非发行包再跑完整链，不以客户端合成 mock PASS 取代实际 Edge。
+
+传输修复：四处 Evidence 资格写/原号回查改为局部 `fetcher` 调用，原 CSRF/ETag/Key/超时/错误行为不变。新增 receiver-sensitive 定向，Evidence/Session 两文件合计180项、前端全量1962项与 typecheck/build退出0。此为源码合同与构建通过，不是新包或人工资格验收；新包待重建。首、次轮的候选 SHA 和失败证据保留。
