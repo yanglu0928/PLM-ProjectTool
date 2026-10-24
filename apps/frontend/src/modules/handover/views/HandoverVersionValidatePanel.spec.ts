@@ -88,4 +88,16 @@ describe("HandoverVersionValidatePanel", () => {
     expect(second.find("button").exists()).toBe(true);
     second.unmount();
   });
+  it("keeps the report surface mounted during a transient Session write", async () => {
+    const { wrapper, validate, session } = await setup();
+    let allow = true; let finish!: (value: typeof report) => void;
+    vi.spyOn(session, "canSubmit", "get").mockImplementation(() => allow);
+    validate.mockImplementationOnce(() => { allow = false;
+      return new Promise(resolve => { finish = resolve; }); });
+    await wrapper.get("button").trigger("click"); await flushPromises();
+    expect(wrapper.find('[aria-label="交接版本当前来源校验"]').exists()).toBe(true);
+    allow = true; finish(report); await flushPromises();
+    expect(wrapper.text()).toContain("本次校验未通过");
+    wrapper.unmount();
+  });
 });

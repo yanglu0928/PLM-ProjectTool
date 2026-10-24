@@ -28,7 +28,7 @@ const labels: Record<HandoverValidationIssue, string> = {
 };
 function canValidate(): boolean { const current = session.view;
   return mounted && !!actorId && current?.user.user_id === actorId
-    && !current.password_change_required && session.canSubmit && props.version.state === "DRAFT"
+    && !current.password_change_required && props.version.state === "DRAFT"
     && current.authorized_projects.some(project => project.project_id === props.version.project_id
       && (project.role === "PROJECT_MANAGER" || project.role === "IMPLEMENTATION_MEMBER"));
 }
@@ -55,7 +55,7 @@ function clearPending(attempt: Pending): boolean {
   } catch { locked.value = true; error.value = "无法清除原操作记录；请保留操作号并核对审计。"; return false; }
 }
 async function validate(): Promise<void> {
-  if (!canValidate() || busy.value || locked.value || report.value
+  if (!canValidate() || !session.canSubmit || busy.value || locked.value || report.value
     || pending.value && !retryConfirmed.value) return;
   let attempt = pending.value;
   if (!attempt) {
@@ -97,6 +97,7 @@ onUnmounted(() => { mounted = false; unsubscribe(); });
   <section v-if="canValidate()" aria-label="交接版本当前来源校验" :aria-busy="busy">
     <h3>当前来源与问题完整性校验</h3>
     <p>只生成本次校验报告，不修改 DRAFT；通过也不是客户确认、送审或评审批准。来源之后变化须重新校验。</p>
+    <p v-if="!session.canSubmit && !busy" role="status">当前会话仅可查看；请重新登录后再校验。</p>
     <p v-if="error" role="alert">{{ error }}</p>
     <template v-if="report">
       <p role="status">{{ report.valid ? '本次校验通过；仍须独立送审与人工批准。' : '本次校验未通过，请先处理阻断项。' }}</p>
@@ -108,7 +109,7 @@ onUnmounted(() => { mounted = false; unsubscribe(); });
     <template v-else>
       <p v-if="pending" role="status">原校验操作号已保留；请先核对审计，再决定是否同号重试。</p>
       <label v-if="pending"><input v-model="retryConfirmed" type="checkbox" :disabled="busy || locked" />我已核对历史，沿用原操作号重试</label>
-      <button type="button" :disabled="busy || locked || !!pending && !retryConfirmed"
+      <button type="button" :disabled="busy || locked || !session.canSubmit || !!pending && !retryConfirmed"
         @click="validate">{{ pending ? '按原操作号重试校验' : '运行当前来源校验' }}</button>
     </template>
   </section>

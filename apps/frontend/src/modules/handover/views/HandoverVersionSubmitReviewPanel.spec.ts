@@ -52,15 +52,16 @@ async function panel(role = "PROJECT_MANAGER", outcome = vi.fn().mockResolvedVal
   const router = createAppRouter(createMemoryHistory());
   await router.push(`/projects/${project}/handover/${analysis}`); await router.isReady();
   const memberClient = { list: memberList }; const submitter = { submit: outcome };
+  const auth = await session(role);
   const wrapper = mount(HandoverVersionSubmitReviewPanel, { props: {
-    session: await session(role), version: detail,
+    session: auth, version: detail,
     members: memberClient as unknown as ProjectMemberReadClient,
     submitter: submitter as unknown as HandoverVersionSubmitReviewClient,
   }, global: { plugins: [router] } });
   await flushPromises();
   const load = wrapper.findAll("button").find(button => button.text() === "读取当前项目确认人");
   if (load) { await load.trigger("click"); await flushPromises(); }
-  return { wrapper, memberClient, submitter };
+  return { wrapper, memberClient, submitter, auth };
 }
 describe("HandoverVersionSubmitReviewPanel", () => {
   afterEach(() => { vi.restoreAllMocks(); sessionStorage.clear(); });
@@ -108,5 +109,22 @@ describe("HandoverVersionSubmitReviewPanel", () => {
     expect(wrapper.text()).toContain("成员翻页无效");
     expect(wrapper.find(`input[value="${customer}"]`).exists()).toBe(false);
     expect(submitter.submit).not.toHaveBeenCalled(); wrapper.unmount();
+  });
+  it("keeps the review surface mounted during a transient Session write", async () => {
+    let finish!: (value: typeof receipt) => void;
+    const outcome = vi.fn();
+    const { wrapper, auth } = await panel("PROJECT_MANAGER", outcome);
+    let allow = true;
+    vi.spyOn(auth, "canSubmit", "get").mockImplementation(() => allow);
+    outcome.mockImplementationOnce(() => { allow = false;
+      return new Promise(resolve => { finish = resolve; }); });
+    await wrapper.get(`input[value="${customer}"]`).setValue(true);
+    await wrapper.get('input[type="checkbox"]:not([value])').setValue(true);
+    await wrapper.findAll("button").find(button => button.text() === "提交交接版本评审")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[aria-label="交接版本客户评审送审"]').exists()).toBe(true);
+    allow = true; finish(receipt); await flushPromises();
+    expect(wrapper.text()).toContain("已送审，评审");
+    wrapper.unmount();
   });
 });

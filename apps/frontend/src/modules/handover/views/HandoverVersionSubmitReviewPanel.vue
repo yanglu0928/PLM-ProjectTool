@@ -26,7 +26,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 let mounted = true;
 function manager(): boolean { const current = session.view;
   return mounted && !!actorId && current?.user.user_id === actorId
-    && !current.password_change_required && session.canSubmit
+    && !current.password_change_required
     && current.authorized_projects.some(item => item.project_id === props.version.project_id
       && item.role === "PROJECT_MANAGER");
 }
@@ -82,7 +82,7 @@ function ready(): boolean { const value = props.version;
     && value.review_ref === null && value.review_round_ref === null;
 }
 async function submit(): Promise<void> {
-  if (!manager() || busy.value || sending.value || locked.value) return;
+  if (!manager() || !session.canSubmit || busy.value || sending.value || locked.value) return;
   const actor = session.view!.user.user_id, version = props.version;
   let attempt = pending.value;
   if (attempt) {
@@ -140,6 +140,7 @@ onUnmounted(() => { mounted = false; unsubscribe(); });
   <section v-if="manager()" aria-label="交接版本客户评审送审" :aria-busy="busy || sending">
     <h3>提交交接问题给客户确认人评审</h3>
     <p>仅送审当前固定 DRAFT 版本；校验通过也不保证此刻来源或资格仍有效。服务端会重新核对来源、问题、Action 和确认人。送审不是客户批准或签署。</p>
+    <p v-if="!session.canSubmit && !sending" role="status">当前会话仅可查看；请重新登录后再送审。</p>
     <p v-if="version.review_ref">现有评审 {{ version.review_ref }}；请在评审待办中查看进展。</p>
     <p v-if="busy" role="status">正在读取当前项目确认人…</p>
     <p v-if="error" role="alert">{{ error }}</p>
@@ -159,7 +160,7 @@ onUnmounted(() => { mounted = false; unsubscribe(); });
         我已核对本固定版本、问题卡片与拟送审范围，理解这不是客户确认</label>
     </template>
     <p v-else-if="!submitted" role="status">当前版本不是未送审草稿；请刷新详情或查看已有评审。</p>
-    <button v-if="pending || ready()" type="button" :disabled="sending || busy || locked
+    <button v-if="pending || ready()" type="button" :disabled="sending || busy || locked || !session.canSubmit
       || (pending ? !confirmRetry : !loaded || !confirmScope || !selected.length)" @click="submit()">
       {{ sending ? '正在送审…' : pending ? '按原操作号重试送审' : '提交交接版本评审' }}
     </button>

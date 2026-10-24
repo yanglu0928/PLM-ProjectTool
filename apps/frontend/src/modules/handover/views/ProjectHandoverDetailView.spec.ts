@@ -64,6 +64,8 @@ describe("ProjectHandoverDetailView", () => {
     const result = await view(await session()); expect(result.wrapper.text()).toContain("项目交接分析");
     expect(result.wrapper.text()).toContain("版本 1"); expect(result.evidence.get).not.toHaveBeenCalled();
     await result.wrapper.findAll("button").find(button => button.text().includes("版本 1 的问题"))!.trigger("click"); await flushPromises();
+    expect(result.wrapper.find('[aria-label="交接版本当前来源校验"]').exists()).toBe(true);
+    expect(result.wrapper.find('[aria-label="交接版本客户评审送审"]').exists()).toBe(true);
     expect(result.wrapper.text()).toContain("实际部署范围是什么"); expect(result.wrapper.text()).toContain("部署范围 · 必填 · 格式：文本");
     expect(result.wrapper.text()).toContain("示例仅说明格式，不是客户事实"); expect(result.wrapper.find("form").exists()).toBe(false);
     await result.wrapper.findAll("button").find(button => button.text().includes("定位原文"))!.trigger("click"); await flushPromises();
