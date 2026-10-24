@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/HND-05-A05-P05 交接评审详情把本轮固定 VersionId 传给交接详情精确深链，保留普通分析返回入口与方案类版本链接。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License/数据迁移；可撤链接，不删除 Review/Audit。验证：两页定向12、前端全量2012、typecheck/build退出0。已知问题：新前后端/前端组合尚未打入固定包验证真实 Edge/HTTPS/PG 决定与拒绝；真人客户确认、正式信任/安装/UAT/Gate/Pilot/Release 未通过。
+
 - 2026-10-25：0.1.0-dev.0/HND-05-A05-P04 交接详情支持 `fixedVersionId` 精确版本深链，不依赖当前分页位置；错误 ID、跨项目/错分析版本不展示问题，切换链接清除旧选择。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License/数据迁移；可撤深链，合法历史不删除。验证：定向6、前端全量2012、typecheck/build退出0。已知问题：评审页尚未携带固定 ID，真实 Edge/PG/包内决定、真人确认、正式信任/安装/UAT/Gate/Pilot/Release 未通过。
 
 - 2026-10-25：0.1.0-dev.0/HND-05-A05-P03 项目评审详情正确标识 HND-02 交接分析与本轮固定版本 ID，返回交接分析并提示手动按 ID 选取；不再误标结构化专项或链接到专项方案。兼容性：Windows 11 前端合同/构建通过，Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License/数据迁移；合法 Review/Audit 保留。验证：定向6、前端全量2010、typecheck/build退出0。已知问题：交接分析页精确版本深链、真实 Edge/PG/包内决定与真人客户确认未验；正式信任/安装/UAT/Gate/Pilot/Release 未通过。
