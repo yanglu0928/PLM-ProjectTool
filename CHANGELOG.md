@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/EVD-05-A02-P02 同一 Windows 11 非发行候选 SHA `5b8e38f4f8e5440c74e7e0ecace43e435b4464ab5a8ae37e4010ecfdce4f1327` 补 GLOBAL Evidence 创建包内拒绝矩阵，不改产品。兼容性：仅 Windows 11 合成 PG18/Caddy/License/Edge；Server 2025、Debian 13 未实测。升级/回滚：只增验收脚本，无 Schema/API/业务数据迁移，撤脚本不影响包。验证：匿名401、普通用户404、错源404、合成 EXPIRED 验证状态403，PG Evidence/Audit/收据维持(1,1,1)，22,194件布局/候选同Hash及48 Vault/进程/文件清理，退出0；首次夹具目录命名被拒已保留。已知问题：EXPIRED 是受保护状态模拟而非自然到期；资格批准、能力版本/Review、正式信任/法律/安装升级/UAT/Gate/Pilot仍待，不可发行。
+
 - 2026-10-24：0.1.0-dev.0/EVD-05-A02-P01 从源码提交 `af08577f` 新建 Windows 11 非发行候选（SHA `5b8e38f4f8e5440c74e7e0ecace43e435b4464ab5a8ae37e4010ecfdce4f1327`），真实 Edge/隔离 PG 验 GLOBAL 固定文档→整文档 Evidence `CANDIDATE` 创建与反读，不自动资格批准。兼容性：仅 Win11 合成 PG18/Caddy/License/Edge；Server 2025、Debian 13 未实测。升级/回滚：仅新增验收夹具，无产品 Schema/API/数据迁移，弃用新候选可回旧包但旧包无 Evidence 创建 UI。验证：22,191件清洁解包、6个相关浏览器API响应、PG 同源指纹/单候选/Audit/收据、候选同Hash及48临时Vault/进程/布局清理退出0；首轮夹具整页导航致会话投影丢失失败已记录。已知问题：包内匿名/普通用户/失效许可/错源负例、人工资格/能力版本/Review、真实信任/法律/离线安装升级/UAT/Gate/Pilot 均待，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/EVD-05-A01 新增部署管理员从 GLOBAL ACTIVE 标准能力文档的 AVAILABLE 固定版本建立整文档 Evidence `CANDIDATE` 入口，严格首回执、原幂等号恢复及显式人工资格引导；不自动置 ELIGIBLE 或声称精确页段定位。兼容性：Windows 11 前端源码/构建；Windows Server 2025、Debian 13 未实测。升级/回滚：无 Schema/API/License 迁移，替换前端资源即可；撤入口不删除已有 Evidence 或 Audit。验证：首轮 UUID 校验缺段定向失败已修复并保留，最终定向8项、前端全量1912项及typecheck/build通过。已知问题：真实 Edge/PG 与包内权限/异常负例未验，CapabilityVersion/Review、正式信任/安装/UAT/Gate/Pilot 未完成，不可发行。
