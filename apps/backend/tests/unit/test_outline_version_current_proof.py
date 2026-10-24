@@ -26,6 +26,10 @@ from plm_assistant.modules.solution.application.outline_version_validation_contr
 from plm_assistant.modules.solution.application.prove_outline_section_use import (
     OutlineSectionUseProof,
 )
+from plm_assistant.modules.solution.application.prove_outline_coverage import (
+    CurrentOutlineCoverageProof,
+    OutlineCoverageProofError,
+)
 from plm_assistant.modules.solution.application.prove_outline_version_current import (
     OutlineVersionCurrentFactsService,
     OutlineVersionCurrentProofError,
@@ -95,6 +99,39 @@ def test_current_fixed_sources_match_historical_fingerprint_but_not_coverage(exa
         example["tx"], project_id=example["command"].project_id,
         outline_id=example["command"].solution_outline_id,
         section_id=example["history"].section_ids[0])
+
+
+def test_current_coverage_requires_exact_proof_after_fixed_sources_pass(example):
+    history = example["history"]
+    coverage = Mock()
+    coverage.prove.return_value = CurrentOutlineCoverageProof(
+        history.project_id, history.solution_outline_id,
+        history.solution_outline_version_id, history.requirement_refs,
+        (uuid.uuid4(),), b"i" * 32,
+    )
+    example["current"]._coverage = coverage
+    result = facts(example)
+    assert (result.order, result.source, result.coverage) == (
+        "PASS", "PASS", "PASS")
+    coverage.prove.assert_called_once_with(
+        example["tx"], command=example["command"], version=history)
+    coverage.prove.return_value = replace(coverage.prove.return_value,
+                                          requirement_refs=())
+    assert facts(example).coverage == "UNAVAILABLE"
+
+
+def test_current_coverage_known_gap_fails_but_unknown_or_stale_source_does_not_pass(example):
+    coverage = Mock()
+    example["current"]._coverage = coverage
+    coverage.prove.side_effect = OutlineCoverageProofError(
+        "SOLUTION_COVERAGE_INCOMPLETE")
+    assert facts(example).coverage == "FAIL"
+    coverage.prove.side_effect = OutlineCoverageProofError()
+    assert facts(example).coverage == "UNAVAILABLE"
+    coverage.prove.reset_mock()
+    example["requirements"].prove.side_effect = RuntimeError("source unavailable")
+    assert facts(example).coverage == "UNAVAILABLE"
+    coverage.prove.assert_not_called()
 
 
 def test_newer_dynamic_next_version_does_not_change_old_version_proof(example):

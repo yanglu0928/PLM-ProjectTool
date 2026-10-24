@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P03-A01 Outline现时事实可选消费同事务完整Coverage证明；仅顺序/来源PASS且证明精确匹配才给coverage PASS，已知缺口FAIL，未知/无端口UNAVAILABLE。兼容性/升级/回滚：Windows11内部候选，默认未装配行为不变，无Schema/公开API/权限/数据迁移，撤可选参数即可回滚。验证：关联定向19、后端全量4000通过/3跳过/6079子例。已知问题：正式VALIDATE/Audit/HTTP、Windows PG组合、Pilot/Gate3及正式发行仍未完成。
+
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P02 新增Outline内部同事务覆盖Owner：当前批准需求全集与Outline固定需求、当前批准章节六维/正式Review/精确Trace并集三者一致才返回完整证明，缺口和未知事实失败关闭。兼容性/升级/回滚：Windows11内部候选，无Schema/公开API/权限或数据变化、无需迁移；未装配的内部Owner可撤，不删历史。验证：定向7、关联48、后端全量3998通过/3跳过/6079子例；尚无本Owner真实PG组合验收。已知问题：公开VALIDATE仍coverage=UNAVAILABLE，PG组合、正式信任、Pilot/Gate3和三平台发行未完成。
 
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P01 补齐已批准SectionVersion的现时Spec内部只读重证，固定规格替换/失效失败关闭；公开非草稿VALIDATE仍不可用。兼容性/升级/回滚：Windows11内部候选，无Schema/公开API/权限/数据变化、无需迁移；撤内部状态分支即可恢复旧只读结果，不改历史。验证：定向40通过/27子例，后端全量3991通过/3跳过/6079子例。已知问题：已批准章节真实PG/Review及Outline覆盖并集未验，Pilot/Gate3/正式三平台发行未完成。

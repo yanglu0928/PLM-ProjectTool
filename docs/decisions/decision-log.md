@@ -11763,3 +11763,10 @@
 - Decision：在单个调用者事务内先用 Requirement 库存服务完成 License/Session/Project 授权和全项目有界范围锁，再逐 Outline 固定 Section 读取当前批准指针及固定版本，核对同项目正式 Review/Round/主题指纹和六维现时事实（其中 Trace 由统一精确 IMPLEMENTS Owner 证明）。Outline 固定需求集合、当前批准全集及各章节固定需求并集必须一致；泛型 missing 声明不抵扣缺口。服务只返回完整证明或失败，不提供可被误当正式业务事实的部分列表。
 - Reason：只扫 Outline 自报需求或历史批准章节会漏掉当前项目其他需求、旧版本和失效 Trace；重复写 Trace SQL 又会与既有统一 Owner 漂移。
 - Impact/Rollback/Verification：本片只新增内部应用 Owner/单元测试，不修改 Schema、冻结 API、权限或既有持久事实；关闭未装配的内部调用即可回退。错项目/Review/版本、缺口、Trace/Spec 漂移、错误库存和同事务调用均须失败关闭。后续片独立接入 Outline VALIDATE 和 Win11/PG/HTTP 验收；Gate 3/Pilot 不预先通过。
+
+# DEC-20261024-1212：Outline 覆盖现时事实只在顺序与来源通过后启用
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A05-P03-A01`；现有 Outline 事实服务可重证固定顺序/来源，但 coverage 恒 UNAVAILABLE，A05-P02 内部 Owner 尚未接线。
+- Decision：事实服务增加可选 Coverage Port，默认缺省保持旧 UNAVAILABLE；只有固定顺序和当前来源均 PASS，且 Port 返回与本 Outline/Section/需求精确一致的证明，coverage 才 PASS。已知正式缺口映射 FAIL；任何缺信任源、缺权限、未知错误或证明错配映射 UNAVAILABLE。旧报告/Audit 不作新事实复用。
+- Reason：先把已验证的内部证明与外部结果边界连接，同时避免来源失败时局部 Coverage PASS 被解释成整体可送审；未装配的默认模式保持安全关闭。
+- Impact/Rollback/Verification：无 Schema/API/角色/License 变化，撤可选注入即可回退，无历史改写；定向 PASS/FAIL/UNAVAILABLE/未调用负例和后端回归后仅标内部单元通过。Windows 组合、正式 VALIDATE/Audit/HTTP/Review 另片验收。
