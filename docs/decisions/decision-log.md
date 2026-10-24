@@ -11889,3 +11889,10 @@
 - Decision：停止此项版本写页编码，不提供手填内部 UUID/JSON 或虚构 `source_missing` 卡片。先走 `CAP-02-A01` 能力基线受权发现/正式创建评审入口，并另核 Evidence/AI 候选到问题卡片的可追溯桥接；前置满足后回到 Handover 版本草稿创建与逐项人工确认。
 - Reason：保证最短纵向链产生可审计业务事实，而非仅能提交但无法真实通过资格的空壳；符合用户要求的待办卡片、原文一键定位和填写提示。
 - Impact/Rollback/Verification：仅执行顺序 L2 决定，无产品 Scope/API/Schema/License 变化；可在前置真实证据补齐后继续 HND-05-A02。静态核查记录在 `docs/progress/hnd-05-a02-version-entry-precheck.md`；未称版本/UAT/Gate PASS。
+
+# DEC-20261024-1230：Capability 先提供按服务端投影区分的只读发现页
+
+- Date/WBS：2026-10-24 / `CAP-02-A02`；后端五个 GET 已按 DeploymentAdmin 历史与项目成员当前批准分投影，前端却完全无 Capability 用户入口。
+- Decision：先增加只读列表/详情/版本条目页与导航，按当前 Session 仅决定是否发起请求，服务端仍作最终权限裁决；页面明确“管理员历史 ≠ 当前批准”。不在本项暴露基线写入或 Review，空态不生成假数据。
+- Reason：为后续受控导入/创建/送审与 Handover 固定能力引用建立可审计发现路径，同时不把前端筛选当授权。
+- Impact/Rollback/Verification：非 Breaking 前端增量，可撤路由/导航停止新入口，后端/历史不变；定向权限/分页/响应合同和全量构建通过后仅标源码 PASS，包内浏览器/批准事实另验。

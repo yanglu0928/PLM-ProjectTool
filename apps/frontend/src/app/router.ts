@@ -46,6 +46,8 @@ import ProjectSurveyConclusionView from "@/modules/survey/views/ProjectSurveyCon
 import ProjectRequirementListView from "@/modules/requirement/views/ProjectRequirementListView.vue";
 import ProjectRequirementDetailView from "@/modules/requirement/views/ProjectRequirementDetailView.vue";
 import ProjectRequirementDraftView from "@/modules/requirement/views/ProjectRequirementDraftView.vue";
+import CapabilityBaselineListView from "@/modules/capability/views/CapabilityBaselineListView.vue";
+import CapabilityBaselineDetailView from "@/modules/capability/views/CapabilityBaselineDetailView.vue";
 
 const GlobalPrototypeTemplateView = () => import("@/modules/prototype/views/GlobalPrototypeTemplateView.vue");
 const ProjectPrototypeDetailView = () => import("@/modules/prototype/views/ProjectPrototypeDetailView.vue");
@@ -103,6 +105,16 @@ export function createAppRouter(
         path: "/projects",
         name: "projects",
         component: ProjectListView,
+      },
+      {
+        path: "/capability-baselines",
+        name: "capability-baselines",
+        component: CapabilityBaselineListView,
+      },
+      {
+        path: "/capability-baselines/:baselineId",
+        name: "capability-baseline-detail",
+        component: CapabilityBaselineDetailView,
       },
       {
         path: "/projects/new",
