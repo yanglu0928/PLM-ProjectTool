@@ -24,6 +24,7 @@ class CurrentAppCandidateTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.parent = self.root / "parent.zip"
         self.wheel = self.root / "backend.whl"
+        self.pgvector_wheel = self.root / "pgvector.whl"
         self.dist = self.root / "dist"
         (self.dist / "assets").mkdir(parents=True)
         (self.dist / "assets" / "index-a1b2c3d4.js").write_text("new js", encoding="utf-8")
@@ -43,6 +44,7 @@ class CurrentAppCandidateTests(unittest.TestCase):
         }
         self._parent(self.old_payload)
         self._wheel()
+        self._pgvector()
 
     def _parent(self, payload: dict[str, bytes], *, checksums: dict[str, str] | None = None) -> None:
         hashes = checksums or {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}
@@ -71,9 +73,25 @@ class CurrentAppCandidateTests(unittest.TestCase):
             for name, data in {**required, **(extra or {})}.items():
                 archive.writestr(name, data)
 
+    def _pgvector(self, extra: dict[str, bytes] | None = None) -> None:
+        required = {
+            "pgvector/__init__.py": b"pgvector",
+            "pgvector/sqlalchemy/__init__.py": b"sqlalchemy",
+            "pgvector-0.5.0.dist-info/METADATA":
+                b"Name: pgvector\nVersion: 0.5.0\nLicense-Expression: MIT\n",
+            "pgvector-0.5.0.dist-info/WHEEL": b"wheel",
+            "pgvector-0.5.0.dist-info/RECORD": b"record",
+            "pgvector-0.5.0.dist-info/licenses/LICENSE.txt": b"MIT",
+        }
+        with zipfile.ZipFile(self.pgvector_wheel, "w") as archive:
+            for name, data in {**required, **(extra or {})}.items():
+                archive.writestr(name, data)
+
     def _build(self) -> dict[str, object]:
         return build_candidate(self.parent, self.wheel, self.dist, self.root,
-                               "a" * 40, expected_parent_sha256=digest(self.parent))
+                               "a" * 40, self.pgvector_wheel,
+                               expected_parent_sha256=digest(self.parent),
+                               expected_pgvector_sha256=digest(self.pgvector_wheel))
 
     def test_replaces_only_app_and_frontend_with_complete_checksums(self) -> None:
         result = self._build()
@@ -86,6 +104,10 @@ class CurrentAppCandidateTests(unittest.TestCase):
             self.assertEqual(archive.read("payload/runtime/packages/plm_assistant/__init__.py"), b"new app")
             self.assertEqual(archive.read("payload/ocr/ghostscript/bin/gswin64c.exe"),
                              b"third party immutable")
+            self.assertEqual(archive.read("payload/runtime/packages/pgvector/__init__.py"),
+                             b"pgvector")
+            inventory = json.loads(archive.read("third-party-inventory.json"))
+            self.assertEqual(inventory["python_runtime_additions"][0]["name"], "pgvector")
             manifest = json.loads(archive.read("manifest.json"))
             self.assertEqual(manifest["source_git_commit"], "a" * 40)
             self.assertFalse(manifest["legal_clearance"])
@@ -128,6 +150,17 @@ class CurrentAppCandidateTests(unittest.TestCase):
         (self.dist / "assets" / "debug.js.map").write_text("source map", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "unexpected frontend dist layout"):
             self._build()
+
+    def test_pgvector_wheel_identity_and_hash_fail_closed(self) -> None:
+        self._pgvector({"../unsafe.txt": b"bad"})
+        with self.assertRaises(ValueError):
+            self._build()
+        self._pgvector()
+        with self.assertRaisesRegex(ValueError, "pgvector wheel SHA-256 mismatch"):
+            build_candidate(self.parent, self.wheel, self.dist, self.root,
+                            "a" * 40, self.pgvector_wheel,
+                            expected_parent_sha256=digest(self.parent),
+                            expected_pgvector_sha256="0" * 64)
 
 
 if __name__ == "__main__":

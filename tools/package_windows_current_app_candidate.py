@@ -20,6 +20,7 @@ from package_windows_unified_candidate import safe_name, zip_members, digest_pat
 
 
 PARENT_SHA256 = "30c9d59852af7e7a9360c4e6f36eff815eb134c481b5908786898b315426bf98"
+PGVECTOR_WHEEL_SHA256 = "fedc9800894e6da2be51358d7b7c574bf34f247ca741a5a09513622135f5964f"
 VERSION = "0.1.0.dev0"
 APP_PREFIX = "payload/runtime/packages/plm_assistant/"
 DIST_PREFIX = f"payload/runtime/packages/plm_project_tool_backend-{VERSION}.dist-info/"
@@ -118,18 +119,51 @@ def _wheel_members(wheel: zipfile.ZipFile) -> dict[str, str]:
     return result
 
 
+def _pgvector_members(wheel: zipfile.ZipFile) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for name in zip_members(wheel):
+        if not name.startswith(("pgvector/", "pgvector-0.5.0.dist-info/")):
+            raise ValueError("pgvector wheel contains unexpected path")
+        if "__pycache__" in name.split("/") or name.lower().endswith(
+                (".key", ".env", ".log")):
+            raise ValueError("pgvector wheel contains private/generated file")
+        result["payload/runtime/packages/" + name] = name
+    required = {
+        "payload/runtime/packages/pgvector/__init__.py",
+        "payload/runtime/packages/pgvector/sqlalchemy/__init__.py",
+        "payload/runtime/packages/pgvector-0.5.0.dist-info/METADATA",
+        "payload/runtime/packages/pgvector-0.5.0.dist-info/WHEEL",
+        "payload/runtime/packages/pgvector-0.5.0.dist-info/RECORD",
+        "payload/runtime/packages/pgvector-0.5.0.dist-info/licenses/LICENSE.txt",
+    }
+    if not required <= set(result):
+        raise ValueError("pgvector wheel lacks package, metadata or license")
+    metadata = wheel.read(result["payload/runtime/packages/pgvector-0.5.0.dist-info/METADATA"])
+    fields = metadata.decode("utf-8").replace("\r\n", "\n").splitlines()
+    if "Name: pgvector" not in fields or "Version: 0.5.0" not in fields \
+            or "License-Expression: MIT" not in fields:
+        raise ValueError("pgvector wheel identity/license mismatch")
+    return result
+
+
 def build_candidate(parent_path: Path, wheel_path: Path, frontend_dist: Path,
-                    output_parent: Path, source_commit: str,
-                    *, expected_parent_sha256: str = PARENT_SHA256) -> dict[str, object]:
-    if not COMMIT.fullmatch(source_commit) or not SHA.fullmatch(expected_parent_sha256):
-        raise ValueError("source commit or parent digest malformed")
+                    output_parent: Path, source_commit: str, pgvector_wheel_path: Path,
+                    *, expected_parent_sha256: str = PARENT_SHA256,
+                    expected_pgvector_sha256: str = PGVECTOR_WHEEL_SHA256) -> dict[str, object]:
+    if (not COMMIT.fullmatch(source_commit) or not SHA.fullmatch(expected_parent_sha256)
+            or not SHA.fullmatch(expected_pgvector_sha256)):
+        raise ValueError("source commit or input digest malformed")
     if not output_parent.is_dir() or output_parent.is_symlink():
         raise ValueError("output parent must be an existing real directory")
     if digest_path(parent_path) != expected_parent_sha256:
         raise ValueError("parent candidate SHA-256 mismatch")
+    if digest_path(pgvector_wheel_path) != expected_pgvector_sha256:
+        raise ValueError("pgvector wheel SHA-256 mismatch")
     wheel_sha = digest_path(wheel_path)
     frontend = _frontend_sources(frontend_dist)
-    with zipfile.ZipFile(parent_path) as parent, zipfile.ZipFile(wheel_path) as wheel:
+    with (zipfile.ZipFile(parent_path) as parent,
+          zipfile.ZipFile(wheel_path) as wheel,
+          zipfile.ZipFile(pgvector_wheel_path) as pgvector_wheel):
         old_entries = zip_members(parent)
         if set(old_entries) - {name for name in old_entries if name.startswith("payload/")} != SIDE_CARS:
             raise ValueError("unexpected parent sidecars")
@@ -144,14 +178,26 @@ def build_candidate(parent_path: Path, wheel_path: Path, frontend_dist: Path,
                 or old_manifest.get("payload_file_count") != len(parent_hashes)):
             raise ValueError("parent is not the expected non-release candidate")
         replacement = _wheel_members(wheel)
-        if set(replacement) & set(frontend):
+        supplement = _pgvector_members(pgvector_wheel)
+        if set(replacement) & (set(frontend) | set(supplement)):
             raise ValueError("replacement collision")
         retained = {name for name in parent_hashes if not name.startswith(
             (APP_PREFIX, DIST_PREFIX, FRONTEND_PREFIX))}
-        all_names = retained | set(replacement) | set(frontend)
-        if len(all_names) != len(retained) + len(replacement) + len(frontend) \
+        all_names = retained | set(replacement) | set(frontend) | set(supplement)
+        if len(all_names) != len(retained) + len(replacement) + len(frontend) + len(supplement) \
                 or len({name.casefold() for name in all_names}) != len(all_names):
             raise ValueError("output path collision")
+        third_party = json.loads(parent.read("third-party-inventory.json"))
+        if "python_runtime_additions" in third_party:
+            raise ValueError("parent already declares Python runtime additions")
+        third_party["python_runtime_additions"] = [{
+            "name": "pgvector", "version": "0.5.0", "license_expression": "MIT",
+            "license_path": "payload/runtime/packages/pgvector-0.5.0.dist-info/licenses/LICENSE.txt",
+            "wheel_sha256": expected_pgvector_sha256,
+            "legal_review_status": "REVIEW_REQUIRED",
+        }]
+        third_party_bytes = (json.dumps(third_party, ensure_ascii=False,
+                                       sort_keys=True, indent=2) + "\n").encode("utf-8")
         output_dir = output_parent / ("current-app-candidate-" + uuid.uuid4().hex[:12])
         output_dir.mkdir()
         archive_path = output_dir / "NOT-FOR-RELEASE-windows11-current-app.zip"
@@ -167,12 +213,15 @@ def build_candidate(parent_path: Path, wheel_path: Path, frontend_dist: Path,
             for target_name, source_name in sorted(replacement.items()):
                 with wheel.open(source_name) as source, output.open(target_name, "w", force_zip64=True) as target:
                     new_hashes[target_name] = _hash_stream(source, target)
+            for target_name, source_name in sorted(supplement.items()):
+                with pgvector_wheel.open(source_name) as source, output.open(target_name, "w", force_zip64=True) as target:
+                    new_hashes[target_name] = _hash_stream(source, target)
             for name, path in sorted(frontend.items()):
                 with path.open("rb") as source, output.open(name, "w", force_zip64=True) as target:
                     new_hashes[name] = _hash_stream(source, target)
             output.writestr("payload-sha256sums.txt", "".join(
                 f"{digest}  {name}\n" for name, digest in sorted(new_hashes.items())).encode("ascii"))
-            output.writestr("third-party-inventory.json", parent.read("third-party-inventory.json"))
+            output.writestr("third-party-inventory.json", third_party_bytes)
             manifest = {
                 **old_manifest,
                 "kind": "WINDOWS11_CURRENT_APP_NON_RELEASE_CANDIDATE",
@@ -180,6 +229,7 @@ def build_candidate(parent_path: Path, wheel_path: Path, frontend_dist: Path,
                 "parent_candidate_sha256": expected_parent_sha256,
                 "source_git_commit": source_commit,
                 "backend_wheel_sha256": wheel_sha,
+                "pgvector_wheel_sha256": expected_pgvector_sha256,
                 "frontend_sha256": {name: new_hashes[name] for name in sorted(frontend)},
                 "payload_file_count": len(new_hashes),
                 "release_eligible": False, "legal_clearance": False,
@@ -195,8 +245,8 @@ def build_candidate(parent_path: Path, wheel_path: Path, frontend_dist: Path,
                 with output.open(name) as source:
                     if _hash_stream(source) != expected:
                         raise ValueError("output payload hash mismatch: " + name)
-            if output.read("third-party-inventory.json") != parent.read("third-party-inventory.json"):
-                raise ValueError("third-party inventory changed")
+            if output.read("third-party-inventory.json") != third_party_bytes:
+                raise ValueError("third-party inventory mismatch")
         result: dict[str, object] = {
             "status": "WINDOWS11_CURRENT_APP_NON_RELEASE_INTEGRITY_PASS",
             "archive": str(archive_path), "archive_sha256": digest_path(archive_path),
@@ -204,6 +254,7 @@ def build_candidate(parent_path: Path, wheel_path: Path, frontend_dist: Path,
             "parent_candidate_sha256": expected_parent_sha256,
             "source_git_commit": source_commit,
             "backend_wheel_sha256": wheel_sha,
+            "pgvector_wheel_sha256": expected_pgvector_sha256,
             "payload_file_count": len(new_hashes),
             "retained_file_count": len(retained),
             "release_eligible": False, "legal_clearance": False,
@@ -217,6 +268,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--parent", required=True, type=Path)
     parser.add_argument("--wheel", required=True, type=Path)
+    parser.add_argument("--pgvector-wheel", required=True, type=Path)
     parser.add_argument("--frontend-dist", required=True, type=Path)
     parser.add_argument("--output-parent", required=True, type=Path)
     parser.add_argument("--source-commit", required=True)
@@ -232,7 +284,7 @@ def main() -> int:
     if head != args.source_commit or tracked_dirty or dirty:
         raise ValueError("source commit must be clean HEAD")
     result = build_candidate(args.parent, args.wheel, args.frontend_dist,
-                             args.output_parent, args.source_commit)
+                             args.output_parent, args.source_commit, args.pgvector_wheel)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
     return 0
 

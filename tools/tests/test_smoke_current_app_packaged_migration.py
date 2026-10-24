@@ -10,6 +10,12 @@ from smoke_current_app_packaged_migration import smoke  # noqa: E402
 
 
 class PackagedMigrationBoundaryTests(unittest.TestCase):
+    def test_rejects_arbitrary_revision_before_database_creation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaisesRegex(ValueError, "unsupported packaged migration head"):
+                smoke(root, root / "candidate.zip", "0" * 64, head="head")
+
     def test_rejects_non_stage_before_database_creation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

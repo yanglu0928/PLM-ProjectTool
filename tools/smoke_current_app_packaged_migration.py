@@ -1,4 +1,4 @@
-"""Exercise bundled 0052 migration in disposable PG18 only; never use an existing DB."""
+"""Exercise fixed bundled migrations in disposable PG18 only; never use an existing DB."""
 
 from __future__ import annotations
 
@@ -21,6 +21,8 @@ from verify_windows_unified_extract import verify
 KIND = "WINDOWS11_CURRENT_APP_NON_RELEASE_CANDIDATE"
 HEAD = "20261001_0052"
 PREVIOUS = "20260930_0051"
+CURRENT_HEAD = "20261024_0185"
+CURRENT_PREVIOUS = "20261023_0184"
 
 
 def _run(arguments: list[str], *, env: dict[str, str] | None = None,
@@ -39,7 +41,11 @@ def _port() -> int:
         return int(probe.getsockname()[1])
 
 
-def smoke(root: Path, candidate: Path, expected_sha256: str) -> dict[str, object]:
+def smoke(root: Path, candidate: Path, expected_sha256: str,
+          *, head: str = HEAD) -> dict[str, object]:
+    if head not in {HEAD, CURRENT_HEAD}:
+        raise ValueError("unsupported packaged migration head")
+    previous = PREVIOUS if head == HEAD else CURRENT_PREVIOUS
     temp = Path(tempfile.gettempdir()).resolve(strict=True)
     root = root.resolve(strict=True)
     if (root.parent != temp or not root.name.startswith("plm-current-app-stage-") or
@@ -89,28 +95,40 @@ def smoke(root: Path, candidate: Path, expected_sha256: str) -> dict[str, object
             if "PACKAGED_MIGRATION_PASS" not in result.splitlines():
                 raise ValueError("packaged migration marker missing")
 
-        migrate("postgres", PREVIOUS)
-        if sql("SELECT version_num FROM plm.alembic_version") != PREVIOUS:
+        migrate("postgres", previous)
+        if sql("SELECT version_num FROM plm.alembic_version") != previous:
             raise ValueError("predecessor revision mismatch")
         sql("INSERT INTO plm.plt_system_configurations(config_key) VALUES ('poc.current_app')")
-        migrate("postgres", HEAD)
-        if (sql("SELECT version_num FROM plm.alembic_version") != HEAD or
+        migrate("postgres", head)
+        if (sql("SELECT version_num FROM plm.alembic_version") != head or
                 sql("SELECT count(*) FROM plm.plt_system_configurations "
-                    "WHERE config_key='poc.current_app'") != "1" or
-                sql("SELECT count(*) FROM information_schema.columns "
+                    "WHERE config_key='poc.current_app'") != "1"):
+            raise ValueError("populated upgrade identity/schema mismatch")
+        if head == HEAD:
+            if (sql("SELECT count(*) FROM information_schema.columns "
                     "WHERE table_schema='plm' AND table_name='evd_evidence_records' "
                     "AND column_name='source_parse_record_id'") != "1" or
-                sql("SELECT count(*) FROM pg_trigger WHERE tgname='trg_evd_evidence_parse_source'") != "1"):
-            raise ValueError("populated upgrade identity/schema mismatch")
-        migrate("postgres", PREVIOUS, "downgrade")
-        if (sql("SELECT version_num FROM plm.alembic_version") != PREVIOUS or
+                    sql("SELECT count(*) FROM pg_trigger "
+                        "WHERE tgname='trg_evd_evidence_parse_source'") != "1"):
+                raise ValueError("0052 evidence migration objects missing")
+        else:
+            if (sql("SELECT count(*) FROM information_schema.tables "
+                    "WHERE table_schema='plm' "
+                    "AND table_name='sol_outline_review_state_results'") != "1" or
+                    sql("SELECT count(*) FROM pg_trigger "
+                        "WHERE tgname='trg_sol_outline_versions__review_closure'") != "1" or
+                    sql("SELECT count(*) FROM pg_indexes WHERE schemaname='plm' "
+                        "AND indexname='uq_sol_outline_versions__outline_approved'") != "1"):
+                raise ValueError("0185 outline review migration objects missing")
+        migrate("postgres", previous, "downgrade")
+        if (sql("SELECT version_num FROM plm.alembic_version") != previous or
                 sql("SELECT count(*) FROM plm.plt_system_configurations "
                     "WHERE config_key='poc.current_app'") != "1"):
             raise ValueError("safe downgrade lost pre-existing data")
-        migrate("postgres", HEAD)
+        migrate("postgres", head)
         sql("CREATE DATABASE plm_empty_candidate")
-        migrate("plm_empty_candidate", HEAD)
-        if sql("SELECT version_num FROM plm.alembic_version", "plm_empty_candidate") != HEAD:
+        migrate("plm_empty_candidate", head)
+        if sql("SELECT version_num FROM plm.alembic_version", "plm_empty_candidate") != head:
             raise ValueError("fresh empty upgrade head mismatch")
         vector = sql("SELECT extversion FROM pg_extension WHERE extname='vector'")
         _run([str(pg / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop"], env=env,
@@ -118,7 +136,7 @@ def smoke(root: Path, candidate: Path, expected_sha256: str) -> dict[str, object
         started = False
         return {"status": "SYNTHETIC_CURRENT_APP_PACKAGED_PG18_MIGRATION_PASS",
                 "candidate_sha256": expected_sha256, "payload_file_count": checked["payload_file_count"],
-                "head": HEAD, "pgvector_version": vector,
+                "head": head, "pgvector_version": vector,
                 "populated_data_preserved": True, "empty_database_upgraded": True,
                 "safe_downgrade_reupgrade": True, "existing_database_touched": False,
                 "release_eligible": False}
@@ -140,8 +158,10 @@ def main() -> int:
     parser.add_argument("--root", required=True, type=Path)
     parser.add_argument("--candidate", required=True, type=Path)
     parser.add_argument("--expected-sha256", required=True)
+    parser.add_argument("--head", choices=(HEAD, CURRENT_HEAD), default=HEAD)
     args = parser.parse_args()
-    print(json.dumps(smoke(args.root, args.candidate, args.expected_sha256),
+    print(json.dumps(smoke(args.root, args.candidate, args.expected_sha256,
+                           head=args.head),
                      ensure_ascii=False, indent=2))
     return 0
 
