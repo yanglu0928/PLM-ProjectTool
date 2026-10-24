@@ -203,13 +203,21 @@ def create_windows_project_review_read_router(
             documents=documents, downloads=downloads,
             parse_results=parse_results, authorization=authorization,
             reviewers=reviewers, terminal_context=True)
+        handover = HandoverReviewSubjectOwner(
+            repository=SqlAlchemyHandoverReviewSubjectRepository(),
+            reviewers=reviewers,
+            sources=HandoverSourceValidator(SqlAlchemyDocumentReadRepository()),
+            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+            capabilities=SqlAlchemyCapabilityReadRepository(),
+            ai_tasks=SqlAlchemyAITaskReadRepository(), audit=audit,
+        )
         reads = ReviewReadService(
             unit_of_work=runtime.unit_of_work,
             sessions=SqlAlchemyProjectReadAccess(), projects=authorization,
             license_guard=license_guard,
             repository=SqlAlchemyReviewSnapshotReadRepository(),
             subjects=ProjectReviewSubjectReadRegistry(
-                (owner, section) + _outline_owner(outline_subject)),
+                (owner, section, handover) + _outline_owner(outline_subject)),
         )
         return create_review_read_router(origins=origins, reads=reads)
     except Exception:

@@ -125,7 +125,7 @@ connect, seed_user, CSRF = fixture.connect, fixture.seed_user, fixture.CSRF
 Guard = fixture.Guard
 
 
-def main(*, use_http: bool = False) -> None:
+def main(*, use_http: bool = False, read_probe=None) -> None:
     name = "hnd01a04p02_" + uuid.uuid4().hex[:8]
     manager_token, reviewer_token = b"m" * 32, b"r" * 32
     with connect("postgres") as admin:
@@ -681,6 +681,16 @@ def main(*, use_http: bool = False) -> None:
                 review_one, round_one = create_start(
                     first.handover_analysis_version_id
                 )
+                if read_probe is not None:
+                    read_probe(
+                        runtime=runtime, guard=guard, audit=audit,
+                        project=project, manager=manager, reviewer=reviewer,
+                        analysis_id=analysis.handover_analysis_id,
+                        version_id=first.handover_analysis_version_id,
+                        review_id=review_one, round_id=round_one,
+                        manager_token=manager_token,
+                        reviewer_token=reviewer_token, database=name,
+                    )
                 if client is None:
                     approved = transition_service.decide_idempotent(
                         DecideReviewRound(

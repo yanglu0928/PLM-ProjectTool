@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261025-HND-A05-P01：交接只读主题显式注册
+
+- Date/WBS：2026-10-25 / `HND-05-A05-P01`。
+- Decision：冻结 `REVIEW_GET` 路径与响应保持不变，仅在 Windows 显式项目 Review 只读 Registry 注册 HND-02 Owner；该 Owner 在调用方事务内重新确认当前项目成员、ACTIVE Analysis 与精确固定 Version 的同项目归属。Review 写 Owner 不自动等于读权限，列表与前端决定另行验收。
+- Reason：HND-05-A04-P03 已真实送审，但当前 Review 详情只读 Registry 仅支持 SOL-03/05/06，交接页面链接将被 404；直接放宽 Registry 或用写 Owner 隐式授权会扩大读取边界。
+- Impact/Rollback：新增既有 GET 的主题支持，无 Schema、路径、DTO、License 权益或客户数据外发；停止显式注册即可回退读取，已形成的 Review/Audit 不删除。须验证当前成员与历史固定版本、跨项目及无权拒绝；不推定 Reviewer 决定、Pilot 或 Gate 通过。
+
 ## DEC-20261025-HND-A04-P02：确认人候选按需读取
 
 - Date/WBS：2026-10-25 / `HND-05-A04-P02`。

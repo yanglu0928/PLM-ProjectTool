@@ -45,6 +45,26 @@ class SqlAlchemyHandoverReviewSubjectRepository:
         ).with_for_update(read=True)).scalar_one_or_none()
         return found == analysis_id
 
+    def active_version_exists(
+        self, transaction: object, *, project_id: uuid.UUID,
+        analysis_id: uuid.UUID, analysis_version_id: uuid.UUID,
+    ) -> bool:
+        if not self._ids(project_id, analysis_id, analysis_version_id):
+            return False
+        if not self.active_analysis_exists(
+                transaction, project_id=project_id,
+                analysis_id=analysis_id):
+            return False
+        found = _session(transaction).execute(select(
+            HandoverAnalysisVersionRow.handover_analysis_version_id,
+        ).where(
+            HandoverAnalysisVersionRow.project_id == project_id,
+            HandoverAnalysisVersionRow.handover_analysis_id == analysis_id,
+            HandoverAnalysisVersionRow.handover_analysis_version_id
+            == analysis_version_id,
+        ).with_for_update(read=True)).scalar_one_or_none()
+        return found == analysis_version_id
+
     def lock_subject(
         self, transaction: object, *, project_id: uuid.UUID,
         analysis_id: uuid.UUID, analysis_version_id: uuid.UUID,

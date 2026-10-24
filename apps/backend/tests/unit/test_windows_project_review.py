@@ -38,7 +38,11 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
                 runtime, origins=Mock(), license_guard=Mock(), audit=Mock(),
                 documents=Mock(), downloads=Mock(), parse_results=Mock(),
                 outline_subject=outline)
-            self.assertEqual((owner, section, outline), reads.call_args.args[0])
+            self.assertEqual(
+                ("SOL-06", "SOL-05", "HND-02", "SOL-03"),
+                tuple(getattr(item, "SUBJECT_TYPE")
+                      for item in reads.call_args.args[0]),
+            )
             create_windows_project_review_list_router(
                 runtime, origins=Mock(), license_guard=Mock(), audit=Mock(),
                 documents=Mock(), downloads=Mock(), parse_results=Mock(),
@@ -123,7 +127,11 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
         self.assertEqual([
             "/api/v1/projects/{project_id}/reviews/{review_id}",
         ], [route.path for route in router.routes])
-        self.assertEqual((owner, section), registry.call_args.args[0])
+        self.assertEqual(
+            ("SOL-06", "SOL-05", "HND-02"),
+            tuple(getattr(item, "SUBJECT_TYPE")
+                  for item in registry.call_args.args[0]),
+        )
 
     def test_composes_one_set_of_four_review_write_routes(self):
         runtime = Mock()

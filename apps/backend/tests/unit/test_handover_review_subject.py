@@ -36,6 +36,9 @@ from plm_assistant.modules.review.application.create_review import (
 from plm_assistant.modules.review.application.read_snapshot import (
     FixedReviewRoundSnapshot, ReviewIdentitySnapshot,
 )
+from plm_assistant.modules.review.application.read_service import (
+    AuthorizedReviewSubjectRead,
+)
 from plm_assistant.modules.review.application.subject_start import (
     ReviewSubjectAccessDenied, ReviewSubjectStartRequest,
 )
@@ -121,6 +124,35 @@ class HandoverReviewSubjectTests(unittest.TestCase):
             audit=self.audit, clock=lambda: self.now,
         )
         self.tx = object()
+
+    def test_read_requires_current_member_and_exact_active_version(self):
+        member = ProjectReviewerFacts(self.actor, self.project, "CUSTOMER_MANAGER")
+        self.reviewers.qualify_in_transaction.return_value = (member,)
+        self.repository.active_version_exists.return_value = True
+        result = self.owner.authorize_read(
+            self.tx, user_id=self.actor, project_id=self.project,
+            subject_type="HND-02", subject_id=self.analysis,
+            subject_version_id=self.version,
+        )
+        self.assertEqual(result, AuthorizedReviewSubjectRead(
+            self.actor, self.project, "HND-02", self.analysis, self.version))
+        self.repository.active_version_exists.assert_called_once_with(
+            self.tx, project_id=self.project, analysis_id=self.analysis,
+            analysis_version_id=self.version)
+        self.assertIsNone(self.owner.authorize_read(
+            self.tx, user_id=self.actor, project_id=self.project,
+            subject_type="SOL-06", subject_id=self.analysis,
+            subject_version_id=self.version))
+        self.repository.active_version_exists.return_value = False
+        self.assertIsNone(self.owner.authorize_read(
+            self.tx, user_id=self.actor, project_id=self.project,
+            subject_type="HND-02", subject_id=self.analysis,
+            subject_version_id=self.version))
+        self.reviewers.qualify_in_transaction.side_effect = ReviewReviewerEligibilityError()
+        self.assertIsNone(self.owner.authorize_read(
+            self.tx, user_id=self.actor, project_id=self.project,
+            subject_type="HND-02", subject_id=self.analysis,
+            subject_version_id=None))
 
     def test_create_owner_binds_latest_draft_and_policy(self):
         proof = self.owner.authorize_create(
