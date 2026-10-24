@@ -3,6 +3,7 @@ export interface UserCandidate {
   readonly user_id: string;
   readonly username_display: string;
   readonly account_state: "ENABLED" | "DISABLED";
+  readonly deployment_role: "NONE" | "DEPLOYMENT_ADMIN";
 }
 
 export interface UserCandidatePage {
@@ -86,7 +87,7 @@ export class AdminUserListClient {
           throw new UserCandidateError("USER_LIST_UNAVAILABLE");
         }
         return Object.freeze({ user_id: value.user_id, username_display: value.username_display,
-          account_state: value.account_state });
+          account_state: value.account_state, deployment_role: value.deployment_role });
       });
       if (new Set(items.map((item) => item.user_id)).size !== items.length) {
         throw new UserCandidateError("USER_LIST_UNAVAILABLE");

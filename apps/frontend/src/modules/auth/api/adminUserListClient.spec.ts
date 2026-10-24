@@ -34,8 +34,8 @@ describe("AdminUserListClient", () => {
       headers: { Accept: "application/json" },
     }));
     expect(page).toEqual({ items: [
-      { user_id: id, username_display: "测试负责人", account_state: "ENABLED" },
-      { user_id: otherId, username_display: "停用用户", account_state: "DISABLED" },
+      { user_id: id, username_display: "测试负责人", account_state: "ENABLED", deployment_role: "NONE" },
+      { user_id: otherId, username_display: "停用用户", account_state: "DISABLED", deployment_role: "NONE" },
     ], next_cursor: null, has_more: false });
     expect(Object.isFrozen(page)).toBe(true);
     expect(Object.isFrozen(page.items)).toBe(true);

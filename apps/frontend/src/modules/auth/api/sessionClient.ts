@@ -214,6 +214,7 @@ export class SessionClient {
   async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users" | "/api/v1/global/document-uploads"
     | "/api/v1/global/capability-baselines" | "/api/v1/global/evidence"
     | `/api/v1/global/capability-baselines/${string}/versions`
+    | `/api/v1/global/capability-baselines/${string}/versions/${string}:submit-review`
     | `/api/v1/projects/${string}/members` | `/api/v1/projects/${string}/departments`
     | `/api/v1/projects/${string}/document-uploads`
     | `/api/v1/projects/${string}/egress-previews`
@@ -477,6 +478,17 @@ export class SessionClient {
     } catch {
       throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
     } finally { window.clearTimeout(timer); this.#busy = false; }
+  }
+
+  /** Frozen Capability submission; retain the exact reviewer set and Key on uncertainty. */
+  postGlobalCapabilityVersionSubmitReview(baselineId: string, versionId: string,
+    body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(baselineId) || !identifier(versionId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/global/capability-baselines/${baselineId}/versions/${versionId}:submit-review`,
+      body, idempotencyKey, 8192);
   }
 
   postGlobalEvidenceCreate(body: string, idempotencyKey: string): Promise<Response> {

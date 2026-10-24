@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P02 增加标准能力 DRAFT 版本正式送审入口、已启用部署管理员选择、固定策略/评审人原号恢复及严格 `IN_REVIEW` 回执核验；送审不等于批准。兼容性：Windows 11 前端源码/构建；Server 2025、Debian 13 未实测。升级/回滚：无 Schema/后端 API/License 迁移，撤前端入口不删除 Review/Audit 历史。验证：新增定向7、前端全量1938项、typecheck/build通过。已知问题：GLOBAL Review 公开决定路径、包内 Edge/PG、真人资格/批准、正式信任/安装/UAT/Gate/Pilot未验，不可发行。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P01 增加标准能力 DRAFT 版本当前来源 VALIDATE 入口、阻断报告与原幂等号恢复；校验不改变状态或替代正式 Review。兼容性：Windows 11 前端源码/构建；Server 2025、Debian 13 未实测。升级/回滚：无 Schema/后端 API/License 迁移，撤入口不删除审计或版本历史。验证：定向7、前端全量1931项、typecheck/build通过。已知问题：GLOBAL Review 尚无公开读取/决定路径，包内 Edge/PG、真实资格/批准、正式信任/安装/UAT/Gate/Pilot未验，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P03-P01 增加标准能力版本单条目 DRAFT 编辑页、固定 GLOBAL 文档/Evidence 分页选取、与后端一致的来源集合 SHA、提交前当前资格/ETag 重验和原内容/原号恢复。兼容性：Windows 11 前端源码/构建；Server 2025、Debian 13 未实测。升级/回滚：无 Schema/后端 API/License 迁移，撤入口不删除已有版本历史。验证：定向7、前端全量1924项及typecheck/build通过。已知问题：多条目未开放，写模型 DEPRECATED 与只读 API 状态枚举不一致，页面暂限 AVAILABLE/WITHDRAWN；包内 Edge/PG、真实资格/正式 Review/信任/安装/UAT/Gate/Pilot均待，不可发行。
