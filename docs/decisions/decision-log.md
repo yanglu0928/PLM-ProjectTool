@@ -11854,3 +11854,17 @@
 - Decision：现有一次性PG烟测增加明确白名单模式`0184→0185`，保留旧模式语义和历史证据；新模式独立检查Outline Review结果表/闭合Trigger、空库及合成旧行、无历史降级重升。拒绝任意Revision输入。
 - Reason：重用经过验证的候选身份、Temp隔离和进程清理边界，同时精确验证当前头版本。
 - Impact/Rollback/Verification：只影响验证工具，无产品Schema/API/正式数据更改；可撤新模式。定向失败关闭及随包隔离PG实际演练通过才标记本项完成。
+
+# DEC-20261024-1225：非发行HTTPS烟测绑定当前候选清单而非旧固定文件数
+
+- Date/WBS：2026-10-24 / `PKG-PILOT-01-A03`；旧烟测硬编码21,182件和0052映射，新固定候选为22,191件/0185，并补Python pgvector。
+- Decision：从已验证且与ZIP一致的manifest获取唯一载荷数，仍对文件全集/哈希/大小写冲突做独立校验，并强制当前0185和pgvector目标路径。合成信任只注入临时副本，不进入候选。
+- Reason：旧计数是历史候选属性，不是正式合同；必须保持对当前固定候选的强身份与路径检查。
+- Impact/Rollback/Verification：仅验收适配器，无产品API/Schema/信任机制变更；撤适配器可回退。定向边界及真实隔离HTTPS/License烟测通过才关闭本项。
+
+# DEC-20261024-1226：合成HTTPS夹具显式补齐当前路由独立Vault引用
+
+- Date/WBS：2026-10-24 / `PKG-PILOT-01-A03`；旧烟测夹具只初始化早期12个引用，当前显式平台工厂已经使用AI、Evidence、Review、Solution、Prototype、Plan与Trace等新增的独立游标签名引用。A03三轮布局通过但API在健康前退出，安全诊断仅定位至统一`ProductionLoginStartupError`，未暴露内部错误正文。
+- Decision：从当前受控`windows_*cursor.py`与上传Token入口的显式常量核对，补齐全部已知合成引用；仅一次性当前账户Vault和临时布局使用，测试后逐项清理。增加引用集合覆盖测试，防止后续路由增长时夹具静默过时。
+- Reason：不应为通过烟测而放宽生产缺钥失败关闭；维护测试夹具更符合现有安全基线。
+- Impact/Rollback/Verification：无产品License/安全机制变更；撤夹具补全即可回退。仍须真实隔离启动、HTTPS/Origin/License响应、Vault/进程清理全部通过；如失败继续记录真实原因。

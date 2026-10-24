@@ -11,6 +11,7 @@ import zipfile
 from pathlib import Path
 
 from install_windows_caddy_go_atomic_rehearsal import _copy_and_publish
+from package_windows_current_app_candidate import PGVECTOR_WHEEL_SHA256
 from package_windows_unified_candidate import digest_path
 from plan_windows_unified_caddy_install import META, exact_mapping
 from rehearse_windows_unified_pg18_layout import validate_output_root
@@ -19,10 +20,9 @@ from verify_windows_unified_extract import verify as verify_stage
 
 
 KIND = "WINDOWS11_CURRENT_APP_NON_RELEASE_CANDIDATE"
-COUNT = 21182
 
 
-def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[str, str], dict[str, str], str]:
+def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[str, str], dict[str, str], str, int]:
     temp = Path(tempfile.gettempdir()).resolve(strict=True)
     resolved = stage.resolve(strict=True)
     if (resolved.parent != temp or not resolved.name.startswith("plm-current-app-stage-")
@@ -30,7 +30,11 @@ def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[st
             or digest_path(candidate) != expected_sha256):
         raise ValueError("current candidate or stage identity rejected")
     checked = verify_stage(resolved, expected_kind=KIND)
-    if checked["payload_file_count"] != COUNT:
+    manifest = json.loads((resolved / "manifest.json").read_text(encoding="utf-8"))
+    count = manifest.get("payload_file_count")
+    if (type(count) is not int or checked["payload_file_count"] != count
+            or manifest.get("pgvector_wheel_sha256") != PGVECTOR_WHEEL_SHA256
+            or manifest.get("legal_clearance") is not False):
         raise ValueError("current candidate payload count differs")
     with zipfile.ZipFile(candidate) as archive:
         if any((resolved / name).read_bytes() != archive.read(name) for name in META):
@@ -42,15 +46,17 @@ def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[st
             raise ValueError("current stage hash manifest rejected")
         hashes[name] = sha
     mapping, mapping_sha = exact_mapping([*hashes, *META])
-    if (len(mapping) != COUNT + len(META) or
+    if (len(mapping) != count + len(META) or
             mapping.get("payload/runtime/packages/plm_assistant/modules/evidence/api/lookup_eligibility_operation.py") !=
             "runtime/python/packages/plm_assistant/modules/evidence/api/lookup_eligibility_operation.py" or
-            mapping.get("payload/runtime/packages/plm_assistant/migrations/versions/20261001_0052_evidence_parse_provenance.py") !=
-            "runtime/python/packages/plm_assistant/migrations/versions/20261001_0052_evidence_parse_provenance.py" or
+            mapping.get("payload/runtime/packages/plm_assistant/migrations/versions/20261024_0185_outline_review_state_guard.py") !=
+            "runtime/python/packages/plm_assistant/migrations/versions/20261024_0185_outline_review_state_guard.py" or
+            mapping.get("payload/runtime/packages/pgvector/sqlalchemy/__init__.py") !=
+            "runtime/python/packages/pgvector/sqlalchemy/__init__.py" or
             mapping.get("payload/runtime/packages/plm_assistant/modules/workflow/api/start_workflow.py") !=
             "runtime/python/packages/plm_assistant/modules/workflow/api/start_workflow.py"):
         raise ValueError("current app layout mapping differs")
-    return hashes, mapping, mapping_sha
+    return hashes, mapping, mapping_sha, count
 
 
 def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
@@ -60,7 +66,7 @@ def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
     validate_output_root(target)
     if pristine == target or stage in {pristine, target}:
         raise ValueError("stage and synthetic layouts must differ")
-    hashes, mapping, mapping_sha = _inputs(candidate, stage, expected_sha256)
+    hashes, mapping, mapping_sha, count = _inputs(candidate, stage, expected_sha256)
 
     def check_layout(_candidate: Path, _source: Path, _stage: Path, layout: Path) -> dict:
         if (_candidate != candidate or _source != candidate or _stage != stage or
@@ -91,7 +97,7 @@ def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
                                 layout_rehearser=place_layout,
                                 synthetic_license_document_factory=synthetic_license_document_factory,
                                 licensed_https_probe=licensed_https_probe)
-        if (result.get("synthetic_layout_file_count_before_injection") != COUNT + len(META)
+        if (result.get("synthetic_layout_file_count_before_injection") != count + len(META)
                 or result.get("fixed_candidate_unmodified") is not True
                 or result.get("synthetic_vault_targets_absent") is not True
                 or result.get("temporary_processes_stopped") is not True

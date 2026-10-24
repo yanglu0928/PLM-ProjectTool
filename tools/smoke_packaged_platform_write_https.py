@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import base64
 import ctypes
+import hashlib
 import hmac
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -54,6 +56,25 @@ KEY_REFS = (
     "audit-list-cursor-v1", "job-list-cursor-v1", "document-list-cursor-v1",
     "document-version-cursor-v1", "document-parse-cursor-v1",
     "document-upload-token-v1", "secret-master-v1",
+    "ai-model-list-cursor-v1", "ai-prompt-list-cursor-v1",
+    "ai-provider-list-cursor-v1", "ai-read-cursor-v1",
+    "evidence-list-cursor-v1", "global-reference-list-cursor-v1",
+    "project-global-reference-candidate-list-cursor-v1",
+    "project-outline-list-cursor-v1", "project-outline-version-list-cursor-v1",
+    "project-plan-list-cursor-v1", "project-reference-list-cursor-v1",
+    "project-section-list-cursor-v1", "project-section-version-list-cursor-v1",
+    "project-structured-spec-version-list-cursor-v1",
+    "prototype-list-cursor-v1", "prototype-package-cursor-v1",
+    "prototype-requirement-link-cursor-v1", "prototype-template-cursor-v1",
+    "prototype-version-cursor-v1", "review-list-cursor-v1",
+    "trace-graph-cursor-v1",
+    "capability-baseline-cursor-v1", "capability-child-cursor-v1",
+    "handover-action-cursor-v1", "handover-analysis-cursor-v1",
+    "handover-item-cursor-v1", "handover-version-cursor-v1",
+    "requirement-cursor-v1", "requirement-package-cursor-v1",
+    "requirement-relation-cursor-v1", "requirement-version-cursor-v1",
+    "survey-assignment-cursor-v1", "survey-conclusion-cursor-v1",
+    "survey-cursor-v1", "survey-round-cursor-v1", "survey-version-cursor-v1",
 )
 
 
@@ -96,7 +117,21 @@ def _wait_http(client: httpx.Client, path: str, process: subprocess.Popen, *, se
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
         if process.poll() is not None:
-            raise ValueError("packaged production child exited before ready")
+            diagnostic = "stderr unavailable"
+            if process.stderr is not None:
+                raw = process.stderr.read(65536)
+                lines = raw.decode("utf-8", errors="replace").splitlines()
+                for line in reversed(lines):
+                    match = re.match(r"([\w.]+(?:Error|Exception))(?::\s*(.*))?", line)
+                    if match:
+                        kind, message = match.groups()
+                        missing = re.fullmatch(r"No module named '([\w.]+)'", message or "")
+                        diagnostic = (f"{kind}: missing module {missing.group(1)}"
+                                      if missing else kind)
+                        break
+                else:
+                    diagnostic = "stderr-sha256:" + hashlib.sha256(raw).hexdigest()[:12]
+            raise ValueError("packaged production child exited before ready: " + diagnostic)
         try:
             response = client.get(path)
             if response.status_code == 200:
@@ -105,6 +140,29 @@ def _wait_http(client: httpx.Client, path: str, process: subprocess.Popen, *, se
             pass
         time.sleep(.1)
     raise ValueError("packaged production child did not become ready")
+
+
+def _diagnose_packaged_factory(runtime: Path, bootstrap: Path,
+                               env: dict[str, str]) -> str:
+    """Return only exception class and source location; never print config/credentials."""
+    code = (
+        "import sys,traceback; from pathlib import Path; "
+        "from plm_assistant.modules.platform.infrastructure.bootstrap_config "
+        "import load_bootstrap_settings; "
+        "from plm_assistant.entrypoints.production_login "
+        "import create_production_platform_write_app; "
+        "settings=load_bootstrap_settings(Path(sys.argv[1])); "
+        "\ntry: create_production_platform_write_app(settings); print('FACTORY_OK')"
+        "\nexcept Exception as error:"
+        "\n frame=traceback.extract_tb(error.__traceback__)[-1]; "
+        "print(type(error).__name__+'@'+Path(frame.filename).name+':'+str(frame.lineno)); "
+        "raise SystemExit(1)"
+    )
+    result = subprocess.run([str(runtime), "-I", "-B", "-c", code, str(bootstrap)],
+                            capture_output=True, text=True, errors="replace", env=env,
+                            timeout=30, check=False)
+    label = result.stdout.strip().splitlines()[-1:] or ["NO_FACTORY_RESULT"]
+    return label[0] if re.fullmatch(r"(?:FACTORY_OK|[\w]+Error@[\w.]+:\d+)", label[0]) else "NO_FACTORY_RESULT"
 
 
 def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Path, *,
@@ -223,11 +281,15 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         api_process = subprocess.Popen(
             [str(runtime), "-I", "-B", "-m", "plm_assistant.entrypoints.serve_windows",
              str(bootstrap), "--platform-write"], stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env,
+            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, env=env,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         with httpx.Client(base_url=f"http://127.0.0.1:{api_port}", timeout=3,
                           trust_env=False) as direct:
-            _wait_http(direct, "/health/ready", api_process)
+            try:
+                _wait_http(direct, "/health/ready", api_process)
+            except ValueError as startup_error:
+                diagnostic = _diagnose_packaged_factory(runtime, bootstrap, env)
+                raise ValueError(f"{startup_error}; packaged factory={diagnostic}") from None
         caddy_config.write_text(caddyfile(target / "app/frontend/dist", cert, key,
                                           api_port, https_port), encoding="ascii")
         checked = subprocess.run([str(caddy), "validate", "--config", str(caddy_config)],

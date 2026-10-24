@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import sys
 import unittest
 from pathlib import Path
@@ -32,8 +33,19 @@ class PackagedPlatformWriteSmokeTests(unittest.TestCase):
     def test_synthetic_public_key_uses_actual_embedded_packages_root(self) -> None:
         self.assertEqual(PUBLIC_KEY_RELATIVE,
                          "runtime/python/packages/plm_assistant/modules/license/trust/product_public_key.json")
-        self.assertEqual(len(KEY_REFS), 12)
-        self.assertEqual(len(set(KEY_REFS)), 12)
+        self.assertEqual(len(KEY_REFS), len(set(KEY_REFS)))
+
+    def test_synthetic_vault_fixture_covers_current_cursor_key_refs(self) -> None:
+        entrypoints = (Path(__file__).resolve().parents[2] / "apps" / "backend" /
+                       "src" / "plm_assistant" / "entrypoints")
+        refs: set[str] = set()
+        for path in entrypoints.glob("*.py"):
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+                if isinstance(node, (ast.Assign, ast.AnnAssign)) and isinstance(
+                        node.value, ast.Constant) and isinstance(node.value.value, str):
+                    if node.value.value.endswith(("-cursor-v1", "-token-v1")):
+                        refs.add(node.value.value)
+        self.assertTrue(refs <= set(KEY_REFS))
 
     def test_existing_fixed_vault_target_rejects_before_copy(self) -> None:
         paths = tuple(Path(name) for name in ("candidate", "source", "stage", "pristine", "target"))
