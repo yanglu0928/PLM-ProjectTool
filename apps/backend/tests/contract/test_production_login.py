@@ -32,6 +32,7 @@ from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCu
 from plm_assistant.modules.plan.api.list_cursor import PlanListCursorCodec
 from plm_assistant.modules.trace.application.page_graph import TraceGraphCursorCodec
 from plm_assistant.modules.solution.api.outline_version_list_cursor import OutlineVersionListCursorCodec
+from plm_assistant.modules.solution.application.outline_review_subject import OutlineReviewSubjectOwner
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
 from plm_assistant.modules.solution.api.section_list_cursor import SectionListCursorCodec
 from plm_assistant.modules.solution.api.structured_spec_list_cursor import (
@@ -333,6 +334,48 @@ class ProductionLoginTests(unittest.TestCase):
                     "plm_assistant.entrypoints.production_login."
                     "create_windows_outline_read_router",
                     side_effect=RuntimeError("private outline trust missing"),
+                ) as failed:
+                    with self.assertRaises(ProductionLoginStartupError) as caught:
+                        factory(self.settings(("http://localhost",)))
+                failed.assert_called_once()
+                self.assertNotIn("private", str(caught.exception))
+                runtime.dispose.assert_called_once()
+
+    def test_outline_review_owner_failure_disposes_both_platform_modes(self):
+        for factory in (create_production_platform_app,
+                        create_production_platform_write_app):
+            with self.subTest(factory=factory.__name__):
+                runtime = Mock()
+                runtime.is_ready.return_value = True
+                with patch(
+                    "plm_assistant.entrypoints.production_login.read_database_url",
+                    return_value="postgresql+psycopg://localhost/test",
+                ), patch(
+                    "plm_assistant.entrypoints.production_login.create_database_runtime",
+                    return_value=runtime,
+                ), patch(
+                    "plm_assistant.entrypoints.production_login._schema_current",
+                    return_value=True,
+                ), patch(
+                    "plm_assistant.entrypoints.windows_license_runtime."
+                    "create_windows_license_services",
+                    return_value=Mock(guard=Mock()),
+                ), patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_secret_list_cursor_codec",
+                    return_value=Mock(),
+                ), patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_project_member_cursor_codec",
+                    return_value=MemberListCursorCodec(b"m" * 32),
+                ), patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_project_department_cursor_codec",
+                    return_value=DepartmentListCursorCodec(b"d" * 32),
+                ), patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_outline_review_subject",
+                    side_effect=RuntimeError("private Outline review source missing"),
                 ) as failed:
                     with self.assertRaises(ProductionLoginStartupError) as caught:
                         factory(self.settings(("http://localhost",)))
@@ -1101,6 +1144,10 @@ class ProductionLoginTests(unittest.TestCase):
         self.project_review_factory.assert_not_called()
         self.project_review_read_factory.assert_called_once()
         self.project_review_list_factory.assert_called_once()
+        outline_owner = self.project_review_read_factory.call_args.kwargs["outline_subject"]
+        self.assertIs(type(outline_owner), OutlineReviewSubjectOwner)
+        self.assertIs(self.project_review_list_factory.call_args.kwargs["outline_subject"],
+                      outline_owner)
         self.workflow_checklist_factory.assert_not_called()
         self.workflow_checklist_qualification_factory.assert_not_called()
         self.workflow_transition_factory.assert_not_called()
@@ -1468,6 +1515,21 @@ class ProductionLoginTests(unittest.TestCase):
         self.project_review_factory.assert_called_once()
         self.project_review_read_factory.assert_called_once()
         self.project_review_list_factory.assert_called_once()
+        outline_owner = self.project_review_read_factory.call_args.kwargs["outline_subject"]
+        self.assertIs(type(outline_owner), OutlineReviewSubjectOwner)
+        self.assertIs(self.project_review_list_factory.call_args.kwargs["outline_subject"],
+                      outline_owner)
+        self.assertIs(self.project_review_factory.call_args.kwargs["outline_subject"],
+                      outline_owner)
+        self.assertTrue(any(
+            getattr(route, "path", "") ==
+            "/api/v1/projects/{project_id}/solution-outlines/{outline_id}/"
+            "versions/{outline_version_id}:submit-review"
+            and "POST" in getattr(route, "methods", ())
+            for included in app.routes
+            for route in getattr(
+                getattr(included, "original_router", None), "routes", ())
+        ))
         self.workflow_checklist_factory.assert_called_once()
         self.workflow_checklist_qualification_factory.assert_called_once()
         self.workflow_transition_factory.assert_called_once()

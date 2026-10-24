@@ -78,6 +78,8 @@ from plm_assistant.entrypoints.windows_solution_reference_cursor import (
 )
 from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_outline_create_router,
+    create_windows_outline_review_subject,
+    create_windows_outline_review_submission_router,
     create_windows_outline_version_create_router,
     create_windows_outline_version_validate_router,
     create_windows_outline_version_read_router,
@@ -705,6 +707,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         trace_graph_router = None
         solution_outline_version_create_router = None
         solution_outline_version_validate_router = None
+        solution_outline_review_submission_router = None
         solution_outline_version_read_router = None
         solution_section_create_router = None
         solution_section_version_create_router = None
@@ -734,6 +737,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         review_command_router = None
         review_list_router = None
         review_read_router = None
+        outline_review_subject = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -997,11 +1001,20 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 prototype_routers.review_submission
             )
             requirement_prototype_link_router = prototype_routers.links
+            outline_review_subject = create_windows_outline_review_subject(
+                runtime=runtime, license_guard=licenses.guard, audit=audit,
+                document_storage_root=settings.data_root,
+                parse_result_storage_root=settings.data_root,
+                documents=document_reads, downloads=document_downloads,
+                parse_results=evidence_results_for_viewer,
+                terminal_context=True,
+            )
             review_read_router = create_windows_project_review_read_router(
                 runtime, origins=origins, license_guard=licenses.guard,
                 audit=audit, documents=document_reads,
                 downloads=document_downloads,
                 parse_results=evidence_results_for_viewer,
+                outline_subject=outline_review_subject,
             )
             review_list_router = create_windows_project_review_list_router(
                 runtime, origins=origins, license_guard=licenses.guard,
@@ -1009,6 +1022,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 downloads=document_downloads,
                 parse_results=evidence_results_for_viewer,
                 cursors=create_windows_review_list_cursor_codec(),
+                outline_subject=outline_review_subject,
             )
             if include_secret_write:
                 plan_create_router = create_windows_plan_create_router(
@@ -1029,6 +1043,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 )
                 solution_outline_version_validate_router = (
                     create_windows_outline_version_validate_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        document_storage_root=settings.data_root,
+                        parse_result_storage_root=settings.data_root,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                solution_outline_review_submission_router = (
+                    create_windows_outline_review_submission_router(
                         runtime=runtime, sessions=sessions, origins=origins,
                         license_guard=licenses.guard, audit=audit,
                         document_storage_root=settings.data_root,
@@ -1166,6 +1190,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     license_guard=licenses.guard, audit=audit,
                     documents=document_reads, downloads=document_downloads,
                     parse_results=evidence_results_for_viewer,
+                    outline_subject=outline_review_subject,
                 )
                 workflow_checklist_record_router = (
                     create_windows_workflow_checklist_record_router(
@@ -1976,6 +2001,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             trace_graph_router=trace_graph_router,
             solution_outline_version_create_router=solution_outline_version_create_router,
             solution_outline_version_validate_router=solution_outline_version_validate_router,
+            solution_outline_review_submission_router=solution_outline_review_submission_router,
             solution_outline_version_read_router=solution_outline_version_read_router,
             solution_section_create_router=solution_section_create_router,
             solution_section_version_create_router=solution_section_version_create_router,
