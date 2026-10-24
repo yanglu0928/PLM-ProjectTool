@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/HND-05-A05-P03 项目评审详情正确标识 HND-02 交接分析与本轮固定版本 ID，返回交接分析并提示手动按 ID 选取；不再误标结构化专项或链接到专项方案。兼容性：Windows 11 前端合同/构建通过，Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License/数据迁移；合法 Review/Audit 保留。验证：定向6、前端全量2010、typecheck/build退出0。已知问题：交接分析页精确版本深链、真实 Edge/PG/包内决定与真人客户确认未验；正式信任/安装/UAT/Gate/Pilot/Release 未通过。
+
 - 2026-10-25：0.1.0-dev.0/HND-05-A05-P02 通用 PROJECT Review 客户端增加严格 HND-02/`HANDOVER_ALL_V1` 投影支持，保留当前评审人、固定轮次、Session/CSRF/原操作号及回执校验，错配主题/策略失败关闭。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License 或数据迁移；回退后 HND-02 会重新被客户端拒绝，合法 Review/Audit 保留。验证：定向6、前端全量2009、typecheck/build退出0。已知问题：通用页面仍把 HND 误标为结构化专项并给错误固定版本入口，真实 Edge/PG/包内决定、真人客户确认、正式信任/安装/UAT/Gate/Pilot/Release 未通过。
 
 - 2026-10-25：0.1.0-dev.0/HND-05-A05-P01 既有 PROJECT `REVIEW_GET` 显式注册 HND-02 只读 Owner，当前成员与 ACTIVE 交接分析/精确固定版本再校验；不自动开放列表或决定。兼容性：Windows 11 隔离 PG18/HTTP 已实测，Windows Server 2025/Debian 13 未实测；冻结 GET 路径/DTO 不变。升级/回滚：无 Schema/Migration/License 变化；移除 HND-02 只读注册即可关闭新增读取，保留已形成 Review/Audit。验证：定向31项及5 subtest、后端全量4097通过/3跳过/6149 subtests；自启一次性 PG 空库迁移/Alembic check、负责人/当前客户成员200、匿名401、跨项目/暂停成员404、错误版本不存在，原交接评审写链回归退出0并清理。已知问题：前两轮验收环境失败保留；本轮 wheel 构建环境缺 pip/setuptools 未成功，尚未固定包/Edge 验证；前端 HND-02 决定、真人确认、正式信任/安装/UAT/Gate 3～7/Pilot/Release 未通过。
