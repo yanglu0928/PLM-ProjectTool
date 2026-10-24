@@ -1,6 +1,6 @@
 # CAP-02-A03：GLOBAL 标准能力固定文档来源入口编码前检查
 
-日期：2026-10-24；状态：`SOURCE_PASS / WINDOWS_BROWSER_PG_PENDING`。
+日期：2026-10-24；状态：`SOURCE_PASS / SYNTHETIC_POSITIVE_EDGE_PG_PASS`。
 
 |检查项|结论|
 |---|---|
@@ -20,3 +20,5 @@
 - 新增部署管理员独立 `STANDARD_CAPABILITY` 新文档上传页。只允许 GLOBAL 新文档，不把项目文档转作全局来源；三步操作、未知结果原操作号确认重试、显式终止、会话变化清屏和提交后独立 GLOBAL Document/AVAILABLE 固定版本读取均有界面状态。
 - 新增 GLOBAL 传输 3 项、页面权限/正向/未知/终止/重放/会话变化 6 项；关联定向及前端全量 166 文件、1896 项 PASS，TypeScript 检查、Vite 构建 PASS。现有 PROJECT 上传与 Auth 客户端定向 274 项 PASS。
 - 尚未执行真实 Edge/PG 合成文件端到端；不能由回执推定已解析、已批准 CapabilityBaseline，亦不能把本地标准能力库文件自动写入系统。
+
+后续 `CAP-02-A03-P02` 已在 Win11 固定非发行候选中以合成文件完成真实 Edge/隔离 PG 上传、GLOBAL `ACTIVE` 文档及 `AVAILABLE` 固定版本反读、三类上传 Audit；首轮验收 SQL 列名错误和同候选复验退出 0 见 `docs/progress/cap-02-a03-a04-p02-packaged-edge.md`。上段保留当时源码验收事实，不将其改写为首轮已通过。正式来源、批准与 Pilot 仍待。

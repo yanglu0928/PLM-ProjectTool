@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/CAP-02-A03-P02+A04-P02 为 Win11 固定非发行候选新增 GLOBAL 标准能力来源上传→固定可用版本读取→基线身份创建包内 Edge/PG 验收夹具，不改产品 Schema/API。兼容性：仅 Windows 11 一次性 PG18/Caddy/合成 License/Edge；Windows Server 2025、Debian 13 未实测。升级/回滚：无迁移或产品数据改动，撤验收夹具不删除已有真实业务历史；候选不可发行。验证：候选 SHA `bbace47d347919ae625372e35d1d5764c4004b97cf5038458a01ac15b1d51876`，清洁解包、13 个相关浏览器 API 响应、PG 单文档/版本/基线/来源哈希及四类 Audit、临时资源清理，同包复验退出 0；首轮验收 SQL 列名误写失败已保留。已知问题：仅正向合成链，包内权限/异常负例、能力版本/条目/Evidence/正式 Review、正式信任/法律/离线安装升级/UAT/Gate 均待，不是可交付 Pilot。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A04 新增管理员从 GLOBAL ACTIVE 标准能力文档的 AVAILABLE 固定版本创建基线身份入口；严格 201/ETag/Location、原操作号恢复，创建后仍无批准版本。兼容性：Windows 11 前端源码/构建；Windows Server 2025、Debian 13 未实测。升级/回滚：无 Schema/后端 API/License 迁移，撤入口不删除已建基线或审计。验证：新增8项，前端全量1904项及typecheck/build通过。已知问题：真实 Edge/PG 尚未验，版本条目/Evidence/Review 批准、真实信任/安装/UAT/Gate 未完成，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A03 新增部署管理员 GLOBAL 标准能力文档上传入口，复用三段安全上传、摘要、幂等与显式终止；提交后另行读取 GLOBAL ACTIVE/AVAILABLE 固定版本，不把回执当批准事实。兼容性：Windows 11 前端源码/构建；Windows Server 2025、Debian 13 未实测。升级/回滚：无 Schema/API/License 迁移；撤入口不删除已上传 GLOBAL 文档或审计。验证：新增9项、原上传/Auth定向274项、前端全量1896项及typecheck/build通过。已知问题：实际 Edge/PG、正式能力基线创建/评审/批准、真实信任/安装/UAT/Gate未完成，不可发行。

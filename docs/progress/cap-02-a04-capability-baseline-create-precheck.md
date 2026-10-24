@@ -1,6 +1,6 @@
 # CAP-02-A04：全局能力基线身份创建入口编码前检查
 
-日期：2026-10-24；状态：`SOURCE_PASS / WINDOWS_EDGE_PG_PENDING`。
+日期：2026-10-24；状态：`SOURCE_PASS / SYNTHETIC_POSITIVE_EDGE_PG_PASS`。
 
 |检查项|结论|
 |---|---|
@@ -20,3 +20,5 @@
 - 页面仅列出 GLOBAL ACTIVE `STANDARD_CAPABILITY` 文档，逐文档选择 AVAILABLE 固定版本；保留同号不确定结果记录，成功后跳转只读详情。创建回执的 `current_approved_version_ref` 必须为 null。
 - 客户端 4 项、页面 4 项定向 PASS；前端全量 168 文件、1904 项 PASS，typecheck/build PASS。没有新增 Schema、后端 API 或第三方依赖。
 - 尚未在 Windows 11 Edge/隔离 PG 用合成文档验证 A03 上传与本项创建的真实服务组合；没有正式已批准 CapabilityVersion，Handover 引用前置未满足，Pilot/Gate 仍 `NOT_READY`。
+
+后续 `CAP-02-A04-P02` 已在同一 Win11 固定非发行候选中由真实 Edge 选择合成 GLOBAL `AVAILABLE` 固定版本、创建身份并反读详情；隔离 PG 核对单基线、来源集合哈希与 `CAP_BASELINE_CREATED` Audit，完整复验退出 0。详见 `docs/progress/cap-02-a03-a04-p02-packaged-edge.md`；本节上段保留源码验收时点的未测事实。基线没有批准版本，Handover 前置及 Pilot/Gate 仍未满足。
