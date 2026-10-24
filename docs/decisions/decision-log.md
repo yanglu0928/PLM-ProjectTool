@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261024-CAP-P05-P02：复用固定候选包的合成 HTTPS 验收骨架
+
+- Date/WBS：2026-10-24 / `CAP-02-A05-P04-P03-A04-P02-P05-P02`。
+- Decision：复用现有不可发行候选的清洁布局和包内 PG/API/Caddy/合成 License 启动夹具；通过真实 HTTP 建立合成固定 Document/Evidence/Capability Review，再以独立 Edge 配置登录受分配 Reviewer，核对固定内容与决定，并从 PG/审计复核。匿名/未分配/签名游标篡改作为同包负例。
+- Reason：同一 SHA 下验证实际随包 Python、前端与权限装配，不用源码替身或扩张产品权限；复用已验的基础启动，避免另造发布流程。
+- Impact/Rollback：只增测试夹具与证据，无产品 API/Schema/业务迁移。撤夹具不改变候选或 Review/Audit 合法历史；合成临时库及进程按现有烟测清理。
+
 ## DEC-20261023-1248：Section VALIDATE 与 Review START 共用当前来源树
 
 - Date/WBS：2026-10-23 / `SOL-05-A04-P13-P05-P02`；依据 CR-SOL-024 当前六维同事务复验要求。

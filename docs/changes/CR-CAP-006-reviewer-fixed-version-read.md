@@ -1,7 +1,7 @@
 # CR-CAP-006：受分配评审人读取 CAP-01 GLOBAL 固定版本
 
 - 日期：2026-10-24
-- 状态：`APPROVED_FOR_IMPLEMENTATION / WINDOWS_11_SYNTHETIC_EDGE_PG_PASS / PACKAGED_PENDING`（依据用户 2026-09-24 持续授权；实施批准不等于正式发行）
+- 状态：`APPROVED_FOR_IMPLEMENTATION / WINDOWS_11_SYNTHETIC_PACKAGED_REVIEW_PASS / NEGATIVE_MATRIX_PARTIAL`（依据用户 2026-09-24 持续授权；实施批准不等于正式发行）
 - 关联：`CR-CAP-005`、`CAP-02-A05-P04-P03-A04-P02`、Gate 2 原 API-02/API-04 冻结提交 `64cdf09`
 
 ## 事实、差异与影响
@@ -33,3 +33,4 @@
 - 2026-10-24 / `A04-P02-A03-P01`：新增精确 Review 固定内容与决定页面、受分配者核对门槛、原号不确定恢复；复用既有严格 Version/Item 解析器，前端全量1947/typecheck/build通过。页面的 Edge/包内、正文定位及真人决定仍未验，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-a03-p01-reviewer-ui.md`。
 - 2026-10-24 / `A04-P02-A03-P02`：Windows 11 Edge/Vue/真实 API/隔离 PG 合成普通受分配评审人固定双条目核对、决定及唯一审计通过，旧 HTTP/PG 夹具复跑通过。登录/License 为合成、未在候选包内或真人验收，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-a03-p02-edge-pg.md`。
 - 2026-10-24 / `P05-P01`：从提交 `2caf1752` 构建不可发行当前候选 SHA `f2a2385538b111a1a36e3761086e0f4e5749554a3c57bde8941c0fb11080e095`，清洁解包及包内 PG/API/HTTPS/Edge 来源→基线身份通过；固定 Review 包内决定尚未验，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p01-current-package.md`。
+- 2026-10-24 / `P05-P02`：同候选 SHA 下包内 HTTPS/Edge/PG 合成双条目资格→版本→送审→受分配者决定→批准指针及 Audit 通过；匿名/未分配/篡改游标拒绝，扩展负例与正式信任仍未验，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p02-packaged-review.md`。
