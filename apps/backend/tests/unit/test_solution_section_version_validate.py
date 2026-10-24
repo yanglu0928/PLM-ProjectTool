@@ -292,6 +292,44 @@ def test_internal_terminal_spec_rechecks_in_review_but_public_validate_remains_d
     assert public.spec == "UNAVAILABLE"
 
 
+def test_internal_approved_spec_reproof_preserves_public_validate_boundary():
+    subject = Harness()
+    version = replace(_spec_version(), version_state="APPROVED")
+    subject.current._specs = SimpleNamespace(
+        prove=lambda _tx, *, version: (_qualified(version.structured_spec_refs[0]),))
+    internal = subject.current.facts(
+        object(), command=SectionCurrentFactQuery(
+            b"s" * 32, uuid.uuid4(), PROJECT, SECTION, VERSION),
+        version=version)
+    public = subject.current.facts(object(), command=command(), version=version)
+    assert internal.spec == "PASS"
+    assert public.spec == "UNAVAILABLE"
+    subject.current._specs = SimpleNamespace(prove=lambda _tx, *, version: ())
+    stale = subject.current.facts(
+        object(), command=SectionCurrentFactQuery(
+            b"s" * 32, uuid.uuid4(), PROJECT, SECTION, VERSION),
+        version=version)
+    assert stale.spec == "UNAVAILABLE"
+
+
+def test_internal_approved_none_required_still_requires_author_basis():
+    subject = Harness()
+    version = replace(
+        VERSION_VIEW, version_state="APPROVED",
+        spec_binding_state="NONE_REQUIRED",
+        spec_not_required_reason="No specialist design required",
+    )
+    query = SectionCurrentFactQuery(
+        b"s" * 32, uuid.uuid4(), PROJECT, SECTION, VERSION,
+    )
+    assert subject.current.facts(object(), command=query, version=version).spec == "PASS"
+    assert subject.current.facts(object(), command=command(), version=version).spec == "UNAVAILABLE"
+    assert subject.current.facts(
+        object(), command=query,
+        version=replace(version, spec_not_required_reason=" padded "),
+    ).spec == "UNAVAILABLE"
+
+
 def test_spec_readiness_needs_other_dimensions_and_replay_preserves_observation():
     subject = Harness()
     subject.version = _spec_version()

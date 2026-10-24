@@ -120,7 +120,7 @@ class SectionStructuredSpecQualificationService:
                 or not _id(version.project_id)
                 or not _id(version.solution_section_id)
                 or not _id(version.solution_section_version_id)
-                or version.version_state not in ("DRAFT", "IN_REVIEW")
+                or version.version_state not in ("DRAFT", "IN_REVIEW", "APPROVED")
                 or version.spec_binding_state != "FIXED_REFS"
                 or type(version.version_no) is not int or version.version_no < 2
                 or not _id(version.supersedes_version_ref)

@@ -11749,3 +11749,10 @@
 - Decision：新增内部只读库存服务，先按既有 `REQ_VERSION_GET` 政策授权，再调用现有 `REQUIREMENT_FORMAL_VERSIONS` 资格 Owner；该 Owner 的生产装配须使用 `max_roots=500` 的仓储。项目共享行锁取得后先 `LIMIT 501` 判界，再读取历史与现时资格；超过上限、空集或任一指针/Review/来源/决定不合格均失败关闭，不截断。原 Workflow 默认仓储行为不变。服务对返回的项目、固定版本、指纹和 Review 对应关系做二次校验。
 - Reason：重复写第二套批准/Review 遍历容易与正式 Workflow 语义漂移；先锁项目再限界可阻止并发新增 Root 与不受控全量历史扫描。该服务只证明需求全集，不证明 Section Trace 并集，故不能直接将 Outline `coverage` 置 PASS。
 - Impact/Rollback/Verification：无新 Schema、公开 API、角色或 License 权益；关闭新内部调用即可回退，不改历史。单元授权/拒绝/映射、Win11 临时 PG18.6 完整/超限/空集/锁与 drift、后端回归后才标记本片 PASS；下一片另验 Outline 覆盖。Gate 3/Pilot/正式发行维持未通过。
+
+# DEC-20261024-1210：已批准章节 Spec 只读重证不扩大公开 VALIDATE
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A05-P01`；Outline 覆盖必须消费当前批准 SectionVersion，而既有 Spec 现时资格只接受 DRAFT/IN_REVIEW，导致 APPROVED 一律 UNAVAILABLE。
+- Decision：只为内部 `SectionCurrentFactQuery` 允许 APPROVED SectionVersion 对固定 Spec/显式 NONE_REQUIRED 理由重新证明；Spec 当前资格 Owner 扩到 APPROVED，仍检查当前 Spec/Review/来源祖先与共享需求。公开 `ValidateSectionVersion` 的非 DRAFT 结果维持 UNAVAILABLE，不因此重开提交或客户决定。
+- Reason：历史批准与今天仍可用是两种事实；也不能因为客户端试图公开验证 APPROVED 就把它当新草稿。此调整只补内用读取，不改变 Section 正式批准指针/Review 判定，后续覆盖 Owner 仍需独立验证。
+- Impact/Rollback/Verification：无 Schema/API/角色/License/数据变更；撤内部状态分支即可恢复旧 UNAVAILABLE，不改历史。定向单元覆盖 APPROVED 固定 Spec 成功/替换失败、显式理由、公开边界；后端全量回归后再推进并集。Outline coverage/Pilot/Gate 3 保持未通过。

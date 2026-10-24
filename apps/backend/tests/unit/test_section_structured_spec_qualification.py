@@ -255,7 +255,21 @@ class SectionStructuredSpecQualificationTests(unittest.TestCase):
         with self.assertRaises(SectionStructuredSpecQualificationError):
             current.prove(self.tx, version=target)
 
-    def test_current_draft_missing_basis_or_non_draft_denied_before_ports(self):
+    def test_current_approved_rechecks_same_fixed_spec_without_changing_history(self):
+        ref = replace(self.ref, fit_rationale="Author fit for approved section")
+        target = replace(
+            self.source, solution_section_version_id=uuid.uuid4(),
+            version_no=2, version_state="APPROVED",
+            supersedes_version_ref=self.latest_id,
+            spec_binding_state="FIXED_REFS", structured_spec_refs=(ref,))
+        current = SectionCurrentSpecQualificationService(self.service)
+        (proof,) = current.prove(self.tx, version=target)
+        self.assertEqual(ref, proof.ref)
+        self.specs.approved = uuid.uuid4()
+        with self.assertRaises(SectionStructuredSpecQualificationError):
+            current.prove(self.tx, version=target)
+
+    def test_current_missing_basis_or_ineligible_state_denied_before_ports(self):
         ref = replace(self.ref, fit_rationale="Author fit")
         target = replace(
             self.source, solution_section_version_id=uuid.uuid4(),
@@ -267,7 +281,7 @@ class SectionStructuredSpecQualificationTests(unittest.TestCase):
             replace(target, structured_spec_refs=(self.ref,)),
             replace(target, structured_spec_refs=(replace(ref,
                     fit_rationale=" padded"),)),
-            replace(target, version_state="APPROVED"),
+            replace(target, version_state="RETURNED"),
             replace(target, supersedes_version_ref=None),
         ):
             with self.subTest(wrong=wrong):

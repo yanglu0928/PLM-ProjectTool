@@ -214,13 +214,14 @@ class SectionVersionCurrentValidator:
             trace=self._trace_status(transaction, command, version),
             spec=self._spec_status(
                 transaction, version,
-                allow_in_review=type(command) is SectionCurrentFactQuery))
+                allow_internal_terminal=type(command) is SectionCurrentFactQuery))
 
     def _spec_status(self, transaction: object,
                      version: SectionVersionHistoryView, *,
-                     allow_in_review: bool = False) -> str:
+                     allow_internal_terminal: bool = False) -> str:
         if (version.version_state != "DRAFT"
-                and not (allow_in_review and version.version_state == "IN_REVIEW")):
+                and not (allow_internal_terminal and version.version_state in (
+                    "IN_REVIEW", "APPROVED"))):
             return "UNAVAILABLE"
         refs = version.structured_spec_refs
         if version.spec_binding_state == "NONE_REQUIRED":
