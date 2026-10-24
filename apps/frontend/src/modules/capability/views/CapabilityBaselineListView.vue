@@ -59,6 +59,7 @@ onUnmounted(() => { mounted = false; clear(); unsubscribe(); });
     <p>仅展示当前账户有权读取的全局能力资料；能力建议不能替代正式审批。</p>
     <p v-if="session.view?.deployment_role === 'DEPLOYMENT_ADMIN'">
       <RouterLink :to="{ name: 'global-capability-document-upload' }">上传标准能力来源文档</RouterLink>
+      · <RouterLink :to="{ name: 'capability-baseline-create' }">从固定来源创建基线</RouterLink>
     </p>
     <p v-if="!mayRead()" role="status">请先登录并取得项目成员或部署管理员权限。</p>
     <template v-else>

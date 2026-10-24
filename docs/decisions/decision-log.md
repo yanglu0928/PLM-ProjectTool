@@ -11903,3 +11903,10 @@
 - Decision：复用现有上传客户端的校验与安全状态机，为其添加 GLOBAL 专用调用；SessionClient 保持 CSRF/凭证私有，并新增明确的 GLOBAL 路径桥接。提供仅 DeploymentAdmin 可启动的独立 `STANDARD_CAPABILITY` 上传页，不以 PROJECT 类别选择冒充 GLOBAL 来源。
 - Reason：不改冻结 API/Document 语义，不复制整套上传校验；GLOBAL 来源与项目资料在界面、请求路径和资格上分离，后续基线创建仅取 GLOBAL ACTIVE/AVAILABLE 固定版本。
 - Impact/Rollback/Verification：无 Schema/后端 API/License 权益变更；可撤 GLOBAL 入口和桥接，已上传 GLOBAL 文档须保留历史。复验原 PROJECT 上传、GLOBAL 正反向/中断与端到端合成 Edge/PG；无真实客户文件自动导入或外发。
+
+# DEC-20261024-1232：Capability 身份创建先于真实 Edge 联合验收
+
+- Date/WBS：2026-10-24 / `CAP-02-A04`；GLOBAL 来源上传页源码已验，若单独重启隔离 PG/Edge 只测上传，随后还须重启同类环境测基线身份创建。
+- Decision：先实现独立的基线创建 UI/客户端并各自完成源码验收，然后在一次隔离 Windows 11 合成场景中分别记录上传和身份创建的真实 HTTP/PG/Edge 证据；两项 WBS 独立结论，不以联合脚本掩盖任一失败。
+- Reason：减少昂贵的重复环境启动，保持每个业务事实按其专属回执、数据库和 Audit 验收。
+- Impact/Rollback/Verification：仅执行顺序 L2 调整，无 API/Schema/正式数据变化。若基线 UI 或资格受阻，仍可单独运行来源上传验收；源码可撤，已写业务历史不删。

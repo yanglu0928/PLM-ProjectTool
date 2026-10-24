@@ -212,6 +212,7 @@ export class SessionClient {
 
   /** Frozen create command paths; the CSRF token never leaves this client. */
   async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users" | "/api/v1/global/document-uploads"
+    | "/api/v1/global/capability-baselines"
     | `/api/v1/projects/${string}/members` | `/api/v1/projects/${string}/departments`
     | `/api/v1/projects/${string}/document-uploads`
     | `/api/v1/projects/${string}/egress-previews`
@@ -431,6 +432,10 @@ export class SessionClient {
 
   postGlobalDocumentUploadCreate(body: string, idempotencyKey: string): Promise<Response> {
     return this.#postCommand("/api/v1/global/document-uploads", body, idempotencyKey, 8192);
+  }
+
+  postGlobalCapabilityBaselineCreate(body: string, idempotencyKey: string): Promise<Response> {
+    return this.#postCommand("/api/v1/global/capability-baselines", body, idempotencyKey, 262_144);
   }
 
   postProjectAIEgressPreview(projectId: string, body: string, idempotencyKey: string): Promise<Response> {

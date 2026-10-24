@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/CAP-02-A04 新增管理员从 GLOBAL ACTIVE 标准能力文档的 AVAILABLE 固定版本创建基线身份入口；严格 201/ETag/Location、原操作号恢复，创建后仍无批准版本。兼容性：Windows 11 前端源码/构建；Windows Server 2025、Debian 13 未实测。升级/回滚：无 Schema/后端 API/License 迁移，撤入口不删除已建基线或审计。验证：新增8项，前端全量1904项及typecheck/build通过。已知问题：真实 Edge/PG 尚未验，版本条目/Evidence/Review 批准、真实信任/安装/UAT/Gate 未完成，不可发行。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A03 新增部署管理员 GLOBAL 标准能力文档上传入口，复用三段安全上传、摘要、幂等与显式终止；提交后另行读取 GLOBAL ACTIVE/AVAILABLE 固定版本，不把回执当批准事实。兼容性：Windows 11 前端源码/构建；Windows Server 2025、Debian 13 未实测。升级/回滚：无 Schema/API/License 迁移；撤入口不删除已上传 GLOBAL 文档或审计。验证：新增9项、原上传/Auth定向274项、前端全量1896项及typecheck/build通过。已知问题：实际 Edge/PG、正式能力基线创建/评审/批准、真实信任/安装/UAT/Gate未完成，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A03-PRECHECK 确认 GLOBAL 标准能力固定文档来源入库缺用户入口：后端四步上传与 GLOBAL 只读已存在，前端现有上传链仅 PROJECT；将 GLOBAL 来源入口与后续能力基线创建/审批拆分验收。兼容性/升级/回滚：仅设计证据，无程序、Schema/API或数据变化。验证：Document HTTP/前端上传客户端/Capability 来源资格静态核查，未运行新业务测试。已知问题：GLOBAL 前端上传、当前批准基线、Edge/PG、正式信任/Pilot/Gate均未通过。

@@ -49,6 +49,7 @@ import ProjectRequirementDetailView from "@/modules/requirement/views/ProjectReq
 import ProjectRequirementDraftView from "@/modules/requirement/views/ProjectRequirementDraftView.vue";
 import CapabilityBaselineListView from "@/modules/capability/views/CapabilityBaselineListView.vue";
 import CapabilityBaselineDetailView from "@/modules/capability/views/CapabilityBaselineDetailView.vue";
+import CapabilityBaselineCreateView from "@/modules/capability/views/CapabilityBaselineCreateView.vue";
 
 const GlobalPrototypeTemplateView = () => import("@/modules/prototype/views/GlobalPrototypeTemplateView.vue");
 const ProjectPrototypeDetailView = () => import("@/modules/prototype/views/ProjectPrototypeDetailView.vue");
@@ -111,6 +112,11 @@ export function createAppRouter(
         path: "/capability-baselines",
         name: "capability-baselines",
         component: CapabilityBaselineListView,
+      },
+      {
+        path: "/admin/capability-baselines/new",
+        name: "capability-baseline-create",
+        component: CapabilityBaselineCreateView,
       },
       {
         path: "/capability-baselines/:baselineId",
