@@ -19,7 +19,7 @@ export interface CapabilityItem {
   readonly ordinal: number; readonly capability_code: string; readonly domain_name: string;
   readonly module_name: string; readonly feature_name: string; readonly name: string;
   readonly description: string; readonly boundary: string; readonly prerequisites: readonly string[];
-  readonly interface_refs: readonly string[]; readonly state: "AVAILABLE" | "WITHDRAWN";
+  readonly interface_refs: readonly string[]; readonly state: "AVAILABLE" | "DEPRECATED" | "WITHDRAWN";
   readonly document_version_refs: readonly string[]; readonly evidence_refs: readonly string[];
 }
 export interface CapabilityPage<T> { readonly items: readonly T[]; readonly next_cursor: string | null; readonly has_more: boolean; }
@@ -87,7 +87,7 @@ export function parseItem(value: unknown, baselineId: string, versionId: string)
     || !Number.isSafeInteger(value.ordinal) || Number(value.ordinal) < 0
     || ![value.capability_code, value.domain_name, value.module_name, value.feature_name,
       value.name, value.description, value.boundary].every(item => content(item))
-    || !["AVAILABLE", "WITHDRAWN"].includes(String(value.state))
+    || !["AVAILABLE", "DEPRECATED", "WITHDRAWN"].includes(String(value.state))
     || !Array.isArray(value.prerequisites) || value.prerequisites.some(item => !content(item))
     || !Array.isArray(value.interface_refs) || value.interface_refs.some(item => !content(item))
     || !Array.isArray(value.document_version_refs) || value.document_version_refs.some(item => !identifier(item))

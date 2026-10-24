@@ -45,6 +45,7 @@ OUTSIDER_TOKEN = b"d" * 32
 GLOBAL_REVIEW_HTTP = os.environ.get("PLM_CAP_GLOBAL_REVIEW_HTTP_VALIDATION") == "1"
 FIXED_CONTENT_HTTP = os.environ.get("PLM_CAP_FIXED_CONTENT_HTTP_VALIDATION") == "1"
 FIXED_CONTENT_EDGE = os.environ.get("PLM_CAP_FIXED_CONTENT_EDGE_VALIDATION") == "1"
+DEPRECATED_READ = os.environ.get("PLM_CAP_DEPRECATED_READ_VALIDATION") == "1"
 if FIXED_CONTENT_HTTP and not GLOBAL_REVIEW_HTTP:
     raise AssertionError("fixed content proof requires GLOBAL Review HTTP")
 if FIXED_CONTENT_EDGE and not FIXED_CONTENT_HTTP:
@@ -177,7 +178,9 @@ def main() -> None:
                         "boundary": "GLOBAL only", "prerequisites": [],
                         "interface_refs": [], "document_refs": source,
                         "evidence_refs": [str(evidence_id)],
-                        "item_state": "AVAILABLE",
+                        "item_state": ("DEPRECATED" if DEPRECATED_READ
+                                       and code == "PLM.HTTP.A" and ordinal == 0
+                                       else "AVAILABLE"),
                     } for ordinal in range(2 if FIXED_CONTENT_HTTP
                                            and code == "PLM.HTTP.A" else 1)]
                     return _expect(client.post(
@@ -221,6 +224,8 @@ def main() -> None:
                         f"{version_id}/items", headers=_headers(),
                     ), 200)
                     assert len(items["items"]) == (2 if FIXED_CONTENT_HTTP else 1)
+                    if DEPRECATED_READ:
+                        assert items["items"][0]["state"] == "DEPRECATED"
                     _expect(client.post(
                         f"/api/v1/global/capability-baselines/{baseline_id}/versions/"
                         f"{version_id}:validate",
@@ -282,6 +287,8 @@ def main() -> None:
                                 item_path, headers=_headers(token=REVIEWER_ONE_TOKEN),
                             ), 200)
                             assert first_page["has_more"] and len(first_page["items"]) == 1
+                            if DEPRECATED_READ:
+                                assert first_page["items"][0]["state"] == "DEPRECATED"
                             assert first_page["items"][0]["document_version_refs"] == [
                                 str(document_version_id)]
                             cursor = first_page["next_cursor"]

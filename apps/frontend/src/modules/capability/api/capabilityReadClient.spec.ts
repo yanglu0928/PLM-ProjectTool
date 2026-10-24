@@ -58,6 +58,13 @@ describe("CapabilityReadClient", () => {
     await expect(client.getBaseline("../other")).rejects.toMatchObject({ code: "CAPABILITY_INVALID_ID" });
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
+  it("accepts a deprecated item but fails closed on an unknown state", async () => {
+    const deprecated = { ...item, state: "DEPRECATED" };
+    const page = { items: [deprecated], next_cursor: null, has_more: false };
+    expect(await make(response(page)).client.listItems(baselineId, versionId)).toEqual(page);
+    await expect(make(response({ ...page, items: [{ ...item, state: "UNKNOWN" }] }))
+      .client.listItems(baselineId, versionId)).rejects.toMatchObject({ code: "CAPABILITY_READ_UNAVAILABLE" });
+  });
   it("fails closed on foreign identities, extra fields and impossible pages", async () => {
     await expect(make(response({ ...baseline, private_path: "secret" })).client.getBaseline(baselineId))
       .rejects.toMatchObject({ code: "CAPABILITY_READ_UNAVAILABLE" });

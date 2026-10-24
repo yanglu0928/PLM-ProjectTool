@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/CAP-02-A05-P03-P02-A01 按 CR-CAP-007 将 GLOBAL Capability 合法 `DEPRECATED` 条目读取与既有写/DB 状态对齐，未知状态仍拒绝；原冻结版本保留。兼容性：严格枚举客户端须随服务端同包升级；仅 Windows 11 合成 PG/HTTP 已验，Server 2025/Debian 13 未实测。升级/回滚：无 Schema/Migration；若已有 DEPRECATED 历史，不能回退到旧读取导致不可读。验证：HTTP 合同5、Win11 PG/HTTP 管理员及固定 Reviewer 原值回读/决定链、前端1948/typecheck/build、后端完整3781/3跳过通过。已知问题：旧候选包不含本改动，多条目编辑、正式信任/安装/UAT/Gate/Pilot未验，不可发行。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P02-P05-P03 扩展同一 Windows 11 非发行候选的包内 Review 安全验收夹具，不改产品字节/API/Schema。兼容性：Windows 11 合成 HTTPS/PG/Edge；Server2025/Debian13 未实测。升级/回滚：无迁移，关闭测试开关可复跑旧链。验证：停用评审人拒绝、跨会话游标400、未分配写404、终态同号原回执与异号拒绝、双决定/2 Audit、候选SHA及临时资源清理退出0。已知问题：License到期/撤销、网络中断后的前端恢复、正式信任/安装/UAT/Gate/Pilot未验，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P02-P05-P02 在固定非发行候选 SHA `f2a2385538b111a1a36e3761086e0f4e5749554a3c57bde8941c0fb11080e095` 中新增可复跑验收夹具，不改产品字节/API/Schema。兼容性：Windows 11 合成 PG/HTTPS/Edge 通过，Server2025/Debian13 未实测。升级/回滚：无迁移；撤夹具不影响候选或业务历史。验证：双条目/双评审批准及指针/Audit，匿名401、未分配404、游标篡改400，候选/临时资源清理退出0。已知问题：失效许可/停用身份/跨会话与网络恢复负例、真人确认、正式信任/安装/UAT/Gate/Pilot未验，不可发行。

@@ -21,3 +21,5 @@ Router 仅通过 `create_app(capability_read_router=...)` 显式注入，默认�
 DeploymentAdmin可读受控全历史；非管理员必须是至少一个ACTIVE Project/Department的当前ACTIVE Member，且仅读ACTIVE Baseline当前APPROVED Version/Items。无权、撤权、历史或不存在均收窄为404；License返回403，参数/游标投影冲突返回422，未知内部失败83。不返回数据库表、物理文件位置、原文、评审意见、异常或Secret。
 
 本增量无Schema/Migration/依赖/网络/外发。停止注入Router可关闭新读取，数据历史不变。
+
+2026-10-24 `CR-CAP-007` 后续枚举对齐：`CapabilityItem.state` 与已允许写入和数据库约束一致，读取可返回 `AVAILABLE/DEPRECATED/WITHDRAWN`，未知值继续失败关闭。路径、字段、权限、分页及来源绑定不变；严格枚举客户端应与服务端同包升级，不将扩展宣称为对所有既有客户端无感。原冻结版本不追写。

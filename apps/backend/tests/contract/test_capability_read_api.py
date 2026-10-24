@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 import uuid
+from dataclasses import replace
 from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
@@ -153,6 +154,19 @@ class CapabilityReadApiTests(unittest.TestCase):
         self.assertEqual(str(ITEM), items.json()["data"]["items"][0][
             "capability_item_id"])
         self.assertNotIn("query", items.text.lower())
+
+    def test_deprecated_item_round_trips_and_unknown_state_fails_closed(self):
+        self.reads.list_items = lambda query, **kwargs: CapabilityItemPage(
+            (replace(ITEM_VIEW, state="DEPRECATED"),), None, False, "ADMIN_HISTORY",
+        )
+        path = f"{self.root}/{BASELINE}/versions/{VERSION}/items"
+        response = self.client.get(path, headers=self.headers)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("DEPRECATED", response.json()["data"]["items"][0]["state"])
+        self.reads.list_items = lambda query, **kwargs: CapabilityItemPage(
+            (replace(ITEM_VIEW, state="UNKNOWN"),), None, False, "ADMIN_HISTORY",
+        )
+        self.assertEqual(503, self.client.get(path, headers=self.headers).status_code)
 
     def test_strict_query_path_session_and_host(self):
         self.assertEqual(400, self.client.get(
