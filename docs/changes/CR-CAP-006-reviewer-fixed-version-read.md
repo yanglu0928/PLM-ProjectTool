@@ -34,3 +34,4 @@
 - 2026-10-24 / `A04-P02-A03-P02`：Windows 11 Edge/Vue/真实 API/隔离 PG 合成普通受分配评审人固定双条目核对、决定及唯一审计通过，旧 HTTP/PG 夹具复跑通过。登录/License 为合成、未在候选包内或真人验收，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-a03-p02-edge-pg.md`。
 - 2026-10-24 / `P05-P01`：从提交 `2caf1752` 构建不可发行当前候选 SHA `f2a2385538b111a1a36e3761086e0f4e5749554a3c57bde8941c0fb11080e095`，清洁解包及包内 PG/API/HTTPS/Edge 来源→基线身份通过；固定 Review 包内决定尚未验，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p01-current-package.md`。
 - 2026-10-24 / `P05-P02`：同候选 SHA 下包内 HTTPS/Edge/PG 合成双条目资格→版本→送审→受分配者决定→批准指针及 Audit 通过；匿名/未分配/篡改游标拒绝，扩展负例与正式信任仍未验，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p02-packaged-review.md`。
+- 2026-10-24 / `P05-P03`：同包补停用 Reviewer、跨会话游标、未分配者写拒绝、终态同号回执重放和异号拒绝；PG 决定/Audit 唯一，候选/资源清理通过。License 自然失效仍留 P05-P04，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p03-packaged-negative.md`。

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import uuid
@@ -30,6 +31,7 @@ def load(name: str, path: Path):
 evidence = load("_cap_review_package_evidence", ROOT / "validation" /
                 "evd-05-a02-packaged-edge" / "verify.py")
 workflow = evidence.workflow
+EXTENDED_NEGATIVE = os.environ.get("PLM_CAP_PACKAGED_REVIEW_NEGATIVE") == "1"
 
 
 def expect(response: httpx.Response, status: int) -> dict:
@@ -158,10 +160,17 @@ def probe(**context) -> None:
     review_path = f"/api/v1/global/reviews/{review_id}"
     with httpx.Client(base_url=origin, verify=False, timeout=8, trust_env=False) as anon:
         assert anon.get(review_path + "/fixed-version").status_code == 401
-    outsider, _ = login_user(origin, "Synthetic Capability Outsider")
+    outsider, outsider_csrf = login_user(origin, "Synthetic Capability Outsider")
     try:
         assert outsider.get(review_path).status_code == 404
         assert outsider.get(review_path + "/fixed-version").status_code == 404
+        if EXTENDED_NEGATIVE:
+            denied = outsider.post(
+                review_path + f"/rounds/{round_id}:decide",
+                headers=headers(origin, outsider_csrf, key=str(uuid.uuid4())),
+                json={"decision": "APPROVE", "comment": None},
+            )
+            assert denied.status_code == 404, denied.text[:300]
     finally:
         outsider.close()
     reviewer, reviewer_csrf = login_user(origin, "Synthetic Capability Reviewer Two")
@@ -171,6 +180,22 @@ def probe(**context) -> None:
         cursor = first["next_cursor"]
         changed = cursor[:-1] + ("A" if cursor[-1] != "A" else "B")
         assert reviewer.get(review_path + "/fixed-items?page_size=1&cursor=" + changed).status_code == 400
+        if EXTENDED_NEGATIVE:
+            other_session, _ = login_user(origin, "Synthetic Capability Reviewer One")
+            try:
+                assert other_session.get(
+                    review_path + "/fixed-items?page_size=1&cursor=" + cursor,
+                ).status_code == 400
+                with connect_db() as db:
+                    db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s",
+                               (reviewer_one,))
+                rejected = other_session.get(review_path + "/fixed-version")
+                assert rejected.status_code in (401, 404), rejected.text[:300]
+            finally:
+                with connect_db() as db:
+                    db.execute("UPDATE plm.auth_users SET state='ENABLED' WHERE user_id=%s",
+                               (reviewer_one,))
+                other_session.close()
         browser = subprocess.run(
             ["node", str(Path(__file__).with_name("run-review-edge.mjs")), origin,
              str(baseline_id), version_id, review_id], capture_output=True,
@@ -181,12 +206,27 @@ def probe(**context) -> None:
                                  + browser.stdout[-3500:] + browser.stderr[-3500:])
         assert "CAP_02_P05_P02_PACKAGED_REVIEW_EDGE_PASS" in browser.stdout
         print(browser.stdout.strip(), flush=True)
+        second_key = str(uuid.uuid4())
+        second_body = {"decision": "APPROVE", "comment": None}
         second = expect(reviewer.post(
             review_path + f"/rounds/{round_id}:decide",
-            headers=headers(origin, reviewer_csrf, key=str(uuid.uuid4())),
-            json={"decision": "APPROVE", "comment": None},
+            headers=headers(origin, reviewer_csrf, key=second_key),
+            json=second_body,
         ), 200)
         assert second["state"] == "APPROVED"
+        if EXTENDED_NEGATIVE:
+            replay = expect(reviewer.post(
+                review_path + f"/rounds/{round_id}:decide",
+                headers=headers(origin, reviewer_csrf, key=second_key),
+                json=second_body,
+            ), 200)
+            assert replay == second
+            different = reviewer.post(
+                review_path + f"/rounds/{round_id}:decide",
+                headers=headers(origin, reviewer_csrf, key=str(uuid.uuid4())),
+                json=second_body,
+            )
+            assert different.status_code in (409, 422), different.text[:300]
     finally:
         reviewer.close()
     current = expect(client.get(baseline_path), 200)
@@ -203,6 +243,8 @@ def probe(**context) -> None:
         assert set(decisions) == {(reviewer_one, "APPROVE"), (reviewer_two, "APPROVE")}
         assert audit == 2
     print("CAP_02_P05_P02_PACKAGED_REVIEW_PG_PASS: 2 fixed items, 2 reviewers, pointer, Audit, denials", flush=True)
+    if EXTENDED_NEGATIVE:
+        print("CAP_02_P05_P03_PACKAGED_NEGATIVE_PASS: disabled, cross-session, outsider write, replay", flush=True)
 
 
 def main() -> int:
