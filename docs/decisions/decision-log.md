@@ -11770,3 +11770,10 @@
 - Decision：事实服务增加可选 Coverage Port，默认缺省保持旧 UNAVAILABLE；只有固定顺序和当前来源均 PASS，且 Port 返回与本 Outline/Section/需求精确一致的证明，coverage 才 PASS。已知正式缺口映射 FAIL；任何缺信任源、缺权限、未知错误或证明错配映射 UNAVAILABLE。旧报告/Audit 不作新事实复用。
 - Reason：先把已验证的内部证明与外部结果边界连接，同时避免来源失败时局部 Coverage PASS 被解释成整体可送审；未装配的默认模式保持安全关闭。
 - Impact/Rollback/Verification：无 Schema/API/角色/License 变化，撤可选注入即可回退，无历史改写；定向 PASS/FAIL/UNAVAILABLE/未调用负例和后端回归后仅标内部单元通过。Windows 组合、正式 VALIDATE/Audit/HTTP/Review 另片验收。
+
+# DEC-20261024-1213：Outline VALIDATE 复用首次观察审计与持久收据
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A05-P03-A02`；API-04已冻结Outline VALIDATE，但当前只有报告合同与无授权现时事实计算器，缺正式命令服务、项目政策和Audit读回。
+- Decision：参照Section VALIDATE，以 ProjectManager/ImplementationMember 的写级项目政策在同事务锁当前 Outline 和固定Version，首次计算 order/source/coverage 后将内容无关三维码写Audit，Receipt指向Audit；同Key只读回首次观察，异Key必须重证当前事实。重复校验不改变Outline业务状态，也不产生客户Review或批准指针。
+- Reason：旧报告仅能证明首次时点；来源/Trace/Review 可能变化。把Audit、收据和观察分离会产生回放漂移或未审计成功。复用已验证结构减少合同差异。
+- Impact/Rollback/Verification：仅增加内部政策/服务/Audit读端，无Schema或公开API路径变化；关闭未挂载服务即可回退，不删除历史。单元覆盖授权、同Key回放、异Key再证明和故障回滚，后续Win11/PG/HTTP独立验收。
