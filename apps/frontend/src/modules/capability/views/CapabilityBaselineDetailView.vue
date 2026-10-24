@@ -123,6 +123,8 @@ onUnmounted(() => { mounted = false; reset(); unsubscribe(); });
         <p v-if="baseline.description">{{ baseline.description }}</p>
         <p>{{ baseline.current_approved_version_ref ? '存在当前批准版本' : '尚无批准版本，不可作为正式能力依据' }}</p>
         <p v-if="session.view?.deployment_role === 'DEPLOYMENT_ADMIN'">管理员历史视图；未批准版本仅供审查。</p>
+        <RouterLink v-if="session.view?.deployment_role === 'DEPLOYMENT_ADMIN' && baseline.state === 'ACTIVE'"
+          :to="{ name: 'capability-version-create', params: { baselineId: baseline.baseline_id } }">创建 DRAFT 版本</RouterLink>
         <h3>版本</h3>
         <ul><li v-for="version in versions" :key="version.baseline_version_id">
           <button type="button" :disabled="childBusy" @click="choose(version.baseline_version_id)">

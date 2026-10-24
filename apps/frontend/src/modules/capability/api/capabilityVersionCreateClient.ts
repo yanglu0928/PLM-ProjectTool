@@ -63,7 +63,7 @@ function strings(value: unknown): value is readonly string[] {
 }
 function invalid(): never { throw new CapabilityVersionCreateError("CAP_VERSION_INVALID"); }
 function uncertain(): never { throw new CapabilityVersionCreateError("CAP_VERSION_UNCERTAIN"); }
-function validateItems(value: unknown): readonly CapabilityVersionItemDraft[] {
+export function normalizeCapabilityVersionItems(value: unknown): readonly CapabilityVersionItemDraft[] {
   if (!Array.isArray(value) || value.length < 1 || value.length > 500) invalid();
   const stable = new Set<string>(); const codes = new Set<string>();
   for (const item of value) {
@@ -103,7 +103,7 @@ export class CapabilityVersionCreateClient {
       ? Number(baselineEtag.slice(2, -1)) : null;
     if (!id(baselineId) || baselineVersion === null || !Number.isSafeInteger(baselineVersion)
       || baselineVersion >= Number.MAX_SAFE_INTEGER || typeof key !== "string" || !keyPattern.test(key)) invalid();
-    const body = JSON.stringify({ items: validateItems(items) });
+    const body = JSON.stringify({ items: normalizeCapabilityVersionItems(items) });
     const identity = this.session.view;
     if (!identity || identity.password_change_required || !this.session.canSubmit
       || identity.deployment_role !== "DEPLOYMENT_ADMIN") {

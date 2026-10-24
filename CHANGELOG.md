@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/CAP-02-A05-P03-P01 增加标准能力版本单条目 DRAFT 编辑页、固定 GLOBAL 文档/Evidence 分页选取、与后端一致的来源集合 SHA、提交前当前资格/ETag 重验和原内容/原号恢复。兼容性：Windows 11 前端源码/构建；Server 2025、Debian 13 未实测。升级/回滚：无 Schema/后端 API/License 迁移，撤入口不删除已有版本历史。验证：定向7、前端全量1924项及typecheck/build通过。已知问题：多条目未开放，写模型 DEPRECATED 与只读 API 状态枚举不一致，页面暂限 AVAILABLE/WITHDRAWN；包内 Edge/PG、真实资格/正式 Review/信任/安装/UAT/Gate/Pilot均待，不可发行。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P02 增加 GLOBAL 标准能力版本 POST 前端命令客户端，严格完整条目/固定引用 DTO、管理员会话、基线 If-Match、原幂等号及 DRAFT/201/ETag/Location 回执；不自动批准或伪造 Evidence 资格。兼容性：Windows 11 前端源码/构建；Server 2025、Debian 13 未实测。升级/回滚：无 Schema/后端 API/License 迁移，撤客户端不删除版本历史。验证：定向5、前端全量1917项及typecheck/build通过。已知问题：编辑页、真实版本写/Review、包内 Edge/PG、正式信任/法律/安装升级/UAT/Gate/Pilot均待，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/EVD-05-A02-P02 同一 Windows 11 非发行候选 SHA `5b8e38f4f8e5440c74e7e0ecace43e435b4464ab5a8ae37e4010ecfdce4f1327` 补 GLOBAL Evidence 创建包内拒绝矩阵，不改产品。兼容性：仅 Windows 11 合成 PG18/Caddy/License/Edge；Server 2025、Debian 13 未实测。升级/回滚：只增验收脚本，无 Schema/API/业务数据迁移，撤脚本不影响包。验证：匿名401、普通用户404、错源404、合成 EXPIRED 验证状态403，PG Evidence/Audit/收据维持(1,1,1)，22,194件布局/候选同Hash及48 Vault/进程/文件清理，退出0；首次夹具目录命名被拒已保留。已知问题：EXPIRED 是受保护状态模拟而非自然到期；资格批准、能力版本/Review、正式信任/法律/安装升级/UAT/Gate/Pilot仍待，不可发行。
