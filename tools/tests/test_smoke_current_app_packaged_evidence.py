@@ -18,7 +18,7 @@ class PackagedEvidenceBoundaryTests(unittest.TestCase):
             candidate = parent / "candidate.zip"
             candidate.write_bytes(b"not the fixed candidate")
             with self.assertRaisesRegex(ValueError, "identity rejected"):
-                smoke(candidate, stage, parent)
+                smoke(candidate, stage, parent, "0" * 64)
 
 
 if __name__ == "__main__":

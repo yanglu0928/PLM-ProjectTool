@@ -11868,3 +11868,10 @@
 - Decision：从当前受控`windows_*cursor.py`与上传Token入口的显式常量核对，补齐全部已知合成引用；仅一次性当前账户Vault和临时布局使用，测试后逐项清理。增加引用集合覆盖测试，防止后续路由增长时夹具静默过时。
 - Reason：不应为通过烟测而放宽生产缺钥失败关闭；维护测试夹具更符合现有安全基线。
 - Impact/Rollback/Verification：无产品License/安全机制变更；撤夹具补全即可回退。仍须真实隔离启动、HTTPS/Origin/License响应、Vault/进程清理全部通过；如失败继续记录真实原因。
+
+# DEC-20261024-1227：随包Evidence验证改为显式固定候选身份输入
+
+- Date/WBS：2026-10-24 / `PKG-PILOT-01-A04-P01`；现有业务随包验证器固定P47旧ZIP SHA，不能用于已补Python pgvector的当前候选。
+- Decision：将待验证候选SHA作为必填参数，仍验证全量暂存、ZIP manifest一致和候选前后同Hash；业务验证脚本/权限断言不变。先独立闭合Evidence资格业务片，完整纵向链与浏览器另片。
+- Reason：使同一受控非发行候选的业务片可追溯，同时避免把旧P47结果迁移成新版本的事实。
+- Impact/Rollback/Verification：仅测试入口参数，无产品API/Schema/正式数据变化；撤工具变更可回退。新固定候选实际包内Python/PG与临时清理通过才标PASS。
