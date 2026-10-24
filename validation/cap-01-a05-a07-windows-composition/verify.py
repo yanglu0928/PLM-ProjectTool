@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import runpy
 import os
+import socket
 import uuid
 from pathlib import Path
 
@@ -43,8 +44,11 @@ REVIEWER_TWO_TOKEN = b"c" * 32
 OUTSIDER_TOKEN = b"d" * 32
 GLOBAL_REVIEW_HTTP = os.environ.get("PLM_CAP_GLOBAL_REVIEW_HTTP_VALIDATION") == "1"
 FIXED_CONTENT_HTTP = os.environ.get("PLM_CAP_FIXED_CONTENT_HTTP_VALIDATION") == "1"
+FIXED_CONTENT_EDGE = os.environ.get("PLM_CAP_FIXED_CONTENT_EDGE_VALIDATION") == "1"
 if FIXED_CONTENT_HTTP and not GLOBAL_REVIEW_HTTP:
     raise AssertionError("fixed content proof requires GLOBAL Review HTTP")
+if FIXED_CONTENT_EDGE and not FIXED_CONTENT_HTTP:
+    raise AssertionError("fixed content Edge proof requires fixed content HTTP")
 
 
 class Keys:
@@ -89,6 +93,12 @@ def _expect(response, status: int):
 
 
 def main() -> None:
+    browser_socket = socket.socket() if FIXED_CONTENT_EDGE else None
+    browser_origin = None
+    if browser_socket is not None:
+        browser_socket.bind(("127.0.0.1", 0))
+        browser_socket.listen(128)
+        browser_origin = f"http://127.0.0.1:{browser_socket.getsockname()[1]}"
     name = "cap01a05a07_" + uuid.uuid4().hex[:10]
     with connect("postgres") as admin:
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
@@ -126,9 +136,11 @@ def main() -> None:
                         """, (document_version_id,))
 
                 guard = Guard()
+                origins = LoginOriginPolicy(["https://plm.example.test"]
+                                            + ([browser_origin] if browser_origin else []))
                 routers = create_windows_capability_routers(
                     runtime, sessions=Sessions(),
-                    origins=LoginOriginPolicy(["https://plm.example.test"]),
+                    origins=origins,
                     license_guard=guard,
                     audit=AuditService(SqlAlchemyAuditRepository()),
                     include_write=True, resolver=Keys(),
@@ -294,6 +306,16 @@ def main() -> None:
                             with connect(name) as db:
                                 db.execute("UPDATE plm.auth_users SET state='ENABLED' "
                                            "WHERE user_id=%s", (reviewer_two,))
+                            if FIXED_CONTENT_EDGE:
+                                browser = runpy.run_path(str(ROOT / "validation" /
+                                    "cap-02-a05-p04-p03-a04-p02-a03-p02-edge-pg" / "serve.py"))
+                                browser["run"](
+                                    app=app, sock=browser_socket, origin=browser_origin,
+                                    review_id=review_id, baseline_id=baseline_id,
+                                    version_id=version_id, reviewer_id=str(reviewer_one),
+                                    reviewer_token=REVIEWER_ONE_TOKEN,
+                                    csrf_token=CSRF,
+                                )
                         guard.enabled = False
                         assert client.get(path, headers=_headers()).status_code == 403
                         if FIXED_CONTENT_HTTP:
@@ -310,20 +332,33 @@ def main() -> None:
                                        token=REVIEWER_ONE_TOKEN),
                             "x-csrf-token": "0" * 64,
                         }, json=body).status_code in (401, 403)
-                        first = _expect(client.post(
-                            decide_path, headers=_headers(
-                                key=first_key, json=True,
-                                token=REVIEWER_ONE_TOKEN,
-                            ), json=body,
-                        ), 200)
-                        replay = _expect(client.post(
-                            decide_path, headers=_headers(
-                                key=first_key, json=True,
-                                token=REVIEWER_ONE_TOKEN,
-                            ), json=body,
-                        ), 200)
-                        assert replay == first
-                        assert first["state"] == "IN_REVIEW"
+                        if FIXED_CONTENT_EDGE:
+                            with connect(name) as db:
+                                assert db.execute(
+                                    "SELECT count(*) FROM plm.rvw_review_decisions "
+                                    "WHERE review_id=%s AND reviewer_id=%s AND decision='APPROVE'",
+                                    (review_id, reviewer_one),
+                                ).fetchone()[0] == 1
+                                assert db.execute(
+                                    "SELECT count(*) FROM plm.aud_events "
+                                    "WHERE action='REVIEW_DECISION_RECORDED' AND actor_id=%s",
+                                    (reviewer_one,),
+                                ).fetchone()[0] == 1
+                        else:
+                            first = _expect(client.post(
+                                decide_path, headers=_headers(
+                                    key=first_key, json=True,
+                                    token=REVIEWER_ONE_TOKEN,
+                                ), json=body,
+                            ), 200)
+                            replay = _expect(client.post(
+                                decide_path, headers=_headers(
+                                    key=first_key, json=True,
+                                    token=REVIEWER_ONE_TOKEN,
+                                ), json=body,
+                            ), 200)
+                            assert replay == first
+                            assert first["state"] == "IN_REVIEW"
                         second = _expect(client.post(
                             decide_path, headers=_headers(
                                 key=str(uuid.uuid4()), json=True,
@@ -393,6 +428,8 @@ def main() -> None:
             admin.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(
                 sql.Identifier(name)
             ))
+            if browser_socket is not None:
+                browser_socket.close()
 
 
 if __name__ == "__main__":

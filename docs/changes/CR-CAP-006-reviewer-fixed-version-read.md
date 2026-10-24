@@ -1,7 +1,7 @@
 # CR-CAP-006：受分配评审人读取 CAP-01 GLOBAL 固定版本
 
 - 日期：2026-10-24
-- 状态：`APPROVED_FOR_IMPLEMENTATION / WINDOWS_11_SYNTHETIC_HTTP_PG_PASS / UI_CONTRACT_PASS / EDGE_PENDING`（依据用户 2026-09-24 持续授权；实施批准不等于正式发行）
+- 状态：`APPROVED_FOR_IMPLEMENTATION / WINDOWS_11_SYNTHETIC_EDGE_PG_PASS / PACKAGED_PENDING`（依据用户 2026-09-24 持续授权；实施批准不等于正式发行）
 - 关联：`CR-CAP-005`、`CAP-02-A05-P04-P03-A04-P02`、Gate 2 原 API-02/API-04 冻结提交 `64cdf09`
 
 ## 事实、差异与影响
@@ -31,3 +31,4 @@
 - 2026-10-24 / `A04-P02-A01`：固定 Version/条目只读服务按 Review 分配资格及双向引用同事务重证，限制每页 50 条；定向13/7子例、后端全量4090/3跳过/6136子例通过。HTTP/PG/页面仍未实现，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-a01-fixed-content-service.md`。
 - 2026-10-24 / `A04-P02-A02`：新增两条默认关闭 GET、会话/Review/Version/页大小绑定的签名游标和 Windows 显式写模式装配；隔离 PostgreSQL 18.6 合成双页/拒绝/决定链、后端全量4095/3跳过/6149子例通过。页面/Edge/正式信任仍未验，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-a02-fixed-content-http-pg.md`。
 - 2026-10-24 / `A04-P02-A03-P01`：新增精确 Review 固定内容与决定页面、受分配者核对门槛、原号不确定恢复；复用既有严格 Version/Item 解析器，前端全量1947/typecheck/build通过。页面的 Edge/包内、正文定位及真人决定仍未验，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-a03-p01-reviewer-ui.md`。
+- 2026-10-24 / `A04-P02-A03-P02`：Windows 11 Edge/Vue/真实 API/隔离 PG 合成普通受分配评审人固定双条目核对、决定及唯一审计通过，旧 HTTP/PG 夹具复跑通过。登录/License 为合成、未在候选包内或真人验收，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-a03-p02-edge-pg.md`。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P02-A03-P02 增加可复跑的 Windows 11 Edge/Vue/FastAPI/隔离 PostgreSQL 18.6 合成固定内容评审夹具，不改产品运行代码。兼容性：仅 Windows 11 本机验证，Server 2025/Debian 13 未实测。升级/回滚：无 Schema/业务数据迁移；撤验收夹具不影响合法 Review/Audit 历史。验证：双条目展示、核对前按钮禁用、首 Reviewer 决定及唯一 Audit、第二人批准、原 HTTP/PG 回归均退出0，PG服务复位。已知问题：登录/License 合成，未做固定包/正式 HTTPS、真人核对、正文定位、安装/UAT/Gate/Pilot/Release，不可发行。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P02-A03-P01 新增 CAP-01 GLOBAL 固定内容评审页、版本/送审回执精确链接、完整条目核对门槛及受分配者同号决定恢复；普通 Capability 目录权限不变。兼容性：Windows 11 前端构建通过，Server 2025/Debian 13 未实测。升级/回滚：无 Schema/数据迁移；撤页面不删 Review/Audit/收据历史。验证：定向11、前端全量1947、typecheck/build通过。已知问题：普通评审人需直接链接、文档正文不能一键定位，页面 Edge/包内、真人批准/正式信任/安装/UAT/Gate/Pilot未验，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P02-A02 新增 CAP-01 GLOBAL 评审固定版本/条目只读 HTTP、签名分页及 Windows 显式写模式装配；默认/只读模式与 PROJECT API 不变。兼容性：Windows 11 隔离 PostgreSQL 18.6 合成信任 HTTP 通过，Server 2025/Debian 13 未实测。升级/回滚：无 Schema/数据迁移；关闭写模式恢复不挂载，保留合法 Review/Capability/Audit 历史。验证：双页/普通受分配者/未分配/停用/失效许可/跨会话及篡改游标拒绝、决定链退出0，临时库0/PoC服务复位；后端4095通过/3跳过/6149子例。已知问题：页面/Edge/固定包/真人批准/正式信任/安装/UAT/Gate/Pilot未验，不可发行。
