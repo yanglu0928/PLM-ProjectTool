@@ -213,6 +213,7 @@ export class SessionClient {
   /** Frozen create command paths; the CSRF token never leaves this client. */
   async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users" | "/api/v1/global/document-uploads"
     | "/api/v1/global/capability-baselines" | "/api/v1/global/evidence"
+    | `/api/v1/global/capability-baselines/${string}/versions`
     | `/api/v1/projects/${string}/members` | `/api/v1/projects/${string}/departments`
     | `/api/v1/projects/${string}/document-uploads`
     | `/api/v1/projects/${string}/egress-previews`
@@ -230,11 +231,14 @@ export class SessionClient {
     | `/api/v1/projects/${string}/structured-solution-specs/${string}:revise`
     | `/api/v1/projects/${string}/structured-solution-specs/${string}:submit-review`
     | `/api/v1/projects/${string}/reviews/${string}/rounds/${string}:decide`, body: string,
-    idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
+    idempotencyKey: string, maxBodyBytes: number, etag: string | null = null): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
     if (typeof body !== "string" || new TextEncoder().encode(body).length > maxBodyBytes || body.length === 0
-      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)
+      || etag !== null && (!/^"v(?:0|[1-9]\d*)"$/.test(etag)
+        || !Number.isSafeInteger(Number(etag.slice(2, -1)))
+        || Number(etag.slice(2, -1)) >= Number.MAX_SAFE_INTEGER)) {
       throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
     }
     this.#busy = true;
@@ -242,10 +246,12 @@ export class SessionClient {
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
       const fetcher = this.fetcher;
+      const headers: Record<string, string> = { Accept: "application/json",
+        "Content-Type": "application/json", "X-CSRF-Token": this.#csrf,
+        "Idempotency-Key": idempotencyKey };
+      if (etag !== null) headers["If-Match"] = etag;
       const response = await fetcher(path, { method: "POST", credentials: "same-origin",
-        cache: "no-store", redirect: "error", headers: { Accept: "application/json",
-          "Content-Type": "application/json", "X-CSRF-Token": this.#csrf,
-          "Idempotency-Key": idempotencyKey }, body, signal: controller.signal });
+        cache: "no-store", redirect: "error", headers, body, signal: controller.signal });
       if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
       if (response.status === 401) { this.#csrf = null; this.#view = null; }
       return response;
@@ -436,6 +442,13 @@ export class SessionClient {
 
   postGlobalCapabilityBaselineCreate(body: string, idempotencyKey: string): Promise<Response> {
     return this.#postCommand("/api/v1/global/capability-baselines", body, idempotencyKey, 262_144);
+  }
+
+  postGlobalCapabilityVersionCreate(baselineId: string, body: string, etag: string,
+    idempotencyKey: string): Promise<Response> {
+    if (!identifier(baselineId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    return this.#postCommand(`/api/v1/global/capability-baselines/${baselineId}/versions`,
+      body, idempotencyKey, 2 * 1024 * 1024, etag);
   }
 
   postGlobalEvidenceCreate(body: string, idempotencyKey: string): Promise<Response> {
