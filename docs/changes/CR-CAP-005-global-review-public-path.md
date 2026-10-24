@@ -43,3 +43,4 @@ Capability Version 现可用冻结 `CAP_VERSION_SUBMIT_REVIEW` 由 DeploymentAdm
 - 2026-10-24 / `A02-P01`：仅内部 GLOBAL/CAP-01 受权读取与唯一首轮/Capability Version 绑定；8 项定向、后端单元全量通过。尚无运行 HTTP、真实 PG 或批准事实；见 `docs/progress/cap-02-a05-p04-p03-a02-p01-global-review-read.md`。
 - 2026-10-24 / `A02-P02` 编码前纠偏：复核已冻结 `DEC-20261005` Capability Review Subject 决策，明确送审者为 DeploymentAdmin、Reviewer 集合要求当前启用，并未限定 Reviewer 必须同为 DeploymentAdmin。P04-P02 前端候选筛选及本 CR 初稿的读取/决定角色过窄；按原冻结优先级修正为“当前已启用且受分配 Reviewer”，不扩大到任意用户，也不伪造客户身份。原初稿保留在 Git 历史中，后续回归覆盖普通已分配、普通未分配及失效用户。
 - 2026-10-24 / `A02-P02`：内部决定命令及候选/读取纠偏单元与前端全量通过；PG/公开 HTTP/实际批准均未验，见 `docs/progress/cap-02-a05-p04-p03-a02-p02-global-review-decision.md`。
+- 2026-10-24 / `A02-P03`：Windows 11 隔离 PostgreSQL 18 合成受分配 Reviewer、拒绝矩阵、同 Key 回放、撤源回滚及终态批准指针闭合，临时库/服务清理；仍无 HTTP/浏览器或真实人工批准，见 `docs/progress/cap-02-a05-p04-p03-a02-p03-global-review-pg.md`。

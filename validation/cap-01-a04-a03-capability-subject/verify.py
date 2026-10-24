@@ -22,6 +22,9 @@ from plm_assistant.modules.auth.infrastructure.current_user_access import (
 from plm_assistant.modules.auth.infrastructure.license_import_access import (
     SqlAlchemyLicenseImportAccess,
 )
+from plm_assistant.modules.auth.infrastructure.review_start_access import (
+    SqlAlchemyReviewStartAccess,
+)
 from plm_assistant.modules.auth.infrastructure.project_read_access import (
     SqlAlchemyProjectReadAccess,
 )
@@ -89,6 +92,13 @@ from plm_assistant.modules.project.infrastructure.capability_read_access import 
 from plm_assistant.modules.review.application.global_persistence import (
     GlobalReviewPersistenceService,
 )
+from plm_assistant.modules.review.application.global_capability_decide import (
+    DecideGlobalCapabilityReview, GlobalCapabilityReviewDecisionError,
+    GlobalCapabilityReviewDecisionService,
+)
+from plm_assistant.modules.review.application.global_capability_read import (
+    GetGlobalCapabilityReview, GlobalCapabilityReviewReadService,
+)
 from plm_assistant.modules.review.application.subject_start import (
     ReviewSubjectAccessDenied,
 )
@@ -118,6 +128,9 @@ def main() -> None:
     read_enabled = os.environ.get("PLM_CAP_READ_VALIDATION") == "1"
     state_enabled = os.environ.get("PLM_CAP_STATE_VALIDATION") == "1"
     submission_enabled = os.environ.get("PLM_CAP_SUBMISSION_VALIDATION") == "1"
+    decision_enabled = os.environ.get("PLM_CAP_GLOBAL_DECISION_VALIDATION") == "1"
+    if decision_enabled and not (terminal_enabled and submission_enabled):
+        raise AssertionError("GLOBAL decision proof requires terminal and submission modes")
     name = "cap01a04a03_" + uuid.uuid4().hex[:10]
     admin_token = b"a" * 32
     with connect("postgres") as admin:
@@ -216,6 +229,20 @@ def main() -> None:
                     replay_repository=review_repository, reviews=review,
                     subjects=owner, clock=lambda: now,
                 )
+                global_reads = GlobalCapabilityReviewReadService(
+                    unit_of_work=runtime.unit_of_work,
+                    sessions=SqlAlchemyProjectReadAccess(),
+                    users=SqlAlchemyCurrentUserAccess(), license_guard=guard,
+                    reviews=review_repository,
+                    capabilities=SqlAlchemyCapabilityReadRepository(),
+                    clock=lambda: now,
+                ) if decision_enabled else None
+                global_decisions = GlobalCapabilityReviewDecisionService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyReviewStartAccess(), license_guard=guard,
+                    repository=review_repository, receipts=receipts,
+                    reviews=review, subject=owner, clock=lambda: now,
+                ) if decision_enabled else None
 
                 with connect(name) as db, db.transaction():
                     db.execute("SET LOCAL session_replication_role='replica'")
@@ -300,6 +327,21 @@ def main() -> None:
                         )
                         tx.commit()
 
+                if decision_enabled:
+                    assert global_reads is not None
+                    reviewer_view = global_reads.get(GetGlobalCapabilityReview(
+                        b"b" * 32, uuid.uuid4(), submitted.review_id,
+                    ))
+                    assert reviewer_view.review.subject_type == "CAP-01"
+                    assert reviewer_view.fixed_round.subject_version_id == version.baseline_version_id
+                    assert set(reviewer_view.fixed_round.progress.reviewer_ids) == {
+                        reviewer_one, reviewer_two,
+                    }
+                    assert reviewer_view.review_etag == '"v1"'
+                    assert global_reads.get(GetGlobalCapabilityReview(
+                        admin_token, uuid.uuid4(), submitted.review_id,
+                    )).review.review_id == submitted.review_id
+
                 try:
                     version_service.create(CreateCapabilityVersion(
                         admin_token, CSRF, uuid.uuid4(), baseline.baseline_id, 2,
@@ -310,33 +352,83 @@ def main() -> None:
                 else:
                     raise AssertionError("replacement Draft entered active Review")
 
-                with runtime.unit_of_work() as tx:
-                    first = review.decide_in_transaction(
-                        tx, actor_id=reviewer_one,
-                        review_id=submitted.review_id,
-                        round_id=submitted.round_id,
-                        trace_id=uuid.uuid4(),
-                        decision=ReviewDecisionKind.APPROVE,
+                if decision_enabled:
+                    assert global_decisions is not None
+                    try:
+                        global_decisions.decide(DecideGlobalCapabilityReview(
+                            admin_token, CSRF, uuid.uuid4(), submitted.review_id,
+                            submitted.round_id, ReviewDecisionKind.APPROVE, None,
+                            str(uuid.uuid4()),
+                        ))
+                    except GlobalCapabilityReviewDecisionError as error:
+                        assert error.code == "RESOURCE_NOT_FOUND", error.code
+                    else:
+                        raise AssertionError("unassigned admin decided GLOBAL review")
+                    first_command = DecideGlobalCapabilityReview(
+                        b"b" * 32, CSRF, uuid.uuid4(), submitted.review_id,
+                        submitted.round_id, ReviewDecisionKind.APPROVE, None,
+                        str(uuid.uuid4()),
                     )
+                    guard.enabled = False
+                    try:
+                        global_decisions.decide(first_command)
+                    except GlobalCapabilityReviewDecisionError as error:
+                        assert error.code == "LICENSE_OPERATION_DENIED", error.code
+                    else:
+                        raise AssertionError("expired synthetic License decided Review")
+                    finally:
+                        guard.enabled = True
+                    first = global_decisions.decide(first_command)
                     assert first.state.value == "IN_REVIEW"
-                    tx.commit()
+                    assert global_decisions.decide(first_command) == first
+                    try:
+                        global_decisions.decide(DecideGlobalCapabilityReview(
+                            b"b" * 32, CSRF, uuid.uuid4(), submitted.review_id,
+                            submitted.round_id, ReviewDecisionKind.RETURN,
+                            "changed decision", first_command.idempotency_key,
+                        ))
+                    except GlobalCapabilityReviewDecisionError as error:
+                        assert error.code == "CONFLICT_IDEMPOTENCY", error.code
+                    else:
+                        raise AssertionError("GLOBAL decision key drift accepted")
+                else:
+                    with runtime.unit_of_work() as tx:
+                        first = review.decide_in_transaction(
+                            tx, actor_id=reviewer_one,
+                            review_id=submitted.review_id,
+                            round_id=submitted.round_id,
+                            trace_id=uuid.uuid4(),
+                            decision=ReviewDecisionKind.APPROVE,
+                        )
+                        assert first.state.value == "IN_REVIEW"
+                        tx.commit()
                 with connect(name) as db:
                     db.execute(
                         "UPDATE plm.auth_users SET state='DISABLED' "
                         "WHERE user_id=%s", (reviewer_two,),
                     )
                 try:
-                    with runtime.unit_of_work() as tx:
-                        review.decide_in_transaction(
-                            tx, actor_id=reviewer_two,
-                            review_id=submitted.review_id,
-                            round_id=submitted.round_id,
-                            trace_id=uuid.uuid4(),
-                            decision=ReviewDecisionKind.APPROVE,
-                        )
-                        tx.commit()
-                except ReviewSubjectAccessDenied:
-                    pass
+                    if decision_enabled:
+                        assert global_decisions is not None
+                        global_decisions.decide(DecideGlobalCapabilityReview(
+                            b"c" * 32, CSRF, uuid.uuid4(), submitted.review_id,
+                            submitted.round_id, ReviewDecisionKind.APPROVE, None,
+                            str(uuid.uuid4()),
+                        ))
+                    else:
+                        with runtime.unit_of_work() as tx:
+                            review.decide_in_transaction(
+                                tx, actor_id=reviewer_two,
+                                review_id=submitted.review_id,
+                                round_id=submitted.round_id,
+                                trace_id=uuid.uuid4(),
+                                decision=ReviewDecisionKind.APPROVE,
+                            )
+                            tx.commit()
+                except (ReviewSubjectAccessDenied, GlobalCapabilityReviewDecisionError) as error:
+                    if decision_enabled:
+                        assert isinstance(error, GlobalCapabilityReviewDecisionError)
+                        assert error.code == "AUTH_ACCESS_DENIED", error.code
                 else:
                     raise AssertionError("disabled reviewer decision accepted")
                 with connect(name) as db:
@@ -345,16 +437,64 @@ def main() -> None:
                         "WHERE user_id=%s", (reviewer_two,),
                     )
                 if terminal_enabled:
-                    with runtime.unit_of_work() as tx:
-                        approved = review.decide_in_transaction(
-                            tx, actor_id=reviewer_two,
-                            review_id=submitted.review_id,
-                            round_id=submitted.round_id,
-                            trace_id=uuid.uuid4(),
-                            decision=ReviewDecisionKind.APPROVE,
+                    if decision_enabled:
+                        assert global_decisions is not None
+                        final_command = DecideGlobalCapabilityReview(
+                            b"c" * 32, CSRF, uuid.uuid4(), submitted.review_id,
+                            submitted.round_id, ReviewDecisionKind.APPROVE, None,
+                            str(uuid.uuid4()),
                         )
+                        with connect(name) as db, db.transaction():
+                            db.execute("SET LOCAL session_replication_role='replica'")
+                            db.execute("""
+                                UPDATE plm.evd_evidence_records
+                                   SET eligibility_state='CANDIDATE',
+                                       eligibility_reason=NULL
+                                 WHERE evidence_id=%s
+                            """, (evidence_id,))
+                        try:
+                            global_decisions.decide(final_command)
+                        except GlobalCapabilityReviewDecisionError as error:
+                            assert error.code == "RESOURCE_NOT_FOUND", error.code
+                        else:
+                            raise AssertionError("revoked source approved")
+                        with connect(name) as db:
+                            assert db.execute("""
+                                SELECT count(*) FROM plm.rvw_review_decisions
+                                 WHERE review_id=%s AND reviewer_id=%s
+                            """, (submitted.review_id, reviewer_two)).fetchone()[0] == 0
+                            with db.transaction():
+                                db.execute("SET LOCAL session_replication_role='replica'")
+                                db.execute("""
+                                    UPDATE plm.evd_evidence_records
+                                       SET eligibility_state='ELIGIBLE',
+                                           eligibility_reason='restored synthetic source'
+                                     WHERE evidence_id=%s
+                                """, (evidence_id,))
+                        approved = global_decisions.decide(final_command)
                         assert approved.state.value == "APPROVED"
-                        tx.commit()
+                        assert global_decisions.decide(final_command) == approved
+                        final_view = global_reads.get(GetGlobalCapabilityReview(
+                            b"b" * 32, uuid.uuid4(), submitted.review_id,
+                        ))
+                        assert final_view.review.state == "APPROVED"
+                        assert final_view.review_etag == '"v3"'
+                        print(
+                            "CAP_02_A05_P04_P03_A02_P03_GLOBAL_REVIEW_PG_PASS: "
+                            "assigned enabled reviewer, license/unassigned/revoked source "
+                            "refusals, same-key replay, atomic terminal pointer verified"
+                        )
+                    else:
+                        with runtime.unit_of_work() as tx:
+                            approved = review.decide_in_transaction(
+                                tx, actor_id=reviewer_two,
+                                review_id=submitted.review_id,
+                                round_id=submitted.round_id,
+                                trace_id=uuid.uuid4(),
+                                decision=ReviewDecisionKind.APPROVE,
+                            )
+                            assert approved.state.value == "APPROVED"
+                            tx.commit()
                     returned_version = version_service.create(
                         CreateCapabilityVersion(
                             admin_token, CSRF, uuid.uuid4(),
