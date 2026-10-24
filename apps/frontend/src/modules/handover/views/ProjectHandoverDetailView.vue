@@ -6,6 +6,7 @@ import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import { EvidenceViewerClient, EvidenceViewerClientError, type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
 import { HandoverReadClient, HandoverReadError, type HandoverAnalysisItemView, type HandoverAnalysisView,
   type HandoverAnalysisVersionView, type HandoverItemCursor, type HandoverVersionCursor } from "@/modules/handover/api/handoverReadClient";
+import HandoverVersionValidatePanel from "./HandoverVersionValidatePanel.vue";
 
 const props = defineProps<{ session?: SessionClient; handover?: HandoverReadClient; evidence?: EvidenceViewerClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
@@ -116,6 +117,8 @@ onUnmounted(() => { mounted = false; generation += 1; itemGeneration += 1; evide
             <RouterLink :to="{ name: 'project-ai-task-detail', params: { projectId: route.params.projectId,
               taskId: task.ai_task_id } }">查看任务与非正式建议状态</RouterLink></li></ul>
         </details>
+        <HandoverVersionValidatePanel v-if="selectedVersion?.state === 'DRAFT'"
+          :key="selectedVersion.handover_analysis_version_id" :version="selectedVersion" :session="session" />
         <p v-if="itemBusy" role="status">正在读取固定版本与问题清单…</p><p v-if="itemError" role="alert">{{ itemError }}</p>
         <p v-if="selectedVersion && !items.length && !itemBusy">该版本没有可见问题。</p>
         <article v-for="item in items" :key="item.analysis_item_id" class="issue-card">
