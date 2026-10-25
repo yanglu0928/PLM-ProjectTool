@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A06 新增严格的已批准交接来源只读客户端与冻结调研版本创建客户端，含四类来源互斥校验、私有 Session CSRF/If-Match/幂等原号、完整快照和201回执核验；明确 MANUAL 访谈注释不冒充固定引用。兼容性：Windows 11 前端合同/构建验证，Server 2025/Debian 13 未实测。升级/回滚：仅前端客户端/私有 POST 白名单，无 Schema、旧 API、License 或数据迁移；可撤未接页面的客户端，保留合法历史。验证：定向9项、前端全量2031、typecheck/build通过。已知问题：页面接入、真实 Edge/HTTPS/PG SurveyVersion 写链、真人访谈确认、正式信任/安装/UAT/Gate/Pilot/正式三平台发行未通过。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A05 新增项目内当前已批准交接问题只读来源候选 GET、窄角色、最小投影、用途隔离签名分页及 Windows 显式组合；原 HND GET/SurveyVersion POST 保持不变。兼容性：Windows 11/隔离 PG18.6 合成 HTTP 已验，Server 2025/Debian 13 未实测。升级/回滚：无 Schema/Migration/License/依赖变更；停止挂载新 GET 可回滚，合法历史与 Audit 保留。验证：完整后端4101通过/3跳过/6153子例；未批准空集、批准当前来源、匿名/只读/跨项目/暂停成员/历史、keyset/错 cursor 和临时清理退出0。已知问题：前端选择/SurveyVersion 创建与包内 Edge、真人访谈确认、正式公钥/服务账户/法律、离线安装升级/UAT/Gate/Pilot/正式三平台发行未通过。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A04 完成首个调研问题版本固定交接来源的只读前置核查，登记 `CR-SUR-013`：Survey 写合同需交接版本内固定行 ID，现有交接 GET 仅公开不同的业务问题 ID，故需独立受权只读来源候选操作；不猜测 ID、不改旧 DTO、不以 MANUAL 冒充固定来源。兼容性：仅代码/合同核对及 Windows 11 上轮合成包证据，Server 2025/Debian 13 未实测。升级/回滚：纯文档，无 API/Schema/数据迁移或用户功能变化。验证：冻结 POST/GET、ORM 行 ID、内部来源证明及前端入口对账；版本写链未验。已知问题：来源选择器、调研版本/实际访谈、正式信任/安装/UAT/Gate/Pilot/Release 待完成。

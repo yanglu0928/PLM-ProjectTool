@@ -226,6 +226,7 @@ export class SessionClient {
     | `/api/v1/projects/${string}/handover-analyses/${string}/versions`
     | `/api/v1/projects/${string}/handover-analyses/${string}/versions/${string}:submit-review`
     | `/api/v1/projects/${string}/surveys`
+    | `/api/v1/projects/${string}/surveys/${string}/versions`
     | `/api/v1/projects/${string}/solution-outlines`
     | `/api/v1/projects/${string}/plans`
     | `/api/v1/projects/${string}/solution-outlines/${string}/versions`
@@ -282,6 +283,15 @@ export class SessionClient {
   postProjectSurveyCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
     return this.#postCommand(`/api/v1/projects/${projectId}/surveys`, body, idempotencyKey, 8192);
+  }
+
+  postProjectSurveyVersionCreate(projectId: string, surveyId: string, body: string,
+    etag: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId) || !identifier(surveyId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(`/api/v1/projects/${projectId}/surveys/${surveyId}/versions`,
+      body, idempotencyKey, 2 * 1024 * 1024, etag);
   }
 
   postProjectHandoverVersionCreate(projectId: string, analysisId: string, body: string,
