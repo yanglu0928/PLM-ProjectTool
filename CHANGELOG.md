@@ -1,5 +1,8 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04`（编码前）：记录 CR-PLAN-002。发现关闭式 Plan Schema 缺失冻结完整PlanVersionInput中的计划/WBS快照字段，且不存在OutputArtifact持久化Owner；拒绝部分保存或以整体JSON/裸UUID规避约束。按持续授权选择增量强类型/owned child Schema；未改变API/数据库/业务数据。完成详细字段映射前不开始Migration或开放写口。详见CR及P04前置记录。
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S01`：完成 CR-PLAN-002 首批字段精确映射：责任人绑定ProjectMember复合身份、有序角色/进入与验收项用owned rows、日期/工期用date/minutes、Plan排除用固定目标复合引用、Calendar用受控logical ref；OutputArtifact Owner缺失时非空输出引用继续关闭。仅文档设计决策，无代码/Schema/API/数据变更；迁移细节与PG验收未执行。见S01记录。
+
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P03`（编码前）：记录Approved Solution输入证明边界和内部兼容调整。现有Coverage Owner拒绝APPROVED Outline；仅允许在独立验证Outline终态Review绑定之后扩展其只读覆盖复证，并由Plan侧复查当前批准指针、固定来源及Spec资格。影响限内部Application/测试，不触碰冻结API、Schema、权限或业务数据；回滚恢复原拒绝行为。详见 `docs/progress/plan-02-a04-p04-a04-p03-p03-approved-solution-proof-precheck.md`。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P03`：新增只读 `ApprovedSolutionInputProofService`，绑定Outline当前Approved指针、终态Review、完整需求覆盖、精确批准SectionVersion与StructuredSpec资格；受控扩展Coverage内部Approved路径，未改API/Schema/权限/数据。定向26项与完整后端4107项、3跳过、6153子例通过；py_compile/diff-check通过。兼容性：内部Owner尚未接入PlanVersion HTTP/写Owner，未做真实PostgreSQL组合验收；后续原子写事务仍须锁定/复查当前指针。详见对应P03记录。
 

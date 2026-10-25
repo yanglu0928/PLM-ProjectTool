@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## CR-PLAN-002：补齐 PlanVersion 冻结草稿快照的持久化字段
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04`。
+- Evidence：冻结 DM-05/API-04 的 PlanVersionInput/WbsItemInput 包含完整计划快照；当前 0170～0177 ORM只保存关闭式身份、部分固定引用、依赖和里程碑。DEC-20261019-1231 明确分类/责任人/日期/验收等延后，完整快照Owner未接线不得开放写入；OutputArtifact Owner当前不存在。
+- Decision：依 CR-EXEC-001 持续授权，采用 CR-PLAN-002 方案 C：保留原冻结版本，增量完善强类型及owned child Schema；不接受静默删字段或整体JSONB/裸UUID伪关系。无OutputArtifact Owner时对非空 output refs fail-closed。
+- Impact/Rollback：只追加 0185 后 Alembic revisions/ORM和验证，暂不改公开API、角色或License、不写业务数据。无新历史可按依赖逆序降级；有草稿历史时拒绝破坏性降级并关闭新入口/前向修复。Schema验收不代表写Owner/API/Pilot通过。
+- Field Map：责任人使用ProjectMember复合归属；有序条件和协作角色用owned child rows；日期/工期采用date/minutes；Calendar仅存有界logical ref并要求受控registry解析；Plan/WBS排除采用四种固定目标类别与各自复合Project FK；风险/显式排除采用有界短文本。OutputArtifact不存在时拒绝非空output refs。详见P04-S01 field map，后续各Schema slice仍须单独验收。
+
 ## DEC-20261025-SUR-A05：新来源游标复用现有交接密钥但隔离用途族
 
 - Date/WBS：2026-10-25 / `SUR-07-A05`。
