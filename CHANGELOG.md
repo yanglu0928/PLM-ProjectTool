@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-26 / `PLT-PKG-01-A09-P51-A12`：固定候选包逻辑恢复后，临时切换仅本轮Credential Manager数据库URL并重启API；同一既有HTTPS授权Session仍读取相同Plan，恢复精确原URL并再重启后继续读取成功。API重启2次、PG重启1次、逻辑恢复1次，完整Edge/HTTPS/PG链、8项smoke单测、候选SHA和临时资源/Vault清理通过。恢复库因`--no-owner`由隔离管理角色创建Schema，本次仅向合成应用角色授予临时`plm`访问权限；一次`REASSIGN OWNED`尝试因系统扩展对象依赖被拒，已移除并记录，不影响源库。A05 Prototype浏览器探针复用已通过证据，本轮未重复验证。仅smoke测试编排/验证器变化，无产品/API/Schema/Migration/依赖变化；不证明外键完整性、正式灾备或发行，`release_eligible=false`、`legal_clearance=false`。详见`docs/progress/plt-pkg-01-a09-p51-a12-restored-db-api-precheck.md`。
+
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A11`：当前固定非发行候选包内以随包`pg_dump`创建custom格式逻辑备份，在隔离新库中先恢复Schema、再恢复数据/序列；合成Plan、Audit、创建收据、Review决定计数与Schema head核对一致。固定候选SHA不变，完整Edge/HTTPS/PG链、单测8/8和临时资源清理通过。数据恢复为避开既有测试夹具中的占位Review引用而临时禁用触发器，故不证明外键完整性或正式灾备；仅smoke测试编排/验证器变化，无产品/API/Schema/Migration/依赖变更，`release_eligible=false`、`legal_clearance=false`。
 
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A10`：当前固定候选包内仅重启本轮临时PostgreSQL（API/Caddy不重启），同数据目录正常fast stop/start后，原授权成员Session继续读取相同Plan=200，数据与Plan/Audit/收据/Review决定计数不变。完整Edge/HTTPS/PG链、单测8/8、22,197项Stage清单通过；候选SHA不变且临时资源清理。仅调整隔离smoke编排与验证器，无产品/API/Schema/Migration/依赖变化；不是备份/灾难恢复、正式安装或发行证据。

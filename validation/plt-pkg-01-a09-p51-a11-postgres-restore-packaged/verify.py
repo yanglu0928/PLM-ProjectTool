@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "apps" / "backend" / "src"))
 postgres_restart = runpy.run_path(
     str(ROOT / "validation/plt-pkg-01-a09-p51-a10-postgres-restart-packaged/verify.py"))
+AFTER_RESTORE_PROBE = None
 
 
 def snapshot(connect, project):
@@ -53,6 +54,8 @@ def postgres_restore_probe(**context) -> None:
         with restored["connect_restored_db"]() as db:
             assert db.execute("SELECT version_num FROM plm.alembic_version").fetchall() == [
                 ("20261024_0185",)]
+        if callable(AFTER_RESTORE_PROBE):
+            AFTER_RESTORE_PROBE(context, restored, source, source_counts)
         print("P51_A11_POSTGRES_LOGICAL_BACKUP_RESTORE_PASS: packaged pg_dump/pg_restore "
               "preserved Plan, Audit, receipt and Review-decision data", flush=True)
     finally:

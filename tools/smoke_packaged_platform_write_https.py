@@ -310,6 +310,20 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                       f"--dbname={restored_database}", "--exit-on-error",
                       "--schema-only", "--no-owner", "--no-acl", str(backup)],
                      env=restore_env, timeout=240)
+                # The schema-only restore runs as the isolated admin with --no-owner.
+                # Grant access only inside this temporary target DB; extension/system
+                # ownership is intentionally left unchanged.
+                with psycopg.connect(host="127.0.0.1", port=pg_port,
+                                     user="poc_admin", dbname=restored_database,
+                                     autocommit=True, connect_timeout=5) as admin:
+                    app_role = sql.Identifier(role)
+                    admin.execute(sql.SQL("GRANT USAGE ON SCHEMA plm TO {}").format(app_role))
+                    for privilege, object_type in (
+                            ("ALL PRIVILEGES", "TABLES"),
+                            ("ALL PRIVILEGES", "SEQUENCES"),
+                            ("EXECUTE", "FUNCTIONS")):
+                        admin.execute(sql.SQL("GRANT {} ON ALL {} IN SCHEMA plm TO {}").format(
+                            sql.SQL(privilege), sql.SQL(object_type), app_role))
                 _run([str(pg / "pg_restore.exe"), "--host=127.0.0.1",
                       f"--port={pg_port}", "--username=poc_admin",
                       f"--dbname={restored_database}", "--exit-on-error",
@@ -325,6 +339,52 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                 backup_bytes = backup.stat().st_size
                 backup.unlink()
 
+                def activate_restored_api_database() -> Callable[[], bool]:
+                    if not isinstance(db_url, str):
+                        raise ValueError("owned source database URL is unavailable")
+                    original_url = read_database_url()
+                    if not hmac.compare_digest(original_url.encode(), db_url.encode()):
+                        raise ValueError("database credential ownership changed during smoke")
+                    restored_url = URL.create(
+                        "postgresql+psycopg", username=role, password=password,
+                        host="127.0.0.1", port=pg_port,
+                        database=restored_database,
+                    ).render_as_string(hide_password=False)
+                    write_database_url(restored_url)
+                    try:
+                        if not hmac.compare_digest(read_database_url().encode(),
+                                                   restored_url.encode()):
+                            raise ValueError("restored database credential did not read back")
+                        restart_api()
+                    except BaseException:
+                        try:
+                            current_url = read_database_url()
+                            if hmac.compare_digest(current_url.encode(), restored_url.encode()):
+                                write_database_url(original_url)
+                                restart_api()
+                        except Exception:
+                            pass
+                        raise
+                    active = True
+
+                    def restore_source_database() -> bool:
+                        nonlocal active
+                        if not active:
+                            return hmac.compare_digest(
+                                read_database_url().encode(), original_url.encode())
+                        current_url = read_database_url()
+                        if not hmac.compare_digest(current_url.encode(), restored_url.encode()):
+                            raise ValueError("database credential changed during restored API probe")
+                        write_database_url(original_url)
+                        if not hmac.compare_digest(read_database_url().encode(),
+                                                   original_url.encode()):
+                            raise ValueError("source database credential did not restore")
+                        active = False
+                        restart_api()
+                        return True
+
+                    return restore_source_database
+
                 def drop_restored_database() -> None:
                     with psycopg.connect(host="127.0.0.1", port=pg_port,
                                          user="poc_admin", dbname="postgres",
@@ -339,6 +399,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                         host="127.0.0.1", port=pg_port, user="poc_admin",
                         dbname=restored_database, autocommit=True, connect_timeout=5),
                     "drop_restored_db": drop_restored_database,
+                    "activate_restored_api_database": activate_restored_api_database,
                     "backup_removed": not backup.exists(),
                 }
             except BaseException:
@@ -446,7 +507,13 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             api_process = start_api()
             with httpx.Client(base_url=f"http://127.0.0.1:{api_port}", timeout=3,
                               trust_env=False) as direct:
-                _wait_http(direct, "/health/ready", api_process)
+                try:
+                    _wait_http(direct, "/health/ready", api_process)
+                except ValueError as startup_error:
+                    diagnostic = _diagnose_packaged_factory(runtime, bootstrap, env)
+                    raise ValueError(
+                        f"packaged API restart failed; packaged factory={diagnostic}"
+                    ) from None
             api_restart_count += 1
         caddy_config.write_text(caddyfile(target / "app/frontend/dist", cert, key,
                                           api_port, https_port), encoding="ascii")
