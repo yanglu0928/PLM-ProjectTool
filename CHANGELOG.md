@@ -6,7 +6,9 @@
 
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A04`：当前候选 SHA `3cbd68aa…f2326f455` 的 Survey Review 真实Edge/HTTPS/PG18合成链通过。成员读取成功且无决定按钮；指定Reviewer的列表、详情、固定版本链接与按钮正确；Review决定为0、批准指针NULL、Audit/回执存在。临时服务/Vault/profile/目录已清理，非发行/非客户信任。终端中文列表标签显示乱码但验收器内部精确断言通过，详见进度记录。
 
-- 2026-10-25 / `PILOT-CHAIN-A02`：更新Prototype→Solution→Plan→Output路线；旧Plan模块缺失结论已失效，当前PlanVersion受Outline/Section/StructuredSpec固定批准来源Owner阻断，选择 `SOL-03-A06-P01` 作为下一项。纯静态审计，无程序/API/Schema变化；Pilot仍NOT_READY。详见 `docs/progress/pilot-chain-a02-current-route-audit.md`。
+- 2026-10-25 / `PILOT-CHAIN-A02`：源码审计发现旧A01的Plan身份建议及SOL-03 Outline Review前置均已完成；路线改为固定P51当前候选的Prototype包内Edge/HTTPS/PG验收。纯静态审计，无产品代码/API/Schema变化；Pilot仍NOT_READY。详见 `docs/progress/pilot-chain-a02-current-route-audit.md`。
+
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A05` 前置核查：锁定当前候选SHA `3cbd68aa…f2326f455`，计划复用Prototype身份/版本/Validate/送审与Review读取真实浏览器链完成包内验收；仅合成数据，不自动作Review决定。运行待开始，非发行候选与Pilot限制保持不变。
 
 - 2026-10-25：新增 `PLT-PKG-01-A09-P51-A01` 当前源码 Windows 11 非发行安装前置核查。正式公钥缺失，正式安装继续阻塞；将后续限定为最新源码候选在独立临时 ASCII 根的离线安装/启动/停止/清理验收，禁止触碰正式安装根/生产SCM/现有数据库或把合成信任写成正式通过。此项只读计划，无产品/API/Schema/Migration变化。详见进度记录。
 
