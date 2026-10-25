@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## CR-PLAN-005：PlanVersion首版受控代码集
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A02`。
+- Evidence：冻结字段映射要求Calendar、WBS category和support roles由版本化白名单解析；当前无对应配置表/API，任意字符串或复用Project权限角色都不安全/不准确。
+- Decision：按持续授权先记录CR-PLAN-005，使用内部不可变`PLAN_WBS_CODES_V1`有限代码集；未知值失败关闭，不创建DB/API。代码集合与兼容风险见CR全文。
+- Impact/Rollback：仅影响Plan Owner可接受的初始字段值，不改Schema/API/授权；撤去Owner/目录可回滚，已持久化快照保留。
+- Verification：Owner单测与实际PG验证有效码、未知码拒绝和失败不留数据；客户自定义项后续需独立设计。
+
 ## CR-PLAN-004：PlanVersion Owner 的append-only数据库guard
 
 - Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03`。

@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A02`（编码前调整）：核对字段映射发现Calendar、WBS category和support roles无版本化白名单；登记CR-PLAN-005，选择内部不可变 `PLAN_WBS_CODES_V1`，未知值拒绝，不擅自将业务协作角色当Project授权角色。无Schema/API/代码变化；仍在Owner编码前置检查。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A01`：按CR-PLAN-004新增Migration `20261026_0188`，八类Plan aggregate guards允许INSERT、继续拒绝UPDATE/DELETE；no-TRUNCATE保护保留。Win11/PG18.6隔离库升迁/降迁/重升、8个PG guard调用、截断拒绝、降级历史保留及drift通过；定向6项、完整后端4120 passed/3 skipped/6153 subtests passed。0188不独立投产，须与事务型Owner同批交付；Pilot/Gate/Release不变。详见A01记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03`（编码前）：核查发现0170～0176及0186/0187所有Plan子表Owner guards仍无条件拒绝INSERT，需先补可审计的append-only数据库门。登记CR-PLAN-004并决定0188允许INSERT但继续拒绝UPDATE/DELETE/TRUNCATE；0188不得脱离Application Owner单独部署。将P03拆分为P03-A01 guard验证、P03-A02原子Owner。当前仅源码审计，无代码/数据库变化、无功能测试。详见前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P02`：按CR-PLAN-003新增ORM与Migration `20261026_0187`，以WBS+PlanVersion+Project与PrototypeVersion+Prototype+Project双复合FK、有序去重行表达固定Prototype ref；owner未安装时拒绝所有写入/TRUNCATE，有历史拒绝降级。Win11/PG18.6空业务库0186→0187→0186→0187及drift通过，定向18项、完整后端4118项通过/3跳过/6153子例通过。未测带业务历史行升级、真实跨项目FK负例和有历史拒绝降级，故PASS_SCOPE_LIMITED；无HTTP、现有业务数据或批准状态变化。详见P02记录。
