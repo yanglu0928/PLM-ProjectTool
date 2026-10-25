@@ -12057,6 +12057,13 @@
 - Reason：WBS与Plan列表属于同一授权资源域，可避免新增客户安装时的必配密钥/恢复环节；family与请求范围校验阻止Plan list cursor与WBS cursor互换或跨项目/版本重放。
 - Impact/Rollback/Verification：不改变冻结API/Schema/Vault格式/License；如将来密钥轮换需要独立域，可追加versioned key ref但保持旧cursor过期/迁移策略。Contract篡改及Win11隔离PG18真实多页验证后标记内部通过，不构成正式信任或Gate结论。
 
+# DEC-20261026-PLAN-VERSION-VALIDATE-01：不可变PlanVersion验证只审计、不改状态
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P01`；冻结Validate返回派生ValidationReport且明确不改变PlanVersion状态；相邻Capability Validate已使用Audit身份+通用幂等收据承载可重放报告。
+- Decision：Plan Validate采用当前授权下的只读固定快照重验；报告在同一事务生成Audit与通用IdempotencyReceipt，重放由原Audit身份重建，不新增Validation表或改变PlanVersion生命周期。
+- Reason：保留不可变版本语义、符合冻结`S,L,C,I,A`与报告DTO，并避免派生快照与业务版本发生双重事实；Plan仍独立实现其项目授权、来源/覆盖证明及稳定问题码。
+- Impact/Rollback/Verification：当前仅为前置决策，无代码/API/Schema/数据变化；后续报告纯评价器及Owner分别测试。若实现证据证明通用Audit无法支撑安全重放，则先登记CR再实施。
+
 ## DEC-20261024-CAP-P03-P02-A02：多条目版本编辑与原号兼容
 
 已选逐条暂存、最终整批重验/提交的前端流程；现有单条直接创建仍可用。未暂存编辑内容不允许被静默忽略；不确定结果持久记录完整条目数组及原 ETag/Key，同时读取旧单条记录。每项来源/证据独立，整批来源并集必须等于基线；CR-CAP-007 已先完成 DEPRECATED 读写对齐。此决策不修改后端合同或 Gate，也不把合成资格变为真实确认。见 `docs/progress/cap-02-a05-p03-p02-a02-multi-item-editor.md`。

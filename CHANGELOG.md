@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P01`（编码前核查完成）：确认冻结PlanVersion Validate报告为只读派生结果，选择Audit身份+通用幂等回执支持同Key重放，不增加状态或验证表；复用现有纯结构解析器和当前Approved Solution/Coverage证明，但必须基于持久快照重新核查。仅新增实施前置记录和L2决定，无代码/API/Schema/数据变化，未标Validate功能通过。下一项A06-P02纯报告合同/评价器。详见对应进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A05`（内部验收完成）：新增固定PlanVersion的WBS受权只读keyset分页、Session/Project/Plan/Version/page-size绑定HMAC cursor及Windows显式组合，默认应用仍关闭。Win11隔离PG18 HTTP两页、无重复、终页及跨Plan cursor拒绝通过；定向19 passed/867 subtests，全量后端4134 passed/3 skipped/6190 subtests。无Migration/Breaking API；cursor复用既有Vault key reference并以端点域隔离。未代表Pilot/Gate/Release通过。详见A05进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A04`（内部验收完成）：新增受权PlanVersion固定版本快照读取，显式Windows组合挂载，默认应用保持关闭；真实Win11隔离PG18 HTTP验证完整快照、成员权限、跨Project 404，并修正依赖/里程碑关联按批读取。定向21 passed/875 subtests，全量后端4131 passed/3 skipped/6183 subtests；无Migration/Breaking API。Dependency/Milestone缺输入序号时按DEC记录的稳定键排序。Gate/Pilot/Release状态不变。详见A04进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A03`（内部验收完成）：新增冻结PlanVersion DRAFT创建HTTP及Windows显式组合，保留默认应用关闭；真实Win11隔离PG18验证完整快照创建、同Key重放/冲突、非空Output refs失败关闭且零写入。定向18 passed/866 subtests，全量后端4128 passed/3 skipped/6174 subtests；8MiB请求体硬上限仅适用于该大型版本快照接口，旧Plan端点保持128KiB。无Migration/Breaking API；不代表Pilot/Gate/发行通过。详见A03进度记录。
