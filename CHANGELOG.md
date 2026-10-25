@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S02`：按CR-PLAN-002新增Migration `20261026_0186` 与强类型PlanVersion/WBS快照字段及owned rows，ORM/Migration一致；child写入保持失败关闭、不可TRUNCATE，含快照历史时降级拒绝。Windows 11/PostgreSQL 18.6空业务库执行0185→0186→0185→0186及Alembic drift检查通过；定向10项通过，完整后端4110通过/3跳过/6153子例通过。未验证有业务历史行的升级及真实PG新增FK负例，故仅`PASS_SCOPE_LIMITED`。无API变化、无业务写Owner，Pilot/Gate/Release不变。详见S02记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04`（编码前）：记录 CR-PLAN-002。发现关闭式 Plan Schema 缺失冻结完整PlanVersionInput中的计划/WBS快照字段，且不存在OutputArtifact持久化Owner；拒绝部分保存或以整体JSON/裸UUID规避约束。按持续授权选择增量强类型/owned child Schema；未改变API/数据库/业务数据。完成详细字段映射前不开始Migration或开放写口。详见CR及P04前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S01`：完成 CR-PLAN-002 首批字段精确映射：责任人绑定ProjectMember复合身份、有序角色/进入与验收项用owned rows、日期/工期用date/minutes、Plan排除用固定目标复合引用、Calendar用受控logical ref；OutputArtifact Owner缺失时非空输出引用继续关闭。仅文档设计决策，无代码/Schema/API/数据变更；迁移细节与PG验收未执行。见S01记录。
 

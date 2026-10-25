@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, Date, ForeignKeyConstraint, Index, SmallInteger, Text, UniqueConstraint, text
+from sqlalchemy import BigInteger, CheckConstraint, Date, ForeignKeyConstraint, Index, Integer, SmallInteger, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -113,6 +113,7 @@ class PlanVersionRow(Base):
     plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     version_no: Mapped[int] = mapped_column(nullable=False)
+    calendar_ref: Mapped[str | None] = mapped_column(Text)
     version_state: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text("'DRAFT'"))
     supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
@@ -122,6 +123,107 @@ class PlanVersionRow(Base):
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"))
+
+
+class PlanVersionExclusionRow(Base):
+    """Fixed-target explicit exclusions owned by one immutable PlanVersion."""
+
+    __tablename__ = "pln_version_exclusions"
+    __table_args__ = (
+        UniqueConstraint("exclusion_id", "plan_version_id", "plan_id", "project_id",
+                         name="uq_pln_version_exclusions__id_version_plan_project"),
+        UniqueConstraint("plan_version_id", "ordinal",
+                         name="uq_pln_version_exclusions__version_ordinal"),
+        UniqueConstraint("plan_version_id", "requirement_version_id",
+                         name="uq_pln_version_exclusions__requirement"),
+        UniqueConstraint("plan_version_id", "solution_outline_version_id",
+                         name="uq_pln_version_exclusions__outline"),
+        UniqueConstraint("plan_version_id", "solution_section_version_id",
+                         name="uq_pln_version_exclusions__section"),
+        UniqueConstraint("plan_version_id", "structured_solution_spec_id",
+                         name="uq_pln_version_exclusions__spec"),
+        ForeignKeyConstraint(
+            ["plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_plan_versions.plan_version_id", "plm.pln_plan_versions.plan_id",
+             "plm.pln_plan_versions.project_id"],
+            name="fk_pln_version_exclusions__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["requirement_version_id", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_pln_version_exclusions__requirement", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["solution_outline_version_id", "solution_outline_id", "project_id"],
+            ["plm.sol_outline_versions.solution_outline_version_id",
+             "plm.sol_outline_versions.solution_outline_id",
+             "plm.sol_outline_versions.project_id"],
+            name="fk_pln_version_exclusions__outline", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["solution_section_version_id", "solution_section_id", "project_id"],
+            ["plm.sol_section_versions.solution_section_version_id",
+             "plm.sol_section_versions.solution_section_id",
+             "plm.sol_section_versions.project_id"],
+            name="fk_pln_version_exclusions__section", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["structured_solution_spec_id", "spec_series_id", "project_id", "spec_type"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id", "plm.sol_structured_specs.project_id",
+             "plm.sol_structured_specs.spec_type"],
+            name="fk_pln_version_exclusions__spec", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_pln_version_exclusions__ordinal"),
+        CheckConstraint("target_kind IN ('REQUIREMENT_VERSION','SOLUTION_OUTLINE_VERSION',"
+                        "'SOLUTION_SECTION_VERSION','STRUCTURED_SPEC_VERSION')",
+                        name="ck_pln_version_exclusions__kind"),
+        CheckConstraint("char_length(reason) BETWEEN 1 AND 2000 AND reason=btrim(reason)",
+                        name="ck_pln_version_exclusions__reason"),
+        CheckConstraint("char_length(impact) BETWEEN 1 AND 2000 AND impact=btrim(impact)",
+                        name="ck_pln_version_exclusions__impact"),
+        CheckConstraint(
+            "(target_kind='REQUIREMENT_VERSION' AND requirement_id IS NOT NULL "
+            "AND requirement_version_id IS NOT NULL AND solution_outline_id IS NULL "
+            "AND solution_outline_version_id IS NULL AND solution_section_id IS NULL "
+            "AND solution_section_version_id IS NULL AND spec_series_id IS NULL "
+            "AND structured_solution_spec_id IS NULL AND spec_type IS NULL) OR "
+            "(target_kind='SOLUTION_OUTLINE_VERSION' AND requirement_id IS NULL "
+            "AND requirement_version_id IS NULL AND solution_outline_id IS NOT NULL "
+            "AND solution_outline_version_id IS NOT NULL AND solution_section_id IS NULL "
+            "AND solution_section_version_id IS NULL AND spec_series_id IS NULL "
+            "AND structured_solution_spec_id IS NULL AND spec_type IS NULL) OR "
+            "(target_kind='SOLUTION_SECTION_VERSION' AND requirement_id IS NULL "
+            "AND requirement_version_id IS NULL AND solution_outline_id IS NULL "
+            "AND solution_outline_version_id IS NULL AND solution_section_id IS NOT NULL "
+            "AND solution_section_version_id IS NOT NULL AND spec_series_id IS NULL "
+            "AND structured_solution_spec_id IS NULL AND spec_type IS NULL) OR "
+            "(target_kind='STRUCTURED_SPEC_VERSION' AND requirement_id IS NULL "
+            "AND requirement_version_id IS NULL AND solution_outline_id IS NULL "
+            "AND solution_outline_version_id IS NULL AND solution_section_id IS NULL "
+            "AND solution_section_version_id IS NULL AND spec_series_id IS NOT NULL "
+            "AND structured_solution_spec_id IS NOT NULL AND spec_type IS NOT NULL)",
+            name="ck_pln_version_exclusions__typed_target"),
+        Index("ix_pln_version_exclusions__target", "project_id", "target_kind",
+              "plan_version_id"),
+        {"schema": "plm"},
+    )
+
+    exclusion_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    target_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    requirement_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    requirement_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    solution_outline_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    solution_outline_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    solution_section_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    solution_section_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    spec_series_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    structured_solution_spec_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    spec_type: Mapped[str | None] = mapped_column(Text)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    impact: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class PlanWbsItemRow(Base):
@@ -160,6 +262,34 @@ class PlanWbsItemRow(Base):
         CheckConstraint("item_state IN "
                         "('NOT_STARTED','IN_PROGRESS','BLOCKED','COMPLETED','CANCELLED')",
                         name="ck_pln_wbs_items__state"),
+        ForeignKeyConstraint(
+            ["owner_project_member_id", "project_id"],
+            ["plm.prj_project_members.project_member_id",
+             "plm.prj_project_members.project_id"],
+            name="fk_pln_wbs_items__owner_member", ondelete="NO ACTION"),
+        CheckConstraint("category_code IS NULL OR "
+                        "(char_length(category_code) BETWEEN 1 AND 64 "
+                        "AND category_code=btrim(category_code) "
+                        "AND category_code ~ '^[A-Z][A-Z0-9_]*$')",
+                        name="ck_pln_wbs_items__category"),
+        CheckConstraint("planned_duration_minutes IS NULL OR planned_duration_minutes>=0",
+                        name="ck_pln_wbs_items__planned_duration"),
+        CheckConstraint("(planned_start_date IS NULL)=(planned_finish_date IS NULL)",
+                        name="ck_pln_wbs_items__planned_date_pair"),
+        CheckConstraint("planned_finish_date IS NULL OR planned_finish_date>=planned_start_date",
+                        name="ck_pln_wbs_items__planned_date_order"),
+        CheckConstraint("(actual_start_date IS NULL)=(actual_finish_date IS NULL)",
+                        name="ck_pln_wbs_items__actual_date_pair"),
+        CheckConstraint("actual_finish_date IS NULL OR actual_finish_date>=actual_start_date",
+                        name="ck_pln_wbs_items__actual_date_order"),
+        CheckConstraint("risk_summary IS NULL OR "
+                        "(char_length(risk_summary) BETWEEN 1 AND 2000 "
+                        "AND risk_summary=btrim(risk_summary))",
+                        name="ck_pln_wbs_items__risk_summary"),
+        CheckConstraint("explicit_exclusion_reason IS NULL OR "
+                        "(char_length(explicit_exclusion_reason) BETWEEN 1 AND 2000 "
+                        "AND explicit_exclusion_reason=btrim(explicit_exclusion_reason))",
+                        name="ck_pln_wbs_items__exclusion_reason"),
         Index("ix_pln_wbs_items__parent_order", "plan_version_id", "parent_item_id",
               "ordinal", "wbs_item_id"),
         {"schema": "plm"},
@@ -177,6 +307,81 @@ class PlanWbsItemRow(Base):
     ordinal: Mapped[int] = mapped_column(nullable=False)
     item_state: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text("'NOT_STARTED'"))
+    category_code: Mapped[str | None] = mapped_column(Text)
+    owner_project_member_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    planned_start_date: Mapped[date | None] = mapped_column(Date)
+    planned_finish_date: Mapped[date | None] = mapped_column(Date)
+    planned_duration_minutes: Mapped[int | None] = mapped_column(Integer)
+    actual_start_date: Mapped[date | None] = mapped_column(Date)
+    actual_finish_date: Mapped[date | None] = mapped_column(Date)
+    risk_summary: Mapped[str | None] = mapped_column(Text)
+    explicit_exclusion_reason: Mapped[str | None] = mapped_column(Text)
+
+
+class PlanWbsSupportRoleRow(Base):
+    """Ordered, bounded support-role snapshot for a WBS item."""
+
+    __tablename__ = "pln_wbs_support_roles"
+    __table_args__ = (
+        UniqueConstraint("wbs_item_id", "support_role",
+                         name="uq_pln_wbs_support_roles__item_role"),
+        UniqueConstraint("wbs_item_id", "ordinal",
+                         name="uq_pln_wbs_support_roles__item_ordinal"),
+        ForeignKeyConstraint(
+            ["wbs_item_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_wbs_items.wbs_item_id", "plm.pln_wbs_items.plan_version_id",
+             "plm.pln_wbs_items.plan_id", "plm.pln_wbs_items.project_id"],
+            name="fk_pln_wbs_support_roles__item", ondelete="NO ACTION"),
+        CheckConstraint("char_length(support_role) BETWEEN 1 AND 64 "
+                        "AND support_role=btrim(support_role) "
+                        "AND support_role ~ '^[A-Z][A-Z0-9_]*$'",
+                        name="ck_pln_wbs_support_roles__role"),
+        CheckConstraint("ordinal>0", name="ck_pln_wbs_support_roles__ordinal"),
+        Index("ix_pln_wbs_support_roles__project_version", "project_id", "plan_version_id"),
+        {"schema": "plm"},
+    )
+
+    support_role_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    wbs_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    support_role: Mapped[str] = mapped_column(Text, nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class PlanWbsConditionRow(Base):
+    """Ordered entry/acceptance text owned by one immutable WBS item."""
+
+    __tablename__ = "pln_wbs_conditions"
+    __table_args__ = (
+        UniqueConstraint("wbs_item_id", "condition_kind", "ordinal",
+                         name="uq_pln_wbs_conditions__item_kind_ordinal"),
+        ForeignKeyConstraint(
+            ["wbs_item_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_wbs_items.wbs_item_id", "plm.pln_wbs_items.plan_version_id",
+             "plm.pln_wbs_items.plan_id", "plm.pln_wbs_items.project_id"],
+            name="fk_pln_wbs_conditions__item", ondelete="NO ACTION"),
+        CheckConstraint("condition_kind IN ('ENTRY','ACCEPTANCE')",
+                        name="ck_pln_wbs_conditions__kind"),
+        CheckConstraint("ordinal>0", name="ck_pln_wbs_conditions__ordinal"),
+        CheckConstraint("char_length(condition_text) BETWEEN 1 AND 2000 "
+                        "AND condition_text=btrim(condition_text)",
+                        name="ck_pln_wbs_conditions__text"),
+        Index("ix_pln_wbs_conditions__project_version", "project_id", "plan_version_id"),
+        {"schema": "plm"},
+    )
+
+    condition_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    wbs_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    condition_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    condition_text: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class PlanWbsDependencyRow(Base):

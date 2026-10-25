@@ -233,6 +233,10 @@ class OrmMetadataTests(unittest.TestCase):
         historical_metadata.discard('plm.pln_item_solution_refs')
         self.assertIn('plm.pln_item_evidence_refs', Base.metadata.tables)
         historical_metadata.discard('plm.pln_item_evidence_refs')
+        for table in ('plm.pln_version_exclusions', 'plm.pln_wbs_support_roles',
+                      'plm.pln_wbs_conditions'):
+            self.assertIn(table, Base.metadata.tables)
+            historical_metadata.discard(table)
         self.assertIn('plm.job_parse_cancel_versions', Base.metadata.tables)
         self.assertIn('plm.plt_maintenance_state', Base.metadata.tables)
         for table in (export_orm.exports, export_orm.members, export_orm.captures, export_orm.acceptances):
