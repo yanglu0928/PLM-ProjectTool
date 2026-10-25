@@ -53,6 +53,8 @@ def seed_observer(context: dict, project: uuid.UUID) -> uuid.UUID:
 
 
 def browser_probe(**context) -> None:
+    after_approval_probe = context.pop("after_approval_probe", None)
+    after_expiry_probe = context.pop("after_expiry_probe", None)
     base["browser_probe"](**context)
     origin = context["origin"]
     with context["connect_db"]() as db:
@@ -148,6 +150,10 @@ def browser_probe(**context) -> None:
             "SELECT count(*) FROM plm.rvw_review_decisions WHERE review_id=%s",
             (review,),
         ).fetchone()[0]
+    if after_approval_probe is not None:
+        after_approval_probe(**context, project=project, analysis=analysis,
+                             version=version, observer_id=observer_id,
+                             observer_client=observer_client, observer_csrf=csrf)
     # Synthetic EXPIRED projection only; this does not prove natural time expiry.
     with context["connect_db"]() as db, db.transaction():
         active_id, old_version = db.execute(
@@ -174,6 +180,9 @@ def browser_probe(**context) -> None:
             "SELECT count(*) FROM plm.rvw_review_decisions WHERE review_id=%s",
             (review,),
         ).fetchone()[0] == before
+    if after_expiry_probe is not None:
+        after_expiry_probe(**context, project=project, observer_client=observer_client,
+                           observer_csrf=csrf)
     observer_client.close()
     print("HND_05_A05_P06_PACKAGED_PG_PASS: fixed version, one decision, "
           "approved Handover, Audit/receipt and denials", flush=True)

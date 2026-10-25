@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A03 从干净提交重建 Windows 11 非发行候选（SHA-256 `fea9bb417d40839cbd2191d429bfc92ab008442edbddb571b3479af394bad194`），新增可重复包内调研定义验收脚本；不改冻结 API/Schema/角色。兼容性：仅 Windows 11 合成信任环境已实测，Windows Server 2025/Debian 13 未实测。升级/回滚：无迁移，此非发行候选替换前端资产用于内部验证，旧包及合法 Survey/Audit 保留；正式离线安装升级仍未验。验证：22,196件独立清洁解包逐件哈希，Edge/HTTPS/隔离 PG18 从交接批准到调研 UI 创建、同号重放、唯一 ACTIVE 定义/零版本/唯一 Audit/收据及匿名/错项目/只读角色/合成失效许可拒绝退出0；临时进程/库/布局清理。首轮未提交前置记录与两次解包调用环境拒绝留痕。已知问题：本包 `release_eligible=false`、`legal_clearance=false`；调研问题版本、实际面对面访谈/真人确认、正式公钥/服务账户/CA、离线安装升级、UAT/Gate 3～7/Pilot/三平台正式 Release 未通过。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A02 调研列表增加仅项目负责人/实施成员可见的创建定义表单，未知提交结果按原名称和操作号恢复、显式核对重试，损坏记录/冲突锁定，成功进入服务器返回的定义详情；明示表单和定义不等于客户事实。兼容性：Windows 11 前端测试/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端页面，无 API/Schema/License/数据迁移；回退页面不会删除已合法创建的定义/Audit。验证：页面定向10、前端全量2022、typecheck/build退出0。已知问题：非发行包内真实 Edge/HTTPS/PG 创建和调研版本/实际访谈、正式信任/安装/UAT/Gate/Pilot/Release 未通过。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A01 新增冻结调研定义创建的私有 Session POST 桥接与严格客户端，校验当前项目角色、CSRF/原幂等号、201 回执/Trace/ETag/Location，结果未知不自动重发；不把定义当客户访谈事实。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅新增尚未接界面的前端代码，无 API/Schema/License/数据迁移；可撤客户端，不删除既有调研数据。验证：定向4、前端全量2016、typecheck/build退出0。已知问题：创建表单/真实 Edge/HTTPS/PG 与调研版本和实际访谈记录仍未完成；正式信任/安装/UAT/Gate/Pilot/Release 未通过。
