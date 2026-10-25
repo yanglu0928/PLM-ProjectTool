@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A04`（内部验收完成）：新增受权PlanVersion固定版本快照读取，显式Windows组合挂载，默认应用保持关闭；真实Win11隔离PG18 HTTP验证完整快照、成员权限、跨Project 404，并修正依赖/里程碑关联按批读取。定向21 passed/875 subtests，全量后端4131 passed/3 skipped/6183 subtests；无Migration/Breaking API。Dependency/Milestone缺输入序号时按DEC记录的稳定键排序。Gate/Pilot/Release状态不变。详见A04进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A03`（内部验收完成）：新增冻结PlanVersion DRAFT创建HTTP及Windows显式组合，保留默认应用关闭；真实Win11隔离PG18验证完整快照创建、同Key重放/冲突、非空Output refs失败关闭且零写入。定向18 passed/866 subtests，全量后端4128 passed/3 skipped/6174 subtests；8MiB请求体硬上限仅适用于该大型版本快照接口，旧Plan端点保持128KiB。无Migration/Breaking API；不代表Pilot/Gate/发行通过。详见A03进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A02`（内部验收完成）：新增事务型PlanVersion内部Owner、固定来源复核、完整快照持久化、持久幂等/Audit同事务、CR-PLAN-005受控代码目录校验及Windows显式组合。Win11隔离PostgreSQL 18.6合成端到端通过：批准来源、完整聚合快照、同Key重放/冲突、无效来源拒绝、Audit失败原子回滚与同Key恢复、并发版本号连续；定向14 passed/853 subtests，完整后端4124 passed/3 skipped/6161 subtests。真实PG复验发现并修复异构Solution refs批量INSERT列键不一致。测试使用未随项目交付的本机非官方pgvector二进制；0188仍禁止单独部署，Gate/Pilot/Release未变。详见A02进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A02`（编码前调整）：核对字段映射发现Calendar、WBS category和support roles无版本化白名单；登记CR-PLAN-005，选择内部不可变 `PLAN_WBS_CODES_V1`，未知值拒绝，不擅自将业务协作角色当Project授权角色。无Schema/API/代码变化；仍在Owner编码前置检查。

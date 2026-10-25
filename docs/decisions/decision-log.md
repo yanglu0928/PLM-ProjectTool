@@ -12043,6 +12043,13 @@
 - Reason：减少昂贵的重复环境启动，保持每个业务事实按其专属回执、数据库和 Audit 验收。
 - Impact/Rollback/Verification：仅执行顺序 L2 调整，无 API/Schema/正式数据变化。若基线 UI 或资格受阻，仍可单独运行来源上传验收；源码可撤，已写业务历史不删。
 
+# DEC-20261026-PLAN-VERSION-READ-01：PlanVersion 无序关系读取使用确定性排序
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A04`；冻结 `PLAN_VERSION_GET`要求返回不可变快照，但当前 DB Schema 对Dependency/Milestone没有输入序号列。
+- Decision：WBS/角色/条件/引用/Exclusion按Schema内ordinal读取；Dependency按前置/后置Item ID和固定Dependency ID排序；Milestone按日期/名称/固定Milestone ID排序。Milestone内WBS refs按ordinal读取。不把数据库缺失的输入顺序伪装成原始顺序。
+- Reason：保持输出稳定、可缓存/可比较且兼容冻结Schema；后续UI工作可通过独立的WBS keyset列表取得分页视图。若业务后续证明Dependency/Milestone原始顺序有业务语义，再通过正式CR增加持久序号并保留历史兼容。
+- Impact/Rollback/Verification：仅只读DTO投影排序，无Schema、API字段、正式数据或写行为变化；删除排序键即可回退，但响应可重复性下降。Win11隔离PG HTTP、Contract/权限和完整回归验证后标记内部通过；不构成Gate/Pilot/Release结论。
+
 ## DEC-20261024-CAP-P03-P02-A02：多条目版本编辑与原号兼容
 
 已选逐条暂存、最终整批重验/提交的前端流程；现有单条直接创建仍可用。未暂存编辑内容不允许被静默忽略；不确定结果持久记录完整条目数组及原 ETag/Key，同时读取旧单条记录。每项来源/证据独立，整批来源并集必须等于基线；CR-CAP-007 已先完成 DEPRECATED 读写对齐。此决策不修改后端合同或 Gate，也不把合成资格变为真实确认。见 `docs/progress/cap-02-a05-p03-p02-a02-multi-item-editor.md`。

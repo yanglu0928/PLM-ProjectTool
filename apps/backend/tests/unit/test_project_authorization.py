@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 181)
+        self.assertEqual(len(POLICIES), 182)
         source = POLICIES["SURVEY_HANDOVER_SOURCE_LIST"]
         self.assertEqual(source.roles, frozenset({
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
@@ -71,7 +71,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
             "REQ_PACKAGE_LIST", "REQ_PACKAGE_GET", "REQ_LIST", "REQ_GET",
             "SOL_REFERENCE_LIST", "SOL_REFERENCE_GET", "SOL_OUTLINE_GET",
             "SOL_OUTLINE_LIST",
-            "PLAN_GET", "PLAN_LIST", "PLAN_VERSION_WBS_LIST",
+            "PLAN_GET", "PLAN_LIST", "PLAN_VERSION_GET", "PLAN_VERSION_WBS_LIST",
             "SOL_OUTLINE_VERSION_LIST", "SOL_OUTLINE_VERSION_GET",
             "SOL_SECTION_GET",
             "SOL_SECTION_LIST", "SOL_SECTION_VERSION_LIST",

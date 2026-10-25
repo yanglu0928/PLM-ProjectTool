@@ -309,6 +309,7 @@ def _verify_http_composition(context: dict[str, object], storage_root: Path,
     from plm_assistant.entrypoints.api import create_app
     from plm_assistant.entrypoints.windows_plan_version import (
         create_windows_plan_version_create_router,
+        create_windows_plan_version_read_router,
     )
     from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
     from plm_assistant.modules.auth.application.session_service import SessionService
@@ -361,6 +362,38 @@ def _verify_http_composition(context: dict[str, object], storage_root: Path,
         rejected = client.post(path, headers=output_headers, json=output_ref_payload)
         assert rejected.status_code == 422, rejected.text
         assert _snapshot_counts(context["port"], plan_id) == before
+
+    version_id = uuid.UUID(data["plan_version_id"])
+    read_router = create_windows_plan_version_read_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=context["license_guard"],
+    )
+    read_path = f"{path}/{version_id}"
+    with TestClient(create_app(plan_version_read_router=read_router),
+                    base_url="https://plm.example.test") as client:
+        response = client.get(read_path, headers={
+            key: value for key, value in headers.items()
+            if key in {"cookie", "origin"}
+        })
+        assert response.status_code == 200, response.text
+        snapshot = response.json()["data"]
+        assert snapshot["plan_version_id"] == str(version_id)
+        assert snapshot["plan_id"] == str(plan_id)
+        assert snapshot["version_no"] == 5 and snapshot["version_state"] == "DRAFT"
+        assert len(snapshot["wbs_items"]) == 2
+        assert len(snapshot["dependencies"]) == 1
+        assert len(snapshot["milestones"]) == 1
+        assert len(snapshot["approved_solution_refs"]) == len(
+            payload["approved_solution_refs"])
+        assert snapshot["wbs_items"][0]["solution_refs"]
+        cross_project = client.get(
+            f"/api/v1/projects/{uuid.uuid4()}/plans/{plan_id}/versions/{version_id}",
+            headers={key: value for key, value in headers.items()
+                     if key in {"cookie", "origin"}},
+        )
+        assert cross_project.status_code == 404, cross_project.text
+    print("PLAN_VERSION_GET_HTTP_POSTGRESQL_PASS: fixed version snapshot, full refs, "
+          "review/supersedes identity, member authorization and cross-project 404")
 
 
 class _FailingAudit:

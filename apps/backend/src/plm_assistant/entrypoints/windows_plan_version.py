@@ -10,8 +10,14 @@ from plm_assistant.entrypoints.windows_solution_outline import (
 from plm_assistant.modules.auth.infrastructure.project_write_access import (
     SqlAlchemyProjectWriteAccess,
 )
+from plm_assistant.modules.auth.infrastructure.project_read_access import (
+    SqlAlchemyProjectReadAccess,
+)
 from plm_assistant.modules.plan.api.create_plan_version import (
     create_plan_version_create_router,
+)
+from plm_assistant.modules.plan.api.read_plan_version import (
+    create_plan_version_read_router,
 )
 from plm_assistant.modules.plan.application.create_plan_version import (
     PlanVersionCreateService,
@@ -19,8 +25,14 @@ from plm_assistant.modules.plan.application.create_plan_version import (
 from plm_assistant.modules.plan.application.prove_approved_solution_input import (
     ApprovedSolutionInputProofService,
 )
+from plm_assistant.modules.plan.application.read_plan_version import (
+    PlanVersionReadService,
+)
 from plm_assistant.modules.plan.infrastructure.plan_version_create_repository import (
     SqlAlchemyPlanVersionCreateRepository,
+)
+from plm_assistant.modules.plan.infrastructure.plan_version_read_repository import (
+    SqlAlchemyPlanVersionReadRepository,
 )
 from plm_assistant.modules.plan.infrastructure.plan_version_source_proofs import (
     SqlAlchemyPlanVersionSourceProofs,
@@ -75,6 +87,26 @@ def create_windows_plan_version_create_router(
             parse_results=parse_results)
         return create_plan_version_create_router(
             sessions=sessions, origins=origins, creates=service)
+    except Exception:
+        raise WindowsPlanVersionStartupError() from None
+
+
+def create_windows_plan_version_read_router(
+    *, runtime, sessions, origins, license_guard,
+):
+    if any(value is None for value in (runtime, sessions, origins, license_guard)):
+        raise WindowsPlanVersionStartupError()
+    try:
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=SqlAlchemyProjectAuthorizationRepository())
+        reads = PlanVersionReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard, authorization=authorization,
+            repository=SqlAlchemyPlanVersionReadRepository())
+        return create_plan_version_read_router(
+            sessions=sessions, origins=origins, reads=reads)
     except Exception:
         raise WindowsPlanVersionStartupError() from None
 
