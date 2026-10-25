@@ -22,6 +22,7 @@ p51 = runpy.run_path(str(ROOT / "validation/sur-07-a08-survey-version-packaged/v
 def seed_current_requirement(context: dict, project: uuid.UUID) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID]:
     """Seed only the approved Requirement and fixed Project Document fixtures."""
     requirement, version = uuid.uuid4(), uuid.uuid4()
+    review_id, review_round_id = uuid.uuid4(), uuid.uuid4()
     source = uuid.uuid4()
     criteria = (uuid.uuid4(), uuid.uuid4())
     document, file_object, document_version = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
@@ -60,6 +61,20 @@ def seed_current_requirement(context: dict, project: uuid.UUID) -> tuple[uuid.UU
             "requirement_code_normalized,created_by) VALUES (%s,%s,%s,%s,%s)",
             (requirement, project, "REQ-P51-PROTOTYPE-001", "REQ-P51-PROTOTYPE-001", actor),
         )
+        # A05 uses a synthetic pre-approved Requirement as Prototype input. Keep its
+        # Review pointers internally coherent instead of inventing orphan UUIDs.
+        db.execute(
+            """INSERT INTO plm.rvw_reviews(review_id,scope,project_id,subject_type,
+              subject_id,policy_code,review_state,active_round_id,created_by)
+              VALUES (%s,'PROJECT',%s,'REQ-03',%s,'REQUIREMENT_ALL_V1','APPROVED',NULL,%s)""",
+            (review_id, project, requirement, actor),
+        )
+        db.execute(
+            """INSERT INTO plm.rvw_review_rounds(review_round_id,review_id,scope,
+              project_id,round_no,subject_version_id,round_state,started_by,started_at)
+              VALUES (%s,%s,'PROJECT',%s,1,%s,'APPROVED',%s,statement_timestamp())""",
+            (review_round_id, review_id, project, version, actor),
+        )
         db.execute(
             """INSERT INTO plm.req_requirement_versions(
               requirement_version_id,requirement_id,project_id,version_no,version_state,
@@ -72,7 +87,7 @@ def seed_current_requirement(context: dict, project: uuid.UUID) -> tuple[uuid.UU
             (version, requirement, project,
              "项目应形成可追溯的受控原型评审记录",
              "仅作为P51隔离浏览器验收的合成输入，不代表客户确认",
-             b"p" * 32, uuid.uuid4(), uuid.uuid4(), actor),
+             b"p" * 32, review_id, review_round_id, actor),
         )
         db.execute(
             """INSERT INTO plm.req_sources(requirement_version_id,requirement_id,project_id,

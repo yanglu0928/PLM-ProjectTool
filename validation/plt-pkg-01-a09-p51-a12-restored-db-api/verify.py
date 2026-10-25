@@ -69,10 +69,15 @@ def main() -> int:
         fixture_db = _context.get("fixture_db")
         if not callable(fixture_db):
             raise RuntimeError("A12 requires the current smoke's fixture DB for rate-bucket cleanup")
+        seed_requirement = prototype_probe.__globals__.get("seed_current_requirement")
+        if not callable(seed_requirement):
+            raise RuntimeError("A12 requires the established synthetic Prototype source fixture")
+        seed_requirement(_context, _context["project"])
         with fixture_db() as db:
             db.execute("DELETE FROM plm.auth_login_rate_buckets")
-        print("P51_A12_REUSE_P51_A05_PRIOR_PASS: prototype UI probe not repeated after "
-              "package-list readiness timeouts; owned synthetic login buckets cleared",
+        print("P51_A12_REUSE_P51_A05_PRIOR_PASS: prototype UI probe not repeated; "
+              "its coherent synthetic Requirement/Review source fixture was seeded and "
+              "owned synthetic login buckets cleared",
               flush=True)
 
     prototype_probe.__globals__["prototype_probe"] = reuse_existing_prototype_evidence
