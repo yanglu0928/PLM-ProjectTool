@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P02`（PlanVersion Review状态Schema编码前核查完成）：在已推送的CR-PLAN-007范围内限定0190仅允许白名单状态/引用跃迁、同事务不可变Review状态事件闭合，Plan内容保持不可变，并要求有历史时拒绝降级。仅前置记录/状态更新，尚无Schema代码或PASS。
 - 2026-10-26 / `CR-PLAN-007` / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P01`（PlanVersion Review送审前置核查完成）：发现0188对PlanVersion根表禁止所有UPDATE，与冻结SubmitReview/批准生命周期字段冲突。先登记授权CR，选择0190仅准白名单Review状态指针更新且内容不可变、每次同事务append-only事件闭合、历史降级拒绝。仅前置/CR/状态文档，无代码或Schema变更。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P04-P03-P03-P02`（Win11隔离PG18 Validate HTTP组合通过）：以合成批准来源和Project PM/IM经Windows Validate router实际HTTP验证报告、精确重放、跨项目/只读成员/Origin拒绝，以及Audit故障的0189/Audit/Receipt原子回滚。PlanVersion保持DRAFT；测试数据仅在一次性PG。全量后端4149 passed/3 skipped/6206 subtests。非Gate/Pilot结论。详见P03-P03-P02记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P04-P03-P03-P01`（Validate隔离HTTP/PG验收器前置核查完成）：确认复用自建一次性PG18、合成Session/许可/Approved来源链和TestClient；真实业务行必须由Owner事务生成，不伪造Audit/报告。仅前置记录与状态更新。下一项P02执行端到端HTTP断言。
