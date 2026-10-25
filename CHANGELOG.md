@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P04-P03-P01`（Windows运行时接线前置核查）：确认显式write启动根已具备Validate来源证明依赖；路由只在该模式装入，login-only/只读仍关闭。仅新增前置记录与状态，无运行行为变化。下一项A06-P04-P03-P02实施启动根接线。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P04-P02`（HTTP合同边界通过）：新增PlanVersion Validate冻结POST路由及报告投影，校验Session/CSRF/Origin/幂等并保持默认App关闭；提供显式Windows router factory，但未接实际生产启动根。定向18 passed/870 subtests、后端全量4149 passed/3 skipped/6206 subtests。真实Windows启动/PG HTTP仍待。详见A06-P04-P02记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P04-P02`（编码前核查完成）：确定可选FastAPI Validate路由与合同测试范围，复用冻结安全/错误Envelope，仅显式Windows工厂注入，默认应用维持404；无代码/API/Schema变化。详见A06-P04-P02前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P04-P01`（HTTP接线前置核查完成）：确认冻结Validate POST路径、空体/无query、200报告字段、Session/CSRF/Origin/License/幂等和标准错误Envelope；路由仅可由显式Windows组合注入，默认应用关闭。只新增核查记录与状态，无代码/API/Schema变化。下一项A06-P04-P02实现可选HTTP边界和合同测试。
