@@ -20,6 +20,8 @@ import sys
 import tempfile
 import time
 import uuid
+from collections.abc import Callable
+from contextvars import ContextVar
 from ctypes import wintypes
 from pathlib import Path
 
@@ -48,6 +50,28 @@ from plm_assistant.modules.platform.infrastructure.windows_database_credential i
     DEFAULT_TARGET, read_database_url, write_database_url,
 )
 from plm_assistant.modules.platform.infrastructure.windows_secret_key_provider import WindowsSecretKeyProvider
+
+
+_ACTIVE_API_RESTART: ContextVar[Callable[[], None] | None] = ContextVar(
+    "packaged_smoke_api_restart", default=None)
+_ACTIVE_POSTGRES_RESTART: ContextVar[Callable[[], None] | None] = ContextVar(
+    "packaged_smoke_postgres_restart", default=None)
+
+
+def current_packaged_api_restart() -> Callable[[], None]:
+    """Return the restart hook only while an owned packaged smoke is active."""
+    restart = _ACTIVE_API_RESTART.get()
+    if not callable(restart):
+        raise RuntimeError("packaged API restart is available only inside its smoke callback")
+    return restart
+
+
+def current_packaged_postgres_restart() -> Callable[[], None]:
+    """Return the PostgreSQL restart hook only inside its owned smoke callback."""
+    restart = _ACTIVE_POSTGRES_RESTART.get()
+    if not callable(restart):
+        raise RuntimeError("packaged PostgreSQL restart is available only inside its smoke callback")
+    return restart
 
 
 KEY_REFS = (
@@ -215,6 +239,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     data, log = run / "pgdata", run / "postgresql.log"
     api_process = caddy_process = None
     pg_started = False
+    pg_restart_count = 0
     installed_keys: dict[str, bytes] = {}
     db_url: str | None = None
     outcome: dict | None = None
@@ -225,6 +250,21 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         _start_pg_ctl([str(pg / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
                        "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log)
         pg_started = True
+
+        def restart_postgres() -> None:
+            """Restart only this smoke's isolated cluster using the same data and port."""
+            nonlocal pg_restart_count
+            _run([str(pg / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop"],
+                 timeout=60)
+            # Keep cleanup ownership set even if the subsequent start fails.
+            _start_pg_ctl([str(pg / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
+                           "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log)
+            with psycopg.connect(host="127.0.0.1", port=pg_port, user="poc_admin",
+                                 dbname="postgres", autocommit=True,
+                                 connect_timeout=5) as check:
+                if check.execute("SELECT 1").fetchone() != (1,):
+                    raise ValueError("restarted isolated PostgreSQL readiness query failed")
+            pg_restart_count += 1
         suffix = uuid.uuid4().hex[:12]
         role, database = f"p42_{suffix}", f"p42_{suffix}"
         password = uuid.uuid4().hex + uuid.uuid4().hex
@@ -283,11 +323,17 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         env.pop("PYTHONPATH", None)
         env["PATH"] = os.pathsep.join((str(target / "runtime/python"), str(pg),
                                        str(Path(os.environ["WINDIR"]) / "System32"), os.environ["WINDIR"]))
-        api_process = subprocess.Popen(
-            [str(runtime), "-I", "-B", "-m", "plm_assistant.entrypoints.serve_windows",
-             str(bootstrap), "--platform-write"], stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, env=env,
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+        api_command = [str(runtime), "-I", "-B", "-m",
+                       "plm_assistant.entrypoints.serve_windows",
+                       str(bootstrap), "--platform-write"]
+
+        def start_api() -> subprocess.Popen:
+            return subprocess.Popen(
+                api_command, stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, env=env,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+
+        api_process = start_api()
         with httpx.Client(base_url=f"http://127.0.0.1:{api_port}", timeout=3,
                           trust_env=False) as direct:
             try:
@@ -295,6 +341,23 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             except ValueError as startup_error:
                 diagnostic = _diagnose_packaged_factory(runtime, bootstrap, env)
                 raise ValueError(f"{startup_error}; packaged factory={diagnostic}") from None
+
+        api_restart_count = 0
+
+        def restart_api() -> None:
+            """Restart only this smoke's API process; retain its DB and Caddy."""
+            nonlocal api_process, api_restart_count
+            previous = api_process
+            if previous is None or previous.poll() is not None:
+                raise ValueError("owned packaged API is not running")
+            _stop_process(previous)
+            if previous.poll() is None:
+                raise ValueError("owned packaged API did not stop")
+            api_process = start_api()
+            with httpx.Client(base_url=f"http://127.0.0.1:{api_port}", timeout=3,
+                              trust_env=False) as direct:
+                _wait_http(direct, "/health/ready", api_process)
+            api_restart_count += 1
         caddy_config.write_text(caddyfile(target / "app/frontend/dist", cert, key,
                                           api_port, https_port), encoding="ascii")
         checked = subprocess.run([str(caddy), "validate", "--config", str(caddy_config)],
@@ -339,10 +402,16 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                     # product/API assertions continue through the least-privileged app role.
                     return psycopg.connect(host="127.0.0.1", port=pg_port, user="poc_admin",
                                            dbname=database, autocommit=True)
-                licensed_https_probe(client=client, connect_db=connect_db,
-                                     fixture_db=connect_fixture_db,
-                                     user_id=user, signed_document=signed_document,
-                                     selected_mac=selected_mac, login=login, origin=origin)
+                restart_token = _ACTIVE_API_RESTART.set(restart_api)
+                postgres_restart_token = _ACTIVE_POSTGRES_RESTART.set(restart_postgres)
+                try:
+                    licensed_https_probe(client=client, connect_db=connect_db,
+                                         fixture_db=connect_fixture_db,
+                                         user_id=user, signed_document=signed_document,
+                                         selected_mac=selected_mac, login=login, origin=origin)
+                finally:
+                    _ACTIVE_POSTGRES_RESTART.reset(postgres_restart_token)
+                    _ACTIVE_API_RESTART.reset(restart_token)
         outcome = {"status": "SYNTHETIC_PACKAGED_PLATFORM_WRITE_HTTPS_PASS",
                 "release_eligible": False, "fixed_candidate_unmodified": True,
                 "synthetic_layout_file_count_before_injection": verified["file_count"],
@@ -350,7 +419,9 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                 "temporary_pg18_started": True, "login_status": 200,
                 "session_status": 200, "unlicensed_project_status": project.status_code,
                 "synthetic_public_key_only": True, "vault_key_count": len(installed_keys),
-                "formal_trust_provisioned": False}
+                "formal_trust_provisioned": False,
+                "api_restart_count": api_restart_count,
+                "postgres_restart_count": pg_restart_count}
     finally:
         cleanup_errors = []
         for name, process in (("caddy", caddy_process), ("api", api_process)):

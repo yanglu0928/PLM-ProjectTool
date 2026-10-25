@@ -1,5 +1,9 @@
 # 版本说明
 
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A10`：当前固定候选包内仅重启本轮临时PostgreSQL（API/Caddy不重启），同数据目录正常fast stop/start后，原授权成员Session继续读取相同Plan=200，数据与Plan/Audit/收据/Review决定计数不变。完整Edge/HTTPS/PG链、单测8/8、22,197项Stage清单通过；候选SHA不变且临时资源清理。仅调整隔离smoke编排与验证器，无产品/API/Schema/Migration/依赖变化；不是备份/灾难恢复、正式安装或发行证据。
+
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A09`：当前固定候选包内创建Plan后只重启本轮API进程，原授权成员Session继续读取同一Plan=200且字段一致；PG Plan/Audit/完成收据/Review决定计数不变。完整Edge/HTTPS/隔离PG链、7项smoke单测、Stage清单和候选SHA检查通过，临时资源清理。首轮回调关键字穿过旧strict adapter失败关闭，改为smoke生命周期ContextVar hook后完整复跑。无产品/API/Schema/Migration/依赖变化；不等于Windows服务恢复或正式发行。
+
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A08`：当前固定Windows 11非发行候选新增Plan跨项目读取隔离证据。同一合成成员读取其他项目下同一Plan ID返回404且不回显目标身份；PG确认原Plan/Audit/幂等收据唯一、无跨项目写入。完整候选包Edge/HTTPS/隔离PG回归退出0，SHA不变且临时资源清理。兼容性：只扩展一次性验证器的可选参数，无产品/API/Schema/Migration/依赖变化；`release_eligible=false`、`legal_clearance=false`。已知未决：PlanVersion、完整纵向链、正式信任/安装、Pilot/Gate及多平台未验；smoke单测6/6通过，复用当前候选包依赖目录运行。
 
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A07`：当前固定候选包内Edge/HTTPS/PG Plan身份创建201/读取200通过；数据库确认ACTIVE、批准指针NULL、唯一Audit/收据。无PlanVersion/WBS/Review决定/Output。兼容性：仅新增隔离验证器，无产品/API/Schema/Migration/依赖变化；候选非发行，正式信任/完整链/Pilot/Gate仍待。详见P51-A07进度记录。
