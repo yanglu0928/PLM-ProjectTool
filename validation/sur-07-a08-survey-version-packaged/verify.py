@@ -18,6 +18,24 @@ sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "apps" / "backend" / "src"))
 survey_create = runpy.run_path(str(ROOT / "validation/sur-07-a03-survey-create-packaged/verify.py"))
 handover_review = survey_create["prior"]
+_seed_observer = handover_review["seed_observer"]
+
+
+def seed_project_manager(context: dict, project: uuid.UUID) -> uuid.UUID:
+    user_id = _seed_observer(context, project)
+    with context["connect_db"]() as db:
+        assert db.execute(
+            "UPDATE plm.prj_project_members SET project_role='PROJECT_MANAGER' "
+            "WHERE project_id=%s AND user_id=%s AND project_role='IMPLEMENTATION_MEMBER'",
+            (project, user_id),
+        ).rowcount == 1
+    return user_id
+
+
+# The Session is created after this fixture. The ProjectManager role therefore
+# appears in its real authorization projection before Edge opens the Survey UI.
+handover_review["seed_observer"] = seed_project_manager
+handover_review["browser_probe"].__globals__["seed_observer"] = seed_project_manager
 
 
 def after_approval(state: dict, **context) -> None:
@@ -46,7 +64,7 @@ def after_approval(state: dict, **context) -> None:
         raise AssertionError("packaged SurveyVersion Edge failed: "
                              + edge.stdout[-9000:] + edge.stderr[-9000:])
     result = json.loads(edge.stdout.strip().splitlines()[-1])
-    assert result["status"] == "SUR_07_A08_PACKAGED_EDGE_PASS", result
+    assert result["status"] == "SUR_07_A12_P02_PACKAGED_EDGE_PASS", result
     assert result["project_id"] == str(project) and result["survey_id"] == str(survey)
     fixed_row = result["handover_item_row_id"]
     assert fixed_row in {item["handover_item_row_id"] for item in available}
@@ -64,7 +82,7 @@ def after_approval(state: dict, **context) -> None:
             "WHERE survey_version_id=%s AND survey_id=%s AND project_id=%s",
             (version, survey, project),
         ).fetchone()
-        assert row == ("DRAFT", 1, context["observer_id"]), row
+        assert row == ("IN_REVIEW", 1, context["observer_id"]), row
         assert db.execute("SELECT count(*) FROM plm.srv_questions WHERE survey_version_id=%s",
                           (version,)).fetchone()[0] == 1
         sources = db.execute(
@@ -90,6 +108,55 @@ def after_approval(state: dict, **context) -> None:
             "AND state='COMPLETED' AND result_ref_id=%s",
             (context["observer_id"], project, version),
         ).fetchone()[0] == 1
+        final_version = db.execute(
+            "SELECT version_state,review_ref,review_round_ref FROM plm.srv_survey_versions "
+            "WHERE survey_version_id=%s", (version,),
+        ).fetchone()
+        review_id = uuid.UUID(result["review_id"])
+        round_id = uuid.UUID(result["review_round_id"])
+        reviewer_id = uuid.UUID(result["reviewer_id"])
+        assert final_version == ("IN_REVIEW", review_id, round_id), final_version
+        assert db.execute(
+            "SELECT review_state,active_round_id,subject_type,subject_id FROM plm.rvw_reviews "
+            "WHERE review_id=%s", (review_id,),
+        ).fetchone() == ("IN_REVIEW", round_id, "SRV-02", survey)
+        assert db.execute(
+            "SELECT round_state,subject_version_id,started_by FROM plm.rvw_review_rounds "
+            "WHERE review_round_id=%s", (round_id,),
+        ).fetchone() == ("IN_REVIEW", version, context["observer_id"])
+        assert db.execute(
+            "SELECT reviewer_id,assignment_state FROM plm.rvw_review_assignments "
+            "WHERE review_round_id=%s", (round_id,),
+        ).fetchall() == [(reviewer_id, "PENDING")]
+        assert db.execute(
+            "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
+            "AND target_object_id=%s AND action='SURVEY_VERSION_VALIDATED' "
+            "AND outcome='SUCCESS'", (project, version),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
+            "AND target_object_id=%s AND action='REVIEW_CREATED' AND outcome='SUCCESS'",
+            (project, review_id),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
+            "AND target_object_id=%s AND action='REVIEW_STARTED' AND outcome='SUCCESS'",
+            (project, round_id),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE actor_id=%s "
+            "AND project_id=%s AND operation='V1_SURVEY_VERSION_SUBMIT_REVIEW' "
+            "AND state='COMPLETED' AND result_ref_id=%s",
+            (context["observer_id"], project, round_id),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT count(*) FROM plm.rvw_review_decisions WHERE review_id=%s",
+            (review_id,),
+        ).fetchone()[0] == 0
+        assert db.execute(
+            "SELECT current_approved_version_ref FROM plm.srv_surveys "
+            "WHERE survey_id=%s", (survey,),
+        ).fetchone() == (None,)
         state["version_count"] = db.execute(
             "SELECT count(*) FROM plm.srv_survey_versions WHERE survey_id=%s", (survey,),
         ).fetchone()[0]
@@ -99,7 +166,10 @@ def after_approval(state: dict, **context) -> None:
     invalid = json.loads(json.dumps(body))
     invalid["questions"][0]["sources"][0]["handover_item_row_id"] = str(uuid.uuid4())
     denied = observer.post(path, headers=headers, json=invalid)
-    assert denied.status_code == 422, (denied.status_code, denied.text)
+    # Submit-review advances the Survey write boundary; the pre-submit ETag
+    # must be rejected before a second version can be created.
+    assert denied.status_code == 409 and denied.json()["error"]["code"] == "CONFLICT_VERSION", (
+        denied.status_code, denied.text)
     denied = observer.post(f"/api/v1/projects/{uuid.uuid4()}/surveys/{survey}/versions",
                            headers=headers, json=body)
     assert denied.status_code == 404, (denied.status_code, denied.text)
@@ -120,6 +190,8 @@ def after_approval(state: dict, **context) -> None:
                           (survey,)).fetchone()[0] == 1
     print("SUR_07_A08_PACKAGED_PG_PASS: DRAFT fixed+MANUAL, target, one Audit/receipt, "
           "same-key replay and denied writers", flush=True)
+    print("SUR_07_A12_P02_PACKAGED_PG_PASS: DRAFT Validate, ProjectManager atomic "
+          "submit-review, exact ACTIVE reviewer snapshot, Audit and receipt", flush=True)
 
 
 def after_expiry(state: dict, **context) -> None:

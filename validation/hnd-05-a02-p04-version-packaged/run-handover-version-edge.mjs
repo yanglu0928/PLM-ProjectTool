@@ -20,7 +20,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 let socket; let nextId = 0; const pending = new Map(); const observations = [];
 let versionRequest = null;
 async function target() {
-  for (let attempt = 0; attempt < 120; attempt += 1) {
+  for (let attempt = 0; attempt < 300; attempt += 1) {
     try {
       const entries = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
       const page = entries.find(entry => entry.type === "page" && entry.url.startsWith(origin));

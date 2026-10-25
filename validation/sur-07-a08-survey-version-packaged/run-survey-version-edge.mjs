@@ -21,6 +21,8 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 const path = `/api/v1/projects/${project}/surveys/${survey}/versions`;
 const observations = []; const pending = new Map(); let nextId = 0;
 let socket; let createRequest = null; let createResponseId = null;
+let validateRequest = null; let validateResponseId = null;
+let submitRequest = null; let submitResponseId = null;
 async function target() {
   for (let attempt = 0; attempt < 120; attempt += 1) {
     try { const entries = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
@@ -52,6 +54,10 @@ async function setValue(selector, value) {
   const done = await evaluate(`(() => {const e=document.querySelector(${JSON.stringify(selector)});if(!e)return false;const d=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e),'value');d.set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('input',{bubbles:true}));return true;})()`);
   if (!done) throw new Error(`missing input: ${selector}`);
 }
+async function click(text) {
+  const done = await evaluate(`(() => {const x=[...document.querySelectorAll('a,button')].find(e=>e.textContent.trim().includes(${JSON.stringify(text)}));if(!x)return false;x.click();return true;})()`);
+  if (!done) throw new Error(`missing UI action: ${text}`);
+}
 function header(request, name) {
   return Object.entries(request?.headers ?? {}).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1];
 }
@@ -67,12 +73,20 @@ try {
       if (url === path && message.params.response.status === 201 && !createResponseId) {
         createResponseId = message.params.requestId;
       }
+      if (url.endsWith(":validate") && message.params.response.status === 200 && !validateResponseId) {
+        validateResponseId = message.params.requestId;
+      }
+      if (url.endsWith(":submit-review") && message.params.response.status === 201 && !submitResponseId) {
+        submitResponseId = message.params.requestId;
+      }
     }
     if (message.method === "Network.loadingFailed") observations.push({ loadingFailed: message.params.errorText });
     if (message.method === "Runtime.exceptionThrown") observations.push({ exception: message.params.exceptionDetails.text });
-    if (message.method === "Network.requestWillBeSent" && message.params.request.method === "POST"
-      && new URL(message.params.request.url).pathname === path && !createRequest) {
-      createRequest = message.params.request;
+    if (message.method === "Network.requestWillBeSent" && message.params.request.method === "POST") {
+      const requestPath = new URL(message.params.request.url).pathname;
+      if (requestPath === path && !createRequest) createRequest = message.params.request;
+      if (requestPath.endsWith(":validate") && !validateRequest) validateRequest = message.params.request;
+      if (requestPath.endsWith(":submit-review") && !submitRequest) submitRequest = message.params.request;
     }
     if (!message.id || !pending.has(message.id)) return;
     const request = pending.get(message.id); pending.delete(message.id);
@@ -127,16 +141,70 @@ try {
   if (replay.status !== 201 || replay.data?.survey_version_id !== created.survey_version_id) {
     throw new Error(`same-key replay failed: ${JSON.stringify(replay)}`);
   }
+  const returnLink = await evaluate(`(() => {const x=[...document.querySelectorAll('a')].find(e=>e.textContent.includes('返回调研定义与版本'));if(!x)return false;x.click();return true;})()`);
+  if (!returnLink) throw new Error("return-to-survey link missing");
+  await waitFor("document.querySelector('#survey-detail-title')", "Survey detail after DRAFT creation");
+  await waitFor("[...document.querySelectorAll('button')].some(e=>e.textContent.includes('查看版本 1 的问题卡片'))",
+    "created DRAFT version card");
+  await click("查看版本 1 的问题卡片");
+  await waitFor("[...document.querySelectorAll('button')].some(e=>e.textContent.trim()==='运行当前来源校验')",
+    "Survey validation panel");
+  await click("运行当前来源校验");
+  await waitFor("document.body.innerText.includes('本次校验通过')", "Survey current validation report");
+  if (!validateRequest || !validateResponseId || validateRequest.postData
+    || !header(validateRequest, "Idempotency-Key") || !header(validateRequest, "X-CSRF-Token")) {
+    throw new Error("Survey validate POST must be bodyless and carry its CSRF/idempotency headers");
+  }
+  const validationResponse = await send("Network.getResponseBody", { requestId: validateResponseId });
+  if (validationResponse.base64Encoded) throw new Error("unexpected encoded Survey validation response");
+  const validation = JSON.parse(validationResponse.body).data;
+  if (validation?.survey_version_id !== created.survey_version_id || validation.state !== "DRAFT"
+    || validation.valid !== true || validation.question_count !== 1 || validation.source_count !== 2
+    || !uuid.test(validation.audit_event_id ?? "")) {
+    throw new Error(`Survey validation response mismatch: ${JSON.stringify(validation)}`);
+  }
+
+  const loadReviewers = await evaluate(`(() => {const x=[...document.querySelectorAll('button')].find(e=>e.textContent.trim()==='读取当前项目评审人');if(!x)return false;x.click();return true;})()`);
+  if (!loadReviewers) throw new Error("ProjectManager reviewer-list action missing");
+  await waitFor("document.querySelector('fieldset input[type=checkbox]')", "ACTIVE customer reviewer options");
+  const reviewerId = await evaluate("(() => {const x=document.querySelector('fieldset input[type=checkbox]');if(!x)return null;x.click();return x.value;})()");
+  if (!uuid.test(reviewerId ?? "")) throw new Error("no selectable ACTIVE customer reviewer");
+  const confirmation = await evaluate(`(() => {const label=[...document.querySelectorAll('label')].find(e=>e.textContent.includes('我已核对该固定版本和问题'));if(!label)return false;label.querySelector('input')?.click();return true;})()`);
+  if (!confirmation) throw new Error("explicit Survey review submission confirmation missing");
+  await click("提交调研版本评审");
+  await waitFor("document.body.innerText.includes('已送审，评审')", "atomic Survey submit-review receipt");
+  if (!submitRequest || !submitResponseId || !header(submitRequest, "Idempotency-Key")
+    || !header(submitRequest, "X-CSRF-Token") || !submitRequest.postData) {
+    throw new Error("Survey submit-review request lacks its key, CSRF or JSON body");
+  }
+  const submitResponse = await send("Network.getResponseBody", { requestId: submitResponseId });
+  if (submitResponse.base64Encoded) throw new Error("unexpected encoded Survey submit-review response");
+  const submitted = JSON.parse(submitResponse.body).data;
+  if (submitted?.survey_version_id !== created.survey_version_id || submitted.project_id !== project
+    || submitted.survey_id !== survey || submitted.subject_type !== "SRV-02"
+    || submitted.policy_ref !== "SURVEY_ALL_V1" || submitted.state !== "IN_REVIEW"
+    || submitted.reviewer_ids?.length !== 1 || submitted.reviewer_ids[0] !== reviewerId
+    || !uuid.test(submitted.review_id ?? "") || !uuid.test(submitted.review_round_id ?? "")) {
+    throw new Error(`Survey submit-review response mismatch: ${JSON.stringify(submitted)}`);
+  }
+  if (!await evaluate("document.body.innerText.includes('尚未批准')")) {
+    throw new Error("submit-review UI must explicitly state that this is not an approval");
+  }
   const failures = observations.filter(item => item.exception || item.loadingFailed
     || item.status >= 400 && !(item.url === "/api/v1/auth/session" && item.status === 401));
   const alerts = await evaluate("[...document.querySelectorAll('[role=alert]')].filter(e=>e.offsetParent!==null).map(e=>e.innerText)");
   if (failures.length || alerts.length) throw new Error(`browser failures: ${JSON.stringify({ failures, alerts })}`);
-  console.log(JSON.stringify({ status: "SUR_07_A08_PACKAGED_EDGE_PASS", project_id: project,
+  console.log(JSON.stringify({ status: "SUR_07_A12_P02_PACKAGED_EDGE_PASS", project_id: project,
     survey_id: survey, actor_id: actor, survey_version_id: created.survey_version_id,
     handover_item_row_id: requestBody.questions[0].sources[0].handover_item_row_id,
     handover_analysis_version_id: requestBody.questions[0].sources[0].handover_analysis_version_id,
     target_department_id: requestBody.target_department_ids[0], request_body: requestBody,
-    original_etag: header(createRequest, "If-Match") }));
+    original_etag: header(createRequest, "If-Match"), validation_audit_event_id: validation.audit_event_id,
+    validation_valid: validation.valid, validation_idempotency_key: header(validateRequest, "Idempotency-Key"),
+    review_id: submitted.review_id, review_round_id: submitted.review_round_id,
+    reviewer_id: reviewerId, submit_review_etag: header(submitRequest, "If-Match"),
+    submit_review_idempotency_key: header(submitRequest, "Idempotency-Key"),
+    submit_review_state: submitted.state }));
   socket.close();
 } catch (error) {
   console.error(JSON.stringify({ error: String(error), observations }, null, 2)); process.exitCode = 1;
