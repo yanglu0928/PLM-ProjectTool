@@ -147,12 +147,13 @@ class PlanVersionReviewStateResultRow(Base):
         ForeignKeyConstraint(["actor_id"], ["plm.auth_users.user_id"],
                              name="fk_pln_plan_review_results__actor",
                              ondelete="NO ACTION"),
-        CheckConstraint("event_type IN ('START','APPROVED','RETURNED','SUPERSEDED')",
+        CheckConstraint("event_type IN ('START','APPROVED','RETURNED','WITHDRAWN','SUPERSEDED')",
                         name="ck_pln_plan_review_results__event"),
         CheckConstraint(
             "(event_type='START' AND previous_state='DRAFT' AND current_state='IN_REVIEW') "
             "OR (event_type='APPROVED' AND previous_state='IN_REVIEW' AND current_state='APPROVED') "
             "OR (event_type='RETURNED' AND previous_state='IN_REVIEW' AND current_state='RETURNED') "
+            "OR (event_type='WITHDRAWN' AND previous_state='IN_REVIEW' AND current_state='RETURNED') "
             "OR (event_type='SUPERSEDED' AND previous_state='APPROVED' AND current_state='SUPERSEDED')",
             name="ck_pln_plan_review_results__transition"),
         CheckConstraint("isfinite(created_at)",

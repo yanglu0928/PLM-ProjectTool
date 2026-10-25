@@ -20,6 +20,12 @@ class PlanVersionReviewStateMigrationTests(unittest.TestCase):
         }.issubset(table.c.keys()))
         self.assertTrue(any("pln_plan_versions.plan_version_id" in str(fk.target_fullname)
                             for fk in table.foreign_keys))
+        checks = {constraint.name: str(constraint.sqltext)
+                  for constraint in table.constraints
+                  if constraint.__class__.__name__ == "CheckConstraint"}
+        self.assertIn("WITHDRAWN", checks["ck_pln_plan_review_results__event"])
+        self.assertIn("event_type='WITHDRAWN'", checks["ck_pln_plan_review_results__transition"])
+        self.assertIn("current_state='RETURNED'", checks["ck_pln_plan_review_results__transition"])
 
     def test_migration_extends_0189_and_closes_every_lifecycle_transition(self) -> None:
         migration = importlib.import_module(
@@ -50,6 +56,29 @@ class PlanVersionReviewStateMigrationTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "history prevents downgrade"):
                 migration.downgrade()
             self.assertEqual(execute.call_count, 1)  # only acquire the protective lock
+
+    def test_withdrawal_migration_requires_real_withdrawn_facts_and_is_history_safe(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261026_0210_plan_review_withdrawal_result")
+        self.assertEqual(migration.revision, "20261026_0210")
+        self.assertEqual(migration.down_revision, "20261026_0200")
+        combined = migration._GUARDS + inspect.getsource(migration.upgrade)
+        for required in (
+            "WHEN 'WITHDRAWN' THEN 'RETURNED'",
+            "NEW.event_type IN ('APPROVED','RETURNED','WITHDRAWN')",
+            "review_row.review_state=NEW.event_type",
+            "round_row.round_state=NEW.event_type",
+            "e.actor_id=NEW.actor_id AND e.result_state=NEW.event_type",
+            "existing withdrawn Plan Review requires audited migration",
+        ):
+            self.assertIn(required, combined)
+        with patch.object(migration.context, "is_offline_mode", return_value=False), \
+                patch.object(migration.op, "execute") as execute, \
+                patch.object(migration.op, "get_bind") as get_bind:
+            get_bind.return_value.execute.return_value.scalar_one.return_value = True
+            with self.assertRaisesRegex(RuntimeError, "withdrawn Plan Review history prevents downgrade"):
+                migration.downgrade()
+            self.assertEqual(execute.call_count, 1)  # only acquire the protective table lock
 
 
 if __name__ == "__main__":

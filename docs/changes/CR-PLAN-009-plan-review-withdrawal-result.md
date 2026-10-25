@@ -31,3 +31,11 @@ CR-PLAN-007 已明确撤回/取消新跃迁必须独立核验。本 CR 补齐这
 - PlanVersion 已有对外状态 `RETURNED` 足以表达可重新修订的终态；独立 `WITHDRAWN` 事件保留“由撤回导致”的审计语义，不把Review撤回误认为客户的退回决定。
 - 不变更 `/api/v1`、Review DTO/状态机、权限、License、数据外发、依赖或产品Scope。原0190、0200及Gate 2冻结内容保持不变。
 - 用户2026-09-24持续自主执行授权覆盖本CR的实施；本记录不代表业务验收或Gate通过。
+
+## 实施结果（2026-10-26）
+
+- Migration `20261026_0210` 与内部PlanVersion终态Owner已实现；0190/0200及冻结API未改。
+- Windows 11/PG18.6：真实Review/Round/Plan持久化证明两版连续批准、旧Approved转SUPERSEDED、当前指针唯一切换；再创建第三版并真实WITHDRAWN，PlanVersion返回既有状态RETURNED且Approved指针保留。Review/Plan Audit、同事务回执、同Key原响应重放通过；注入Plan Audit故障时所有业务行/事件/回执整体回滚；有WITHDRAWN历史的降级失败关闭且Alembic版本仍为0210。
+- 完整后端`4170 passed, 3 skipped, 6206 subtests passed`，P06-P01迁移往返/漂移脚本通过。
+- 真实Session、License、Project授权策略、Reviewer资格和来源当前Proof由确定性替身提供；Review/Round/Plan/结果/Audit/Receipt及迁移/触发器为真PG数据。还未完成HTTP/Windows用户入口、逐项伪造错Actor/错误Round/无结果负例；不得宣称Gate/Pilot/Release通过。
+- 结果记录：`docs/progress/plan-02-a04-p04-a04-p03-p04-s03-p03-a06-p05-p06-p02-terminal-owner.md`。
