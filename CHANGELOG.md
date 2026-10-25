@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A12-P03 完成 Survey Review UI 编码前核查。后端已注册真实 `SRV-02 + SURVEY_ALL_V1` Owner 与冻结通用 Review 读/决定流程；前端精确 Subject allowlist、详情标签、待办映射和固定 SurveyVersion 链接尚缺。只读核查，无代码/API/Schema/Migration/依赖变化。验证：对照后端 Windows 组合、Review Owner、前端 Review Client/详情页及送审 201 回执路径；未运行程序测试。已知问题：SRV-02 Review UI 和合成包内决定链待 P04；客户真实决定、正式信任、Pilot/Gate/发行仍未完成。见 `docs/progress/sur-07-a12-p03-survey-review-ui-precheck.md`。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A12-P02 完成 Survey Validate→原子送审固定包验收。Windows 11 候选 SHA-256 `730f87b6ddf87d429ada7a28c2e6a3ae7de85ba9c3ba7a042a408c2f86a367e5`（22,197件负载）通过清洁解包、真实 Edge/HTTPS/隔离 PG18；合成 ProjectManager 送审后 Review/Round=`IN_REVIEW`、客户 Reviewer=`PENDING`、决定数0、批准指针NULL，Audit/幂等收据与临时资源清理通过。只修改验收脚本/进度文档，无产品 API/Schema/Migration/生产依赖变化。兼容性：仅 Windows 11 合成信任验收，Windows Server 2025/Debian 13 未测；升级：不涉及产品升级。已知限制：候选 `release_eligible=false`、`legal_clearance=false`、正式信任未配置；不表示真人客户决定、Pilot、Gate 或发行完成。历史测试时序/夹具/断言修正记录见 `docs/progress/sur-07-a12-p02-survey-review-packaged.md`。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A12-P01 完成 Survey A10/A11 当前 UI 与包内验收前置核查：冻结 Validate/Submit Review 与 Windows 组合存在，但最新前端能力尚无固定候选包 Edge/HTTPS/PG18 证据；既有 A08 包只到 DRAFT 创建。确认后续送审需通过产品授权流程准备独立合成 ProjectManager，Reviewer 仍仅为测试身份。兼容性：只读核查，无代码/API/Schema/Migration/依赖变化。验证：对照 A08/A10/A11 记录、前端路由和 Submit Review Owner；未运行程序测试。已知问题：当前新 UI 包内验收、正式信任、真人客户批准、Gate/Pilot/三平台发行均未完成；见 `docs/progress/sur-07-a12-p01-survey-review-packaged-precheck.md`。
