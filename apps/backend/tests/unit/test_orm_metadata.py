@@ -222,6 +222,8 @@ class OrmMetadataTests(unittest.TestCase):
         historical_metadata.discard('plm.pln_plan_versions')
         self.assertIn('plm.pln_plan_version_validation_results', Base.metadata.tables)
         historical_metadata.discard('plm.pln_plan_version_validation_results')
+        self.assertIn('plm.pln_plan_version_review_state_results', Base.metadata.tables)
+        historical_metadata.discard('plm.pln_plan_version_review_state_results')
         self.assertIn('plm.pln_wbs_items', Base.metadata.tables)
         historical_metadata.discard('plm.pln_wbs_items')
         self.assertIn('plm.pln_wbs_dependencies', Base.metadata.tables)

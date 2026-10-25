@@ -125,6 +125,60 @@ class PlanVersionRow(Base):
         server_default=text("statement_timestamp()"))
 
 
+class PlanVersionReviewStateResultRow(Base):
+    """Immutable PlanVersion Review lifecycle event; no application writer yet."""
+
+    __tablename__ = "pln_plan_version_review_state_results"
+    __table_args__ = (
+        UniqueConstraint("plan_version_id", "event_type",
+                         name="uq_pln_plan_review_results__version_event"),
+        UniqueConstraint("review_id", "review_round_id", "event_type",
+                         name="uq_pln_plan_review_results__round_event"),
+        ForeignKeyConstraint(
+            ["plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_plan_versions.plan_version_id", "plm.pln_plan_versions.plan_id",
+             "plm.pln_plan_versions.project_id"],
+            name="fk_pln_plan_review_results__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["review_id"], ["plm.rvw_reviews.review_id"],
+                             name="fk_pln_plan_review_results__review",
+                             ondelete="NO ACTION"),
+        ForeignKeyConstraint(["review_round_id"],
+                             ["plm.rvw_review_rounds.review_round_id"],
+                             name="fk_pln_plan_review_results__round",
+                             ondelete="NO ACTION"),
+        ForeignKeyConstraint(["actor_id"], ["plm.auth_users.user_id"],
+                             name="fk_pln_plan_review_results__actor",
+                             ondelete="NO ACTION"),
+        CheckConstraint("event_type IN ('START','APPROVED','RETURNED','SUPERSEDED')",
+                        name="ck_pln_plan_review_results__event"),
+        CheckConstraint(
+            "(event_type='START' AND previous_state='DRAFT' AND current_state='IN_REVIEW') "
+            "OR (event_type='APPROVED' AND previous_state='IN_REVIEW' AND current_state='APPROVED') "
+            "OR (event_type='RETURNED' AND previous_state='IN_REVIEW' AND current_state='RETURNED') "
+            "OR (event_type='SUPERSEDED' AND previous_state='APPROVED' AND current_state='SUPERSEDED')",
+            name="ck_pln_plan_review_results__transition"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_pln_plan_review_results__created_at"),
+        Index("ix_pln_plan_review_results__review_round", "review_id", "review_round_id"),
+        {"schema": "plm"},
+    )
+
+    review_state_result_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_round_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    event_type: Mapped[str] = mapped_column(Text, nullable=False)
+    previous_state: Mapped[str] = mapped_column(Text, nullable=False)
+    current_state: Mapped[str] = mapped_column(Text, nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+
+
 class PlanVersionValidationResultRow(Base):
     """Immutable first-response snapshot for one audited validation command."""
 
