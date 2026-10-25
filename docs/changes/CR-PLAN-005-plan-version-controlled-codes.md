@@ -14,9 +14,9 @@ PlanVersion字段映射（CR-PLAN-002/S01）要求 `calendar_ref`、WBS `categor
 
 选择 B。首版集合为：
 
-- WBS category：`ANALYSIS`、`DESIGN`、`BUILD`、`TEST`、`DEPLOYMENT`、`TRAINING`、`ACCEPTANCE`、`PROJECT_MANAGEMENT`、`OTHER`。
-- Support role：`PROJECT_MANAGER`、`BUSINESS_ANALYST`、`SOLUTION_ARCHITECT`、`DEVELOPER`、`TESTER`、`IMPLEMENTATION_MEMBER`、`CUSTOMER`。
-- Calendar：`STANDARD_5X8`（工作日换算语义不扩展；准确日历算法留待正式调研配置）。
+- WBS category：`ANALYSIS`、`DESIGN`、`IMPLEMENTATION`、`TEST`、`DEPLOYMENT`、`TRAINING`、`ACCEPTANCE`、`PROJECT_MANAGEMENT`、`OTHER`。
+- Support role：`PROJECT_MANAGER`、`IMPLEMENTATION_MEMBER`、`CUSTOMER_MANAGER`、`CUSTOMER_MEMBER`，沿用字段映射明确要求的Project role code vocabulary；这只是WBS快照标签，不授予任何授权，执行人仍由 `owner_ref` 和授权服务单独验证。
+- Calendar：`CN_WORKDAY`（作为当前已有输入示例使用的逻辑code；工作日换算语义不扩展，准确日历算法留待正式调研配置）。
 
 拒绝未列值，不做大小写别名或自动猜测。`OTHER`仅为显式类别值，不接受任意自定义代码。冻结API/Schema无变化；部署无需迁移。回滚时可撤去Owner/registry，保留已创建不可变版本，不静默重写历史。风险是用户现有业务术语可能不在首版集合内；在用户配置界面可用前须由调用方使用列出的规范代码。
 
