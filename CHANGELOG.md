@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A01 新增冻结调研定义创建的私有 Session POST 桥接与严格客户端，校验当前项目角色、CSRF/原幂等号、201 回执/Trace/ETag/Location，结果未知不自动重发；不把定义当客户访谈事实。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅新增尚未接界面的前端代码，无 API/Schema/License/数据迁移；可撤客户端，不删除既有调研数据。验证：定向4、前端全量2016、typecheck/build退出0。已知问题：创建表单/真实 Edge/HTTPS/PG 与调研版本和实际访谈记录仍未完成；正式信任/安装/UAT/Gate/Pilot/Release 未通过。
+
 - 2026-10-25：0.1.0-dev.0/PKG-PILOT-01-A04-P07 完成交接批准→调研定义创建入口的只读前置核查：后端 Survey Create 已在 Windows 组合中装配且交接批准问题可作为受控来源，但前端尚无创建桥接/按钮。兼容性：仅核对 Windows 11 已验切片与当前源码，Windows Server 2025/Debian 13 未实测。升级/回滚：纯文档，无 API/Schema/数据迁移或用户功能变化。验证：路由、权限、来源证明与调研列表/详情代码核对；调研写链未运行。已知问题：调研定义/版本实际创建与访谈资料、正式信任/安装/UAT/Gate/Pilot/Release 仍未完成；转 `SUR-07-A01`。
 
 - 2026-10-25：0.1.0-dev.0/HND-05-A05-P06 从干净源提交重建 Windows 11 后端 wheel 与非发行候选包（SHA-256 `4cd0b60aaa439fd9e0a349233b065fa79bc6caacceaca017ec80791957fe3dc7`），新增可重复包内交接 Review 验收夹具，不改冻结 API/Schema/权限。兼容性：仅 Windows 11 合成信任环境已实测；Windows Server 2025/Debian 13 未实测。升级/回滚：无数据库迁移，本候选替换旧非发行候选用于内部验证，旧包/合法 Review/Audit 保留；正式安装/升级仍未验。验证：22,196载荷独立清洁解包逐件哈希、临时布局及 Edge/HTTPS/隔离 PG18 交接送审→固定版本核对→合成客户批准、同号重放、唯一决定/Audit/收据与匿名/外项目/非评审人/错项目/合成失效 License 拒绝，第四轮退出0；前三轮夹具偏差留痕，进程/临时库/布局清理。已知问题：本包 `release_eligible=false`、`legal_clearance=false`；真人客户确认、正式公钥/服务账户/CA、License 自然到期/撤销、调研及后续完整链、离线安装升级、UAT/Gate 3～7/Pilot/正式三平台 Release 未通过。
