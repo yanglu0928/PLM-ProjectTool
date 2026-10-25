@@ -19,6 +19,12 @@ from plm_assistant.modules.plan.api.create_plan_version import (
 from plm_assistant.modules.plan.api.read_plan_version import (
     create_plan_version_read_router,
 )
+from plm_assistant.modules.plan.api.list_plan_version_wbs import (
+    create_plan_version_wbs_list_router,
+)
+from plm_assistant.modules.plan.api.wbs_list_cursor import (
+    PlanVersionWbsCursorCodec,
+)
 from plm_assistant.modules.plan.application.create_plan_version import (
     PlanVersionCreateService,
 )
@@ -28,11 +34,17 @@ from plm_assistant.modules.plan.application.prove_approved_solution_input import
 from plm_assistant.modules.plan.application.read_plan_version import (
     PlanVersionReadService,
 )
+from plm_assistant.modules.plan.application.list_plan_version_wbs import (
+    PlanVersionWbsReadService,
+)
 from plm_assistant.modules.plan.infrastructure.plan_version_create_repository import (
     SqlAlchemyPlanVersionCreateRepository,
 )
 from plm_assistant.modules.plan.infrastructure.plan_version_read_repository import (
     SqlAlchemyPlanVersionReadRepository,
+)
+from plm_assistant.modules.plan.infrastructure.plan_version_wbs_read_repository import (
+    SqlAlchemyPlanVersionWbsReadRepository,
 )
 from plm_assistant.modules.plan.infrastructure.plan_version_source_proofs import (
     SqlAlchemyPlanVersionSourceProofs,
@@ -107,6 +119,30 @@ def create_windows_plan_version_read_router(
             repository=SqlAlchemyPlanVersionReadRepository())
         return create_plan_version_read_router(
             sessions=sessions, origins=origins, reads=reads)
+    except Exception:
+        raise WindowsPlanVersionStartupError() from None
+
+
+def create_windows_plan_version_wbs_list_router(
+    *, runtime, sessions, origins, license_guard,
+    cursors: PlanVersionWbsCursorCodec,
+):
+    if any(value is None for value in (runtime, sessions, origins,
+                                       license_guard, cursors)):
+        raise WindowsPlanVersionStartupError()
+    if type(cursors) is not PlanVersionWbsCursorCodec:
+        raise WindowsPlanVersionStartupError()
+    try:
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=SqlAlchemyProjectAuthorizationRepository())
+        reads = PlanVersionWbsReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard, authorization=authorization,
+            repository=SqlAlchemyPlanVersionWbsReadRepository())
+        return create_plan_version_wbs_list_router(
+            sessions=sessions, origins=origins, reads=reads, cursors=cursors)
     except Exception:
         raise WindowsPlanVersionStartupError() from None
 

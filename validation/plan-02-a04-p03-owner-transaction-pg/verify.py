@@ -310,6 +310,7 @@ def _verify_http_composition(context: dict[str, object], storage_root: Path,
     from plm_assistant.entrypoints.windows_plan_version import (
         create_windows_plan_version_create_router,
         create_windows_plan_version_read_router,
+        create_windows_plan_version_wbs_list_router,
     )
     from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
     from plm_assistant.modules.auth.application.session_service import SessionService
@@ -392,6 +393,39 @@ def _verify_http_composition(context: dict[str, object], storage_root: Path,
                      if key in {"cookie", "origin"}},
         )
         assert cross_project.status_code == 404, cross_project.text
+
+    from plm_assistant.modules.plan.api.wbs_list_cursor import (
+        PlanVersionWbsCursorCodec,
+    )
+    wbs_router = create_windows_plan_version_wbs_list_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=context["license_guard"],
+        cursors=PlanVersionWbsCursorCodec(b"w" * 32),
+    )
+    wbs_path = read_path + "/wbs-items?page_size=1"
+    wbs_headers = {key: value for key, value in headers.items()
+                   if key in {"cookie", "origin"}}
+    with TestClient(create_app(plan_version_wbs_list_router=wbs_router),
+                    base_url="https://plm.example.test") as client:
+        first_page = client.get(wbs_path, headers=wbs_headers)
+        assert first_page.status_code == 200, first_page.text
+        first_data = first_page.json()["data"]
+        assert len(first_data["items"]) == 1 and first_data["has_more"] is True
+        cursor = first_data["next_cursor"]
+        second_page = client.get(
+            f"{read_path}/wbs-items?page_size=1&cursor={cursor}",
+            headers=wbs_headers)
+        assert second_page.status_code == 200, second_page.text
+        second_data = second_page.json()["data"]
+        assert len(second_data["items"]) == 1 and second_data["has_more"] is False
+        assert first_data["items"][0]["wbs_item_id"] != second_data["items"][0]["wbs_item_id"]
+        cross_scope = client.get(
+            f"/api/v1/projects/{project}/plans/{uuid.uuid4()}/versions/"
+            f"{version_id}/wbs-items?page_size=1&cursor={cursor}",
+            headers=wbs_headers)
+        assert cross_scope.status_code == 400, cross_scope.text
+    print("PLAN_VERSION_WBS_LIST_HTTP_POSTGRESQL_PASS: fixed-version keyset pages, "
+          "session/project/plan/version-bound signed cursor")
     print("PLAN_VERSION_GET_HTTP_POSTGRESQL_PASS: fixed version snapshot, full refs, "
           "review/supersedes identity, member authorization and cross-project 404")
 

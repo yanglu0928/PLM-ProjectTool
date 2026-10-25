@@ -12050,6 +12050,13 @@
 - Reason：保持输出稳定、可缓存/可比较且兼容冻结Schema；后续UI工作可通过独立的WBS keyset列表取得分页视图。若业务后续证明Dependency/Milestone原始顺序有业务语义，再通过正式CR增加持久序号并保留历史兼容。
 - Impact/Rollback/Verification：仅只读DTO投影排序，无Schema、API字段、正式数据或写行为变化；删除排序键即可回退，但响应可重复性下降。Win11隔离PG HTTP、Contract/权限和完整回归验证后标记内部通过；不构成Gate/Pilot/Release结论。
 
+# DEC-20261026-PLAN-WBS-CURSOR-01：WBS页面游标复用Plan Vault key并独立域隔离
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A05`；分页WBS需要签名keyset cursor，已有Plan身份分页已配置Windows当前账户Vault中的32字节 `project-plan-list-cursor-v1` key。
+- Decision：复用同一受保护Plan cursor HMAC key，不新增Secret项；使用独立`plan-version-wbs-list` family、严格闭合字段集和独立payload编码，签入Session摘要、Project/Plan/PlanVersion/page_size/ordinal/WbsItemId。
+- Reason：WBS与Plan列表属于同一授权资源域，可避免新增客户安装时的必配密钥/恢复环节；family与请求范围校验阻止Plan list cursor与WBS cursor互换或跨项目/版本重放。
+- Impact/Rollback/Verification：不改变冻结API/Schema/Vault格式/License；如将来密钥轮换需要独立域，可追加versioned key ref但保持旧cursor过期/迁移策略。Contract篡改及Win11隔离PG18真实多页验证后标记内部通过，不构成正式信任或Gate结论。
+
 ## DEC-20261024-CAP-P03-P02-A02：多条目版本编辑与原号兼容
 
 已选逐条暂存、最终整批重验/提交的前端流程；现有单条直接创建仍可用。未暂存编辑内容不允许被静默忽略；不确定结果持久记录完整条目数组及原 ETag/Key，同时读取旧单条记录。每项来源/证据独立，整批来源并集必须等于基线；CR-CAP-007 已先完成 DEPRECATED 读写对齐。此决策不修改后端合同或 Gate，也不把合成资格变为真实确认。见 `docs/progress/cap-02-a05-p03-p02-a02-multi-item-editor.md`。
