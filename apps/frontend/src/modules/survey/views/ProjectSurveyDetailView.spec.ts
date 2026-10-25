@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
+import { ProjectMemberReadClient } from "@/modules/project/api/projectMemberReadClient";
 import { EvidenceViewerClient } from "@/modules/evidence/api/evidenceViewerClient";
 import { SurveyReadClient, SurveyReadError, type SurveySourceView,
   type SurveyVersionView, type SurveyView } from "@/modules/survey/api/surveyReadClient";
@@ -75,10 +76,10 @@ function locationClients() { const locations = new SurveySourceLocationClient(vi
     precision: "PARSED_NODE", display_label: "第 2 页 · 审批流程", short_preview: "客户确认采用两级审批",
     content_url: `/api/v1/projects/${project}/documents/${document}/versions/${fixedVersion}/content`,
   }); return { locations, evidence }; }
-async function view(auth: SessionClient, surveys = clients(), sources = locationClients()) { const router = createAppRouter(createMemoryHistory());
+async function view(auth: SessionClient, surveys = clients(), sources = locationClients(), members = new ProjectMemberReadClient()) { const router = createAppRouter(createMemoryHistory());
   await router.push(`/projects/${project}/surveys/${surveyId}`); await router.isReady();
   const wrapper = mount(ProjectSurveyDetailView, { props: { session: auth, surveys,
-    sourceLocations: sources.locations, evidence: sources.evidence }, global: { plugins: [router] } });
+    sourceLocations: sources.locations, evidence: sources.evidence, members }, global: { plugins: [router] } });
   await flushPromises(); return { wrapper, router, surveys, ...sources }; }
 
 describe("ProjectSurveyDetailView", () => {
@@ -113,6 +114,32 @@ describe("ProjectSurveyDetailView", () => {
       expect.stringMatching(/^survey-version-validation-/));
     expect(wrapper.text()).toContain("本次校验未通过"); expect(wrapper.text()).toContain("固定来源不可用");
     expect(wrapper.text()).toContain("不代表送审、评审批准或客户确认"); wrapper.unmount();
+  });
+
+  it("submits atomically to the complete current customer reviewer set and reports only IN_REVIEW", async () => {
+    const auth = await session(); const reviewer = "d1234567-89ab-4cde-8123-456789abcdef";
+    const members = new ProjectMemberReadClient(vi.fn() as typeof fetch);
+    vi.spyOn(members, "list").mockResolvedValue({ items: [
+      { member_id: reviewer, user: { user_id: reviewer, display_name: "客户经理" }, role: "CUSTOMER_MANAGER",
+        department: { department_id: department, name: "客户部" }, state: "ACTIVE", effective_at: now, ended_at: null, etag: '"v0"' },
+    ], next_cursor: null, has_more: false });
+    const receipt = { review_id: "e1234567-89ab-4cde-8123-456789abcdef",
+      review_round_id: "f1234567-89ab-4cde-8123-456789abcdef", subject_type: "SRV-02", project_id: project,
+      survey_id: surveyId, survey_version_id: versionId, policy_ref: "SURVEY_ALL_V1", reviewer_ids: [reviewer],
+      state: "IN_REVIEW", round_no: 1, review_etag: '"v1"', submitted_by: actor, submitted_at: now };
+    vi.spyOn(auth, "postProjectSurveyVersionSubmitReview").mockResolvedValue(new Response(
+      JSON.stringify({ data: receipt, trace_id: trace }), { status: 201, headers: { "Content-Type": "application/json",
+        "Cache-Control": "no-store", "X-Trace-Id": trace, ETag: '"v1"' } }));
+    const { wrapper } = await view(auth, clients(), locationClients(), members);
+    await wrapper.findAll("button").find(button => button.text().includes("问题卡片"))!.trigger("click"); await flushPromises();
+    await wrapper.findAll("button").find(button => button.text().includes("读取当前项目评审人"))!.trigger("click"); await flushPromises();
+    await wrapper.findAll("input").find(input => (input.element as HTMLInputElement).value === reviewer)!.setValue(true);
+    await wrapper.findAll("input").find(input => (input.element as HTMLInputElement).type === "checkbox"
+      && (input.element as HTMLInputElement).value !== reviewer)!.setValue(true);
+    await wrapper.findAll("button").find(button => button.text().includes("提交调研版本评审"))!.trigger("click"); await flushPromises();
+    expect(auth.postProjectSurveyVersionSubmitReview).toHaveBeenCalledWith(project, surveyId, versionId,
+      expect.stringContaining('"policy_ref":"SURVEY_ALL_V1"'), expect.stringMatching(/^survey-review-/));
+    expect(wrapper.text()).toContain("已送审"); expect(wrapper.text()).toContain("尚未批准"); wrapper.unmount();
   });
 
   it("locates manual, fixed document, Handover and Evidence only after an explicit click", async () => {

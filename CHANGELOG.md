@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A11 为 Survey DRAFT 增加 ProjectManager 原子送审及当前项目客户评审人面板：完整分页读取成员、只列 ACTIVE 客户角色、最多选择32人并显式确认。冻结 `SURVEY_ALL_V1` 请求使用单个原子 endpoint；未知结果保留同一评审人集合和幂等操作号。201回执只显示 IN_REVIEW，不是客户批准。兼容性：仅接入冻结 API，无 Schema/Migration/License/依赖变化；Server 2025/Debian 13 未实测。验证：前端2041项、类型检查、构建通过（主包体积警告仍在）；真实客户评审与后端/数据库回归未在本 WBS 重跑。已知问题：自然失效/撤销负例、实际包内纵向浏览器、正式信任、Pilot/Gate/三平台发行待后续。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A10 为 Survey DRAFT 当前固定版本增加安全 Validate 命令桥、严格报告解析及详情页面板；显示计数、阻断项、时间和审计事件。入口限定项目管理/实施角色，未知结果保留原幂等操作号，明确报告不改变状态、不等于送审/批准/客户确认。兼容性：只增加前端调用已冻结 API，无 API/Schema/License/依赖变化；Server 2025/Debian 13 未实测。升级/回滚：无需数据迁移；移除视图入口可回退，不影响已留审计。验证：前端全量测试2040项、类型检查通过、生产构建通过（399 modules；主包体积警告保留），见 `docs/progress/sur-07-a10-survey-version-validation-ui.md`。已知问题：A11送审、自然失效/撤销负例、正式信任、Pilot/Gate/三平台发行仍待。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A09 完成调研版本 Validate/原子送审前端缺口核查；确认后端冻结命令和 Windows 组合已有，但 Survey 详情页没有校验报告或送审入口。将后续拆为 A10 当前快照校验面板、A11 ProjectManager 原子送审及当前客户 Reviewer 选择。兼容性：纯静态核查，无 API/Schema/代码/迁移变化。验证：合同、Owner、Windows 组合与页面调用路径对账；未新增测试。已知问题：A10/A11、真人 Reviewer 决定、正式信任/Pilot/Release仍待。

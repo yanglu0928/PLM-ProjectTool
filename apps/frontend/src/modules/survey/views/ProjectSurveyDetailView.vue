@@ -4,19 +4,22 @@ import { RouterLink, useRoute } from "vue-router";
 
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
+import { ProjectMemberReadClient } from "@/modules/project/api/projectMemberReadClient";
 import { EvidenceViewerClient, EvidenceViewerClientError, type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
 import { SurveyReadClient, SurveyReadError, type SurveyQuestionView, type SurveySourceView,
   type SurveyVersionCursor, type SurveyVersionView, type SurveyView } from "@/modules/survey/api/surveyReadClient";
 import { SurveySourceLocationClient, SurveySourceLocationClientError, type SurveySourceLocation,
   type SurveySourceLocationView } from "@/modules/survey/api/surveySourceLocationClient";
 import SurveyVersionValidatePanel from "@/modules/survey/views/SurveyVersionValidatePanel.vue";
+import SurveyVersionSubmitReviewPanel from "@/modules/survey/views/SurveyVersionSubmitReviewPanel.vue";
 
 const props = defineProps<{ session?: SessionClient; surveys?: SurveyReadClient;
-  sourceLocations?: SurveySourceLocationClient; evidence?: EvidenceViewerClient }>();
+  sourceLocations?: SurveySourceLocationClient; evidence?: EvidenceViewerClient; members?: ProjectMemberReadClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const surveys = toRaw(props.surveys ?? new SurveyReadClient());
 const sourceLocations = toRaw(props.sourceLocations ?? new SurveySourceLocationClient());
 const evidence = toRaw(props.evidence ?? new EvidenceViewerClient());
+const members = toRaw(props.members ?? new ProjectMemberReadClient());
 const identity = session.view; const route = useRoute();
 const survey = ref<SurveyView | null>(null); const versions = ref<readonly SurveyVersionView[]>([]);
 const versionCursor = ref<SurveyVersionCursor | null>(null); const selectedVersion = ref<SurveyVersionView | null>(null);
@@ -195,6 +198,7 @@ onUnmounted(() => { mounted = false; generation += 1; detailGeneration += 1; loc
         <template v-if="selectedVersion">
           <p>固定版本 {{ selectedVersion.version_no }} · {{ versionLabels[selectedVersion.state] }}；共 {{ selectedVersion.questions.length }} 个问题。</p>
           <SurveyVersionValidatePanel :version="selectedVersion" :session="session" />
+          <SurveyVersionSubmitReviewPanel :version="selectedVersion" :session="session" :members="members" />
           <p>目标部门：{{ selectedVersion.target_departments.length }} 个受控引用 ·
             <RouterLink :to="{ name: 'project-departments', params: { projectId: route.params.projectId } }">核对项目部门历史</RouterLink></p>
           <article v-for="question in selectedVersion.questions" :key="question.question_id" class="question-card">
