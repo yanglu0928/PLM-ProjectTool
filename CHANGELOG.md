@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P05`（PlanVersion Review Create/Start Owner编码前核查完成）：确认复用统一PROJECT Review同事务持久层，并按Outline SubmitReview Owner模式由Plan业务Owner串接Session/PM、Reviewer、License、幂等Receipt、Review/Round、Audit及0190 START结果。Subject当前事实Proof必须在同一事务执行；因Review Subject Registry要求完整终态回调，本项暂不装配公共Registry/HTTP。仅前置记录与状态更新，无代码/Schema/API/业务数据变化；下一步实现内部Owner。详见P05-P05前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P04`（PlanVersion Review当前就绪Proof完成）：新增同事务只读当前DRAFT/latest锁与重评Proof，复用纯校验/当前Approved Solution与来源证明，不写Audit/Receipt、状态或Review。Win11隔离PG18真实Plan/PlanVersion锁定与旧版本拒绝通过；全量后端4155/3/6206。PG evaluator使用Mock；真实统一Review Owner正向提交待P05-P05组合，不代表Review功能/Gate通过。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P04`（PlanVersion Review当前就绪Proof编码前核查完成）：确定Start必须在同一事务锁住Plan身份、重建固定版本并重证当前Approved Solution/来源及纯校验规则；不得嵌套公开Validate副作用或创建Review/更改状态。本项仅核查，无程序/schema/API变化；下一项P05-P05创建/Start Owner。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P03`（PlanReview Subject就绪性核查完成）：确认冻结API-04已有PlanVersion submit-review契约及当前Validate/来源证明，但通用Review Registry与Windows组合当前没有`PLN-02` Subject Owner/路由。仅静态核查；下一项限内部送审资格/Start Owner，公开HTTP和终态决定另分项，真实合法正向PG验收留待Owner组合。
