@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## CR-PLAN-004：PlanVersion Owner 的append-only数据库guard
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03`。
+- Evidence：0170～0176、0186/0187现有PlanVersion/WBS父子/引用owner guards均无条件拒绝DML。直接删除会失去DB侧不可变与truncate保护，Application Owner无法事务提交完整快照。
+- Decision：按持续授权登记CR-PLAN-004；追加0188将所有Plan aggregate行guard改为允许INSERT、拒绝UPDATE/DELETE，保留no-TRUNCATE guards。降级恢复原拒写函数而不删除数据。必须与真正Owner同一受控交付，不单独部署。
+- Impact/Rollback：内部Migration/SQL写门变化；无API、权限、Schema列、冻结基线或数据删除。Owner失败时0188降级恢复闭锁；已有行始终保留。
+- Verification：P03-A01已用Win11 PostgreSQL 18.6逐个调用8个被替换的真实PL/pgSQL guard函数，验证INSERT允许、UPDATE/DELETE拒绝；验证独立TRUNCATE保护和0188降级后恢复拒写/历史行保留；Alembic drift及完整后端4120 passed/3 skipped/6153 subtests passed。P03-A02完整Owner回滚/审计/幂等测试仍待。
+
 ## CR-PLAN-003：补齐WBS Prototype固定版本引用Schema
 
 - Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P01`。
