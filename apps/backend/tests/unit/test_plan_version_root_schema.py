@@ -9,7 +9,7 @@ from plm_assistant.modules.plan.infrastructure.orm import PlanRow, PlanVersionRo
 
 
 class PlanVersionRootSchemaTests(unittest.TestCase):
-    def test_project_scoped_version_and_closed_approval(self) -> None:
+    def test_project_scoped_version_and_approved_pointer_reference(self) -> None:
         version = PlanVersionRow.__table__
         root = PlanRow.__table__
         self.assertEqual((version.schema, version.name), ("plm", "pln_plan_versions"))
@@ -22,8 +22,8 @@ class PlanVersionRootSchemaTests(unittest.TestCase):
                          "ck_pln_plan_versions__review_pair"} <= names)
         self.assertIn("fk_pln_plans__approved_version",
                       {constraint.name for constraint in root.constraints})
-        self.assertIn("ck_pln_plans__approved_pointer_closed",
-                      {constraint.name for constraint in root.constraints})
+        self.assertNotIn("ck_pln_plans__approved_pointer_closed",
+                         {constraint.name for constraint in root.constraints})
 
     def test_migration_is_closed_and_history_preserving(self) -> None:
         migration = importlib.import_module(

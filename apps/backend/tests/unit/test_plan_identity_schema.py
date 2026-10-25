@@ -9,13 +9,14 @@ from plm_assistant.modules.plan.infrastructure.orm import PlanRow
 
 
 class PlanIdentitySchemaTests(unittest.TestCase):
-    def test_identity_and_closed_pointer(self) -> None:
+    def test_identity_and_versioned_approved_pointer(self) -> None:
         table = PlanRow.__table__
         self.assertEqual((table.schema, table.name), ("plm", "pln_plans"))
         self.assertTrue(table.c.current_approved_version_ref.nullable)
         names = {constraint.name for constraint in table.constraints}
         self.assertTrue({"uq_pln_plans__id_project", "fk_pln_plans__project",
-                         "fk_pln_plans__creator", "ck_pln_plans__approved_pointer_closed"} <= names)
+                         "fk_pln_plans__creator"} <= names)
+        self.assertNotIn("ck_pln_plans__approved_pointer_closed", names)
 
     def test_migration_chain_and_history_guard(self) -> None:
         migration = importlib.import_module(

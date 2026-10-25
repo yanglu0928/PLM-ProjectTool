@@ -29,8 +29,6 @@ class PlanRow(Base):
         CheckConstraint("char_length(name) BETWEEN 1 AND 500 AND name=btrim(name)",
                         name="ck_pln_plans__name"),
         CheckConstraint("plan_state IN ('ACTIVE','ARCHIVED')", name="ck_pln_plans__state"),
-        CheckConstraint("current_approved_version_ref IS NULL",
-                        name="ck_pln_plans__approved_pointer_closed"),
         CheckConstraint("lock_version>=0", name="ck_pln_plans__lock"),
         Index("ix_pln_plans__project_state", "project_id", "plan_state", "plan_id"),
         {"schema": "plm"},
