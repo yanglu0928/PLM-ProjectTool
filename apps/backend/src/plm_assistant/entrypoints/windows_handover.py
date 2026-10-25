@@ -35,7 +35,10 @@ from plm_assistant.modules.handover.api.commands import create_handover_command_
 from plm_assistant.modules.handover.api.read import create_handover_read_router
 from plm_assistant.modules.handover.api.read_cursor import (
     HandoverAnalysisCursorCodec, HandoverItemCursorCodec,
-    HandoverVersionCursorCodec,
+    HandoverVersionCursorCodec, HandoverSurveySourceCursorCodec,
+)
+from plm_assistant.modules.handover.api.survey_sources import (
+    create_handover_survey_source_router,
 )
 from plm_assistant.modules.handover.api.submit_review import (
     create_handover_review_submission_router,
@@ -130,6 +133,7 @@ class WindowsHandoverRouters:
     reads: APIRouter
     commands: APIRouter | None
     review_submission: APIRouter | None
+    survey_sources: APIRouter | None = None
 
 
 def create_windows_handover_routers(
@@ -146,9 +150,8 @@ def create_windows_handover_routers(
         version_cursors = HandoverVersionCursorCodec(
             keys.resolve_key(HANDOVER_VERSION_CURSOR_KEY_REF),
         )
-        item_cursors = HandoverItemCursorCodec(
-            keys.resolve_key(HANDOVER_ITEM_CURSOR_KEY_REF),
-        )
+        item_key = keys.resolve_key(HANDOVER_ITEM_CURSOR_KEY_REF)
+        item_cursors = HandoverItemCursorCodec(item_key)
         project_repository = SqlAlchemyProjectAuthorizationRepository()
         authorization = ProjectAuthorizationService(
             unit_of_work=runtime.unit_of_work, repository=project_repository,
@@ -164,8 +167,12 @@ def create_windows_handover_routers(
             analysis_cursors=analysis_cursors, version_cursors=version_cursors,
             item_cursors=item_cursors,
         )
+        source_router = create_handover_survey_source_router(
+            sessions=sessions, origins=origins, reads=reads,
+            cursors=HandoverSurveySourceCursorCodec(item_key),
+        )
         if not include_write:
-            return WindowsHandoverRouters(read_router, None, None)
+            return WindowsHandoverRouters(read_router, None, None, source_router)
 
         access = SqlAlchemyReviewStartAccess()
         receipts = SqlAlchemyIdempotencyReceipts()
@@ -230,6 +237,8 @@ def create_windows_handover_routers(
         review_router = create_handover_review_submission_router(
             sessions=sessions, origins=origins, submissions=submission,
         )
-        return WindowsHandoverRouters(read_router, command_router, review_router)
+        return WindowsHandoverRouters(
+            read_router, command_router, review_router, source_router,
+        )
     except Exception:
         raise ProductionHandoverStartupError() from None

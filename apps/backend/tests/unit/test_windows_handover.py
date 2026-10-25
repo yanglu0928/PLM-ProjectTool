@@ -41,6 +41,7 @@ class WindowsHandoverCompositionTests(unittest.TestCase):
         self.assertEqual(5, len(read_only.reads.routes))
         self.assertIsNone(read_only.commands)
         self.assertIsNone(read_only.review_submission)
+        self.assertEqual(1, len(read_only.survey_sources.routes))
         write = create_windows_handover_routers(
             runtime, sessions=sessions, origins=origins, license_guard=guard,
             audit=audit, include_write=True, resolver=Keys(),
@@ -48,6 +49,7 @@ class WindowsHandoverCompositionTests(unittest.TestCase):
         self.assertEqual(5, len(write.reads.routes))
         self.assertEqual(5, len(write.commands.routes))
         self.assertEqual(1, len(write.review_submission.routes))
+        self.assertEqual(1, len(write.survey_sources.routes))
         self.assertEqual([
             HANDOVER_ANALYSIS_CURSOR_KEY_REF, HANDOVER_VERSION_CURSOR_KEY_REF,
             HANDOVER_ITEM_CURSOR_KEY_REF,

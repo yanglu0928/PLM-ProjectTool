@@ -114,6 +114,7 @@ def create_app(
     handover_command_router: APIRouter | None = None,
     handover_review_submission_router: APIRouter | None = None,
     handover_read_router: APIRouter | None = None,
+    handover_survey_source_router: APIRouter | None = None,
     handover_action_read_router: APIRouter | None = None,
     handover_action_command_router: APIRouter | None = None,
     handover_action_lifecycle_router: APIRouter | None = None,
@@ -379,6 +380,8 @@ def create_app(
         app.include_router(handover_review_submission_router)
     if handover_read_router is not None:
         app.include_router(handover_read_router)
+    if handover_survey_source_router is not None:
+        app.include_router(handover_survey_source_router)
     if handover_action_read_router is not None:
         app.include_router(handover_action_read_router)
     if handover_action_command_router is not None:

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261025-SUR-A05：新来源游标复用现有交接密钥但隔离用途族
+
+- Date/WBS：2026-10-25 / `SUR-07-A05`。
+- Decision：新增独立 `survey-handover-sources` HMAC cursor family，绑定 Project、Session、页长与固定行 UUID；Windows 组合复用已有 Handover Item cursor Vault 32 字节密钥，不另增服务账户 Secret 供给前置。
+- Reason：CR-SUR-013 要求用途隔离签名分页，不要求每个用途族独立密钥；现有 Item key 已被 Windows 启动门禁保护。跨族解码仍按严格 family/字段检查拒绝，业务读取每页重新授权和查询当前版本。
+- Impact/Rollback：无 Schema、License、冻结旧 API 或新密钥迁移；旧 Item cursor 字节和验证保持不变。可停止挂载新 GET 回滚；如后续安全评审要求独立密钥，另增可追溯轮换计划。已测跨族/错会话/错项目/篡改拒绝；不宣称正式服务账户 Vault 已供给。
+
 ## DEC-20261025-HND-A05-P01：交接只读主题显式注册
 
 - Date/WBS：2026-10-25 / `HND-05-A05-P01`。

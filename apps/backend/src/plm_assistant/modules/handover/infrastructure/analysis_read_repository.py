@@ -11,7 +11,7 @@ from sqlalchemy import and_, or_, select
 from plm_assistant.modules.handover.application.read_analyses import (
     HandoverAITaskView, HandoverAnalysisItemView, HandoverAnalysisVersionView,
     HandoverAnalysisView, HandoverItemCapabilityView, HandoverItemOptionView,
-    HandoverSourceDocumentView,
+    HandoverSourceDocumentView, HandoverSurveySourceView,
 )
 
 from .analysis_create_repository import _session
@@ -48,6 +48,55 @@ def _version(row: HandoverAnalysisVersionRow, *,
 
 
 class SqlAlchemyHandoverAnalysisReadRepository:
+    def list_survey_sources(
+        self, transaction: object, *, project_id: uuid.UUID,
+        after_row_id: uuid.UUID | None, limit: int,
+    ) -> tuple[HandoverSurveySourceView, ...]:
+        query = select(
+            HandoverAnalysisItemRow.analysis_item_row_id,
+            HandoverAnalysisItemRow.handover_analysis_version_id,
+            HandoverAnalysisItemRow.handover_analysis_id,
+            HandoverAnalysisItemRow.analysis_item_id,
+            HandoverAnalysisItemRow.project_id,
+            HandoverAnalysisItemRow.title,
+            HandoverAnalysisItemRow.item_state,
+        ).join(
+            HandoverAnalysisVersionRow,
+            and_(
+                HandoverAnalysisVersionRow.handover_analysis_version_id
+                == HandoverAnalysisItemRow.handover_analysis_version_id,
+                HandoverAnalysisVersionRow.handover_analysis_id
+                == HandoverAnalysisItemRow.handover_analysis_id,
+                HandoverAnalysisVersionRow.project_id
+                == HandoverAnalysisItemRow.project_id,
+            ),
+        ).join(
+            HandoverAnalysisRow,
+            and_(
+                HandoverAnalysisRow.handover_analysis_id
+                == HandoverAnalysisVersionRow.handover_analysis_id,
+                HandoverAnalysisRow.project_id
+                == HandoverAnalysisVersionRow.project_id,
+            ),
+        ).where(
+            HandoverAnalysisItemRow.project_id == project_id,
+            HandoverAnalysisVersionRow.version_state == "APPROVED",
+            HandoverAnalysisRow.analysis_state == "ACTIVE",
+            HandoverAnalysisRow.current_approved_version_ref
+            == HandoverAnalysisVersionRow.handover_analysis_version_id,
+            HandoverAnalysisItemRow.item_state.in_((
+                "CONFIRMED", "RESOLVED", "ACCEPTED_RISK",
+            )),
+        )
+        if after_row_id is not None:
+            query = query.where(
+                HandoverAnalysisItemRow.analysis_item_row_id > after_row_id,
+            )
+        rows = _session(transaction).execute(query.order_by(
+            HandoverAnalysisItemRow.analysis_item_row_id,
+        ).limit(limit)).all()
+        return tuple(HandoverSurveySourceView(*row) for row in rows)
+
     def list_analyses(
         self, transaction: object, *, project_id: uuid.UUID,
         after_updated_at: datetime | None,

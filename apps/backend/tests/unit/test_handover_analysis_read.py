@@ -9,6 +9,7 @@ from plm_assistant.modules.handover.application.read_analyses import (
     HandoverAnalysisItemView, HandoverAnalysisReadError,
     HandoverAnalysisReadQuery, HandoverAnalysisReadService,
     HandoverAnalysisVersionView, HandoverAnalysisView,
+    HandoverSurveySourceView,
 )
 
 
@@ -43,6 +44,11 @@ class Repository:
     analyses = ()
     versions = ()
     items = ()
+    sources = ()
+
+    def list_survey_sources(self, transaction, **kwargs):
+        self.kwargs = kwargs
+        return self.sources
 
     def list_analyses(self, transaction, **kwargs):
         self.kwargs = kwargs
@@ -179,6 +185,23 @@ class HandoverAnalysisReadTests(unittest.TestCase):
         with self.assertRaises(HandoverAnalysisReadError) as caught:
             self.service.list_analyses(self.query, page_size=1)
         self.assertEqual("HANDOVER_UNAVAILABLE", caught.exception.code)
+
+    def test_survey_source_page_requires_narrow_policy_and_project(self):
+        rows = tuple(HandoverSurveySourceView(
+            uuid.UUID(int=index), uuid.uuid4(), uuid.uuid4(), uuid.uuid4(),
+            self.project, f"Item {index}", "CONFIRMED",
+        ) for index in range(1, 4))
+        self.repository.sources = rows
+        page = self.service.list_survey_sources(self.query, page_size=2)
+        self.assertEqual(rows[:2], page.items)
+        self.assertEqual(rows[1].handover_item_row_id, page.next_row_id)
+        self.assertTrue(page.has_more)
+        self.assertEqual("SURVEY_HANDOVER_SOURCE_LIST",
+                         self.authorization.kwargs["operation"])
+        self.assertEqual(3, self.repository.kwargs["limit"])
+        self.repository.sources = (replace(rows[0], project_id=uuid.uuid4()),)
+        with self.assertRaises(HandoverAnalysisReadError):
+            self.service.list_survey_sources(self.query, page_size=2)
 
 
 if __name__ == "__main__":

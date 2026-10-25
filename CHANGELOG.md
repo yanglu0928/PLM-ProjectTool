@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A05 新增项目内当前已批准交接问题只读来源候选 GET、窄角色、最小投影、用途隔离签名分页及 Windows 显式组合；原 HND GET/SurveyVersion POST 保持不变。兼容性：Windows 11/隔离 PG18.6 合成 HTTP 已验，Server 2025/Debian 13 未实测。升级/回滚：无 Schema/Migration/License/依赖变更；停止挂载新 GET 可回滚，合法历史与 Audit 保留。验证：完整后端4101通过/3跳过/6153子例；未批准空集、批准当前来源、匿名/只读/跨项目/暂停成员/历史、keyset/错 cursor 和临时清理退出0。已知问题：前端选择/SurveyVersion 创建与包内 Edge、真人访谈确认、正式公钥/服务账户/法律、离线安装升级/UAT/Gate/Pilot/正式三平台发行未通过。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A04 完成首个调研问题版本固定交接来源的只读前置核查，登记 `CR-SUR-013`：Survey 写合同需交接版本内固定行 ID，现有交接 GET 仅公开不同的业务问题 ID，故需独立受权只读来源候选操作；不猜测 ID、不改旧 DTO、不以 MANUAL 冒充固定来源。兼容性：仅代码/合同核对及 Windows 11 上轮合成包证据，Server 2025/Debian 13 未实测。升级/回滚：纯文档，无 API/Schema/数据迁移或用户功能变化。验证：冻结 POST/GET、ORM 行 ID、内部来源证明及前端入口对账；版本写链未验。已知问题：来源选择器、调研版本/实际访谈、正式信任/安装/UAT/Gate/Pilot/Release 待完成。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A03 从干净提交重建 Windows 11 非发行候选（SHA-256 `fea9bb417d40839cbd2191d429bfc92ab008442edbddb571b3479af394bad194`），新增可重复包内调研定义验收脚本；不改冻结 API/Schema/角色。兼容性：仅 Windows 11 合成信任环境已实测，Windows Server 2025/Debian 13 未实测。升级/回滚：无迁移，此非发行候选替换前端资产用于内部验证，旧包及合法 Survey/Audit 保留；正式离线安装升级仍未验。验证：22,196件独立清洁解包逐件哈希，Edge/HTTPS/隔离 PG18 从交接批准到调研 UI 创建、同号重放、唯一 ACTIVE 定义/零版本/唯一 Audit/收据及匿名/错项目/只读角色/合成失效许可拒绝退出0；临时进程/库/布局清理。首轮未提交前置记录与两次解包调用环境拒绝留痕。已知问题：本包 `release_eligible=false`、`legal_clearance=false`；调研问题版本、实际面对面访谈/真人确认、正式公钥/服务账户/CA、离线安装升级、UAT/Gate 3～7/Pilot/三平台正式 Release 未通过。

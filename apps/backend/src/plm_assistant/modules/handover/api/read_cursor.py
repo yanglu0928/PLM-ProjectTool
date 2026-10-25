@@ -140,6 +140,43 @@ class HandoverAnalysisCursorCodec:
             raise ApplicationError("REQUEST_MALFORMED") from None
 
 
+class HandoverSurveySourceCursorCodec:
+    """Purpose-bound source candidate cursor; never accepted by Handover lists."""
+
+    _FIELDS = {"v", "family", "project", "session", "query", "row_id"}
+
+    def __init__(self, key: bytes) -> None:
+        if type(key) is not bytes or len(key) != 32:
+            raise ValueError("32-byte Handover source cursor key required")
+        self._key = key
+
+    def encode(self, *, project_id: uuid.UUID, session_token: bytes,
+               page_size: int, row_id: uuid.UUID) -> str:
+        payload = _base(
+            project_id=project_id, session_token=session_token, page_size=page_size,
+        )
+        if type(row_id) is not uuid.UUID or row_id.int == 0:
+            raise ValueError("invalid Handover source cursor position")
+        payload.update({"family": "survey-handover-sources", "row_id": str(row_id)})
+        return _encode(payload, self._key)
+
+    def decode(self, token: str, *, project_id: uuid.UUID,
+               session_token: bytes, page_size: int) -> uuid.UUID:
+        try:
+            payload = _common(token, self._key)
+            _bound(payload, family="survey-handover-sources",
+                   project_id=project_id, session_token=session_token,
+                   page_size=page_size, fields=self._FIELDS)
+            row_id = _uuid(payload["row_id"])
+            if self.encode(project_id=project_id, session_token=session_token,
+                           page_size=page_size, row_id=row_id) != token:
+                raise ValueError()
+            return row_id
+        except (TypeError, ValueError, KeyError, OverflowError,
+                UnicodeDecodeError, json.JSONDecodeError):
+            raise ApplicationError("REQUEST_MALFORMED") from None
+
+
 class HandoverVersionCursorCodec:
     _FIELDS = {"v", "family", "project", "analysis", "session", "query",
                "position"}

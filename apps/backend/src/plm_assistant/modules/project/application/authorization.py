@@ -177,6 +177,10 @@ POLICIES: dict[str, _Policy] = {
     "HND_VERSION_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "HND_VERSION_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "HND_VERSION_ITEM_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "SURVEY_HANDOVER_SOURCE_LIST": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
+        False, lock_reads=True,
+    ),
     "HND_ACTION_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
     ),

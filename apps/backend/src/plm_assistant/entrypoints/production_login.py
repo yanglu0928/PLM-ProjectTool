@@ -682,6 +682,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         handover_command_router = None
         handover_review_submission_router = None
         handover_read_router = None
+        handover_survey_source_router = None
         handover_action_read_router = None
         handover_action_command_router = None
         handover_action_lifecycle_router = None
@@ -844,6 +845,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 include_write=include_secret_write,
             )
             handover_read_router = handover_routers.reads
+            handover_survey_source_router = handover_routers.survey_sources
             handover_command_router = handover_routers.commands
             handover_review_submission_router = handover_routers.review_submission
             handover_action_read_router = create_windows_handover_action_read_router(
@@ -1974,6 +1976,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             handover_command_router=handover_command_router,
             handover_review_submission_router=handover_review_submission_router,
             handover_read_router=handover_read_router,
+            handover_survey_source_router=handover_survey_source_router,
             handover_action_read_router=handover_action_read_router,
             handover_action_command_router=handover_action_command_router,
             handover_action_lifecycle_router=handover_action_lifecycle_router,

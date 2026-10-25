@@ -139,7 +139,28 @@ class HandoverAnalysisItemPage:
     has_more: bool
 
 
+@dataclass(frozen=True, slots=True)
+class HandoverSurveySourceView:
+    handover_item_row_id: uuid.UUID
+    handover_analysis_version_id: uuid.UUID
+    handover_analysis_id: uuid.UUID
+    analysis_item_id: uuid.UUID
+    project_id: uuid.UUID
+    title: str
+    state: str
+
+
+@dataclass(frozen=True, slots=True)
+class HandoverSurveySourcePage:
+    items: tuple[HandoverSurveySourceView, ...]
+    next_row_id: uuid.UUID | None
+    has_more: bool
+
+
 class HandoverAnalysisReadRepositoryPort(Protocol):
+    def list_survey_sources(self, transaction: object, *, project_id: uuid.UUID,
+                            after_row_id: uuid.UUID | None,
+                            limit: int) -> tuple[HandoverSurveySourceView, ...]: ...
     def list_analyses(self, transaction: object, *, project_id: uuid.UUID,
                       after_updated_at: datetime | None,
                       after_handover_analysis_id: uuid.UUID | None,
@@ -186,6 +207,31 @@ class HandoverAnalysisReadService:
             tx, query.project_id, page_size, after_updated_at,
             after_handover_analysis_id,
         ))
+
+    def list_survey_sources(
+        self, query: HandoverAnalysisReadQuery, *, page_size: int,
+        after_row_id: uuid.UUID | None = None,
+    ) -> HandoverSurveySourcePage:
+        self._validate_query(query)
+        self._page_size(page_size)
+        if after_row_id is not None:
+            self._identity(after_row_id)
+
+        def read(tx: object) -> HandoverSurveySourcePage:
+            rows = self._repository.list_survey_sources(
+                tx, project_id=query.project_id, after_row_id=after_row_id,
+                limit=page_size + 1,
+            )
+            self._rows(rows, HandoverSurveySourceView, page_size + 1)
+            if any(row.project_id != query.project_id for row in rows):
+                raise HandoverAnalysisReadError()
+            items = rows[:page_size]
+            more = len(rows) > page_size
+            return HandoverSurveySourcePage(
+                items, items[-1].handover_item_row_id if more else None, more,
+            )
+
+        return self._run(query, "SURVEY_HANDOVER_SOURCE_LIST", read)
 
     def get_analysis(self, query: HandoverAnalysisReadQuery,
                      handover_analysis_id: uuid.UUID) -> HandoverAnalysisView:

@@ -125,7 +125,8 @@ connect, seed_user, CSRF = fixture.connect, fixture.seed_user, fixture.CSRF
 Guard = fixture.Guard
 
 
-def main(*, use_http: bool = False, read_probe=None) -> None:
+def main(*, use_http: bool = False, read_probe=None,
+         approved_probe=None, history_probe=None) -> None:
     name = "hnd01a04p02_" + uuid.uuid4().hex[:8]
     manager_token, reviewer_token = b"m" * 32, b"r" * 32
     with connect("postgres") as admin:
@@ -742,6 +743,16 @@ def main(*, use_http: bool = False, read_probe=None) -> None:
                         review_one, round_one,
                     )
 
+                if approved_probe is not None:
+                    approved_probe(
+                        runtime=runtime, guard=guard, project=project,
+                        manager=manager, reviewer=reviewer,
+                        analysis_id=analysis.handover_analysis_id,
+                        version_id=first.handover_analysis_version_id,
+                        manager_token=manager_token,
+                        reviewer_token=reviewer_token, database=name,
+                    )
+
                 with connect(name) as db:
                     root_lock = db.execute(
                         "SELECT lock_version FROM plm.hnd_analyses "
@@ -817,6 +828,14 @@ def main(*, use_http: bool = False, read_probe=None) -> None:
                         "SELECT count(*) FROM plm.aud_events WHERE action IN "
                         "('HND_VERSION_APPROVED','HND_VERSION_WITHDRAWN')"
                     ).fetchone()[0] == 2
+                if history_probe is not None:
+                    history_probe(
+                        runtime=runtime, guard=guard, project=project,
+                        analysis_id=analysis.handover_analysis_id,
+                        approved_version_id=first.handover_analysis_version_id,
+                        historical_version_id=second.handover_analysis_version_id,
+                        manager_token=manager_token, database=name,
+                    )
                 if client is not None:
                     client.close()
                 marker = (
