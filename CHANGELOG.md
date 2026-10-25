@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P03-P02` / `CR-PLAN-006`（Schema内部验收完成）：新增0189 Plan专属不可变Validate报告结果，绑定Audit/固定PlanVersion，保留首次响应摘要并支持历史安全回滚；更新/删除/TRUNCATE拒绝。Win11隔离PG18空库升降重、合成历史保护与drift通过；全量后端4141 passed/3 skipped/6190 subtests。无HTTP/API变化。有效报告写入、授权及幂等同事务Owner仍待，不得独立部署0189。详见A06-P03-P02记录。
 - 2026-10-26 / `CR-PLAN-006`（已授权实施，编码前）：发现通用幂等回执不存Report body、Audit单值reason_code不足以重建Plan Validate首次报告；若重放重读当前来源会破坏同Key同结果。选择Plan-owned不可变报告快照与Audit/Receipt同事务关联，新增0189，原冻结基线保留；当前仅CR/前置文档，无ORM/Migration/数据变化。下一项A06-P03-P02实现Schema并验证安全回滚。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P02`（纯逻辑内部通过）：新增PlanVersion Validate报告不可变合同及确定性纯评价器，按固定快照校验WBS层级、FS DAG、日期和Milestone引用，并以可信当前来源集合核算需求/方案映射、排除、旧引用与缺口；无I/O、授权、状态写入或HTTP。定向16 passed/3 subtests，全量后端4139 passed/3 skipped/6190 subtests；无Migration/API变化。warnings暂为空，未宣称Owner/PG/Gate通过。下一项A06-P03事务Owner。详见A06-P02进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P02`（纯逻辑内部通过）：新增PlanVersion Validate报告不可变合同及确定性纯评价器，按固定快照校验WBS层级、FS DAG、日期和Milestone引用，并以可信当前来源集合核算需求/方案映射、排除、旧引用与缺口；无I/O、授权、状态写入或HTTP。定向16 passed/3 subtests，全量后端4139 passed/3 skipped/6190 subtests；无Migration/API变化。warnings暂为空，未宣称Owner/PG/Gate通过。下一项A06-P03事务Owner。详见A06-P02进度记录。

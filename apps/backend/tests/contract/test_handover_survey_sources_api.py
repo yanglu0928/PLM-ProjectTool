@@ -108,7 +108,7 @@ class HandoverSurveySourceApiTests(unittest.TestCase):
             (uuid.uuid4(), SESSION, 1, token),
             (PROJECT, b"x" * 32, 1, token),
             (PROJECT, SESSION, 2, token),
-            (PROJECT, SESSION, 1, token[:-1] + "A"),
+            (PROJECT, SESSION, 1, ("A" if token[0] != "A" else "B") + token[1:]),
         ):
             with self.assertRaises(ApplicationError):
                 codec.decode(value, project_id=project,

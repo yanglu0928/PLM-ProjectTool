@@ -1,6 +1,6 @@
 # CR-PLAN-006：PlanVersion Validate 首次报告不可变重放快照
 
-日期：2026-10-26。状态：`AUTHORIZED_FOR_IMPLEMENTATION_BY_CR-EXEC-001`；非Gate通过。
+日期：2026-10-26。状态：`SCHEMA_0189_PASS_OWNER_PENDING`；非Gate通过。
 
 ## 发现
 

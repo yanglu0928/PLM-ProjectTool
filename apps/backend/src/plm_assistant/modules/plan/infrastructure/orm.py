@@ -5,8 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, Date, ForeignKeyConstraint, Index, Integer, SmallInteger, Text, UniqueConstraint, text
-from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
+from sqlalchemy import BigInteger, CheckConstraint, Date, ForeignKeyConstraint, Index, Integer, LargeBinary, SmallInteger, Text, UniqueConstraint, text
+from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from plm_assistant.modules.platform.infrastructure.orm import Base
@@ -123,6 +123,49 @@ class PlanVersionRow(Base):
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"))
+
+
+class PlanVersionValidationResultRow(Base):
+    """Immutable first-response snapshot for one audited validation command."""
+
+    __tablename__ = "pln_plan_version_validation_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["audit_event_id"], ["plm.aud_events.audit_event_id"],
+            name="fk_pln_validation_results__audit", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_plan_versions.plan_version_id", "plm.pln_plan_versions.plan_id",
+             "plm.pln_plan_versions.project_id"],
+            name="fk_pln_validation_results__version", ondelete="NO ACTION"),
+        CheckConstraint("octet_length(snapshot_fingerprint)=32",
+                        name="ck_pln_validation_results__fingerprint"),
+        CheckConstraint("jsonb_typeof(blocking_issues)='array'",
+                        name="ck_pln_validation_results__blocking_array"),
+        CheckConstraint("jsonb_typeof(warnings)='array'",
+                        name="ck_pln_validation_results__warnings_array"),
+        CheckConstraint("jsonb_typeof(coverage_summary)='object'",
+                        name="ck_pln_validation_results__coverage_object"),
+        CheckConstraint("valid = (jsonb_array_length(blocking_issues)=0)",
+                        name="ck_pln_validation_results__valid"),
+        CheckConstraint("isfinite(checked_at)",
+                        name="ck_pln_validation_results__checked_at"),
+        Index("ix_pln_validation_results__version_time", "project_id",
+              "plan_version_id", "checked_at", "audit_event_id"),
+        {"schema": "plm"},
+    )
+
+    audit_event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    snapshot_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    valid: Mapped[bool] = mapped_column(nullable=False)
+    blocking_issues: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    warnings: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    coverage_summary: Mapped[dict[str, int]] = mapped_column(JSONB, nullable=False)
+    checked_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False)
 
 
 class PlanVersionExclusionRow(Base):
