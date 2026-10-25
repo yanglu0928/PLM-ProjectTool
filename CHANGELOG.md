@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `CR-PLAN-009` 与 `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P02`（Review终态Owner编码前检查）：发现统一Review允许WITHDRAWN但0190只接受APPROVED/RETURNED/SUPERSEDED，直接把撤回记为Plan RETURNED会伪造Review事实、留在IN_REVIEW又导致版本无法重送审。已依持续授权登记CR-PLAN-009，追加0210内部WITHDRAWN结果语义映射至PlanVersion RETURNED；P06-P02实现前置满足，尚未改程序/Schema/业务数据。详见CR及P06-P02核查记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P01`（Plan Approved pointer Schema `PASS_SCOPE_LIMITED`）：新增ORM/Migration `20261026_0200`，保留0169安全初始Plan创建规则，严格限定Approved指针与lock_version更新并在提交点闭合唯一Approved版本、指针及0190 Review结果。Win11/PG18.6完整迁移、漂移、含DRAFT数据升降级往返、普通更新/DRAFT指针/TRUNCATE拒绝通过；完整后端4163 passed/3 skipped/6206 subtests。真实Review Approved及指针正向闭环留P06-P02终态Owner组合验证，历史批准数据迁移/降级未验证，故不扩大结论。首次PG验证发现并修正新触发器误拒绝0169安全初始INSERT；详情见P06-P01结果记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P01`（Plan Approved pointer Schema编码前核查完成）：在CR-PLAN-008授权范围中细化0200必须同时约束PlanVersion状态更新、0190结果插入与唯一Approved指针，避免绕开应用Owner造成陈旧指针。仅前置记录，无ORM/Migration/业务数据变化；详见P06-P01前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06`（Plan Review终态前置核查完成）：发现Plan指针列仍被0167 Check约束为NULL且Plan身份触发器拒绝所有UPDATE，0190仅解锁PlanVersion状态事件。先登记`CR-PLAN-008`，拟追加0200以严格批准指针allowlist和0190闭合；终态工作拆为P06-P01 Schema、P06-P02业务Owner。仅核查/CR/状态记录，无程序或数据库变更；详见P06前置记录。
