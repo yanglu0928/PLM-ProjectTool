@@ -34,6 +34,19 @@ async function fixture(result: Response | Error, role = "PROJECT_MANAGER") {
 }
 
 describe("SurveyHandoverSourceClient", () => {
+  it("calls browser-like fetch without the client object as receiver", async () => {
+    const login = vi.fn().mockResolvedValue(response(sessionData("PROJECT_MANAGER")));
+    const session = new SessionClient(login as typeof fetch);
+    await session.login("synthetic", "synthetic-only");
+    const browserFetch = vi.fn(function(this: unknown) {
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      return Promise.resolve(response({ items: [candidate], next_cursor: null, has_more: false }));
+    });
+    const client = new SurveyHandoverSourceClient(session, browserFetch as typeof fetch);
+    expect((await client.list(project)).items[0]?.handover_item_row_id).toBe(row);
+    expect(browserFetch).toHaveBeenCalledTimes(1);
+  });
+
   it("reads minimal current candidates with same-origin no-store and cursor", async () => {
     const { client, fetcher } = await fixture(response({ items: [candidate],
       next_cursor: token, has_more: true }));

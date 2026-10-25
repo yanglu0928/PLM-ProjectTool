@@ -67,7 +67,8 @@ export class SurveyHandoverSourceClient {
       + (next === null ? "" : `&cursor=${encodeURIComponent(next)}`);
     let response: Response;
     try {
-      response = await this.fetcher(path, { method: "GET", credentials: "same-origin",
+      const fetcher = this.fetcher;
+      response = await fetcher(path, { method: "GET", credentials: "same-origin",
         cache: "no-store", redirect: "error", headers: { Accept: "application/json" } });
     } catch { throw new SurveyHandoverSourceError("UNAVAILABLE"); }
     try {
