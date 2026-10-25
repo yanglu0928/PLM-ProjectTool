@@ -16,6 +16,9 @@ from plm_assistant.modules.project.application.reviewers import (
 from plm_assistant.modules.review.application.create_review import (
     AuthorizedReviewCreation, CreatedReviewRef,
 )
+from plm_assistant.modules.review.application.read_service import (
+    AuthorizedReviewSubjectRead,
+)
 from plm_assistant.modules.review.application.subject_start import (
     PreparedReviewSubject, ReviewSubjectAccessDenied, ReviewSubjectStartError,
     ReviewSubjectStartRequest,
@@ -68,6 +71,11 @@ class SurveyReviewRepositoryPort(Protocol):
     def active_survey_exists(
         self, transaction: object, *, project_id: uuid.UUID,
         survey_id: uuid.UUID,
+    ) -> bool: ...
+
+    def active_version_exists(
+        self, transaction: object, *, project_id: uuid.UUID,
+        survey_id: uuid.UUID, survey_version_id: uuid.UUID,
     ) -> bool: ...
 
     def bind_start(
@@ -142,6 +150,55 @@ class SurveyReviewSubjectOwner:
         return self._repo.active_survey_exists(
             tx, project_id=review.project_id, survey_id=review.subject_id,
         ) is True
+
+    def authorize_read(
+        self, tx: object, *, user_id: uuid.UUID, project_id: uuid.UUID,
+        subject_type: str, subject_id: uuid.UUID,
+        subject_version_id: uuid.UUID | None,
+    ) -> AuthorizedReviewSubjectRead | None:
+        """Prove current project membership and exact active SRV-02 ownership."""
+        if (not self._ids(user_id, project_id, subject_id)
+                or subject_type != self.SUBJECT_TYPE
+                or subject_version_id is not None
+                and not self._ids(subject_version_id)):
+            return None
+        try:
+            self._qualify_reviewer_ids(
+                tx, project_id=project_id, reviewer_ids=(user_id,),
+            )
+        except ReviewSubjectAccessDenied:
+            return None
+        exists = (
+            self._repo.active_survey_exists(
+                tx, project_id=project_id, survey_id=subject_id,
+            ) if subject_version_id is None else
+            self._repo.active_version_exists(
+                tx, project_id=project_id, survey_id=subject_id,
+                survey_version_id=subject_version_id,
+            )
+        )
+        if exists is not True:
+            return None
+        return AuthorizedReviewSubjectRead(
+            user_id, project_id, subject_type, subject_id,
+            subject_version_id,
+        )
+
+    def _qualify_reviewer_ids(self, tx, *, project_id, reviewer_ids):
+        try:
+            facts = self._reviewers.qualify_in_transaction(
+                tx, project_id=project_id, reviewer_ids=reviewer_ids,
+                allowed_roles=ALL_MEMBERS,
+            )
+        except ReviewReviewerEligibilityError:
+            raise ReviewSubjectAccessDenied() from None
+        if (type(facts) is not tuple or len(facts) != len(reviewer_ids)
+                or any(type(fact) is not ProjectReviewerFacts
+                       or fact.user_id != user_id
+                       or fact.project_id != project_id
+                       or fact.project_role not in ALL_MEMBERS
+                       for fact, user_id in zip(facts, reviewer_ids))):
+            raise ReviewSubjectAccessDenied()
 
     def prepare_start_in_transaction(
         self, tx: object, request: ReviewSubjectStartRequest,

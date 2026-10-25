@@ -55,9 +55,25 @@ def after_approval(state: dict, **context) -> None:
             "if-match": '"v0"', "idempotency-key": str(uuid.uuid4())},
             json={"questions": [], "target_department_ids": []})
         assert denied.status_code in (401, 403), (denied.status_code, denied.text)
+    with context["connect_db"]() as db:
+        expected_reviewer = db.execute(
+            "SELECT user_id FROM plm.auth_users "
+            "WHERE username_normalized='synthetic handover customer'"
+        ).fetchone()
+        assert expected_reviewer is not None, "synthetic customer reviewer fixture missing"
+        expected_reviewer_id = expected_reviewer[0]
+        membership = db.execute(
+            "SELECT project_role FROM plm.prj_project_members "
+            "WHERE project_id=%s AND user_id=%s",
+            (project, expected_reviewer_id),
+        ).fetchone()
+        assert membership is not None and membership[0] in {
+            "CUSTOMER_MANAGER", "CUSTOMER_MEMBER"
+        }, membership
     edge = subprocess.run([
         "node", str(Path(__file__).with_name("run-survey-version-edge.mjs")),
         origin, str(project), str(survey), str(context["observer_id"]),
+        str(expected_reviewer_id),
     ], capture_output=True, text=True, encoding="utf-8", errors="replace",
         timeout=240, check=False)
     if edge.returncode:
@@ -68,9 +84,16 @@ def after_approval(state: dict, **context) -> None:
     assert result["review_ui_subject_label"] is True
     assert result["review_ui_fixed_version_link"].endswith(
         f"?fixedVersionId={result['survey_version_id']}")
-    assert result["non_reviewer_decision_controls_hidden"] is True
+    assert result["assigned_reviewer_decision_controls_visible"] is True
     assert result["review_list_subject_label"] == "调研问题版本"
     assert result["project_id"] == str(project) and result["survey_id"] == str(survey)
+    assert result["reviewer_id"] == str(expected_reviewer_id)
+    non_reviewer_read = observer.get(
+        f"/api/v1/projects/{project}/reviews/{result['review_id']}"
+    )
+    assert non_reviewer_read.status_code == 404, (
+        non_reviewer_read.status_code, non_reviewer_read.text
+    )
     fixed_row = result["handover_item_row_id"]
     assert fixed_row in {item["handover_item_row_id"] for item in available}
     assert result["handover_analysis_version_id"] == str(context["version"])
@@ -196,7 +219,8 @@ def after_approval(state: dict, **context) -> None:
     print("SUR_07_A08_PACKAGED_PG_PASS: DRAFT fixed+MANUAL, target, one Audit/receipt, "
           "same-key replay and denied writers", flush=True)
     print("SUR_07_A12_P05_PACKAGED_PG_PASS: DRAFT Validate, ProjectManager atomic "
-          "submit-review, exact ACTIVE reviewer snapshot, Audit and receipt", flush=True)
+          "submit-review, exact ACTIVE reviewer snapshot, non-reviewer 404, "
+          "Audit and receipt", flush=True)
 
 
 def after_expiry(state: dict, **context) -> None:

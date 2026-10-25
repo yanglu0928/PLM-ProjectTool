@@ -27,11 +27,14 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
         owner.authorize_read = Mock()
         section = Mock(SUBJECT_TYPE="SOL-05")
         section.authorize_read = Mock()
+        survey = Mock(SUBJECT_TYPE="SRV-02")
+        survey.authorize_read = Mock()
         module = "plm_assistant.entrypoints.windows_project_review."
         with (patch(module + "create_windows_structured_spec_review_subject",
                     return_value=owner),
               patch(module + "create_windows_section_review_subject",
                     return_value=section),
+              patch(module + "_survey_read_owner", return_value=survey),
               patch(module + "ProjectReviewSubjectReadRegistry",
                     wraps=ProjectReviewSubjectReadRegistry) as reads):
             create_windows_project_review_read_router(
@@ -39,7 +42,7 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
                 documents=Mock(), downloads=Mock(), parse_results=Mock(),
                 outline_subject=outline)
             self.assertEqual(
-                ("SOL-06", "SOL-05", "HND-02", "SOL-03"),
+                ("SOL-06", "SOL-05", "HND-02", "SRV-02", "SOL-03"),
                 tuple(getattr(item, "SUBJECT_TYPE")
                       for item in reads.call_args.args[0]),
             )
@@ -47,7 +50,7 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
                 runtime, origins=Mock(), license_guard=Mock(), audit=Mock(),
                 documents=Mock(), downloads=Mock(), parse_results=Mock(),
                 cursors=Mock(), outline_subject=outline)
-            self.assertEqual((owner, section, outline), reads.call_args.args[0])
+            self.assertEqual((owner, section, survey, outline), reads.call_args.args[0])
         with patch(module + "ProjectReviewSubjectRegistry",
                    side_effect=lambda owners: Mock(
                        registered_subject_types=tuple(
@@ -79,6 +82,8 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
         owner.authorize_read = Mock()
         section = Mock(SUBJECT_TYPE="SOL-05")
         section.authorize_read = Mock()
+        survey = Mock(SUBJECT_TYPE="SRV-02")
+        survey.authorize_read = Mock()
         cursor = Mock()
         with patch(
             "plm_assistant.entrypoints.windows_project_review."
@@ -87,6 +92,9 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
         ), patch(
             "plm_assistant.entrypoints.windows_project_review."
             "create_windows_section_review_subject", return_value=section,
+        ), patch(
+            "plm_assistant.entrypoints.windows_project_review."
+            "_survey_read_owner", return_value=survey,
         ), patch(
             "plm_assistant.entrypoints.windows_project_review."
             "ProjectReviewSubjectReadRegistry",
@@ -100,7 +108,7 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
         self.assertEqual([
             "/api/v1/projects/{project_id}/reviews",
         ], [route.path for route in router.routes])
-        self.assertEqual((owner, section), registry.call_args.args[0])
+        self.assertEqual((owner, section, survey), registry.call_args.args[0])
 
     def test_composes_sol06_read_router_with_separate_registry(self):
         runtime = Mock()
@@ -109,6 +117,8 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
         owner.authorize_read = Mock()
         section = Mock(SUBJECT_TYPE="SOL-05")
         section.authorize_read = Mock()
+        survey = Mock(SUBJECT_TYPE="SRV-02")
+        survey.authorize_read = Mock()
         with patch(
             "plm_assistant.entrypoints.windows_project_review."
             "create_windows_structured_spec_review_subject",
@@ -116,6 +126,9 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
         ), patch(
             "plm_assistant.entrypoints.windows_project_review."
             "create_windows_section_review_subject", return_value=section,
+        ), patch(
+            "plm_assistant.entrypoints.windows_project_review."
+            "_survey_read_owner", return_value=survey,
         ), patch(
             "plm_assistant.entrypoints.windows_project_review."
             "ProjectReviewSubjectReadRegistry",
@@ -128,7 +141,7 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
             "/api/v1/projects/{project_id}/reviews/{review_id}",
         ], [route.path for route in router.routes])
         self.assertEqual(
-            ("SOL-06", "SOL-05", "HND-02"),
+            ("SOL-06", "SOL-05", "HND-02", "SRV-02"),
             tuple(getattr(item, "SUBJECT_TYPE")
                   for item in registry.call_args.args[0]),
         )

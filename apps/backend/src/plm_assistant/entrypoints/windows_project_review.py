@@ -175,6 +175,20 @@ def _outline_owner(value: object | None) -> tuple[OutlineReviewSubjectOwner, ...
     return (value,)
 
 
+def _survey_read_owner(*, reviewers, audit) -> SurveyReviewSubjectOwner:
+    return SurveyReviewSubjectOwner(
+        repository=SqlAlchemySurveyReviewSubjectRepository(),
+        reviewers=reviewers,
+        current=SurveyVersionCurrentValidator(
+            handover_sources=SqlAlchemyHandoverSurveySourceProof(),
+            capability_sources=SqlAlchemyCapabilitySurveySourceProof(),
+            template_sources=SqlAlchemySurveyTemplateProof(),
+            departments=SqlAlchemySurveyTargetDepartmentProof(),
+        ),
+        audit=audit,
+    )
+
+
 def create_windows_project_review_read_router(
     runtime, *, origins, license_guard, audit,
     documents, downloads, parse_results, outline_subject=None,
@@ -203,6 +217,7 @@ def create_windows_project_review_read_router(
             documents=documents, downloads=downloads,
             parse_results=parse_results, authorization=authorization,
             reviewers=reviewers, terminal_context=True)
+        survey = _survey_read_owner(reviewers=reviewers, audit=audit)
         handover = HandoverReviewSubjectOwner(
             repository=SqlAlchemyHandoverReviewSubjectRepository(),
             reviewers=reviewers,
@@ -217,7 +232,8 @@ def create_windows_project_review_read_router(
             license_guard=license_guard,
             repository=SqlAlchemyReviewSnapshotReadRepository(),
             subjects=ProjectReviewSubjectReadRegistry(
-                (owner, section, handover) + _outline_owner(outline_subject)),
+                (owner, section, handover, survey)
+                + _outline_owner(outline_subject)),
         )
         return create_review_read_router(origins=origins, reads=reads)
     except Exception:
@@ -255,13 +271,14 @@ def create_windows_project_review_list_router(
             documents=documents, downloads=downloads,
             parse_results=parse_results, authorization=authorization,
             reviewers=reviewers, terminal_context=True)
+        survey = _survey_read_owner(reviewers=reviewers, audit=audit)
         lists = ReviewListService(
             unit_of_work=runtime.unit_of_work,
             sessions=SqlAlchemyProjectReadAccess(), projects=authorization,
             license_guard=license_guard,
             repository=SqlAlchemyReviewListRepository(),
             subjects=ProjectReviewSubjectReadRegistry(
-                (owner, section) + _outline_owner(outline_subject)),
+                (owner, section, survey) + _outline_owner(outline_subject)),
         )
         return create_review_list_router(
             origins=origins, lists=lists, cursors=cursors,

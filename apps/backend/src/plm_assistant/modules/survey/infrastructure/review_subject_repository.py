@@ -42,6 +42,24 @@ class SqlAlchemySurveyReviewSubjectRepository:
         ).with_for_update(read=True)).scalar_one_or_none()
         return found == survey_id
 
+    def active_version_exists(
+        self, transaction: object, *, project_id: uuid.UUID,
+        survey_id: uuid.UUID, survey_version_id: uuid.UUID,
+    ) -> bool:
+        if not self._ids(project_id, survey_id, survey_version_id):
+            return False
+        if not self.active_survey_exists(
+                transaction, project_id=project_id, survey_id=survey_id):
+            return False
+        found = _session(transaction).execute(select(
+            SurveyVersionRow.survey_version_id,
+        ).where(
+            SurveyVersionRow.project_id == project_id,
+            SurveyVersionRow.survey_id == survey_id,
+            SurveyVersionRow.survey_version_id == survey_version_id,
+        ).with_for_update(read=True)).scalar_one_or_none()
+        return found == survey_version_id
+
     def lock_subject(
         self, transaction: object, *, project_id: uuid.UUID,
         survey_id: uuid.UUID, survey_version_id: uuid.UUID,

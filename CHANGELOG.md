@@ -1,5 +1,9 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/`CR-SUR-014`（`SUR-07-A12-P06` 实施中）修复 Survey Review 只读 Owner/Windows GET 与 LIST 组合缺失：当前项目成员仅能读取同项目活动 Survey 与精确归属版本；写决定仍遵循原受指派 Reviewer 权限。无 API/Schema/Migration 变化。验证：相关定向34项、后端全量4102 passed/3 skipped/6153 subtests passed、compileall/diff-check通过。独立 PG 端口未运行成功；包内新 Edge/HTTPS/PG18验收待执行，不能当作 WBS PASS。升级迁移不涉及；回滚可移除 Owner 注册/读实现。兼容性仍仅 Windows 11 合成候选待复验，Server 2025/Debian 13未测；Pilot/正式发行仍 NOT_READY。见 `docs/changes/CR-SUR-014-review-read-owner.md`、`docs/progress/sur-07-a12-p06-survey-review-read-owner.md`。
+
+- 2026-10-25：0.1.0-dev.0/`SUR-07-A12-P05` 验收失败记录：固定候选 `fbd0bea95b370258ef211443e77a8bc3deab60dd1df01e762826cea199752720` 上游清洁解包、Survey DRAFT/Validate/ProjectManager 原子送审链通过；实际指派 Reviewer Review GET 仍 404，源码确认 Owner 读取方法与 Windows GET/List 注册均缺失。P05=`INCOMPLETE`，该候选不可交付；未产生 Reviewer 决定。问题和修复路线登记 CR-SUR-014；待修复后重建候选复验。细节见 `docs/progress/sur-07-a12-p05-review-ui-packaged.md`。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A12-P04 为通用 Review 页面接入 `SRV-02 + SURVEY_ALL_V1`：客户端严格匹配 Subject/Policy；列表和详情显示调研问题评审；详情以本轮固定 SurveyVersion ID 深链打开对应版本。复用既有Reviewer权限、显式批准确认、退回意见与同操作号恢复。无 API/Schema/Migration/License/依赖变化。兼容性：Windows 11 前端自动化通过，Server 2025/Debian 13 未测。验证：前端192个测试文件/2045项、typecheck、402 modules build通过（保留约1,041 KB chunk warning）；新 dist 包内验收留 P05。真实客户决定、正式信任、Gate/Pilot/Release未完成，见 `docs/progress/sur-07-a12-p04-survey-review-ui.md`。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A12-P03 完成 Survey Review UI 编码前核查。后端已注册真实 `SRV-02 + SURVEY_ALL_V1` Owner 与冻结通用 Review 读/决定流程；前端精确 Subject allowlist、详情标签、待办映射和固定 SurveyVersion 链接尚缺。只读核查，无代码/API/Schema/Migration/依赖变化。验证：对照后端 Windows 组合、Review Owner、前端 Review Client/详情页及送审 201 回执路径；未运行程序测试。已知问题：SRV-02 Review UI 和合成包内决定链待 P04；客户真实决定、正式信任、Pilot/Gate/发行仍未完成。见 `docs/progress/sur-07-a12-p03-survey-review-ui-precheck.md`。

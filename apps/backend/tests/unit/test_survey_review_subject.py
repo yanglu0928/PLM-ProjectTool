@@ -10,6 +10,9 @@ from plm_assistant.modules.project.application.reviewers import (
     ProjectReviewerFacts, ReviewReviewerEligibilityError,
 )
 from plm_assistant.modules.review.application.create_review import CreatedReviewRef
+from plm_assistant.modules.review.application.read_service import (
+    AuthorizedReviewSubjectRead,
+)
 from plm_assistant.modules.review.application.read_snapshot import (
     FixedReviewRoundSnapshot, ReviewIdentitySnapshot,
 )
@@ -101,6 +104,39 @@ class SurveyReviewSubjectTests(unittest.TestCase):
             self.tx, user_id=self.actor, project_id=self.project,
             subject_type="SRV-02", subject_id=self.survey,
             subject_version_id=self.version,
+        ))
+
+    def test_read_owner_requires_current_member_and_exact_active_subject(self):
+        self.reviewers.qualify_in_transaction.return_value = (
+            ProjectReviewerFacts(self.actor, self.project, "CUSTOMER_MEMBER"),
+        )
+        self.repository.active_survey_exists.return_value = True
+        self.repository.active_version_exists.return_value = True
+        proof = self.owner.authorize_read(
+            self.tx, user_id=self.actor, project_id=self.project,
+            subject_type="SRV-02", subject_id=self.survey,
+            subject_version_id=self.version,
+        )
+        self.assertEqual(proof, AuthorizedReviewSubjectRead(
+            self.actor, self.project, "SRV-02", self.survey, self.version,
+        ))
+        self.repository.active_version_exists.assert_called_once_with(
+            self.tx, project_id=self.project, survey_id=self.survey,
+            survey_version_id=self.version,
+        )
+        self.repository.active_version_exists.return_value = False
+        self.assertIsNone(self.owner.authorize_read(
+            self.tx, user_id=self.actor, project_id=self.project,
+            subject_type="SRV-02", subject_id=self.survey,
+            subject_version_id=uuid4(),
+        ))
+        self.reviewers.qualify_in_transaction.side_effect = (
+            ReviewReviewerEligibilityError()
+        )
+        self.assertIsNone(self.owner.authorize_read(
+            self.tx, user_id=self.actor, project_id=self.project,
+            subject_type="SRV-02", subject_id=self.survey,
+            subject_version_id=None,
         ))
 
     def test_prepare_revalidates_and_finalizes_exact_binding(self):

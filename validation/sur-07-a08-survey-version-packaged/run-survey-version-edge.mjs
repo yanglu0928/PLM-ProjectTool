@@ -4,10 +4,10 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const [origin, project, survey, actor] = process.argv.slice(2);
+const [origin, project, survey, actor, expectedReviewer] = process.argv.slice(2);
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
 if (!/^https:\/\/localhost:\d+$/.test(origin ?? "")
-  || [project, survey, actor].some(value => !uuid.test(value ?? ""))) {
+  || [project, survey, actor, expectedReviewer].some(value => !uuid.test(value ?? ""))) {
   throw new Error("synthetic HTTPS origin and canonical IDs required");
 }
 const profile = await mkdtemp(join(tmpdir(), "plm-survey-version-edge-"));
@@ -167,8 +167,8 @@ try {
   const loadReviewers = await evaluate(`(() => {const x=[...document.querySelectorAll('button')].find(e=>e.textContent.trim()==='读取当前项目评审人');if(!x)return false;x.click();return true;})()`);
   if (!loadReviewers) throw new Error("ProjectManager reviewer-list action missing");
   await waitFor("document.querySelector('fieldset input[type=checkbox]')", "ACTIVE customer reviewer options");
-  const reviewerId = await evaluate("(() => {const x=document.querySelector('fieldset input[type=checkbox]');if(!x)return null;x.click();return x.value;})()");
-  if (!uuid.test(reviewerId ?? "")) throw new Error("no selectable ACTIVE customer reviewer");
+  const reviewerId = await evaluate(`(() => {const x=[...document.querySelectorAll('fieldset input[type=checkbox]')].find(e=>e.value===${JSON.stringify(expectedReviewer)});if(!x)return null;x.click();return x.value;})()`);
+  if (reviewerId !== expectedReviewer) throw new Error("expected synthetic customer reviewer is not selectable");
   const confirmation = await evaluate(`(() => {const label=[...document.querySelectorAll('label')].find(e=>e.textContent.includes('我已核对该固定版本和问题'));if(!label)return false;label.querySelector('input')?.click();return true;})()`);
   if (!confirmation) throw new Error("explicit Survey review submission confirmation missing");
   await click("提交调研版本评审");
@@ -190,22 +190,33 @@ try {
   if (!await evaluate("document.body.innerText.includes('尚未批准')")) {
     throw new Error("submit-review UI must explicitly state that this is not an approval");
   }
-  await click("打开评审");
-  await waitFor("document.body.innerText.includes('你不是本轮评审人')", "non-reviewer Review detail authorization");
+  // Sign out the submitting ProjectManager and sign in as the exact assigned
+  // synthetic customer Reviewer. Review decisions remain untouched.
+  await evaluate(`history.pushState({},'',${JSON.stringify("/login")});dispatchEvent(new PopStateEvent('popstate'))`);
+  await waitFor("document.querySelector('#login-username')", "login view for reviewer handoff");
+  await click("退出登录");
+  await waitFor("document.body.innerText.includes('已退出当前会话。')", "ProjectManager logout");
+  await setValue("#login-username", "Synthetic Handover Customer");
+  await setValue("#login-password", "synthetic-packaged-login-password");
+  await evaluate("document.querySelector('form button[type=submit]').click()");
+  await waitFor("document.body.innerText.includes('登录成功。')", "assigned Reviewer login");
+  await evaluate(`history.pushState({},'',${JSON.stringify(`/projects/${project}/reviews/${submitted.review_id}`)});dispatchEvent(new PopStateEvent('popstate'))`);
+  await waitFor("document.body.innerText.includes('本轮固定调研问题版本')", "assigned Reviewer SRV-02 Review detail");
   const detailLink = await evaluate(`(() => {const x=[...document.querySelectorAll('a')].find(e=>e.textContent.includes('查看本轮固定调研问题版本'));return x?{href:x.getAttribute('href'),text:x.textContent.trim()}:null;})()`);
   if (!detailLink?.href?.includes(`fixedVersionId=${created.survey_version_id}`)
     || !detailLink.text.includes("查看本轮固定调研问题版本")) {
     throw new Error(`SRV-02 Review must link to the exact fixed SurveyVersion: ${JSON.stringify(detailLink)}`);
   }
-  const unauthorizedControls = await evaluate("[...document.querySelectorAll('button')].map(e=>e.textContent.trim()).filter(t=>t==='批准本轮'||t==='退回修改')");
-  if (unauthorizedControls.length) throw new Error("non-assigned ProjectManager must not see Reviewer decision controls");
+  const reviewerControls = await evaluate("[...document.querySelectorAll('button')].map(e=>e.textContent.trim()).filter(t=>t==='批准本轮'||t==='退回修改')");
+  if (!reviewerControls.includes("批准本轮") || !reviewerControls.includes("退回修改")) {
+    throw new Error("assigned Reviewer decision controls are not visible");
+  }
   await click("返回评审待办与历史");
   await waitFor("document.querySelector('#review-list-title')", "Project Review list");
-  await click("全部可见历史");
   await waitFor(`document.body.innerText.includes(${JSON.stringify(submitted.review_id)})
-    && document.body.innerText.includes('评审中 · 调研问题版本')`, "SRV-02 visible Review history label");
+    && document.body.innerText.includes('评审中 · 调研问题版本')`, "SRV-02 assigned Reviewer pending list label");
   await click("打开评审并核对当前状态");
-  await waitFor("document.body.innerText.includes('你不是本轮评审人')", "SRV-02 list-to-review navigation");
+  await waitFor("document.body.innerText.includes('本轮固定调研问题版本')", "SRV-02 list-to-review navigation");
   const failures = observations.filter(item => item.exception || item.loadingFailed
     || item.status >= 400 && !(item.url === "/api/v1/auth/session" && item.status === 401));
   const alerts = await evaluate("[...document.querySelectorAll('[role=alert]')].filter(e=>e.offsetParent!==null).map(e=>e.innerText)");
@@ -219,7 +230,7 @@ try {
     validation_valid: validation.valid, validation_idempotency_key: header(validateRequest, "Idempotency-Key"),
     review_id: submitted.review_id, review_round_id: submitted.review_round_id,
     review_ui_subject_label: true, review_ui_fixed_version_link: detailLink.href,
-    non_reviewer_decision_controls_hidden: true, review_list_subject_label: "调研问题版本",
+    assigned_reviewer_decision_controls_visible: true, review_list_subject_label: "调研问题版本",
     reviewer_id: reviewerId, submit_review_etag: header(submitRequest, "If-Match"),
     submit_review_idempotency_key: header(submitRequest, "Idempotency-Key"),
     submit_review_state: submitted.state }));
