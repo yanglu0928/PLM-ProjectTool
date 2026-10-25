@@ -136,6 +136,14 @@ class SqlAlchemyPlanVersionCreateRepository:
                     "PROTOTYPE": PlanWbsPrototypeRefRow,
                     "EVIDENCE": PlanWbsEvidenceRefRow,
                 }[kind]
+                if kind == "SOLUTION" and rows:
+                    # Typed source refs share one table but intentionally use
+                    # mutually exclusive nullable FK columns. SQLAlchemy's
+                    # multi-VALUES insert requires each row to expose the same
+                    # keys, so make absent variant columns explicit NULLs.
+                    columns = set().union(*(row.keys() for row in rows))
+                    rows = [{column: row.get(column) for column in columns}
+                            for row in rows]
                 session.execute(insert(model).values(rows))
 
         for milestone in draft.input.milestones:

@@ -1,6 +1,6 @@
 # 版本说明
 
-- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A02`（进行中）：新增事务型PlanVersion内部Owner、固定来源复核、完整快照持久化、持久幂等/Audit同事务、CR-PLAN-005受控代码目录校验及Windows显式组合。定向16 passed/853 subtests，完整后端4124 passed/3 skipped/6161 subtests；本机缺PG18工具/服务/容器，真实Owner事务验收尚未运行，故WBS未完成、代码未作发行成果；0188不得单独部署。详见A02进度记录。
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A02`（内部验收完成）：新增事务型PlanVersion内部Owner、固定来源复核、完整快照持久化、持久幂等/Audit同事务、CR-PLAN-005受控代码目录校验及Windows显式组合。Win11隔离PostgreSQL 18.6合成端到端通过：批准来源、完整聚合快照、同Key重放/冲突、无效来源拒绝、Audit失败原子回滚与同Key恢复、并发版本号连续；定向14 passed/853 subtests，完整后端4124 passed/3 skipped/6161 subtests。真实PG复验发现并修复异构Solution refs批量INSERT列键不一致。测试使用未随项目交付的本机非官方pgvector二进制；0188仍禁止单独部署，Gate/Pilot/Release未变。详见A02进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A02`（编码前调整）：核对字段映射发现Calendar、WBS category和support roles无版本化白名单；登记CR-PLAN-005，选择内部不可变 `PLAN_WBS_CODES_V1`，未知值拒绝，不擅自将业务协作角色当Project授权角色。无Schema/API/代码变化；仍在Owner编码前置检查。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A01`：按CR-PLAN-004新增Migration `20261026_0188`，八类Plan aggregate guards允许INSERT、继续拒绝UPDATE/DELETE；no-TRUNCATE保护保留。Win11/PG18.6隔离库升迁/降迁/重升、8个PG guard调用、截断拒绝、降级历史保留及drift通过；定向6项、完整后端4120 passed/3 skipped/6153 subtests passed。0188不独立投产，须与事务型Owner同批交付；Pilot/Gate/Release不变。详见A01记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03`（编码前）：核查发现0170～0176及0186/0187所有Plan子表Owner guards仍无条件拒绝INSERT，需先补可审计的append-only数据库门。登记CR-PLAN-004并决定0188允许INSERT但继续拒绝UPDATE/DELETE/TRUNCATE；0188不得脱离Application Owner单独部署。将P03拆分为P03-A01 guard验证、P03-A02原子Owner。当前仅源码审计，无代码/数据库变化、无功能测试。详见前置记录。
