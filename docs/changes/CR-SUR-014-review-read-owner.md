@@ -3,7 +3,7 @@
 - 日期：2026-10-25
 - 发现 WBS：`SUR-07-A12-P05`
 - 执行 WBS：`SUR-07-A12-P06`
-- 状态：按用户持续授权登记并执行；不修改冻结 API/DB Schema。
+- 状态：`CLOSED_VALIDATED`；按用户持续授权登记并执行，不修改冻结 API/DB Schema；包内合成验收通过。
 
 ## 变更原因与证据
 
@@ -36,3 +36,10 @@ P05 包内验收中，ProjectManager 送审成功，但登录为本轮实际受�
 `SUR-07-A12-P05` 首轮/复跑均未通过：前者确认 ProjectManager 不可读取，后者在实际受指派 Reviewer 登录后仍收到 404。P05 保持 Incomplete，候选 `fbd0bea95b370258ef211443e77a8bc3deab60dd1df01e762826cea199752720` 未因失败而变成可用包。先完成本 CR 与 P06，再从新的干净提交构建候选重验；不将已失败包用于交付。
 
 候选重建第一次又被源码清洁检查拒绝。检查注释意图忽略用户本地 `.tmp/`，但旧 Git pathspec `:(exclude).tmp/` 未过滤其中解包的数万文件；已把排除改为 `:(exclude).tmp/**` 并增加打包器回归测试。实际确认该规则排除 `.tmp` 下文件，同时仍会识别其他未跟踪路径。没有删除、改写或提交 `.tmp/` 内容。
+
+从提交 `47e979044f90c9618d80d0c1283ee93e024057f2` 重建的候选 SHA `050f37207985e5f407ac713373b2713bc24cafe67a3a36a8b5adc4e786aecfce`（22,197 项，654,939,043 bytes）清洁解包通过。包内首轮确认 Reviewer GET=200，但误用 Handover“返回评审待办”文案导致脚本中止；第二轮确认 Review GET/载荷正常，旧脚本把 ProjectManager 读取预期写成404，但现有策略允许当前项目成员读取，实际200是正确结果。已修正验收为项目成员可读/非指派人无决定按钮，Reviewer 有决定按钮但绝不提交；最终 Edge/HTTPS/隔离 PG18 验收通过，Review/Round、指派快照、Audit/收据均准确且决定数为0、批准指针为空。临时资源已清理，候选哈希未变化。
+
+## 最终验收与边界
+
+- P05/P06 包级验收通过：`SUR_07_A12_P05_PACKAGED_EDGE_PASS`、`SUR_07_A08_PACKAGED_PG_PASS`、`SUR_07_A12_P05_PACKAGED_PG_PASS`、`SYNTHETIC_CURRENT_APP_PACKAGED_HTTPS_PASS`；对应证据见 `docs/progress/sur-07-a12-p05-review-ui-packaged.md`。
+- 仅 Windows 11 合成数据及开发环境组合已验；候选 `release_eligible=false`、`legal_clearance=false`。不代表真实客户确认、正式信任、Pilot 可发行、Gate 通过或 Windows Server 2025/Debian 13 兼容。

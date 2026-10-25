@@ -85,15 +85,18 @@ def after_approval(state: dict, **context) -> None:
     assert result["review_ui_fixed_version_link"].endswith(
         f"?fixedVersionId={result['survey_version_id']}")
     assert result["assigned_reviewer_decision_controls_visible"] is True
+    assert result["project_member_read_allowed"] is True
+    assert result["non_assignee_decision_controls_hidden"] is True
     assert result["review_list_subject_label"] == "调研问题版本"
     assert result["project_id"] == str(project) and result["survey_id"] == str(survey)
     assert result["reviewer_id"] == str(expected_reviewer_id)
     non_reviewer_read = observer.get(
         f"/api/v1/projects/{project}/reviews/{result['review_id']}"
     )
-    assert non_reviewer_read.status_code == 404, (
+    assert non_reviewer_read.status_code == 200, (
         non_reviewer_read.status_code, non_reviewer_read.text
     )
+    assert non_reviewer_read.json()["data"]["review_id"] == result["review_id"]
     fixed_row = result["handover_item_row_id"]
     assert fixed_row in {item["handover_item_row_id"] for item in available}
     assert result["handover_analysis_version_id"] == str(context["version"])
@@ -219,7 +222,7 @@ def after_approval(state: dict, **context) -> None:
     print("SUR_07_A08_PACKAGED_PG_PASS: DRAFT fixed+MANUAL, target, one Audit/receipt, "
           "same-key replay and denied writers", flush=True)
     print("SUR_07_A12_P05_PACKAGED_PG_PASS: DRAFT Validate, ProjectManager atomic "
-          "submit-review, exact ACTIVE reviewer snapshot, non-reviewer 404, "
+          "submit-review, exact ACTIVE reviewer snapshot, member read and non-assignee decision denial, "
           "Audit and receipt", flush=True)
 
 

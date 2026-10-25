@@ -1,7 +1,7 @@
 # SUR-07-A12-P06：Survey Review 读取 Owner
 
 - 日期：2026-10-25
-- 状态：`IN_PROGRESS`
+- 状态：`SUR_07_A12_P06_PACKAGED_OWNER_ACCEPTANCE_PASS`
 - 依据：`CR-SUR-014`；P05 包内验收已阻断于缺失 Survey Review 读取 Owner。
 
 ## 编码前检查
@@ -28,6 +28,6 @@ Survey Review subject application/repository、Windows Review composition、定�
 - 已补 `active_version_exists` 查询并把 Survey Owner 注册到独立 Windows PROJECT Review GET 与 LIST 组合；不涉及通用写命令、API载荷、Schema、Migration或产品依赖。
 - 定向测试：Survey Owner、Review Registry、Windows Review composition、Review Read Service 共34项通过。
 - 后端全量：4102 passed、3 skipped、6153 subtests passed；`compileall`、`git diff --check` 通过。
-- 旧 standalone PG 验证入口启动失败：本机测试 PG 端口连接超时（服务未监听）；没有产品测试断言失败。新包内 Edge/HTTPS/PG18 验收还需重建候选执行，故本 WBS 尚未标 PASS。
+- 旧 standalone PG 验证入口启动失败：本机测试 PG 端口连接超时（服务未监听）；没有产品测试断言失败。随后在 P05 从干净源构建的固定非发行候选中，通过 Edge/HTTPS/隔离 PG18 独立验证项目成员读取、准确 SurveyVersion 所有权和 Reviewer 决定权限；完整证据与候选哈希见 `sur-07-a12-p05-review-ui-packaged.md`。因此本 WBS 的包级验收前置现已满足。
 - 验收偏差：P03 曾认定后端 Review Owner/GET 已注册，实际只覆盖送审写 Owner，未核对读取 Owner Registry；此结论已更正并在 CR-SUR-014 追溯。
 - 候选构建偏差：首轮打包器因 Git pathspec 过滤失败，把保留的 `.tmp/` 解包文件误报为源码污染。修正候选清洁检查为递归排除 `.tmp/**`，回归测试6/6通过；保留所有 scratch 数据。该构建工具修正已记录在 CR-SUR-014，待提交后继续干净候选构建。

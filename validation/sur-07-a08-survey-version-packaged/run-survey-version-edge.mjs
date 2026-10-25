@@ -190,6 +190,12 @@ try {
   if (!await evaluate("document.body.innerText.includes('尚未批准')")) {
     throw new Error("submit-review UI must explicitly state that this is not an approval");
   }
+  await evaluate(`history.pushState({},'',${JSON.stringify(`/projects/${project}/reviews/${submitted.review_id}`)});dispatchEvent(new PopStateEvent('popstate'))`);
+  await waitFor("document.body.innerText.includes('本轮固定调研问题版本')", "ProjectManager Review detail");
+  const projectManagerControls = await evaluate("[...document.querySelectorAll('button')].map(e=>e.textContent.trim()).filter(t=>t==='批准本轮'||t==='退回修改')");
+  if (projectManagerControls.length) throw new Error("non-assigned ProjectManager must not see Reviewer decision controls");
+  const managerRead = await evaluate("document.body.innerText.includes('状态：评审中')");
+  if (!managerRead) throw new Error("current project member must read the Survey Review state");
   // Sign out the submitting ProjectManager and sign in as the exact assigned
   // synthetic customer Reviewer. Review decisions remain untouched.
   await evaluate(`history.pushState({},'',${JSON.stringify("/login")});dispatchEvent(new PopStateEvent('popstate'))`);
@@ -211,7 +217,7 @@ try {
   if (!reviewerControls.includes("批准本轮") || !reviewerControls.includes("退回修改")) {
     throw new Error("assigned Reviewer decision controls are not visible");
   }
-  await click("返回评审待办与历史");
+  await evaluate(`history.pushState({},'',${JSON.stringify(`/projects/${project}/reviews`)});dispatchEvent(new PopStateEvent('popstate'))`);
   await waitFor("document.querySelector('#review-list-title')", "Project Review list");
   await waitFor(`document.body.innerText.includes(${JSON.stringify(submitted.review_id)})
     && document.body.innerText.includes('评审中 · 调研问题版本')`, "SRV-02 assigned Reviewer pending list label");
@@ -230,6 +236,7 @@ try {
     validation_valid: validation.valid, validation_idempotency_key: header(validateRequest, "Idempotency-Key"),
     review_id: submitted.review_id, review_round_id: submitted.review_round_id,
     review_ui_subject_label: true, review_ui_fixed_version_link: detailLink.href,
+    project_member_read_allowed: managerRead, non_assignee_decision_controls_hidden: true,
     assigned_reviewer_decision_controls_visible: true, review_list_subject_label: "调研问题版本",
     reviewer_id: reviewerId, submit_review_etag: header(submitRequest, "If-Match"),
     submit_review_idempotency_key: header(submitRequest, "Idempotency-Key"),

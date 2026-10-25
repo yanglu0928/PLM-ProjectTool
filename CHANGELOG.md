@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25 / 0.1.0-dev.0：完成 `SUR-07-A12-P05/P06` Survey Review 包级只读与权限验收，并记录 `CR-SUR-014`。Windows 11 非发行候选 SHA-256 `050f37207985e5f407ac713373b2713bc24cafe67a3a36a8b5adc4e786aecfce` 清洁解包及 Edge/HTTPS/隔离 PG18 合成验收通过；项目成员可读，只有受指派 Reviewer 显示决定控件，Review/Round、Reviewer PENDING、Audit/收据符合预期，未提交决定且批准指针为空。兼容性：仅 Windows 11 合成环境；Windows Server 2025/Debian 13 未实测。升级/回滚：无 Schema/API/Migration，CR-SUR-014 不改冻结合同。已知限制：候选 `release_eligible=false`、`legal_clearance=false`，不构成 Pilot、Gate 或正式发行；正式信任、安装升级、真实客户确认、完整 UAT 仍待。详见 P05/P06 进度记录。
+
 - 2026-10-25：候选打包工具修复：将用户本地 `.tmp/` 递归排除路径改为 Git 可识别的通配 pathspec，避免把保留的 scratch 解包内容误判为源码变更；同时仍拒绝其他未跟踪文件。验证：打包器定向6/6通过，Python compileall 和 diff-check 通过。产品功能、安装包和数据未改变；新候选需在后续干净提交重建。追溯见 `CR-SUR-014`。
 
 - 2026-10-25：0.1.0-dev.0/`CR-SUR-014`（`SUR-07-A12-P06` 实施中）修复 Survey Review 只读 Owner/Windows GET 与 LIST 组合缺失：当前项目成员仅能读取同项目活动 Survey 与精确归属版本；写决定仍遵循原受指派 Reviewer 权限。无 API/Schema/Migration 变化。验证：相关定向34项、后端全量4102 passed/3 skipped/6153 subtests passed、compileall/diff-check通过。独立 PG 端口未运行成功；包内新 Edge/HTTPS/PG18验收待执行，不能当作 WBS PASS。升级迁移不涉及；回滚可移除 Owner 注册/读实现。兼容性仍仅 Windows 11 合成候选待复验，Server 2025/Debian 13未测；Pilot/正式发行仍 NOT_READY。见 `docs/changes/CR-SUR-014-review-read-owner.md`、`docs/progress/sur-07-a12-p06-survey-review-read-owner.md`。
