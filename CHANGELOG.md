@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `CR-PLAN-007` / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P01`（PlanVersion Review送审前置核查完成）：发现0188对PlanVersion根表禁止所有UPDATE，与冻结SubmitReview/批准生命周期字段冲突。先登记授权CR，选择0190仅准白名单Review状态指针更新且内容不可变、每次同事务append-only事件闭合、历史降级拒绝。仅前置/CR/状态文档，无代码或Schema变更。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P04-P03-P03-P02`（Win11隔离PG18 Validate HTTP组合通过）：以合成批准来源和Project PM/IM经Windows Validate router实际HTTP验证报告、精确重放、跨项目/只读成员/Origin拒绝，以及Audit故障的0189/Audit/Receipt原子回滚。PlanVersion保持DRAFT；测试数据仅在一次性PG。全量后端4149 passed/3 skipped/6206 subtests。非Gate/Pilot结论。详见P03-P03-P02记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P04-P03-P03-P01`（Validate隔离HTTP/PG验收器前置核查完成）：确认复用自建一次性PG18、合成Session/许可/Approved来源链和TestClient；真实业务行必须由Owner事务生成，不伪造Audit/报告。仅前置记录与状态更新。下一项P02执行端到端HTTP断言。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P04-P03-P02`（Windows显式Write根合同装载通过）：仅`platform-write`组合根创建PlanVersion Validate router；登录-only、只读和普通默认应用仍关闭。组合合同使用stub router，非真实PG/来源业务链验收。定向6 passed/11 subtests、全量4149 passed/3 skipped/6206 subtests。下一项A06-P04-P03-P03-P01复核隔离HTTP/PG验证器。
