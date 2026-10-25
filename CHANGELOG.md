@@ -4,6 +4,8 @@
 
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A03`：当前非发行候选的包内 PostgreSQL 18.6/pgvector 0.8.6 空库与合成历史行 `20261024_0185` migration/downgrade/re-upgrade 通过；loopback HTTPS synthetic login/Session=200、无License项目403。48临时Vault目标及PG/API/Caddy进程/测试目录清理，候选 SHA 未变。Windows 11 合成技术验收；正式产品公钥/License、客户/发行信任均未验，`release_eligible=false`。详情见 P51-A03 记录。
 
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A04` 前置检查：将同一新候选接入已修正的 Survey Review Edge/PG 验收器，确认 ProjectManager成员只读、受指派Reviewer可见决定控件及精确 SurveyVersion 深链，并以零决定为硬条件。仅一次性合成数据，执行中。
+
 - 2026-10-25：新增 `PLT-PKG-01-A09-P51-A01` 当前源码 Windows 11 非发行安装前置核查。正式公钥缺失，正式安装继续阻塞；将后续限定为最新源码候选在独立临时 ASCII 根的离线安装/启动/停止/清理验收，禁止触碰正式安装根/生产SCM/现有数据库或把合成信任写成正式通过。此项只读计划，无产品/API/Schema/Migration变化。详见进度记录。
 
 - 2026-10-25 / 0.1.0-dev.0：完成 `SUR-07-A12-P05/P06` Survey Review 包级只读与权限验收，并记录 `CR-SUR-014`。Windows 11 非发行候选 SHA-256 `050f37207985e5f407ac713373b2713bc24cafe67a3a36a8b5adc4e786aecfce` 清洁解包及 Edge/HTTPS/隔离 PG18 合成验收通过；项目成员可读，只有受指派 Reviewer 显示决定控件，Review/Round、Reviewer PENDING、Audit/收据符合预期，未提交决定且批准指针为空。兼容性：仅 Windows 11 合成环境；Windows Server 2025/Debian 13 未实测。升级/回滚：无 Schema/API/Migration，CR-SUR-014 不改冻结合同。已知限制：候选 `release_eligible=false`、`legal_clearance=false`，不构成 Pilot、Gate 或正式发行；正式信任、安装升级、真实客户确认、完整 UAT 仍待。详见 P05/P06 进度记录。

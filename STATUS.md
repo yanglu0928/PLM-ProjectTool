@@ -26,7 +26,7 @@
 ## 自动执行策略
 
 - 2026-10-25 `PLT-PKG-01-A09-P51-A02` / `CR-PKG-011`：既有 P39 原子演练器固定 P33 身份，不能接收 P47 当前应用候选；保留旧工具并新增当前候选专用演练器。定向10项（含P39/stage回归）通过；从HEAD `c2ec928a` 派生当前非发行候选 SHA `3cbd68aaad08b111fdf809575915358d7d7737a266990ed6bd3df23f2326f455`，22,197项清洁解包及原子落地/哈希读回通过。正式安装、服务/数据库、License及发行门禁保持关闭。详见对应 CR/进度记录。
-- 2026-10-25 `PLT-PKG-01-A09-P51-A03`：固定候选 SHA `3cbd68aa…f2326f455` 包内 PG18.6/pgvector 0.8.6 空库与合成旧行 `20261024_0185` migration、downgrade/re-upgrade PASS；synthetic HTTPS 登录/Session=200、无License项目403，48临时Vault目标与PG/API/Caddy/临时文件清理，候选未变。两次误传Migration root被CLI前置拒绝，未启动PG，已记录修正；无真实License信任，Pilot/Gate/发行仍未过。详见 `docs/progress/plt-pkg-01-a09-p51-a03-packaged-runtime-precheck.md`。
+- 2026-10-25 `PLT-PKG-01-A09-P51-A04` 编码前检查：以P51新候选复验Survey Review全链，重用已修正Edge/PG脚本；独立合成Project/Survey/Review、Current member read/no-decision与assigned Reviewer/deep link/button visibility，零真实决定。执行前置与临时清理策略见 `docs/progress/plt-pkg-01-a09-p51-a04-survey-review-browser-precheck.md`。
 
 - 2026-10-25 `PLT-PKG-01-A09-P51-A01`：按 `SOL-03-A06-P04-P03-A06-P02` 明确转向当前源码 Windows 11 非发行候选清洁离线安装预检；正式产品公钥缺失，正式启动仍 BLOCKED。核对 P38/P39 安装门禁及 P47～P50 候选链，确定下个切片只做独立临时根内落地/启动/停止/清理；不得添加正式信任绕过、触碰 `C:\PLMTool`、生产 SCM/数据库或客户数据。无程序/Schema/API变化。详情见 `docs/progress/plt-pkg-01-a09-p51-a01-current-source-install-precheck.md`。
 
