@@ -12085,6 +12085,6 @@
 # DEC-20261026-PLAN-REVIEW-TERMINAL-WBS-01：先完成Plan Review终态Owner再装配入口
 
 - Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P05`后续分解；P05-P05已完成内部Create/Start，但统一Review Subject Registry要求Owner提供终态访问、状态消费及不可变回放闭环；CR-PLAN-007/0190已定义PlanVersion批准/退回事件和引用字段。
-- Decision：在公开HTTP/Windows组合装配前，新增独立后续WBS `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06`，只实现Plan Review批准/退回终态Owner、Approved Plan指针联动和0190终态结果事件，并为后续组合验收纳入真实当前Approved来源正向送审。保持Subject Registry/HTTP关闭，直到完整生命周期Owner和同事务证据具备。
-- Reason：缺少终态回调时公共Registry拒绝注册Plan Owner；提前挂载会暴露不可完成的生命周期并让Review结果无法反向同步到Plan事实。拆分终态工作保持P05-P05的单一Start范围，同时真实来源输入在同一后续组合验收前不宣称可用。
-- Impact/Rollback/Verification：这是获授权持续开发下的WBS顺序细化，不修改冻结Scope/API/Schema、不删减业务路径；回滚为保持新WBS未装配。P06须先完成Skill编码前核查，验证0190终态事件、Approved指针/历史、授权/错误回滚与隔离PG18；真实来源正向链在之后的端到端Owner/HTTP门槛完成前不得标为通过。
+- Decision：在公开HTTP/Windows组合装配前，新增独立后续WBS `...-P05-P06`完成Review终态闭环；实现前置经核查发现需先按CR-PLAN-008拆为`...-P05-P06-P01`（只追加Approved指针Schema/Guard）和`...-P05-P06-P02`（批准/退回终态Owner、Approved指针联动与0190结果事件）。两项完成后，再把真实当前Approved来源正向送审加入后续组合验收。保持Subject Registry/HTTP关闭，直到完整生命周期Owner和同事务证据具备。
+- Reason：缺少终态回调时公共Registry拒绝注册Plan Owner；提前挂载会暴露不可完成的生命周期并让Review结果无法反向同步到Plan事实。现有0167还关闭Plan Approved指针，故Schema必须先受控解锁，不能只写应用终态Owner。拆分保持单一可验收范围，真实来源输入在后续组合验收前不宣称可用。
+- Impact/Rollback/Verification：这是获授权持续开发下的WBS/Schema兼容细化，不删减冻结业务路径；回滚为保持新WBS未装配，有历史时Schema只允许向前修复。P06-P01先验证迁移空库/历史库/触发器/drift/安全降级；P06-P02再验证0190终态事件、Approved指针历史、授权/错误回滚与隔离PG18；真实来源正向链在之后的端到端Owner/HTTP门槛完成前不得标为通过。

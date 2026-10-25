@@ -29,4 +29,4 @@
 
 ## 下一项
 
-`PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06`：依据DEC-20261026-PLAN-REVIEW-TERMINAL-WBS-01，先核查PlanVersion Review终态（批准/退回）Owner与0190终态事件/Approved指针闭环；真实来源正向验收仍是后续组合门槛。完成终态前，P05链不挂载Registry/HTTP。
+`PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06`：依据DEC-20261026-PLAN-REVIEW-TERMINAL-WBS-01继续终态闭环；其前置核查已把工作细分为`...-P06-P01`Approved指针Schema和`...-P06-P02`终态Owner。真实来源正向验收仍是后续组合门槛；完成终态前P05链不挂载Registry/HTTP。
