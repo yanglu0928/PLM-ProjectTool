@@ -17,6 +17,7 @@ import psycopg
 
 from plm_assistant.entrypoints.windows_plan_version import (
     create_windows_plan_version_create_service,
+    create_windows_plan_version_validation_service,
 )
 from plm_assistant.modules.auth.infrastructure.project_write_access import (
     SqlAlchemyProjectWriteAccess,
@@ -26,6 +27,9 @@ from plm_assistant.modules.plan.application.create_plan import (
 )
 from plm_assistant.modules.plan.application.create_plan_version import (
     CreatePlanVersion, PlanVersionCreateError, PlanVersionCreateService,
+)
+from plm_assistant.modules.plan.application.validate_plan_version import (
+    PlanVersionValidationError, ValidatePlanVersion,
 )
 from plm_assistant.modules.plan.infrastructure.create_repository import (
     SqlAlchemyPlanCreateRepository,
@@ -435,6 +439,81 @@ class _FailingAudit:
         raise RuntimeError("synthetic audit failure")
 
 
+def _verify_validation_owner(context: dict[str, object], storage_root: Path,
+                             plan_id: uuid.UUID, version_id: uuid.UUID) -> None:
+    with psycopg.connect(**_connection(context["port"])) as db:
+        actor = db.execute(
+            "SELECT user_id FROM plm.auth_sessions WHERE session_token_digest=%s",
+            (hashlib.sha256(context["token"]).digest(),),
+        ).fetchone()[0]
+    service = create_windows_plan_version_validation_service(
+        runtime=context["runtime"], license_guard=context["license_guard"],
+        audit=context["audit"], document_storage_root=storage_root,
+        parse_result_storage_root=storage_root, documents=context["documents"],
+        downloads=context["downloads"], parse_results=context["parse_results"],
+    )
+    command = ValidatePlanVersion(
+        context["token"], context["csrf"], uuid.uuid4(), context["project"],
+        plan_id, version_id, "plan-version-validate-pg-0001")
+    first = service.validate(command)
+    assert first.valid, first.blocking_issues
+    assert first.coverage_summary.solution_total > 0
+    replay = service.validate(command)
+    assert replay == first
+    assert len(first.blocking_issues) == 0
+    assert len(first.warnings) == 0
+    with psycopg.connect(**_connection(context["port"])) as db:
+        assert db.execute(
+            "SELECT count(*) FROM plm.pln_plan_version_validation_results "
+            "WHERE project_id=%s AND plan_id=%s AND plan_version_id=%s",
+            (context["project"], plan_id, version_id),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
+            "AND target_object_id=%s AND action='PLAN_VERSION_VALIDATED'",
+            (context["project"], version_id),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE actor_id=%s "
+            "AND project_id=%s AND operation='V1_PLAN_VERSION_VALIDATE'",
+            (actor, context["project"]),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT version_state FROM plm.pln_plan_versions WHERE plan_version_id=%s",
+            (version_id,),
+        ).fetchone()[0] == "DRAFT"
+
+    failing = create_windows_plan_version_validation_service(
+        runtime=context["runtime"], license_guard=context["license_guard"],
+        audit=_FailingAudit(), document_storage_root=storage_root,
+        parse_result_storage_root=storage_root, documents=context["documents"],
+        downloads=context["downloads"], parse_results=context["parse_results"],
+    )
+    rollback = ValidatePlanVersion(
+        context["token"], context["csrf"], uuid.uuid4(), context["project"],
+        plan_id, version_id, "plan-version-validate-audit-fail-0001")
+    try:
+        failing.validate(rollback)
+    except PlanVersionValidationError:
+        pass
+    else:
+        raise AssertionError("validation Audit failure did not abort the command")
+    with psycopg.connect(**_connection(context["port"])) as db:
+        assert db.execute(
+            "SELECT count(*) FROM plm.pln_plan_version_validation_results "
+            "WHERE project_id=%s AND plan_id=%s AND plan_version_id=%s",
+            (context["project"], plan_id, version_id),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE actor_id=%s "
+            "AND project_id=%s AND operation='V1_PLAN_VERSION_VALIDATE'",
+            (actor, context["project"]),
+        ).fetchone()[0] == 1
+    print("PLAN_VERSION_VALIDATION_OWNER_POSTGRESQL_PASS: current authorization/source proof, "
+          "first report replay, Audit/0189/Receipt atomic binding, immutable version state, "
+          "Audit failure rollback")
+
+
 def verify_owner(context: dict[str, object]) -> None:
     _restore_coverage_edge(context)
     runtime, project = context["runtime"], context["project"]
@@ -470,6 +549,8 @@ def verify_owner(context: dict[str, object]) -> None:
         replay = service.create(command)
         assert first.plan_version_id == replay.plan_version_id
         assert first.version_no == replay.version_no == 1
+        _verify_validation_owner(context, Path(root), plan.plan_id,
+                                 first.plan_version_id)
         counts = _snapshot_counts(context["port"], plan.plan_id)
         assert counts == (1, 2, 2, 4, 1, 1, 2, len(draft["approved_solution_refs"]) * 2,
                           len(proof.requirement_refs) * 2), counts

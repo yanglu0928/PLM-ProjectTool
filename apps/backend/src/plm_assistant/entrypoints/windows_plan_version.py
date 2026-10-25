@@ -37,6 +37,9 @@ from plm_assistant.modules.plan.application.read_plan_version import (
 from plm_assistant.modules.plan.application.list_plan_version_wbs import (
     PlanVersionWbsReadService,
 )
+from plm_assistant.modules.plan.application.validate_plan_version import (
+    PlanVersionValidationService,
+)
 from plm_assistant.modules.plan.infrastructure.plan_version_create_repository import (
     SqlAlchemyPlanVersionCreateRepository,
 )
@@ -45,6 +48,9 @@ from plm_assistant.modules.plan.infrastructure.plan_version_read_repository impo
 )
 from plm_assistant.modules.plan.infrastructure.plan_version_wbs_read_repository import (
     SqlAlchemyPlanVersionWbsReadRepository,
+)
+from plm_assistant.modules.plan.infrastructure.plan_version_validation_results import (
+    SqlAlchemyPlanVersionValidationRepository,
 )
 from plm_assistant.modules.plan.infrastructure.plan_version_source_proofs import (
     SqlAlchemyPlanVersionSourceProofs,
@@ -186,6 +192,50 @@ def create_windows_plan_version_create_service(
             solution_proof=proof,
             source_proofs=SqlAlchemyPlanVersionSourceProofs(reviews=reviews),
             repository=SqlAlchemyPlanVersionCreateRepository(),
+            receipts=SqlAlchemyIdempotencyReceipts(), audit=audit)
+    except Exception:
+        raise WindowsPlanVersionStartupError() from None
+
+
+def create_windows_plan_version_validation_service(
+    *, runtime, license_guard, audit,
+    document_storage_root: Path, parse_result_storage_root: Path,
+    documents, downloads, parse_results,
+) -> PlanVersionValidationService:
+    """Build the authorized internal validation graph; mount no HTTP route."""
+    if any(value is None for value in (
+            runtime, license_guard, audit, document_storage_root,
+            parse_result_storage_root, documents, downloads, parse_results)):
+        raise WindowsPlanVersionStartupError()
+    try:
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work, repository=project_repository)
+        current = _windows_outline_current_facts(
+            runtime=runtime, license_guard=license_guard,
+            authorization=authorization,
+            document_storage_root=document_storage_root,
+            parse_result_storage_root=parse_result_storage_root,
+            documents=documents, downloads=downloads, parse_results=parse_results)
+        reviews = SqlAlchemyReviewSnapshotReadRepository()
+        sections = SqlAlchemySectionVersionReadRepository()
+        specs = SectionStructuredSpecQualificationService(
+            specs=SqlAlchemySectionSpecCandidateRepository(),
+            sections=SqlAlchemySectionSpecSourceRepository(),
+            reviews=reviews)
+        proof = ApprovedSolutionInputProofService(
+            outlines=SqlAlchemyOutlineReadRepository(),
+            versions=SqlAlchemyOutlineVersionReadRepository(),
+            reviews=reviews, current_facts=current,
+            coverage=current._coverage, sections=sections,
+            spec_qualification=specs)
+        results = SqlAlchemyPlanVersionValidationRepository()
+        return PlanVersionValidationService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectWriteAccess(),
+            license_guard=license_guard, authorization=authorization,
+            snapshots=results, results=results, solution_proof=proof,
+            source_proofs=SqlAlchemyPlanVersionSourceProofs(reviews=reviews),
             receipts=SqlAlchemyIdempotencyReceipts(), audit=audit)
     except Exception:
         raise WindowsPlanVersionStartupError() from None

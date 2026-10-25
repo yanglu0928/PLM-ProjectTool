@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P03-P03`（内部Validate事务Owner通过）：接入受权PlanVersion验证Owner，复证当前Approved来源，对固定版本生成报告，并在单事务写入Audit、0189不可变首次报告及通用幂等Receipt；精确同Key重放不重验来源。定向15 passed/859 subtests、全量后端4146 passed/3 skipped/6195 subtests，Win11隔离PostgreSQL 18合成事务链通过。无新增Migration/API；HTTP、浏览器和Pilot尚未完成。详见A06-P03-P03记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P03-P03`（编码前核查完成）：确认复用共享锁PlanVersion快照与现有Approved Solution/Requirement证明，新增显式PM/IM Validate操作策略；0189 Audit ID可作为报告主键并在同事务挂通用Receipt，重放返回首次完整报告。仅新增前置文档/状态，无Owner/API/数据变化。详见A06-P03-P03前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P03-P02` / `CR-PLAN-006`（Schema内部验收完成）：新增0189 Plan专属不可变Validate报告结果，绑定Audit/固定PlanVersion，保留首次响应摘要并支持历史安全回滚；更新/删除/TRUNCATE拒绝。Win11隔离PG18空库升降重、合成历史保护与drift通过；全量后端4141 passed/3 skipped/6190 subtests。无HTTP/API变化。有效报告写入、授权及幂等同事务Owner仍待，不得独立部署0189。详见A06-P03-P02记录。
 - 2026-10-26 / `CR-PLAN-006`（已授权实施，编码前）：发现通用幂等回执不存Report body、Audit单值reason_code不足以重建Plan Validate首次报告；若重放重读当前来源会破坏同Key同结果。选择Plan-owned不可变报告快照与Audit/Receipt同事务关联，新增0189，原冻结基线保留；当前仅CR/前置文档，无ORM/Migration/数据变化。下一项A06-P03-P02实现Schema并验证安全回滚。
