@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A12-P01 完成 Survey A10/A11 当前 UI 与包内验收前置核查：冻结 Validate/Submit Review 与 Windows 组合存在，但最新前端能力尚无固定候选包 Edge/HTTPS/PG18 证据；既有 A08 包只到 DRAFT 创建。确认后续送审需通过产品授权流程准备独立合成 ProjectManager，Reviewer 仍仅为测试身份。兼容性：只读核查，无代码/API/Schema/Migration/依赖变化。验证：对照 A08/A10/A11 记录、前端路由和 Submit Review Owner；未运行程序测试。已知问题：当前新 UI 包内验收、正式信任、真人客户批准、Gate/Pilot/三平台发行均未完成；见 `docs/progress/sur-07-a12-p01-survey-review-packaged-precheck.md`。
+
 - 2026-10-25：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P02-P05-P04 完成 Windows 11 固定非发行候选包 License 自然失效验收：签名 `valid_to` 越期后 Review 固定版本/条目读取与决定均拒绝，Review/轮次/批准指针/决策记录保持不变且过期拒绝审计存在。兼容性：仅 Windows 11 合成信任和隔离 PostgreSQL 18 验证，Server 2025/Debian 13 未实测。升级/回滚：仅修改验收工具，无产品 API/Schema/Migration/License 行为变化；无业务数据迁移。验证：22,199 件候选包清洁解包、包内 Edge/HTTPS/PG 实测、候选 SHA 前后不变、临时进程/布局/Vault 清理通过；夹具修复与细节见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p04-license-natural-expiry.md`。已知问题：候选 `release_eligible=false`、`legal_clearance=false`；正式信任、安装升级、真人确认、Gate 3/Pilot/正式三平台发行均未通过。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A11 为 Survey DRAFT 增加 ProjectManager 原子送审及当前项目客户评审人面板：完整分页读取成员、只列 ACTIVE 客户角色、最多选择32人并显式确认。冻结 `SURVEY_ALL_V1` 请求使用单个原子 endpoint；未知结果保留同一评审人集合和幂等操作号。201回执只显示 IN_REVIEW，不是客户批准。兼容性：仅接入冻结 API，无 Schema/Migration/License/依赖变化；Server 2025/Debian 13 未实测。验证：前端2041项、类型检查、构建通过（主包体积警告仍在）；真实客户评审与后端/数据库回归未在本 WBS 重跑。已知问题：自然失效/撤销负例、实际包内纵向浏览器、正式信任、Pilot/Gate/三平台发行待后续。
