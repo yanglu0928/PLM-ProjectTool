@@ -4413,3 +4413,6 @@
 - POC-03 旧 R2/R3 仍作为历史证据保留；新 R4 四类候选不继承旧批准状态，120 条均须重新进行业务确认后才能进入 Golden Dataset。
 - 两个本地资料库共 10 个旧版二进制 `.doc` 不受当前统一解析器支持，未自动转换或改写。
 - R2 调研执行工作簿是 Phase 0 本地辅助成果，不是正式 Handover/Survey 业务模块；当前独立留出集真实质量复验的数据外发 Gate 保持不变。
+# Unreleased
+
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P08`：纠正PlanVersion版本历史列表的实施判断。冻结API-04已定义`PLAN_VERSION_LIST`；此前进度记录误称无冻结列表接口。保留历史原文并新增纠正记录，当前先实现该冻结只读Operation，再顺延UI消费WBS。无API/Schema/Migration变化；本记录仅是编码前核查与排程调整，尚无功能通过结论。详见`docs/progress/plan-02-a04-p04-a04-p03-p04-s03-p03-a06-p05-p06-p08-plan-version-list-precheck-correction.md`。
