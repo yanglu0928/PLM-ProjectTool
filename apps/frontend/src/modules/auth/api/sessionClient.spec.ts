@@ -325,6 +325,20 @@ describe("SessionClient", () => {
     expect(() => new SessionClient(fetch, timeout)).toThrow(SessionClientError);
   });
 
+  it("posts a bodyless Survey validation through same-origin CSRF transport", async () => {
+    const surveyId = "21234567-89ab-4cde-8123-456789abcdef";
+    const versionId = "31234567-89ab-4cde-8123-456789abcdef";
+    const result = response({}, 200);
+    const { api, fetcher } = client(response(session()), result);
+    await api.login("user", "synthetic-only");
+    await expect(api.postProjectSurveyVersionValidate(projectId, surveyId, versionId,
+      "survey-validate-key-0001")).resolves.toBe(result);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}/surveys/${surveyId}/versions/${versionId}:validate`,
+      expect.objectContaining({ method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "X-CSRF-Token": token, "Idempotency-Key": "survey-validate-key-0001" },
+      })]);
+  });
+
   it("posts one scoped Project bootstrap request with private CSRF and original caller key", async () => {
     const created = response({ project_id: id }, 201);
     const { api, fetcher } = client(response(session()), created);

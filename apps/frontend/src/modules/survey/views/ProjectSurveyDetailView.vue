@@ -9,6 +9,7 @@ import { SurveyReadClient, SurveyReadError, type SurveyQuestionView, type Survey
   type SurveyVersionCursor, type SurveyVersionView, type SurveyView } from "@/modules/survey/api/surveyReadClient";
 import { SurveySourceLocationClient, SurveySourceLocationClientError, type SurveySourceLocation,
   type SurveySourceLocationView } from "@/modules/survey/api/surveySourceLocationClient";
+import SurveyVersionValidatePanel from "@/modules/survey/views/SurveyVersionValidatePanel.vue";
 
 const props = defineProps<{ session?: SessionClient; surveys?: SurveyReadClient;
   sourceLocations?: SurveySourceLocationClient; evidence?: EvidenceViewerClient }>();
@@ -193,6 +194,7 @@ onUnmounted(() => { mounted = false; generation += 1; detailGeneration += 1; loc
         <p v-if="detailBusy" role="status">正在重新核验并读取固定版本…</p><p v-if="detailError" role="alert">{{ detailError }}</p>
         <template v-if="selectedVersion">
           <p>固定版本 {{ selectedVersion.version_no }} · {{ versionLabels[selectedVersion.state] }}；共 {{ selectedVersion.questions.length }} 个问题。</p>
+          <SurveyVersionValidatePanel :version="selectedVersion" :session="session" />
           <p>目标部门：{{ selectedVersion.target_departments.length }} 个受控引用 ·
             <RouterLink :to="{ name: 'project-departments', params: { projectId: route.params.projectId } }">核对项目部门历史</RouterLink></p>
           <article v-for="question in selectedVersion.questions" :key="question.question_id" class="question-card">

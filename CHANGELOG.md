@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A10 为 Survey DRAFT 当前固定版本增加安全 Validate 命令桥、严格报告解析及详情页面板；显示计数、阻断项、时间和审计事件。入口限定项目管理/实施角色，未知结果保留原幂等操作号，明确报告不改变状态、不等于送审/批准/客户确认。兼容性：只增加前端调用已冻结 API，无 API/Schema/License/依赖变化；Server 2025/Debian 13 未实测。升级/回滚：无需数据迁移；移除视图入口可回退，不影响已留审计。验证：前端全量测试2040项、类型检查通过、生产构建通过（399 modules；主包体积警告保留），见 `docs/progress/sur-07-a10-survey-version-validation-ui.md`。已知问题：A11送审、自然失效/撤销负例、正式信任、Pilot/Gate/三平台发行仍待。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A09 完成调研版本 Validate/原子送审前端缺口核查；确认后端冻结命令和 Windows 组合已有，但 Survey 详情页没有校验报告或送审入口。将后续拆为 A10 当前快照校验面板、A11 ProjectManager 原子送审及当前客户 Reviewer 选择。兼容性：纯静态核查，无 API/Schema/代码/迁移变化。验证：合同、Owner、Windows 组合与页面调用路径对账；未新增测试。已知问题：A10/A11、真人 Reviewer 决定、正式信任/Pilot/Release仍待。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A08-P02 从干净提交重建 Windows 11 非发行候选 SHA-256 `4f090636986c5c2173a5fde48eb161a94e5ee285ce73a8deb529c8682e048f46`，包内真实 Edge/HTTPS/隔离 PG 验交接批准→调研定义→DRAFT 问题版本、固定行与 MANUAL 合成访谈说明、同号重放、唯一 Audit/收据及匿名/错项目/只读/伪来源/合成失效许可拒绝。兼容性：仅 Windows 11 合成信任实测，Windows Server 2025/Debian 13 未实测。升级/回滚：无 Schema/API/License/数据迁移；非发行候选取代本轮失败候选用于内部验证，历史合法版本/Audit 保留。验证：22,197 件独立清洁解包哈希、包内全链与临时资源清理退出0；前端全量2038/typecheck/build见 P01。已知问题：`release_eligible=false`、`legal_clearance=false`；调研版本送审/真人客户确认、正式信任/安装升级/自然许可失效/UAT/Gate/Pilot/三平台发行仍待。

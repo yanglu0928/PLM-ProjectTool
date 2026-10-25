@@ -98,6 +98,23 @@ describe("ProjectSurveyDetailView", () => {
     expect(result.wrapper.text()).toContain("回答时需提供证据"); expect(result.wrapper.text()).toContain("预期输出");
     expect(result.wrapper.find("form").exists()).toBe(false); result.wrapper.unmount(); });
 
+  it("runs current Survey validation and renders a report without treating it as approval", async () => {
+    const auth = await session();
+    const report = { audit_event_id: trace, survey_id: surveyId, survey_version_id: versionId, project_id: project,
+      version_no: 1, state: "DRAFT", question_count: 2, option_count: 2, source_count: 3,
+      target_department_count: 1, conditional_question_count: 1, valid: false,
+      blocking_issues: ["SOURCE_UNAVAILABLE"], warnings: [], checked_at: now };
+    vi.spyOn(auth, "postProjectSurveyVersionValidate").mockResolvedValue(new Response(
+      JSON.stringify({ data: report, trace_id: trace }), { headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } }));
+    const { wrapper } = await view(auth);
+    await wrapper.findAll("button").find(button => button.text().includes("问题卡片"))!.trigger("click"); await flushPromises();
+    await wrapper.findAll("button").find(button => button.text().includes("运行当前来源校验"))!.trigger("click"); await flushPromises();
+    expect(auth.postProjectSurveyVersionValidate).toHaveBeenCalledWith(project, surveyId, versionId,
+      expect.stringMatching(/^survey-version-validation-/));
+    expect(wrapper.text()).toContain("本次校验未通过"); expect(wrapper.text()).toContain("固定来源不可用");
+    expect(wrapper.text()).toContain("不代表送审、评审批准或客户确认"); wrapper.unmount();
+  });
+
   it("locates manual, fixed document, Handover and Evidence only after an explicit click", async () => {
     const { wrapper, locations, evidence } = await view(await session()); await wrapper.findAll("button").find(button => button.text().includes("问题卡片"))!.trigger("click");
     await flushPromises(); expect(wrapper.text()).toContain("面对面调研或人工来源说明");
