@@ -176,6 +176,11 @@ onUnmounted(() => { mounted = false; generation += 1; detailGeneration += 1; loc
       <dl v-if="survey"><dt>名称</dt><dd>{{ survey.name }}</dd><dt>状态</dt><dd>{{ survey.state }}</dd>
         <dt>当前批准版本</dt><dd>{{ survey.current_approved_version_ref ? "已形成" : "尚未形成" }}</dd>
         <dt>版本标记</dt><dd>{{ survey.etag }}</dd></dl>
+      <p v-if="survey?.state === 'ACTIVE' && session.canSubmit && identity.authorized_projects.some(item =>
+        item.project_id === ids().projectId && (item.role === 'PROJECT_MANAGER' || item.role === 'IMPLEMENTATION_MEMBER'))">
+        <RouterLink :to="{ name: 'project-survey-version-create', params: { projectId: ids().projectId,
+          surveyId: ids().surveyId } }">建立调研问题版本</RouterLink>
+      </p>
       <section v-if="survey" aria-labelledby="survey-versions-title"><h2 id="survey-versions-title">固定版本</h2>
         <p v-if="!versions.length">暂无可见版本。</p><p v-if="versionError" role="alert">{{ versionError }}</p>
         <ol><li v-for="value in versions" :key="value.survey_version_id"><strong>版本 {{ value.version_no }}</strong>

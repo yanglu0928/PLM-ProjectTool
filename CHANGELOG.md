@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A07 新增受权调研问题版本创建页：当前批准交接固定行/原文定位、启用目标部门、人工问题卡片及明确的 MANUAL 实际访谈来源，未知结果保留原快照/ETag/操作号且须显式核对重试；会话失权清屏。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端页面/入口及输入校验复用，无 Schema、旧 API、License 或数据迁移；撤页面不删除合法历史版本/Audit。验证：定向16、前端全量2037、typecheck/build退出0。已知问题：Vite 主包大于500 kB；真实 Edge/HTTPS/PG 版本写链、真人访谈/客户确认、正式信任/安装/UAT/Gate/Pilot/三平台发行未通过。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A06 新增严格的已批准交接来源只读客户端与冻结调研版本创建客户端，含四类来源互斥校验、私有 Session CSRF/If-Match/幂等原号、完整快照和201回执核验；明确 MANUAL 访谈注释不冒充固定引用。兼容性：Windows 11 前端合同/构建验证，Server 2025/Debian 13 未实测。升级/回滚：仅前端客户端/私有 POST 白名单，无 Schema、旧 API、License 或数据迁移；可撤未接页面的客户端，保留合法历史。验证：定向9项、前端全量2031、typecheck/build通过。已知问题：页面接入、真实 Edge/HTTPS/PG SurveyVersion 写链、真人访谈确认、正式信任/安装/UAT/Gate/Pilot/正式三平台发行未通过。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A05 新增项目内当前已批准交接问题只读来源候选 GET、窄角色、最小投影、用途隔离签名分页及 Windows 显式组合；原 HND GET/SurveyVersion POST 保持不变。兼容性：Windows 11/隔离 PG18.6 合成 HTTP 已验，Server 2025/Debian 13 未实测。升级/回滚：无 Schema/Migration/License/依赖变更；停止挂载新 GET 可回滚，合法历史与 Audit 保留。验证：完整后端4101通过/3跳过/6153子例；未批准空集、批准当前来源、匿名/只读/跨项目/暂停成员/历史、keyset/错 cursor 和临时清理退出0。已知问题：前端选择/SurveyVersion 创建与包内 Edge、真人访谈确认、正式公钥/服务账户/法律、离线安装升级/UAT/Gate/Pilot/正式三平台发行未通过。

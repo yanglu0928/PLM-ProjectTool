@@ -144,6 +144,17 @@ export function manualSurveySource(note: string): SurveyVersionSourceDraft {
     template_document_id: null, manual_source_note: note });
 }
 
+export function validateSurveyVersionCreateInput(value: unknown): SurveyVersionCreateInput {
+  if (!record(value) || !exact(value, ["questions", "target_department_ids"])
+    || !Array.isArray(value.questions) || value.questions.length < 1 || value.questions.length > 500
+    || !value.questions.every(question)
+    || new Set(value.questions.map(item => item.question_id)).size !== value.questions.length
+    || !Array.isArray(value.target_department_ids) || value.target_department_ids.length < 1
+    || value.target_department_ids.length > 200 || !value.target_department_ids.every(id)
+    || new Set(value.target_department_ids).size !== value.target_department_ids.length) invalid();
+  return value as unknown as SurveyVersionCreateInput;
+}
+
 export class SurveyVersionCreateClient {
   constructor(private readonly session: SessionClient) {
     if (!(session instanceof SessionClient)) invalid();
@@ -153,14 +164,8 @@ export class SurveyVersionCreateClient {
     const lock = typeof surveyEtag === "string" && etag.test(surveyEtag)
       ? Number(surveyEtag.slice(2, -1)) : null;
     if (!id(projectId) || !id(surveyId) || lock === null || !Number.isSafeInteger(lock)
-      || lock >= Number.MAX_SAFE_INTEGER || typeof key !== "string" || !keyPattern.test(key)
-      || !record(input) || !exact(input, ["questions", "target_department_ids"])
-      || !Array.isArray(input.questions) || input.questions.length < 1 || input.questions.length > 500
-      || !input.questions.every(question)
-      || new Set(input.questions.map(item => item.question_id)).size !== input.questions.length
-      || !Array.isArray(input.target_department_ids) || input.target_department_ids.length < 1
-      || input.target_department_ids.length > 200 || !input.target_department_ids.every(id)
-      || new Set(input.target_department_ids).size !== input.target_department_ids.length) invalid();
+      || lock >= Number.MAX_SAFE_INTEGER || typeof key !== "string" || !keyPattern.test(key)) invalid();
+    validateSurveyVersionCreateInput(input);
     const identity = this.session.view;
     if (!identity || identity.password_change_required || !this.session.canSubmit
       || !identity.authorized_projects.some(item => item.project_id === projectId
