@@ -1011,6 +1011,10 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(bare.get("/api/v1/global/documents/00000000-0000-0000-0000-000000000001/versions").status_code, 404)
             self.assertEqual(bare.get("/api/v1/global/documents/00000000-0000-0000-0000-000000000001/versions/00000000-0000-0000-0000-000000000002/content").status_code, 404)
             self.assertEqual(bare.post("/api/v1/projects").status_code, 404)
+            self.assertEqual(bare.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
+                "00000000-0000-0000-0000-000000000002/versions/"
+                "00000000-0000-0000-0000-000000000003:validate").status_code, 404)
             self.assertEqual(bare.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001").status_code, 404)
             self.assertEqual(bare.post("/api/v1/projects/00000000-0000-0000-0000-000000000001:archive").status_code, 404)
             self.assertEqual(bare.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 404)
@@ -1026,6 +1030,10 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "solution-outlines").status_code, 404)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
+                "00000000-0000-0000-0000-000000000002/versions/"
+                "00000000-0000-0000-0000-000000000003:validate").status_code, 404)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "solution-outlines").status_code, 404)
@@ -1163,6 +1171,10 @@ class ProductionLoginTests(unittest.TestCase):
                 getattr(included, "original_router", None), "routes", ())
         ))
         with TestClient(app, base_url="http://localhost") as client:
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
+                "00000000-0000-0000-0000-000000000002/versions/"
+                "00000000-0000-0000-0000-000000000003:validate").status_code, 404)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans"
             ).status_code, 401)
@@ -1452,6 +1464,7 @@ class ProductionLoginTests(unittest.TestCase):
         )
         egress_router = APIRouter()
         retrieval_router, retrieval_cancel_router = APIRouter(), APIRouter()
+        validation_router = APIRouter()
         retrieval_cancel_owner = Mock(cancel=Mock())
 
         @egress_router.post("/api/v1/projects/{project_id}/egress-previews", status_code=204)
@@ -1471,6 +1484,15 @@ class ProductionLoginTests(unittest.TestCase):
             project_id: str, run_id: str,
         ) -> None:
             del project_id, run_id
+        @validation_router.post(
+            "/api/v1/projects/{project_id}/plans/{plan_id}/versions/"
+            "{plan_version_id}:validate",
+            status_code=204,
+        )
+        def synthetic_plan_validation_mount(
+            project_id: str, plan_id: str, plan_version_id: str,
+        ) -> None:
+            del project_id, plan_id, plan_version_id
         from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
         with patch("plm_assistant.entrypoints.production_login.read_database_url",
                    return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
@@ -1497,13 +1519,34 @@ class ProductionLoginTests(unittest.TestCase):
                         router=retrieval_router,
                         cancel_router=retrieval_cancel_router,
                         cancellation_owner=retrieval_cancel_owner,
-                    )) as retrieval_factory:
+                    )) as retrieval_factory, patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_plan_version_validation_router",
+                    return_value=validation_router,
+                    ) as validation_factory:
             app = create_production_platform_write_app(settings)
         license_factory.assert_called_once()
         write_factory.assert_called_once()
         upload_issuer_factory.assert_called_once()
         egress_factory.assert_called_once()
         retrieval_factory.assert_called_once()
+        validation_factory.assert_called_once()
+        for name in ("runtime", "sessions", "origins", "license_guard", "audit",
+                     "documents", "downloads", "parse_results"):
+            self.assertIsNotNone(validation_factory.call_args.kwargs[name])
+        self.assertEqual(settings.data_root,
+                         validation_factory.call_args.kwargs["document_storage_root"])
+        self.assertEqual(settings.data_root,
+                         validation_factory.call_args.kwargs["parse_result_storage_root"])
+        self.assertTrue(any(
+            getattr(route, "path", "") ==
+            "/api/v1/projects/{project_id}/plans/{plan_id}/versions/"
+            "{plan_version_id}:validate"
+            and "POST" in getattr(route, "methods", ())
+            for included in app.routes
+            for route in getattr(
+                getattr(included, "original_router", None), "routes", ())
+        ))
         self.handover_action_factory.assert_called_once()
         self.handover_action_write_factory.assert_called_once()
         self.requirement_factory.assert_called_once()
@@ -1568,6 +1611,10 @@ class ProductionLoginTests(unittest.TestCase):
             retrieval_cancel_owner,
         )
         with TestClient(app, base_url="http://localhost") as client:
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
+                "00000000-0000-0000-0000-000000000002/versions/"
+                "00000000-0000-0000-0000-000000000003:validate").status_code, 204)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans"
             ).status_code, 401)
