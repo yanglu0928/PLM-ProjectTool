@@ -492,6 +492,11 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             except ValueError as startup_error:
                 diagnostic = _diagnose_packaged_factory(runtime, bootstrap, env)
                 raise ValueError(f"{startup_error}; packaged factory={diagnostic}") from None
+            direct_ready = direct.get("/health/ready")
+            direct_live = direct.get("/health/live")
+            if any(response.status_code != 200 or response.content != b'{"status":"UP"}'
+                   for response in (direct_ready, direct_live)):
+                raise ValueError("packaged API Ready/Live health contract rejected")
 
         api_restart_count = 0
 
@@ -529,6 +534,29 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         with httpx.Client(base_url=origin, verify=str(cert), timeout=5,
                           follow_redirects=False, trust_env=False) as client:
             _wait_http(client, "/health/ready", caddy_process)
+            https_ready = client.get("/health/ready")
+            https_live = client.get("/health/live")
+            if any(response.status_code != 200 or response.content != b'{"status":"UP"}'
+                   for response in (https_ready, https_live)):
+                raise ValueError("packaged HTTPS Ready/Live health contract rejected")
+            frontend_index_path = target / "app/frontend/dist/index.html"
+            frontend_index = client.get("/")
+            if (frontend_index.status_code != 200
+                    or frontend_index.content != frontend_index_path.read_bytes()):
+                raise ValueError("packaged frontend index differs over HTTPS")
+            asset_paths = re.findall(
+                r'(?:src|href)="(/assets/[A-Za-z0-9_.-]+)"',
+                frontend_index.content.decode("utf-8"),
+            )
+            if (len(asset_paths) != 2 or len(set(asset_paths)) != 2
+                    or not any(path.endswith(".js") for path in asset_paths)
+                    or not any(path.endswith(".css") for path in asset_paths)):
+                raise ValueError("packaged frontend entry assets rejected")
+            for asset in asset_paths:
+                response = client.get(asset)
+                local = target / "app/frontend/dist" / asset.removeprefix("/")
+                if response.status_code != 200 or response.content != local.read_bytes():
+                    raise ValueError("packaged frontend asset differs over HTTPS")
             if client.get("/", headers={"Host": "wrong.example.test"}).status_code != 421:
                 raise ValueError("wrong Host not rejected by packaged Caddy")
             body = {"username": "Synthetic Packaged User",
@@ -578,6 +606,11 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                 "packaged_python_process_started": True, "packaged_caddy_started": True,
                 "temporary_pg18_started": True, "login_status": 200,
                 "session_status": 200, "unlicensed_project_status": project.status_code,
+                "api_health_ready": direct_ready.status_code,
+                "api_health_live": direct_live.status_code,
+                "https_health_ready": https_ready.status_code,
+                "https_health_live": https_live.status_code,
+                "frontend_https_asset_count": len(asset_paths),
                 "synthetic_public_key_only": True, "vault_key_count": len(installed_keys),
                 "formal_trust_provisioned": False,
                 "api_restart_count": api_restart_count,

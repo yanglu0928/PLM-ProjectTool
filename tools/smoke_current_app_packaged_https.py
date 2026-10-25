@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -21,6 +22,25 @@ from verify_windows_unified_extract import verify as verify_stage
 
 
 KIND = "WINDOWS11_CURRENT_APP_NON_RELEASE_CANDIDATE"
+
+
+def _prior_archive_attestation(candidate: Path, expected_sha256: str,
+                               attestation: Path) -> tuple[int, int]:
+    try:
+        summary = json.loads(attestation.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("prior candidate integrity attestation unavailable") from exc
+    stat = candidate.stat()
+    archive = str(summary.get("archive", "")).replace("\\", "/")
+    suffix = "/".join(candidate.parts[-2:])
+    if (summary.get("status") != "WINDOWS11_CURRENT_APP_NON_RELEASE_INTEGRITY_PASS"
+            or summary.get("archive_sha256") != expected_sha256
+            or summary.get("archive_bytes") != stat.st_size
+            or not archive.endswith(suffix)
+            or summary.get("release_eligible") is not False
+            or summary.get("legal_clearance") is not False):
+        raise ValueError("prior candidate integrity attestation mismatch")
+    return stat.st_size, stat.st_mtime_ns
 
 
 def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[str, str], dict[str, str], str, int]:
@@ -62,19 +82,23 @@ def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[st
 
 def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
           expected_sha256: str, *, synthetic_license_document_factory=None,
-          licensed_https_probe=None, fast_reuse_verified_stage: bool = False) -> dict[str, object]:
+          licensed_https_probe=None, fast_reuse_verified_stage: bool = False,
+          prior_attestation: Path | None = None) -> dict[str, object]:
     validate_output_root(pristine)
     validate_output_root(target)
     if pristine == target or stage in {pristine, target}:
         raise ValueError("stage and synthetic layouts must differ")
+    archive_stat: tuple[int, int] | None = None
     if fast_reuse_verified_stage:
         # Reuse the exact stage already byte-verified by P51-A02; retain archive
         # identity and complete file-name checks without rereading all payload bytes.
         temp = Path(tempfile.gettempdir()).resolve(strict=True)
         resolved = stage.resolve(strict=True)
+        archive_stat = (_prior_archive_attestation(candidate, expected_sha256, prior_attestation)
+                        if prior_attestation is not None else None)
         if (resolved.parent != temp or not resolved.name.startswith("plm-current-app-stage-")
                 or not str(resolved).isascii() or Path(r"C:\PLMTool").exists()
-                or digest_path(candidate) != expected_sha256):
+                or (archive_stat is None and digest_path(candidate) != expected_sha256)):
             raise ValueError("current candidate or stage identity rejected")
         manifest = json.loads((resolved / "manifest.json").read_text(encoding="utf-8"))
         if (manifest.get("kind") != KIND or manifest.get("release_eligible") is not False
@@ -154,10 +178,14 @@ def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
                 or result.get("temporary_processes_stopped") is not True
                 or result.get("release_eligible") is not False):
             raise ValueError("current packaged HTTPS smoke boundary differs")
-        if digest_path(candidate) != expected_sha256:
+        if (archive_stat is not None
+                and archive_stat != (candidate.stat().st_size, candidate.stat().st_mtime_ns)):
+            raise ValueError("candidate archive changed during smoke")
+        if archive_stat is None and digest_path(candidate) != expected_sha256:
             raise ValueError("current candidate changed during smoke")
         return {**result, "status": "SYNTHETIC_CURRENT_APP_PACKAGED_HTTPS_PASS",
-                "candidate_sha256": expected_sha256, "legal_clearance": False}
+                "candidate_sha256": expected_sha256, "legal_clearance": False,
+                "archive_sha256_reused_from_prior_attestation": archive_stat is not None}
     finally:
         temp = Path(tempfile.gettempdir()).resolve(strict=True)
         if pristine.exists():
