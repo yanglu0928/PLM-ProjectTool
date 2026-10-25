@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P04`（PlanVersion Review当前就绪Proof完成）：新增同事务只读当前DRAFT/latest锁与重评Proof，复用纯校验/当前Approved Solution与来源证明，不写Audit/Receipt、状态或Review。Win11隔离PG18真实Plan/PlanVersion锁定与旧版本拒绝通过；全量后端4155/3/6206。PG evaluator使用Mock；真实统一Review Owner正向提交待P05-P05组合，不代表Review功能/Gate通过。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P04`（PlanVersion Review当前就绪Proof编码前核查完成）：确定Start必须在同一事务锁住Plan身份、重建固定版本并重证当前Approved Solution/来源及纯校验规则；不得嵌套公开Validate副作用或创建Review/更改状态。本项仅核查，无程序/schema/API变化；下一项P05-P05创建/Start Owner。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P03`（PlanReview Subject就绪性核查完成）：确认冻结API-04已有PlanVersion submit-review契约及当前Validate/来源证明，但通用Review Registry与Windows组合当前没有`PLN-02` Subject Owner/路由。仅静态核查；下一项限内部送审资格/Start Owner，公开HTTP和终态决定另分项，真实合法正向PG验收留待Owner组合。
 - 2026-10-26 / `CR-PLAN-007` / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P02`（PlanVersion Review状态数据库守卫完成）：新增0190及不可变状态结果ORM，白名单只改Review状态/引用列，Plan内容仍不可变；要求PROJECT PLN-02 Review/ReviewRound/Actor证据，延迟闭合，历史存在时拒绝降级。Win11隔离PG18迁移drift/空降升及内容、状态、TRUNCATE负例通过；全量后端4151/3/6206。尚无PlanReview Subject/Owner，合法真实审批正向组合待后续Owner，不代表Review业务/Gate/Pilot通过。

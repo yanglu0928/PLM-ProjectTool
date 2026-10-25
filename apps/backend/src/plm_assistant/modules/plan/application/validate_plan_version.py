@@ -60,6 +60,15 @@ class ValidatePlanVersion:
     idempotency_key: str = field(repr=False)
 
 
+@dataclass(frozen=True, slots=True)
+class _CurrentPlanVersionEvaluation:
+    session_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    plan_id: uuid.UUID
+    plan_version_id: uuid.UUID
+
+
 class AccessPort(Protocol):
     def authenticated_user(self, transaction: object, *, session_token: bytes,
                            csrf_token: bytes, now: datetime) -> uuid.UUID | None: ...
@@ -121,6 +130,28 @@ class PlanVersionValidationService:
         self._solution_proof, self._source_proofs = solution_proof, source_proofs
         self._receipts, self._audit = receipts, audit
         self._clock = clock or (lambda: datetime.now(timezone.utc))
+
+    def evaluate_snapshot_in_transaction(
+            self, transaction: object, *, snapshot: PlanVersionSnapshotView,
+            session_token: bytes, trace_id: uuid.UUID,
+            ) -> tuple[bytes, PlanVersionValidationReport]:
+        """Re-evaluate current facts without nested UoW, Audit, Receipt or writes.
+
+        Review Subject callers must already own the Plan/PlanVersion locks and
+        authorize the current actor in this same transaction.
+        """
+        if (type(session_token) is not bytes or len(session_token) != 32
+                or type(trace_id) is not uuid.UUID or trace_id.int == 0
+                or type(snapshot) is not PlanVersionSnapshotView):
+            raise PlanVersionValidationError("VALIDATION_FAILED")
+        command = _CurrentPlanVersionEvaluation(
+            session_token=session_token, trace_id=trace_id,
+            project_id=snapshot.project_id, plan_id=snapshot.plan_id,
+            plan_version_id=snapshot.plan_version_id,
+        )
+        parsed, fingerprint = self._snapshot(snapshot, command)
+        report = self._evaluate(transaction, command, parsed)
+        return fingerprint, report
 
     def validate(self, command: ValidatePlanVersion) -> PlanVersionValidationReport:
         if (type(command) is not ValidatePlanVersion
