@@ -9,7 +9,8 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from smoke_packaged_platform_write_https import (  # noqa: E402
-    KEY_REFS, current_packaged_api_restart, current_packaged_postgres_restart, smoke,
+    KEY_REFS, current_packaged_api_restart, current_packaged_postgres_logical_restore,
+    current_packaged_postgres_restart, smoke,
 )
 from preflight_packaged_production_startup_windows import PUBLIC_KEY_RELATIVE  # noqa: E402
 
@@ -22,6 +23,10 @@ class PackagedPlatformWriteSmokeTests(unittest.TestCase):
     def test_postgres_restart_hook_is_unavailable_outside_owned_smoke_callback(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "only inside its smoke callback"):
             current_packaged_postgres_restart()
+
+    def test_postgres_logical_restore_hook_is_unavailable_outside_owned_smoke_callback(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "only inside its smoke callback"):
+            current_packaged_postgres_logical_restore()
 
     def test_licensed_probe_requires_paired_document_factory(self) -> None:
         paths = tuple(Path(name) for name in ("candidate", "source", "stage", "pristine", "target"))

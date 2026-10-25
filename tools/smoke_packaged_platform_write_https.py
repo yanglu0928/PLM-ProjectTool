@@ -56,6 +56,8 @@ _ACTIVE_API_RESTART: ContextVar[Callable[[], None] | None] = ContextVar(
     "packaged_smoke_api_restart", default=None)
 _ACTIVE_POSTGRES_RESTART: ContextVar[Callable[[], None] | None] = ContextVar(
     "packaged_smoke_postgres_restart", default=None)
+_ACTIVE_POSTGRES_LOGICAL_RESTORE: ContextVar[Callable[[], dict] | None] = ContextVar(
+    "packaged_smoke_postgres_logical_restore", default=None)
 
 
 def current_packaged_api_restart() -> Callable[[], None]:
@@ -72,6 +74,14 @@ def current_packaged_postgres_restart() -> Callable[[], None]:
     if not callable(restart):
         raise RuntimeError("packaged PostgreSQL restart is available only inside its smoke callback")
     return restart
+
+
+def current_packaged_postgres_logical_restore() -> Callable[[], dict]:
+    """Return a restore hook limited to this smoke's disposable PG cluster."""
+    restore = _ACTIVE_POSTGRES_LOGICAL_RESTORE.get()
+    if not callable(restore):
+        raise RuntimeError("packaged PostgreSQL restore is available only inside its smoke callback")
+    return restore
 
 
 KEY_REFS = (
@@ -240,6 +250,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     api_process = caddy_process = None
     pg_started = False
     pg_restart_count = 0
+    pg_logical_restore_count = 0
     installed_keys: dict[str, bytes] = {}
     db_url: str | None = None
     outcome: dict | None = None
@@ -265,6 +276,85 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                 if check.execute("SELECT 1").fetchone() != (1,):
                     raise ValueError("restarted isolated PostgreSQL readiness query failed")
             pg_restart_count += 1
+
+        def backup_restore_postgres_database() -> dict:
+            """Dump and restore only this smoke's database into a fresh sibling DB."""
+            nonlocal pg_logical_restore_count
+            suffix = uuid.uuid4().hex[:10]
+            restored_database = f"{database[:45]}_r_{suffix}"
+            backup = run / f"p51-a11-{suffix}.dump"
+            if backup.exists() or not run.is_dir():
+                raise ValueError("owned PostgreSQL backup path is not fresh")
+            pg_env = {name: value for name, value in os.environ.items()
+                      if not name.upper().startswith("PG")}
+            pg_env["PGPASSWORD"] = password
+            target_created = False
+            try:
+                _run([str(pg / "pg_dump.exe"), "--host=127.0.0.1",
+                      f"--port={pg_port}", f"--username={role}",
+                      f"--dbname={database}", "--format=custom", "--no-owner",
+                      "--no-acl", f"--file={backup}"], env=pg_env, timeout=180)
+                if (not backup.is_file() or backup.stat().st_size < 64 or
+                        backup.resolve().parent != run.resolve()):
+                    raise ValueError("packaged pg_dump did not produce an owned backup")
+                with psycopg.connect(host="127.0.0.1", port=pg_port, user="poc_admin",
+                                     dbname="postgres", autocommit=True) as admin:
+                    admin.execute(sql.SQL("CREATE DATABASE {} OWNER {}").format(
+                        sql.Identifier(restored_database), sql.Identifier(role)))
+                target_created = True
+                restore_env = {name: value for name, value in os.environ.items()
+                               if not name.upper().startswith("PG")}
+                restore_env["PGPASSWORD"] = ""
+                _run([str(pg / "pg_restore.exe"), "--host=127.0.0.1",
+                      f"--port={pg_port}", "--username=poc_admin",
+                      f"--dbname={restored_database}", "--exit-on-error",
+                      "--schema-only", "--no-owner", "--no-acl", str(backup)],
+                     env=restore_env, timeout=240)
+                _run([str(pg / "pg_restore.exe"), "--host=127.0.0.1",
+                      f"--port={pg_port}", "--username=poc_admin",
+                      f"--dbname={restored_database}", "--exit-on-error",
+                      "--data-only", "--disable-triggers", "--no-owner",
+                      "--no-acl", str(backup)],
+                     env=restore_env, timeout=240)
+                with psycopg.connect(host="127.0.0.1", port=pg_port, user="poc_admin",
+                                     dbname=restored_database, autocommit=True,
+                                     connect_timeout=5) as restored:
+                    if restored.execute("SELECT 1").fetchone() != (1,):
+                        raise ValueError("restored packaged PostgreSQL database is not queryable")
+                pg_logical_restore_count += 1
+                backup_bytes = backup.stat().st_size
+                backup.unlink()
+
+                def drop_restored_database() -> None:
+                    with psycopg.connect(host="127.0.0.1", port=pg_port,
+                                         user="poc_admin", dbname="postgres",
+                                         autocommit=True, connect_timeout=5) as admin:
+                        admin.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(
+                            sql.Identifier(restored_database)))
+
+                return {
+                    "database": restored_database,
+                    "backup_bytes": backup_bytes,
+                    "connect_restored_db": lambda: psycopg.connect(
+                        host="127.0.0.1", port=pg_port, user="poc_admin",
+                        dbname=restored_database, autocommit=True, connect_timeout=5),
+                    "drop_restored_db": drop_restored_database,
+                    "backup_removed": not backup.exists(),
+                }
+            except BaseException:
+                if target_created:
+                    try:
+                        with psycopg.connect(host="127.0.0.1", port=pg_port,
+                                             user="poc_admin", dbname="postgres",
+                                             autocommit=True, connect_timeout=5) as admin:
+                            admin.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(
+                                sql.Identifier(restored_database)))
+                    except Exception:
+                        pass
+                raise
+            finally:
+                if backup.exists():
+                    backup.unlink()
         suffix = uuid.uuid4().hex[:12]
         role, database = f"p42_{suffix}", f"p42_{suffix}"
         password = uuid.uuid4().hex + uuid.uuid4().hex
@@ -404,12 +494,15 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                                            dbname=database, autocommit=True)
                 restart_token = _ACTIVE_API_RESTART.set(restart_api)
                 postgres_restart_token = _ACTIVE_POSTGRES_RESTART.set(restart_postgres)
+                restore_token = _ACTIVE_POSTGRES_LOGICAL_RESTORE.set(
+                    backup_restore_postgres_database)
                 try:
                     licensed_https_probe(client=client, connect_db=connect_db,
                                          fixture_db=connect_fixture_db,
                                          user_id=user, signed_document=signed_document,
                                          selected_mac=selected_mac, login=login, origin=origin)
                 finally:
+                    _ACTIVE_POSTGRES_LOGICAL_RESTORE.reset(restore_token)
                     _ACTIVE_POSTGRES_RESTART.reset(postgres_restart_token)
                     _ACTIVE_API_RESTART.reset(restart_token)
         outcome = {"status": "SYNTHETIC_PACKAGED_PLATFORM_WRITE_HTTPS_PASS",
@@ -421,7 +514,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                 "synthetic_public_key_only": True, "vault_key_count": len(installed_keys),
                 "formal_trust_provisioned": False,
                 "api_restart_count": api_restart_count,
-                "postgres_restart_count": pg_restart_count}
+                "postgres_restart_count": pg_restart_count,
+                "postgres_logical_restore_count": pg_logical_restore_count}
     finally:
         cleanup_errors = []
         for name, process in (("caddy", caddy_process), ("api", api_process)):

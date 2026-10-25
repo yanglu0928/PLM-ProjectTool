@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A11`：当前固定非发行候选包内以随包`pg_dump`创建custom格式逻辑备份，在隔离新库中先恢复Schema、再恢复数据/序列；合成Plan、Audit、创建收据、Review决定计数与Schema head核对一致。固定候选SHA不变，完整Edge/HTTPS/PG链、单测8/8和临时资源清理通过。数据恢复为避开既有测试夹具中的占位Review引用而临时禁用触发器，故不证明外键完整性或正式灾备；仅smoke测试编排/验证器变化，无产品/API/Schema/Migration/依赖变更，`release_eligible=false`、`legal_clearance=false`。
+
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A10`：当前固定候选包内仅重启本轮临时PostgreSQL（API/Caddy不重启），同数据目录正常fast stop/start后，原授权成员Session继续读取相同Plan=200，数据与Plan/Audit/收据/Review决定计数不变。完整Edge/HTTPS/PG链、单测8/8、22,197项Stage清单通过；候选SHA不变且临时资源清理。仅调整隔离smoke编排与验证器，无产品/API/Schema/Migration/依赖变化；不是备份/灾难恢复、正式安装或发行证据。
 
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A09`：当前固定候选包内创建Plan后只重启本轮API进程，原授权成员Session继续读取同一Plan=200且字段一致；PG Plan/Audit/完成收据/Review决定计数不变。完整Edge/HTTPS/隔离PG链、7项smoke单测、Stage清单和候选SHA检查通过，临时资源清理。首轮回调关键字穿过旧strict adapter失败关闭，改为smoke生命周期ContextVar hook后完整复跑。无产品/API/Schema/Migration/依赖变化；不等于Windows服务恢复或正式发行。
