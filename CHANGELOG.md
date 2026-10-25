@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-26 / `CR-PLAN-006`（已授权实施，编码前）：发现通用幂等回执不存Report body、Audit单值reason_code不足以重建Plan Validate首次报告；若重放重读当前来源会破坏同Key同结果。选择Plan-owned不可变报告快照与Audit/Receipt同事务关联，新增0189，原冻结基线保留；当前仅CR/前置文档，无ORM/Migration/数据变化。下一项A06-P03-P02实现Schema并验证安全回滚。
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P02`（纯逻辑内部通过）：新增PlanVersion Validate报告不可变合同及确定性纯评价器，按固定快照校验WBS层级、FS DAG、日期和Milestone引用，并以可信当前来源集合核算需求/方案映射、排除、旧引用与缺口；无I/O、授权、状态写入或HTTP。定向16 passed/3 subtests，全量后端4139 passed/3 skipped/6190 subtests；无Migration/API变化。warnings暂为空，未宣称Owner/PG/Gate通过。下一项A06-P03事务Owner。详见A06-P02进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P02`（纯逻辑内部通过）：新增PlanVersion Validate报告不可变合同及确定性纯评价器，按固定快照校验WBS层级、FS DAG、日期和Milestone引用，并以可信当前来源集合核算需求/方案映射、排除、旧引用与缺口；无I/O、授权、状态写入或HTTP。定向16 passed/3 subtests，全量后端4139 passed/3 skipped/6190 subtests；无Migration/API变化。warnings暂为空，未宣称Owner/PG/Gate通过。下一项A06-P03事务Owner。详见A06-P02进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P01`（编码前核查完成）：确认冻结PlanVersion Validate报告为只读派生结果，选择Audit身份+通用幂等回执支持同Key重放，不增加状态或验证表；复用现有纯结构解析器和当前Approved Solution/Coverage证明，但必须基于持久快照重新核查。仅新增实施前置记录和L2决定，无代码/API/Schema/数据变化，未标Validate功能通过。下一项A06-P02纯报告合同/评价器。详见对应进度记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A05`（内部验收完成）：新增固定PlanVersion的WBS受权只读keyset分页、Session/Project/Plan/Version/page-size绑定HMAC cursor及Windows显式组合，默认应用仍关闭。Win11隔离PG18 HTTP两页、无重复、终页及跨Plan cursor拒绝通过；定向19 passed/867 subtests，全量后端4134 passed/3 skipped/6190 subtests。无Migration/Breaking API；cursor复用既有Vault key reference并以端点域隔离。未代表Pilot/Gate/Release通过。详见A05进度记录。

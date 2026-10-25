@@ -12064,6 +12064,13 @@
 - Reason：保留不可变版本语义、符合冻结`S,L,C,I,A`与报告DTO，并避免派生快照与业务版本发生双重事实；Plan仍独立实现其项目授权、来源/覆盖证明及稳定问题码。
 - Impact/Rollback/Verification：当前仅为前置决策，无代码/API/Schema/数据变化；后续报告纯评价器及Owner分别测试。若实现证据证明通用Audit无法支撑安全重放，则先登记CR再实施。
 
+# DEC-20261026-PLAN-VERSION-VALIDATE-02：首次验证报告使用Plan专属不可变回执快照
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P03-P01`；静态核查证实通用IdempotencyReceipt不存响应体，AuditEvent的单一受限reason_code无法重建多问题码、覆盖计数及首次checked_at。
+- Decision：以 `CR-PLAN-006` 追加Plan-owned不可变报告结果表，同事务关联Audit事件与通用幂等Receipt；重放直接恢复首次完整Report，不重跑可能已变化的当前来源证明。
+- Reason：保持同Key同请求返回首次报告的项目幂等语义，避免修改跨模块Receipt或把结构化报告编码进Audit分类码。
+- Impact/Rollback/Verification：修订DEC-20261026-PLAN-VERSION-VALIDATE-01中“不增加Validation表”的实现意见；PlanVersion本体仍不改状态。追加0189需先验证空库升降/有历史降级拒绝/drift，且不得脱离受权Owner单独部署。详见CR-PLAN-006及A06-P03-P01记录。
+
 ## DEC-20261024-CAP-P03-P02-A02：多条目版本编辑与原号兼容
 
 已选逐条暂存、最终整批重验/提交的前端流程；现有单条直接创建仍可用。未暂存编辑内容不允许被静默忽略；不确定结果持久记录完整条目数组及原 ETag/Key，同时读取旧单条记录。每项来源/证据独立，整批来源并集必须等于基线；CR-CAP-007 已先完成 DEPRECATED 读写对齐。此决策不修改后端合同或 Gate，也不把合成资格变为真实确认。见 `docs/progress/cap-02-a05-p03-p02-a02-multi-item-editor.md`。
