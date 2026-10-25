@@ -231,6 +231,8 @@ export class SessionClient {
     | `/api/v1/projects/${string}/surveys/${string}/versions/${string}:submit-review`
     | `/api/v1/projects/${string}/solution-outlines`
     | `/api/v1/projects/${string}/plans`
+    | `/api/v1/projects/${string}/plans/${string}/versions`
+    | `/api/v1/projects/${string}/plans/${string}/versions/${string}:submit-review`
     | `/api/v1/projects/${string}/solution-outlines/${string}/versions`
     | `/api/v1/projects/${string}/solution-outlines/${string}/versions/${string}:submit-review`
     | `/api/v1/projects/${string}/solution-sections`
@@ -391,6 +393,54 @@ export class SessionClient {
   postProjectPlanCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
     return this.#postCommand(`/api/v1/projects/${projectId}/plans`, body, idempotencyKey, 8192);
+  }
+
+  postProjectPlanVersionCreate(projectId: string, planId: string, body: string,
+    idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId) || !identifier(planId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/projects/${projectId}/plans/${planId}/versions`, body, idempotencyKey, 8 * 1024 * 1024);
+  }
+
+  /** Frozen PlanVersion validation is a bodyless, idempotent command. */
+  async postProjectPlanVersionValidate(projectId: string, planId: string, versionId: string,
+    idempotencyKey: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(projectId) || !identifier(planId) || !identifier(versionId)
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(
+        `/api/v1/projects/${projectId}/plans/${planId}/versions/${versionId}:validate`, {
+          method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+          headers: { Accept: "application/json", "X-CSRF-Token": this.#csrf,
+            "Idempotency-Key": idempotencyKey }, signal: controller.signal,
+        });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally { window.clearTimeout(timer); this.#busy = false; }
+  }
+
+  /** Frozen PlanVersion submit-review; retain the exact reviewer set and key after uncertainty. */
+  postProjectPlanVersionSubmitReview(projectId: string, planId: string, versionId: string,
+    body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId) || !identifier(planId) || !identifier(versionId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/projects/${projectId}/plans/${planId}/versions/${versionId}:submit-review`,
+      body, idempotencyKey, 32 * 1024);
   }
 
   postProjectOutlineVersionCreate(projectId: string, outlineId: string, body: string,
