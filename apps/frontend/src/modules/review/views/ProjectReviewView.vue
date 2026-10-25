@@ -21,7 +21,8 @@ const assignment=computed(()=>current.value?.active_round?.assignments.find(a=>a
 const isHandover=computed(()=>current.value?.subject_ref.resource_type==="HND-02");
 const isSection=computed(()=>current.value?.subject_ref.resource_type==="SOL-05");
 const isOutline=computed(()=>current.value?.subject_ref.resource_type==="SOL-03");
-const subjectLabel=computed(()=>isHandover.value?"交接分析":isOutline.value?"方案大纲":isSection.value?"方案章节":"结构化专项");
+const isSurvey=computed(()=>current.value?.subject_ref.resource_type==="SRV-02");
+const subjectLabel=computed(()=>isSurvey.value?"调研问题":isHandover.value?"交接分析":isOutline.value?"方案大纲":isSection.value?"方案章节":"结构化专项");
 const mayDecide=computed(()=>!!current.value&&current.value.state==="IN_REVIEW"&&assignment.value?.state==="PENDING"&&session.canSubmit&&!locked.value);
 function storageKey(){return `plm.review.decide.pending.${session.view?.user.user_id??"none"}.${projectId()}.${reviewId()}`}
 function validPending(v:unknown):v is Pending{if(!v||typeof v!=="object"||Array.isArray(v))return false;const i=v as Record<string,unknown>;const id=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;return i.actor===session.view?.user.user_id&&i.project===projectId()&&i.review===reviewId()&&typeof i.round==="string"&&id.test(i.round)&&["APPROVE","RETURN"].includes(String(i.decision))&&(i.comment===null||typeof i.comment==="string")&&typeof i.key==="string"&&/^[\x20-\x7e]{16,128}$/.test(i.key as string)&&((i.decision==="APPROVE"&&i.comment===null)||(i.decision==="RETURN"&&!!(i.comment as string).trim()))}
@@ -36,17 +37,20 @@ function stateLabel(v:string){return({DRAFT:"待开始",IN_REVIEW:"评审中",AP
 <template><section class="review" aria-labelledby="review-title" :aria-busy="busy">
   <p class="section-kicker">项目治理 · 已知评审</p><h1 id="review-title">{{subjectLabel}}评审</h1>
   <p v-if="isHandover&&current"><RouterLink :to="{name:'project-handover-detail',params:{projectId:current.project_id,analysisId:current.subject_ref.resource_id}}">返回交接分析</RouterLink></p>
+  <p v-else-if="isSurvey&&current?.active_round"><RouterLink :to="{name:'project-survey-detail',params:{projectId:current.project_id,surveyId:current.subject_ref.resource_id},query:{fixedVersionId:current.active_round.subject_version_ref}}">返回本轮固定调研版本</RouterLink></p>
+  <p v-else-if="isSurvey&&current"><RouterLink :to="{name:'project-survey-detail',params:{projectId:current.project_id,surveyId:current.subject_ref.resource_id}}">返回调研定义</RouterLink></p>
   <p v-else><RouterLink :to="{name:'project-reviews',params:{projectId:route.params.projectId}}">返回评审待办与历史</RouterLink></p>
   <p class="warning">请从评审待办核对当前分配与固定版本。决定只代表本轮评审，不等于合同意义上的客户签署、实施完成或 UAT 通过。</p>
   <p v-if="!mayRead()" role="status">当前会话没有此项目的读取权限。</p>
   <template v-else><button type="button" :disabled="busy||deciding" @click="load">{{busy?'正在读取…':'刷新评审'}}</button>
     <p v-if="error" role="alert">{{error}}</p><p v-else-if="busy" role="status">正在读取评审…</p>
     <template v-else-if="current"><h2>状态：{{stateLabel(current.state)}}</h2>
-      <dl><dt>评审编号</dt><dd>{{current.review_id}}</dd><dt>{{isHandover?'交接分析':isOutline?'大纲':isSection?'章节':'专项系列'}}</dt><dd>{{current.subject_ref.resource_id}}</dd><dt>策略</dt><dd>{{current.policy_code}}</dd><dt>版本</dt><dd>{{current.etag}}</dd></dl>
+      <dl><dt>评审编号</dt><dd>{{current.review_id}}</dd><dt>{{isSurvey?'调研定义':isHandover?'交接分析':isOutline?'大纲':isSection?'章节':'专项系列'}}</dt><dd>{{current.subject_ref.resource_id}}</dd><dt>策略</dt><dd>{{current.policy_code}}</dd><dt>版本</dt><dd>{{current.etag}}</dd></dl>
       <section v-if="current.active_round" aria-labelledby="round-title"><h3 id="round-title">当前活动轮次 {{current.active_round.round_no}}</h3>
         <p v-if="isHandover">本轮固定交接版本 ID：{{current.active_round.subject_version_ref}}。<RouterLink :to="{name:'project-handover-detail',params:{projectId:current.project_id,analysisId:current.subject_ref.resource_id},query:{fixedVersionId:current.active_round.subject_version_ref}}">打开本轮固定交接版本</RouterLink></p>
         <p v-else-if="isSection"><RouterLink :to="{name:'project-section-version-detail',params:{projectId:current.project_id,sectionId:current.subject_ref.resource_id,versionId:current.active_round.subject_version_ref}}">查看本轮固定章节版本</RouterLink></p>
         <p v-else-if="isOutline"><RouterLink :to="{name:'project-outline-version-detail',params:{projectId:current.project_id,outlineId:current.subject_ref.resource_id,versionId:current.active_round.subject_version_ref}}">查看本轮固定大纲版本</RouterLink></p>
+        <p v-else-if="isSurvey"><RouterLink :to="{name:'project-survey-detail',params:{projectId:current.project_id,surveyId:current.subject_ref.resource_id},query:{fixedVersionId:current.active_round.subject_version_ref}}">查看本轮固定调研问题版本</RouterLink></p>
         <p v-else><RouterLink :to="{name:'project-structured-spec-detail',params:{projectId:current.project_id,specId:current.active_round.subject_version_ref}}">查看本轮固定专项版本</RouterLink></p>
         <ul><li v-for="item in current.active_round.assignments" :key="item.assignment_id">评审人 {{item.reviewer_id}}：{{item.state==='PENDING'?'待决定':`已${item.decision?.decision==='APPROVE'?'批准':'退回'}`}}<span v-if="item.decision?.comment">；意见：{{item.decision.comment}}</span></li></ul>
         <p v-if="!assignment" role="status">你不是本轮评审人，可查看状态但不能提交决定。</p><p v-else-if="assignment.state==='DECIDED'" role="status">你已完成本轮决定。</p>

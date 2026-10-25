@@ -128,4 +128,12 @@ describe("ProjectReviewListView", () => {
     expect(wrapper.text()).not.toContain(review);
     wrapper.unmount();
   });
+  it("labels an SRV-02 Review as a Survey version", async () => {
+    const survey = { ...pending, subject_ref: { resource_type: "SRV-02", resource_id: other },
+      policy_code: "SURVEY_ALL_V1" };
+    const { wrapper } = await page({ list: vi.fn().mockResolvedValue({
+      items: [survey], next_cursor: null, has_more: false,
+    }) });
+    expect(wrapper.text()).toContain("评审中 · 调研问题版本"); wrapper.unmount();
+  });
 });

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A12-P04 为通用 Review 页面接入 `SRV-02 + SURVEY_ALL_V1`：客户端严格匹配 Subject/Policy；列表和详情显示调研问题评审；详情以本轮固定 SurveyVersion ID 深链打开对应版本。复用既有Reviewer权限、显式批准确认、退回意见与同操作号恢复。无 API/Schema/Migration/License/依赖变化。兼容性：Windows 11 前端自动化通过，Server 2025/Debian 13 未测。验证：前端192个测试文件/2045项、typecheck、402 modules build通过（保留约1,041 KB chunk warning）；新 dist 包内验收留 P05。真实客户决定、正式信任、Gate/Pilot/Release未完成，见 `docs/progress/sur-07-a12-p04-survey-review-ui.md`。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A12-P03 完成 Survey Review UI 编码前核查。后端已注册真实 `SRV-02 + SURVEY_ALL_V1` Owner 与冻结通用 Review 读/决定流程；前端精确 Subject allowlist、详情标签、待办映射和固定 SurveyVersion 链接尚缺。只读核查，无代码/API/Schema/Migration/依赖变化。验证：对照后端 Windows 组合、Review Owner、前端 Review Client/详情页及送审 201 回执路径；未运行程序测试。已知问题：SRV-02 Review UI 和合成包内决定链待 P04；客户真实决定、正式信任、Pilot/Gate/发行仍未完成。见 `docs/progress/sur-07-a12-p03-survey-review-ui-precheck.md`。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A12-P02 完成 Survey Validate→原子送审固定包验收。Windows 11 候选 SHA-256 `730f87b6ddf87d429ada7a28c2e6a3ae7de85ba9c3ba7a042a408c2f86a367e5`（22,197件负载）通过清洁解包、真实 Edge/HTTPS/隔离 PG18；合成 ProjectManager 送审后 Review/Round=`IN_REVIEW`、客户 Reviewer=`PENDING`、决定数0、批准指针NULL，Audit/幂等收据与临时资源清理通过。只修改验收脚本/进度文档，无产品 API/Schema/Migration/生产依赖变化。兼容性：仅 Windows 11 合成信任验收，Windows Server 2025/Debian 13 未测；升级：不涉及产品升级。已知限制：候选 `release_eligible=false`、`legal_clearance=false`、正式信任未配置；不表示真人客户决定、Pilot、Gate 或发行完成。历史测试时序/夹具/断言修正记录见 `docs/progress/sur-07-a12-p02-survey-review-packaged.md`。

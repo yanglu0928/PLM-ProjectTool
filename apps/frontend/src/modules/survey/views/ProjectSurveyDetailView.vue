@@ -37,6 +37,7 @@ const versionLabels = Object.freeze({ DRAFT: "草稿", IN_REVIEW: "评审中", A
 
 function ids() { return { projectId: typeof route.params.projectId === "string" ? route.params.projectId : "",
   surveyId: typeof route.params.surveyId === "string" ? route.params.surveyId : "" }; }
+function fixedVersionId() { return typeof route.query.fixedVersionId === "string" ? route.query.fixedVersionId : ""; }
 function mayRead() { return mounted && !!identity && !identity.password_change_required
   && session.view?.user.user_id === identity.user.user_id; }
 function clearLocations() { locationGeneration += 1; evidenceGeneration += 1; locatedSources.value = {};
@@ -56,6 +57,7 @@ async function load() {
     if (!mounted || current !== generation || latest.projectId !== request.projectId
       || latest.surveyId !== request.surveyId || !mayRead()) return;
     survey.value = root; versions.value = page.items; versionCursor.value = page.next_cursor;
+    if (fixedVersionId()) await openVersionId(fixedVersionId());
   } catch (failure) {
     const latest = ids();
     if (!mounted || current !== generation || latest.projectId !== request.projectId || latest.surveyId !== request.surveyId) return;
@@ -77,12 +79,12 @@ async function loadMoreVersions() {
       versionError.value = failure instanceof SurveyReadError ? failure.message : "暂时无法读取调研版本。"; }
   } finally { if (mounted && current === generation) versionBusy.value = false; }
 }
-async function choose(summary: SurveyVersionView) {
+async function openVersionId(versionId: string) {
   if (!mayRead() || detailBusy.value) return;
   const request = ids(); const current = ++detailGeneration;
   selectedVersion.value = null; detailError.value = ""; detailBusy.value = true; clearLocations();
   try {
-    const detail = await surveys.getVersion(request.projectId, request.surveyId, summary.survey_version_id);
+    const detail = await surveys.getVersion(request.projectId, request.surveyId, versionId);
     if (!mounted || current !== detailGeneration || ids().projectId !== request.projectId
       || ids().surveyId !== request.surveyId || !mayRead()) return;
     selectedVersion.value = detail;
@@ -91,6 +93,7 @@ async function choose(summary: SurveyVersionView) {
       ? failure.message : "暂时无法读取固定调研版本。";
   } finally { if (mounted && current === detailGeneration) detailBusy.value = false; }
 }
+async function choose(summary: SurveyVersionView) { await openVersionId(summary.survey_version_id); }
 function validationSummary(question: SurveyQuestionView): string {
   const rule = question.validation_rule;
   if (question.answer_type === "TEXT") return `文本长度 ${String(rule.min_length ?? 0)}～${String(rule.max_length ?? 4000)} 字符`;
@@ -161,7 +164,7 @@ async function locateEvidence(location: SurveySourceLocation, key: string) {
     ? failure.message : "暂时无法定位原文。";
   } finally { if (mounted && current === evidenceGeneration) evidenceBusy.value = false; }
 }
-watch(() => [route.params.projectId, route.params.surveyId], () => {
+watch(() => [route.params.projectId, route.params.surveyId, route.query.fixedVersionId], () => {
   generation += 1; clearSelection(); busy.value = false; void load();
 }, { immediate: true });
 onUnmounted(() => { mounted = false; generation += 1; detailGeneration += 1; locationGeneration += 1; evidenceGeneration += 1; });

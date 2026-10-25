@@ -83,6 +83,13 @@ async function view(auth: SessionClient, surveys = clients(), sources = location
   await flushPromises(); return { wrapper, router, surveys, ...sources }; }
 
 describe("ProjectSurveyDetailView", () => {
+  it("opens only the SurveyVersion named by a fixedVersionId review deep link", async () => {
+    const { wrapper, router, surveys } = await view(await session());
+    await router.push({ name: "project-survey-detail", params: { projectId: project, surveyId },
+      query: { fixedVersionId: versionId } }); await flushPromises();
+    expect(surveys.getVersion).toHaveBeenCalledWith(project, surveyId, versionId);
+    expect(wrapper.text()).toContain("固定版本 1"); wrapper.unmount();
+  });
   afterEach(() => vi.restoreAllMocks());
   it("does not read without identity or while password change is required", async () => { const surveys = clients();
     const absent = await view(new SessionClient(vi.fn() as typeof fetch), surveys);
