@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/SUR-07-A09 完成调研版本 Validate/原子送审前端缺口核查；确认后端冻结命令和 Windows 组合已有，但 Survey 详情页没有校验报告或送审入口。将后续拆为 A10 当前快照校验面板、A11 ProjectManager 原子送审及当前客户 Reviewer 选择。兼容性：纯静态核查，无 API/Schema/代码/迁移变化。验证：合同、Owner、Windows 组合与页面调用路径对账；未新增测试。已知问题：A10/A11、真人 Reviewer 决定、正式信任/Pilot/Release仍待。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A08-P02 从干净提交重建 Windows 11 非发行候选 SHA-256 `4f090636986c5c2173a5fde48eb161a94e5ee285ce73a8deb529c8682e048f46`，包内真实 Edge/HTTPS/隔离 PG 验交接批准→调研定义→DRAFT 问题版本、固定行与 MANUAL 合成访谈说明、同号重放、唯一 Audit/收据及匿名/错项目/只读/伪来源/合成失效许可拒绝。兼容性：仅 Windows 11 合成信任实测，Windows Server 2025/Debian 13 未实测。升级/回滚：无 Schema/API/License/数据迁移；非发行候选取代本轮失败候选用于内部验证，历史合法版本/Audit 保留。验证：22,197 件独立清洁解包哈希、包内全链与临时资源清理退出0；前端全量2038/typecheck/build见 P01。已知问题：`release_eligible=false`、`legal_clearance=false`；调研版本送审/真人客户确认、正式信任/安装升级/自然许可失效/UAT/Gate/Pilot/三平台发行仍待。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A08-P01 修复受权交接来源客户端在真实浏览器中调用原生 `fetch` 时接收者不正确的问题，并增加浏览器型回归；A08 包内首次候选虽逐件哈希通过，但因 C 盘临时空间不足及该前端缺陷未通过版本创建，失败证据保留。兼容性：Windows 11 前端验证，Server 2025/Debian 13 未实测。升级/回滚：仅前端调用形式和非发行验收脚本，无 Schema/API/License/数据迁移；可回退前端但会恢复该缺陷，不建议。验证：定向11、前端全量2038、typecheck/build退出0。已知问题：修复后固定包 Edge/HTTPS/PG 复验、正式信任/安装/UAT/Gate/Pilot/三平台发行仍待；此条不构成包验收通过。
