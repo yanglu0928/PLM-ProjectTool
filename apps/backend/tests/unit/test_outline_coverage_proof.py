@@ -124,10 +124,50 @@ def setup():
     return SimpleNamespace(**locals())
 
 
-def _prove(s, *, outline=None):
+def _prove(s, *, outline=None, approved_review=None, command=None):
     return s.service.prove(
-        s.tx, command=s.command, version=outline or s.outline_view,
+        s.tx, command=command or s.command,
+        version=outline or s.outline_view,
+        approved_outline_review=approved_review,
     )
+
+
+def _approved_outline(s):
+    review_id, round_id, fixed = _review(
+        s.project, s.outline, s.outline_version, b"o" * 32, s.actor,
+    )
+    identity = ReviewIdentitySnapshot(
+        review_id, "PROJECT", s.project, "SOL-03", s.outline,
+        "SOLUTION_OUTLINE_ALL_V1", "APPROVED", None, 2,
+    )
+    return (
+        replace(s.outline_view, version_state="APPROVED",
+                review_ref=review_id, review_round_ref=round_id),
+        replace(fixed, review=identity),
+    )
+
+
+def test_approved_outline_coverage_requires_terminal_review_binding(setup):
+    s = setup
+    s.tx = object()
+    approved, fixed = _approved_outline(s)
+    query = OutlineCurrentFactQuery(
+        s.command.session_token, s.trace, s.project, s.outline,
+        s.outline_version,
+    )
+    proof = _prove(s, outline=approved, approved_review=fixed, command=query)
+    assert proof.section_version_ids == (s.section_version,)
+    assert s.inventory.prove_in_transaction.call_args.args[0] is s.tx
+
+    with pytest.raises(OutlineCoverageProofError):
+        _prove(s, outline=approved, command=query)
+    with pytest.raises(OutlineCoverageProofError):
+        _prove(s, outline=approved, approved_review=replace(
+            fixed, subject_fingerprint=b"x" * 32), command=query)
+    with pytest.raises(OutlineCoverageProofError):
+        _prove(s, outline=approved, approved_review=replace(
+            fixed, review=replace(fixed.review, policy_code="OTHER")),
+            command=query)
 
 
 def test_complete_current_approved_section_union_uses_same_transaction(setup):

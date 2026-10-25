@@ -1,5 +1,8 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P03`（编码前）：记录Approved Solution输入证明边界和内部兼容调整。现有Coverage Owner拒绝APPROVED Outline；仅允许在独立验证Outline终态Review绑定之后扩展其只读覆盖复证，并由Plan侧复查当前批准指针、固定来源及Spec资格。影响限内部Application/测试，不触碰冻结API、Schema、权限或业务数据；回滚恢复原拒绝行为。详见 `docs/progress/plan-02-a04-p04-a04-p03-p03-approved-solution-proof-precheck.md`。
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P03`：新增只读 `ApprovedSolutionInputProofService`，绑定Outline当前Approved指针、终态Review、完整需求覆盖、精确批准SectionVersion与StructuredSpec资格；受控扩展Coverage内部Approved路径，未改API/Schema/权限/数据。定向26项与完整后端4107项、3跳过、6153子例通过；py_compile/diff-check通过。兼容性：内部Owner尚未接入PlanVersion HTTP/写Owner，未做真实PostgreSQL组合验收；后续原子写事务仍须锁定/复查当前指针。详见对应P03记录。
+
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P02`：完成PlanVersion来源Owner编码前核查。确认现有 Outline Coverage Proof 仅支持 DRAFT/IN_REVIEW、拒绝 APPROVED，故调整下一片为 Plan-owned、同事务、只读的已批准方案来源聚合证明，并要求校验当前批准指针、Review终态、精确覆盖Section及StructuredSpec资格。兼容性：不改冻结 API-04、ORM/Schema、权限或业务数据；不产生迁移。回滚：本项为决策/预检文档，可撤除记录但不改变运行代码；后续聚合Owner可独立删除。验证：源码与冻结合同核查，无功能测试。已知问题：PlanVersion原子创建/HTTP/UI/送审、真实PG与浏览器链、正式信任/安装、UAT、Gate 3～7、Pilot及三平台Release仍未通过。
 
 - 2026-10-26 / `PILOT-CHAIN-A03`：复核并更新Windows 11 Pilot路线，确认Handover/Survey与Outline/Section Review入口已在后续WBS完成，纠正`PILOT-CHAIN-A02`及Plan旧前置中的过时阻塞描述；当前真正阻断实施WBS/Output的是PlanVersion业务创建/校验/送审Owner与用户/包内链缺失。将下一项定为`PLAN-02-A04-P04-A04-P03-P02`。只读源码/证据审计，无产品/API/Schema/数据变化，不构成Pilot或Gate验收；Handover/Survey/方案测试均不能替代真实客户确认，正式信任/安装与Server2025/Debian13验收仍待。详见 `docs/progress/pilot-chain-a03-current-route-audit.md`。

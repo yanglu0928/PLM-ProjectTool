@@ -109,7 +109,9 @@ class OutlineCoverageProofService:
 
     def prove(self, transaction: object, *,
               command: ValidateOutlineVersion | OutlineCurrentFactQuery,
-              version: OutlineVersionHistoryView) -> CurrentOutlineCoverageProof:
+              version: OutlineVersionHistoryView,
+              approved_outline_review: FixedReviewRoundSnapshot | None = None,
+              ) -> CurrentOutlineCoverageProof:
         if (transaction is None or type(command) not in (
                 ValidateOutlineVersion, OutlineCurrentFactQuery)
                 or type(version) is not OutlineVersionHistoryView
@@ -120,10 +122,15 @@ class OutlineCoverageProofService:
                 or (type(command) is ValidateOutlineVersion
                     and version.version_state != "DRAFT")
                 or (type(command) is OutlineCurrentFactQuery
-                    and version.version_state not in ("DRAFT", "IN_REVIEW"))):
+                    and version.version_state not in (
+                        "DRAFT", "IN_REVIEW", "APPROVED"))):
             raise OutlineCoverageProofError()
         try:
             command.__post_init__()
+            if version.version_state == "APPROVED":
+                self._approved_outline_review(version, approved_outline_review)
+            elif approved_outline_review is not None:
+                raise OutlineCoverageProofError()
             self._fixed_input(version)
             inventory = self._inventory.prove_in_transaction(
                 transaction, RequirementVersionReadQuery(
@@ -255,7 +262,8 @@ class OutlineCoverageProofService:
         return refs
 
     def _approved_version(self, transaction: object,
-                          command: ValidateOutlineVersion, section_id: uuid.UUID,
+                          command: ValidateOutlineVersion | OutlineCurrentFactQuery,
+                          section_id: uuid.UUID,
                           version: object, version_id: uuid.UUID
                           ) -> SectionVersionHistoryView:
         if (type(version) is not SectionVersionHistoryView
@@ -304,3 +312,31 @@ class OutlineCoverageProofService:
         if any(status != "PASS" for status in statuses):
             raise OutlineCoverageProofError()
         return version
+
+    @staticmethod
+    def _approved_outline_review(
+            version: OutlineVersionHistoryView,
+            fixed: FixedReviewRoundSnapshot | None) -> None:
+        if (type(fixed) is not FixedReviewRoundSnapshot
+                or not _id(version.review_ref)
+                or not _id(version.review_round_ref)):
+            raise OutlineCoverageProofError()
+        try:
+            fixed.__post_init__()
+        except Exception:
+            raise OutlineCoverageProofError() from None
+        identity = fixed.review
+        if (identity.review_id != version.review_ref
+                or identity.scope != "PROJECT"
+                or identity.project_id != version.project_id
+                or identity.subject_type != "SOL-03"
+                or identity.subject_id != version.solution_outline_id
+                or identity.policy_code != "SOLUTION_OUTLINE_ALL_V1"
+                or identity.state != "APPROVED"
+                or fixed.progress.round_id != version.review_round_ref
+                or fixed.progress.state is not ReviewRoundState.APPROVED
+                or fixed.subject_version_id
+                   != version.solution_outline_version_id
+                or not hmac.compare_digest(
+                    fixed.subject_fingerprint, version.content_fingerprint)):
+            raise OutlineCoverageProofError()
