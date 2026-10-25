@@ -1465,6 +1465,10 @@ class ProductionLoginTests(unittest.TestCase):
         egress_router = APIRouter()
         retrieval_router, retrieval_cancel_router = APIRouter(), APIRouter()
         validation_router = APIRouter()
+        plan_submit_router = APIRouter()
+        plan_submit_router.add_api_route(
+            "/api/v1/projects/{project_id}/plans/{plan_id}/versions/"
+            "{plan_version_id}:submit-review", lambda: None, methods=["POST"])
         validation_service = Mock()
         retrieval_cancel_owner = Mock(cancel=Mock())
 
@@ -1524,7 +1528,11 @@ class ProductionLoginTests(unittest.TestCase):
                     "plm_assistant.entrypoints.production_login."
                     "create_windows_plan_version_validation_composition",
                     return_value=(validation_router, validation_service),
-                    ) as validation_factory:
+                    ) as validation_factory, patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_plan_version_review_submission_router",
+                    return_value=plan_submit_router,
+                    ) as plan_submit_router_factory:
             app = create_production_platform_write_app(settings)
         license_factory.assert_called_once()
         write_factory.assert_called_once()
@@ -1539,6 +1547,9 @@ class ProductionLoginTests(unittest.TestCase):
                          validation_factory.call_args.kwargs["document_storage_root"])
         self.assertEqual(settings.data_root,
                          validation_factory.call_args.kwargs["parse_result_storage_root"])
+        plan_submit_router_factory.assert_called_once()
+        self.assertIs(plan_submit_router_factory.call_args.kwargs[
+            "validation_service"], validation_service)
         self.assertTrue(any(
             getattr(route, "path", "") ==
             "/api/v1/projects/{project_id}/plans/{plan_id}/versions/"
@@ -1548,6 +1559,9 @@ class ProductionLoginTests(unittest.TestCase):
             for route in getattr(
                 getattr(included, "original_router", None), "routes", ())
         ))
+        self.assertIn(
+            "/api/v1/projects/{project_id}/plans/{plan_id}/versions/"
+            "{plan_version_id}:submit-review", app.openapi()["paths"])
         self.handover_action_factory.assert_called_once()
         self.handover_action_write_factory.assert_called_once()
         self.requirement_factory.assert_called_once()

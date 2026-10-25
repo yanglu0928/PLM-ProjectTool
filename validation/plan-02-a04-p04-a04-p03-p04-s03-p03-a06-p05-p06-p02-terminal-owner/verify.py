@@ -11,6 +11,7 @@ import hashlib
 import json
 import uuid
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import psycopg
@@ -20,6 +21,10 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker
 
+from fastapi.testclient import TestClient
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.plan.api.submit_plan_version_review import create_plan_version_review_submission_router
 from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.plan.application.plan_review_readiness import PlanVersionReviewReadinessService
@@ -114,6 +119,13 @@ def main(port: int) -> None:
                     authorization=projects, reviewers=Mock(), receipts=receipts,
                     replay_repository=SqlAlchemyProjectReviewSubmissionRepository(), reviews=persistence,
                     subjects=subject_registry, scope_repository=SqlAlchemyPlanReviewSubjectRepository(), clock=lambda: now)
+                submit_router = create_plan_version_review_submission_router(
+                    sessions=Mock(),
+                    origins=LoginOriginPolicy(["https://plm.example.test"]),
+                    submissions=submit)
+                http_client = TestClient(
+                    create_app(plan_version_validation_router=submit_router),
+                    base_url="https://plm.example.test")
                 transition = ReviewTransitionCommandService(unit_of_work=uow, access=access, projects=projects,
                     license_guard=license_guard, repository=SqlAlchemyReviewTransitionRepository(), receipts=receipts,
                     audit=audit, subjects=subject_registry, clock=lambda: now)
@@ -124,8 +136,28 @@ def main(port: int) -> None:
                             db.execute("INSERT INTO plm.pln_plan_versions(plan_version_id,plan_id,project_id,version_no,created_by) VALUES (%s,%s,%s,%s,%s)",
                                        (version_id, plan_id, project, index + 1, manager))
                     current_actor["id"] = manager
-                    item = submit.submit(SubmitPlanVersionReview(b"s"*32, b"c"*32, trace, project, plan_id,
-                        version_id, (reviewer,), "PLAN_VERSION_ALL_V1", str(uuid.uuid4())))
+                    review_path = f"/api/v1/projects/{project}/plans/{plan_id}/versions/{version_id}:submit-review"
+                    submit_headers = {
+                        "Origin": "https://plm.example.test",
+                        "Cookie": "plm_session="+(b"s"*32).hex(),
+                        "X-CSRF-Token": (b"c"*32).hex(),
+                        "Idempotency-Key": str(uuid.uuid4()),
+                    }
+                    submit_body = {"reviewer_ids": [str(reviewer)],
+                                   "policy_ref": "PLAN_VERSION_ALL_V1",
+                                   "due_at": None, "submission_note": None}
+                    response = http_client.post(
+                        review_path, headers=submit_headers, json=submit_body)
+                    assert response.status_code == 201, response.text
+                    replay = http_client.post(
+                        review_path, headers=submit_headers, json=submit_body)
+                    assert (replay.status_code == 201
+                            and replay.json()["data"] == response.json()["data"]
+                            and replay.headers["etag"] == response.headers["etag"]
+                            and replay.json()["trace_id"] != response.json()["trace_id"])
+                    data = response.json()["data"]
+                    item = SimpleNamespace(review_id=uuid.UUID(data["review_id"]),
+                                            round_id=uuid.UUID(data["review_round_id"]))
                     started.append(item)
                     if index < 2:
                         current_actor["id"] = reviewer
@@ -193,7 +225,8 @@ def main(port: int) -> None:
                     raise AssertionError("migration 0210 allowed loss of real withdrawal history")
                 with connect(db_name) as db:
                     assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20261026_0210"
-                print("PLAN_VERSION_REVIEW_REGISTRY_TERMINAL_PG_PASS: real Migrations 0210/0200/0190, ProjectReviewSubjectRegistry, Approved pointer, old Approved SUPERSEDED, WITHDRAWN-to-RETURNED result, Review+Plan Audits, receipts and exact idempotent replays; Session/License/Project/reviewer/source proof test doubles")
+                print("PLAN_VERSION_REVIEW_SUBMIT_HTTP_REGISTRY_TERMINAL_PG_PASS: real HTTP submit plus exact HTTP replay, Migrations 0210/0200/0190, ProjectReviewSubjectRegistry transitions, Approved pointer, old Approved SUPERSEDED, WITHDRAWN-to-RETURNED result, Review+Plan Audits, receipts and exact terminal replays; Session/License/Project/reviewer/source proof test doubles")
+                http_client.close()
             finally:
                 engine.dispose()
         finally:

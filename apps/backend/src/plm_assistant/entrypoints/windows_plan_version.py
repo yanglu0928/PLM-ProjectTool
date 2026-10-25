@@ -25,6 +25,9 @@ from plm_assistant.modules.plan.api.list_plan_version_wbs import (
 from plm_assistant.modules.plan.api.validate_plan_version import (
     create_plan_version_validate_router,
 )
+from plm_assistant.modules.plan.api.submit_plan_version_review import (
+    create_plan_version_review_submission_router,
+)
 from plm_assistant.modules.plan.api.wbs_list_cursor import (
     PlanVersionWbsCursorCodec,
 )
@@ -189,6 +192,94 @@ def create_windows_plan_version_validation_composition(
         router = create_plan_version_validate_router(
             sessions=sessions, origins=origins, validations=service)
         return router, service
+    except Exception:
+        raise WindowsPlanVersionStartupError() from None
+
+
+def create_windows_plan_version_review_submission_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    validation_service,
+):
+    """Compose the frozen atomic PlanVersion SubmitReview operation."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            validation_service)) or not callable(getattr(
+                validation_service, "evaluate_snapshot_in_transaction", None)):
+        raise WindowsPlanVersionStartupError()
+    try:
+        from plm_assistant.modules.auth.infrastructure.project_write_access import (
+            SqlAlchemyProjectWriteAccess,
+        )
+        from plm_assistant.modules.auth.infrastructure.review_user_access import (
+            SqlAlchemyReviewUserAccess,
+        )
+        from plm_assistant.modules.plan.application.plan_review_readiness import (
+            PlanVersionReviewReadinessService,
+        )
+        from plm_assistant.modules.plan.application.plan_version_review_terminal import (
+            PlanVersionReviewSubjectOwner,
+        )
+        from plm_assistant.modules.plan.application.submit_plan_version_review import (
+            PlanVersionReviewSubmissionService,
+        )
+        from plm_assistant.modules.plan.infrastructure.plan_review_readiness_repository import (
+            SqlAlchemyPlanVersionReviewReadinessRepository,
+        )
+        from plm_assistant.modules.plan.infrastructure.plan_review_subject_repository import (
+            SqlAlchemyPlanReviewSubjectRepository,
+        )
+        from plm_assistant.modules.platform.infrastructure.idempotency_receipts import (
+            SqlAlchemyIdempotencyReceipts,
+        )
+        from plm_assistant.modules.project.application.authorization import (
+            ProjectAuthorizationService,
+        )
+        from plm_assistant.modules.project.application.reviewers import (
+            ProjectReviewerQualificationService,
+        )
+        from plm_assistant.modules.project.infrastructure.authorization_repository import (
+            SqlAlchemyProjectAuthorizationRepository,
+        )
+        from plm_assistant.modules.review.application.project_persistence import (
+            ProjectReviewPersistenceService,
+        )
+        from plm_assistant.modules.review.infrastructure.create_repository import (
+            SqlAlchemyReviewCreationRepository,
+        )
+        from plm_assistant.modules.review.infrastructure.project_submission_repository import (
+            SqlAlchemyProjectReviewSubmissionRepository,
+        )
+        from plm_assistant.modules.review.infrastructure.start_repository import (
+            SqlAlchemyReviewStartRepository,
+        )
+
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work, repository=project_repository)
+        reviewers = ProjectReviewerQualificationService(
+            users=SqlAlchemyReviewUserAccess(), projects=project_repository)
+        owner = PlanVersionReviewSubjectOwner(
+            repository=SqlAlchemyPlanReviewSubjectRepository(),
+            reviewers=reviewers,
+            readiness=PlanVersionReviewReadinessService(
+                repository=SqlAlchemyPlanVersionReviewReadinessRepository(),
+                evaluator=validation_service),
+            audit=audit)
+        receipts = SqlAlchemyIdempotencyReceipts()
+        reviews = ProjectReviewPersistenceService(
+            creation_repository=SqlAlchemyReviewCreationRepository(),
+            round_repository=SqlAlchemyReviewStartRepository(), audit=audit,
+            subjects=owner)
+        submissions = PlanVersionReviewSubmissionService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectWriteAccess(),
+            license_guard=license_guard, authorization=authorization,
+            reviewers=reviewers, receipts=receipts,
+            replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
+            reviews=reviews, subjects=owner,
+            scope_repository=SqlAlchemyPlanReviewSubjectRepository())
+        return create_plan_version_review_submission_router(
+            sessions=sessions, origins=origins, submissions=submissions)
     except Exception:
         raise WindowsPlanVersionStartupError() from None
 

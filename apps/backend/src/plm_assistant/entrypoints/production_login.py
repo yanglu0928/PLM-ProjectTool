@@ -107,6 +107,7 @@ from plm_assistant.entrypoints.windows_plan import (
 )
 from plm_assistant.entrypoints.windows_plan_version import (
     create_windows_plan_version_validation_composition,
+    create_windows_plan_version_review_submission_router,
 )
 from plm_assistant.entrypoints.windows_plan_cursor import (
     create_windows_plan_list_cursor_codec,
@@ -1049,6 +1050,13 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         parse_result_storage_root=settings.data_root,
                         documents=document_reads, downloads=document_downloads,
                         parse_results=evidence_results_for_viewer,
+                    )
+                )
+                plan_version_validation_router.include_router(
+                    create_windows_plan_version_review_submission_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        validation_service=plan_version_validation_service,
                     )
                 )
                 solution_outline_create_router = create_windows_outline_create_router(
