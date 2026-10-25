@@ -52,9 +52,31 @@ def mapping_for(names: set[str]) -> dict[str, str]:
     return mapped
 
 
-def validate_candidate(candidate: Path, expected_sha256: str, stage: Path) -> tuple[dict[str, str], dict[str, str]]:
-    if digest_path(candidate) != expected_sha256:
-        raise ValueError("candidate ZIP digest mismatch")
+def candidate_inventory(candidate: Path, expected_sha256: str, *,
+                        prior_attestation: Path | None = None) -> tuple[dict[str, str], dict[str, str]]:
+    """Verify candidate identity/inventory; optionally bind to an existing hash attestation.
+
+    The attested path is used only for long-running local rehearsal when the exact
+    candidate SHA was already computed by the package integrity run. Payload bytes
+    are still verified against that inventory as they are copied into the install.
+    """
+    if prior_attestation is None:
+        if digest_path(candidate) != expected_sha256:
+            raise ValueError("candidate ZIP digest mismatch")
+    else:
+        try:
+            summary = json.loads(prior_attestation.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise ValueError("prior candidate attestation unavailable") from exc
+        recorded_archive = str(summary.get("archive", "")).replace("\\", "/")
+        candidate_suffix = "/".join(candidate.parts[-2:])
+        if (summary.get("status") != "WINDOWS11_CURRENT_APP_NON_RELEASE_INTEGRITY_PASS"
+                or summary.get("archive_sha256") != expected_sha256
+                or summary.get("archive_bytes") != candidate.stat().st_size
+                or not recorded_archive.endswith(candidate_suffix)
+                or summary.get("release_eligible") is not False
+                or summary.get("legal_clearance") is not False):
+            raise ValueError("prior candidate attestation mismatch")
     with zipfile.ZipFile(candidate) as archive:
         members = [item.filename for item in archive.infolist() if not item.is_dir()]
         if len(members) != len(set(members)) or set(META) - set(members):
@@ -67,6 +89,11 @@ def validate_candidate(candidate: Path, expected_sha256: str, stage: Path) -> tu
         expected = checksums(archive.read("payload-sha256sums.txt"))
         if set(members) != set(expected) | META or manifest.get("payload_file_count") != len(expected):
             raise ValueError("candidate file inventory mismatch")
+    return expected, mapping_for(set(expected))
+
+
+def validate_candidate(candidate: Path, expected_sha256: str, stage: Path) -> tuple[dict[str, str], dict[str, str]]:
+    expected, mapping = candidate_inventory(candidate, expected_sha256)
     extracted = verify_stage(stage, expected_kind=KIND)
     staged = extracted.get("files")
     if isinstance(staged, dict):
@@ -79,7 +106,7 @@ def validate_candidate(candidate: Path, expected_sha256: str, stage: Path) -> tu
         actual = {name: digest_path(stage / name) for name in expected}
         if actual != expected:
             raise ValueError("candidate and clean stage differ")
-    return expected, mapping_for(set(expected))
+    return expected, mapping
 
 
 def copy_and_publish(stage: Path, target: Path, expected: dict[str, str], mapping: dict[str, str],
