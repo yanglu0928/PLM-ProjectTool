@@ -12074,3 +12074,17 @@
 ## DEC-20261024-CAP-P03-P02-A02：多条目版本编辑与原号兼容
 
 已选逐条暂存、最终整批重验/提交的前端流程；现有单条直接创建仍可用。未暂存编辑内容不允许被静默忽略；不确定结果持久记录完整条目数组及原 ETag/Key，同时读取旧单条记录。每项来源/证据独立，整批来源并集必须等于基线；CR-CAP-007 已先完成 DEPRECATED 读写对齐。此决策不修改后端合同或 Gate，也不把合成资格变为真实确认。见 `docs/progress/cap-02-a05-p03-p02-a02-multi-item-editor.md`。
+
+# DEC-20261026-PLAN-REVIEW-PATH-01：SubmitReview 同时绑定 Plan 与 PlanVersion 路径
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P05`；冻结 `PLAN_VERSION_SUBMIT_REVIEW` 路径同时包含`plan_id`与`plan_version_id`，而统一Review Subject身份键`PLN-02`按DM-02指向PlanVersion本身。
+- Decision：SubmitReview内部Owner必须在授权后、预留幂等Receipt前，验证固定Project/Plan/PlanVersion三者的持久身份关系；首次执行及Receipt重放均进行该验证。以PlanVersion不可变归属行只读检查为准，失败对外统一资源不可见，不把路径中的PlanId丢弃，也不更改Review Subject键或冻结API。
+- Reason：仅凭Subject VersionId无法区分同Project下客户端错误/拼接的另一个Plan路径；在服务内部显式核对可保持Subject语义与API路径一致，避免任何跨Plan身份误绑定。
+- Impact/Rollback/Verification：不改变Schema/API/数据，只给Plan Owner增加一个必须注入的归属查询端口及SQL实现；撤除检查会重新引入路径身份错绑风险，故不建议回退。单测需覆盖路径Plan不匹配在新建/重放之前拒绝；Win11隔离PG18验证真实固定归属、Review事务及Receipt重放。
+
+# DEC-20261026-PLAN-REVIEW-TERMINAL-WBS-01：先完成Plan Review终态Owner再装配入口
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P05`后续分解；P05-P05已完成内部Create/Start，但统一Review Subject Registry要求Owner提供终态访问、状态消费及不可变回放闭环；CR-PLAN-007/0190已定义PlanVersion批准/退回事件和引用字段。
+- Decision：在公开HTTP/Windows组合装配前，新增独立后续WBS `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06`，只实现Plan Review批准/退回终态Owner、Approved Plan指针联动和0190终态结果事件，并为后续组合验收纳入真实当前Approved来源正向送审。保持Subject Registry/HTTP关闭，直到完整生命周期Owner和同事务证据具备。
+- Reason：缺少终态回调时公共Registry拒绝注册Plan Owner；提前挂载会暴露不可完成的生命周期并让Review结果无法反向同步到Plan事实。拆分终态工作保持P05-P05的单一Start范围，同时真实来源输入在同一后续组合验收前不宣称可用。
+- Impact/Rollback/Verification：这是获授权持续开发下的WBS顺序细化，不修改冻结Scope/API/Schema、不删减业务路径；回滚为保持新WBS未装配。P06须先完成Skill编码前核查，验证0190终态事件、Approved指针/历史、授权/错误回滚与隔离PG18；真实来源正向链在之后的端到端Owner/HTTP门槛完成前不得标为通过。
