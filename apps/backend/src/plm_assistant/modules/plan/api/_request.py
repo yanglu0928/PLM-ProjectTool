@@ -26,7 +26,10 @@ def _reject_constant(_: str) -> None:
     raise ValueError("nonstandard JSON constant")
 
 
-async def read_body(request: Request, headers: tuple[tuple[bytes, bytes], ...]) -> object:
+async def read_body(request: Request, headers: tuple[tuple[bytes, bytes], ...], *,
+                    maximum_bytes: int = _MAX_BODY) -> object:
+    if type(maximum_bytes) is not int or not 1 <= maximum_bytes <= 32 * 1024 * 1024:
+        raise ValueError("invalid bounded Plan request limit")
     values = [value for name, value in headers if name.lower() == b"content-type"]
     if (len(values) != 1 or values[0].strip().lower() not in (
             b"application/json", b"application/json; charset=utf-8")):
@@ -34,7 +37,7 @@ async def read_body(request: Request, headers: tuple[tuple[bytes, bytes], ...]) 
     raw = bytearray()
     try:
         async for chunk in request.stream():
-            if len(raw) + len(chunk) > _MAX_BODY:
+            if len(raw) + len(chunk) > maximum_bytes:
                 raise ApplicationError("REQUEST_MALFORMED")
             raw.extend(chunk)
         try:

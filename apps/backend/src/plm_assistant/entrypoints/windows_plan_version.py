@@ -10,6 +10,9 @@ from plm_assistant.entrypoints.windows_solution_outline import (
 from plm_assistant.modules.auth.infrastructure.project_write_access import (
     SqlAlchemyProjectWriteAccess,
 )
+from plm_assistant.modules.plan.api.create_plan_version import (
+    create_plan_version_create_router,
+)
 from plm_assistant.modules.plan.application.create_plan_version import (
     PlanVersionCreateService,
 )
@@ -54,6 +57,26 @@ from plm_assistant.modules.solution.infrastructure.section_version_read_reposito
 
 class WindowsPlanVersionStartupError(RuntimeError):
     """The explicit PlanVersion source-proof composition is unavailable."""
+
+
+def create_windows_plan_version_create_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    document_storage_root: Path, parse_result_storage_root: Path,
+    documents, downloads, parse_results,
+):
+    if any(value is None for value in (sessions, origins)):
+        raise WindowsPlanVersionStartupError()
+    try:
+        service = create_windows_plan_version_create_service(
+            runtime=runtime, license_guard=license_guard, audit=audit,
+            document_storage_root=document_storage_root,
+            parse_result_storage_root=parse_result_storage_root,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results)
+        return create_plan_version_create_router(
+            sessions=sessions, origins=origins, creates=service)
+    except Exception:
+        raise WindowsPlanVersionStartupError() from None
 
 
 def create_windows_plan_version_create_service(

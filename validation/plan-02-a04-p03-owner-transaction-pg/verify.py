@@ -302,6 +302,67 @@ def _snapshot_counts(port: int, plan_id: uuid.UUID) -> tuple[int, ...]:
         ).fetchone()[0] for table in tables)
 
 
+def _verify_http_composition(context: dict[str, object], storage_root: Path,
+                             plan_id: uuid.UUID,
+                             proof) -> None:
+    from fastapi.testclient import TestClient
+    from plm_assistant.entrypoints.api import create_app
+    from plm_assistant.entrypoints.windows_plan_version import (
+        create_windows_plan_version_create_router,
+    )
+    from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+    from plm_assistant.modules.auth.application.session_service import SessionService
+    from plm_assistant.modules.auth.infrastructure.session_repository import (
+        SqlAlchemySessionRepository,
+    )
+
+    runtime, project = context["runtime"], context["project"]
+    origins = LoginOriginPolicy(["https://plm.example.test"])
+    sessions = SessionService(
+        unit_of_work=runtime.unit_of_work,
+        repository=SqlAlchemySessionRepository(), issue_access=object(),
+        audit=context["audit"],
+    )
+    router = create_windows_plan_version_create_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=context["license_guard"], audit=context["audit"],
+        document_storage_root=storage_root,
+        parse_result_storage_root=storage_root,
+        documents=context["documents"], downloads=context["downloads"],
+        parse_results=context["parse_results"],
+    )
+    path = f"/api/v1/projects/{project}/plans/{plan_id}/versions"
+    headers = {
+        "cookie": f"plm_session={context['token'].hex()}",
+        "origin": "https://plm.example.test",
+        "x-csrf-token": context["csrf"].hex(),
+        "idempotency-key": "plan-version-http-create-0001",
+    }
+    payload = _draft(proof, risk="Synthetic Windows HTTP composition")
+    with TestClient(create_app(plan_version_create_router=router),
+                    base_url="https://plm.example.test") as client:
+        response = client.post(path, headers=headers, json=payload)
+        assert response.status_code == 201, response.text
+        data = response.json()["data"]
+        assert data["project_id"] == str(project)
+        assert data["plan_id"] == str(plan_id)
+        assert data["version_no"] == 5 and data["version_state"] == "DRAFT", data
+        replay = client.post(path, headers=headers, json=payload)
+        assert replay.status_code == 201, replay.text
+        assert replay.json()["data"] == response.json()["data"]
+        conflict = client.post(path, headers=headers, json={
+            **payload, "calendar_ref": None,
+        })
+        assert conflict.status_code == 409, conflict.text
+        output_ref_payload = _draft(proof, risk="Unsupported output is closed")
+        output_ref_payload["wbs_items"][0]["output_refs"] = [str(uuid.uuid4())]
+        output_headers = {**headers, "idempotency-key": "plan-version-output-ref-0001"}
+        before = _snapshot_counts(context["port"], plan_id)
+        rejected = client.post(path, headers=output_headers, json=output_ref_payload)
+        assert rejected.status_code == 422, rejected.text
+        assert _snapshot_counts(context["port"], plan_id) == before
+
+
 class _FailingAudit:
     def append(self, transaction, event) -> None:
         raise RuntimeError("synthetic audit failure")
@@ -412,6 +473,7 @@ def verify_owner(context: dict[str, object]) -> None:
         with ThreadPoolExecutor(max_workers=2) as pool:
             concurrent_results = list(pool.map(service.create, parallel))
         assert sorted(item.version_no for item in concurrent_results) == [3, 4]
+        _verify_http_composition(context, Path(root), plan.plan_id, proof)
 
     print("PLAN_VERSION_OWNER_POSTGRESQL_PASS: complete snapshot, current approved "
           "source proof, same-key replay/conflict, invalid source rejection, "
