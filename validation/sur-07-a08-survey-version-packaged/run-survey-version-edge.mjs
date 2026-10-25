@@ -190,11 +190,27 @@ try {
   if (!await evaluate("document.body.innerText.includes('尚未批准')")) {
     throw new Error("submit-review UI must explicitly state that this is not an approval");
   }
+  await click("打开评审");
+  await waitFor("document.body.innerText.includes('你不是本轮评审人')", "non-reviewer Review detail authorization");
+  const detailLink = await evaluate(`(() => {const x=[...document.querySelectorAll('a')].find(e=>e.textContent.includes('查看本轮固定调研问题版本'));return x?{href:x.getAttribute('href'),text:x.textContent.trim()}:null;})()`);
+  if (!detailLink?.href?.includes(`fixedVersionId=${created.survey_version_id}`)
+    || !detailLink.text.includes("查看本轮固定调研问题版本")) {
+    throw new Error(`SRV-02 Review must link to the exact fixed SurveyVersion: ${JSON.stringify(detailLink)}`);
+  }
+  const unauthorizedControls = await evaluate("[...document.querySelectorAll('button')].map(e=>e.textContent.trim()).filter(t=>t==='批准本轮'||t==='退回修改')");
+  if (unauthorizedControls.length) throw new Error("non-assigned ProjectManager must not see Reviewer decision controls");
+  await click("返回评审待办与历史");
+  await waitFor("document.querySelector('#review-list-title')", "Project Review list");
+  await click("全部可见历史");
+  await waitFor(`document.body.innerText.includes(${JSON.stringify(submitted.review_id)})
+    && document.body.innerText.includes('评审中 · 调研问题版本')`, "SRV-02 visible Review history label");
+  await click("打开评审并核对当前状态");
+  await waitFor("document.body.innerText.includes('你不是本轮评审人')", "SRV-02 list-to-review navigation");
   const failures = observations.filter(item => item.exception || item.loadingFailed
     || item.status >= 400 && !(item.url === "/api/v1/auth/session" && item.status === 401));
   const alerts = await evaluate("[...document.querySelectorAll('[role=alert]')].filter(e=>e.offsetParent!==null).map(e=>e.innerText)");
   if (failures.length || alerts.length) throw new Error(`browser failures: ${JSON.stringify({ failures, alerts })}`);
-  console.log(JSON.stringify({ status: "SUR_07_A12_P02_PACKAGED_EDGE_PASS", project_id: project,
+  console.log(JSON.stringify({ status: "SUR_07_A12_P05_PACKAGED_EDGE_PASS", project_id: project,
     survey_id: survey, actor_id: actor, survey_version_id: created.survey_version_id,
     handover_item_row_id: requestBody.questions[0].sources[0].handover_item_row_id,
     handover_analysis_version_id: requestBody.questions[0].sources[0].handover_analysis_version_id,
@@ -202,6 +218,8 @@ try {
     original_etag: header(createRequest, "If-Match"), validation_audit_event_id: validation.audit_event_id,
     validation_valid: validation.valid, validation_idempotency_key: header(validateRequest, "Idempotency-Key"),
     review_id: submitted.review_id, review_round_id: submitted.review_round_id,
+    review_ui_subject_label: true, review_ui_fixed_version_link: detailLink.href,
+    non_reviewer_decision_controls_hidden: true, review_list_subject_label: "调研问题版本",
     reviewer_id: reviewerId, submit_review_etag: header(submitRequest, "If-Match"),
     submit_review_idempotency_key: header(submitRequest, "Idempotency-Key"),
     submit_review_state: submitted.state }));

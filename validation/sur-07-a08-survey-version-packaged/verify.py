@@ -64,7 +64,12 @@ def after_approval(state: dict, **context) -> None:
         raise AssertionError("packaged SurveyVersion Edge failed: "
                              + edge.stdout[-9000:] + edge.stderr[-9000:])
     result = json.loads(edge.stdout.strip().splitlines()[-1])
-    assert result["status"] == "SUR_07_A12_P02_PACKAGED_EDGE_PASS", result
+    assert result["status"] == "SUR_07_A12_P05_PACKAGED_EDGE_PASS", result
+    assert result["review_ui_subject_label"] is True
+    assert result["review_ui_fixed_version_link"].endswith(
+        f"?fixedVersionId={result['survey_version_id']}")
+    assert result["non_reviewer_decision_controls_hidden"] is True
+    assert result["review_list_subject_label"] == "调研问题版本"
     assert result["project_id"] == str(project) and result["survey_id"] == str(survey)
     fixed_row = result["handover_item_row_id"]
     assert fixed_row in {item["handover_item_row_id"] for item in available}
@@ -190,7 +195,7 @@ def after_approval(state: dict, **context) -> None:
                           (survey,)).fetchone()[0] == 1
     print("SUR_07_A08_PACKAGED_PG_PASS: DRAFT fixed+MANUAL, target, one Audit/receipt, "
           "same-key replay and denied writers", flush=True)
-    print("SUR_07_A12_P02_PACKAGED_PG_PASS: DRAFT Validate, ProjectManager atomic "
+    print("SUR_07_A12_P05_PACKAGED_PG_PASS: DRAFT Validate, ProjectManager atomic "
           "submit-review, exact ACTIVE reviewer snapshot, Audit and receipt", flush=True)
 
 
