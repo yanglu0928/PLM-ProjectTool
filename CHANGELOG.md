@@ -1,5 +1,6 @@
 # 版本说明
 
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P07`：固定PlanVersion工作页核查发现创建请求会立即生成不可变完整快照，空壳后补不成立；需先选当前批准Outline固定版本并完成至少一个WBS根条目/验收条件，创建前显式确认不可编辑内容。首片确定为新版本创建→按Location/version ID读回，Validate与原子送审另切；不伪造Plan版本历史列表，Output refs不支持须先阻止。本项仅静态核查。详见P06-P07前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P06`（PlanVersion写Client `PASS_SCOPE_LIMITED`）：新增经SessionClient受限桥接的快照创建、bodyless Validate和原子送审Client；严格解析请求/响应、固定送审policy/null字段、Reviewer排序/PM限制、错误状态、幂等单次写与不确定结果保持。前端定向176通过、全量193文件2050通过、typecheck与Vite build通过。首轮全量与build并行造成Node OOM，限并发串行后通过；build主JS >500 kB警告未纳入本片。无页面/Edge/真实信任验收。详见P06-P06实施记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P06`：PlanVersion写Client编码前检查完成，严格限于冻结create/Validate/atomic SubmitReview三种SessionClient方法和窄响应解析，不做页面或读Client；明确验证CSRF/可信同源、canonical UUID、幂等/单次不确定写、8 MiB创建体、无body Validate及固定四字段送审。仅新增前置记录，未改代码/API/Schema；详见P06-P06前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P05`：PlanVersion用户路径核查确认现有前端仅含Plan身份列表/创建/详情，缺少PlanVersion页面和专属Client；冻结API提供完整创建、单版本/WBS读取、Validate及原子送审，但没有版本集合/历史列表接口且Output refs当前不支持。决定先实现经SessionClient的create/Validate/SubmitReview窄Client，再接固定版本工作页并以已知version id单次读取；不推测补历史、不修改冻结API、不绕过原子SubmitReview。本项仅核查，未跑新增测试。详见P06-P05前置记录。
