@@ -1,0 +1,556 @@
+import {
+  createRouter,
+  createWebHistory,
+  type Router,
+  type RouterHistory,
+} from "vue-router";
+
+import HomeView from "@/app/views/HomeView.vue";
+import NotFoundView from "@/app/views/NotFoundView.vue";
+import LoginView from "@/modules/auth/views/LoginView.vue";
+import ProjectListView from "@/modules/project/views/ProjectListView.vue";
+import ProjectDetailView from "@/modules/project/views/ProjectDetailView.vue";
+import ProjectCreateView from "@/modules/project/views/ProjectCreateView.vue";
+import ProjectMemberListView from "@/modules/project/views/ProjectMemberListView.vue";
+import ProjectMemberCreateView from "@/modules/project/views/ProjectMemberCreateView.vue";
+import ProjectDepartmentListView from "@/modules/project/views/ProjectDepartmentListView.vue";
+import ProjectDepartmentCreateView from "@/modules/project/views/ProjectDepartmentCreateView.vue";
+import AdminUserCreateView from "@/modules/auth/views/AdminUserCreateView.vue";
+import AdminUserListView from "@/modules/auth/views/AdminUserListView.vue";
+import AdminUserDetailView from "@/modules/auth/views/AdminUserDetailView.vue";
+import AdminUserNameView from "@/modules/auth/views/AdminUserNameView.vue";
+import ProjectDocumentListView from "@/modules/document/views/ProjectDocumentListView.vue";
+import ProjectDocumentDetailView from "@/modules/document/views/ProjectDocumentDetailView.vue";
+import ProjectDocumentUploadView from "@/modules/document/views/ProjectDocumentUploadView.vue";
+import GlobalCapabilityDocumentUploadView from "@/modules/document/views/GlobalCapabilityDocumentUploadView.vue";
+import ProjectEvidenceListView from "@/modules/evidence/views/ProjectEvidenceListView.vue";
+import ProjectEvidenceCreateView from "@/modules/evidence/views/ProjectEvidenceCreateView.vue";
+import GlobalEvidenceListView from "@/modules/evidence/views/GlobalEvidenceListView.vue";
+import GlobalEvidenceCreateView from "@/modules/evidence/views/GlobalEvidenceCreateView.vue";
+import ProjectJobListView from "@/modules/jobs/views/ProjectJobListView.vue";
+import AdminJobListView from "@/modules/jobs/views/AdminJobListView.vue";
+import ProjectJobDetailView from "@/modules/jobs/views/ProjectJobDetailView.vue";
+import AdminJobDetailView from "@/modules/jobs/views/AdminJobDetailView.vue";
+import ProjectWorkflowView from "@/modules/workflow/views/ProjectWorkflowView.vue";
+import ProjectAIWorkbenchView from "@/modules/ai/views/ProjectAIWorkbenchView.vue";
+import ProjectAITaskDetailView from "@/modules/ai/views/ProjectAITaskDetailView.vue";
+import ProjectAISuggestionView from "@/modules/ai/views/ProjectAISuggestionView.vue";
+import ProjectAISubmitView from "@/modules/ai/views/ProjectAISubmitView.vue";
+import ProjectRetrievalView from "@/modules/rag/views/ProjectRetrievalView.vue";
+import ProjectHandoverListView from "@/modules/handover/views/ProjectHandoverListView.vue";
+import ProjectHandoverCreateView from "@/modules/handover/views/ProjectHandoverCreateView.vue";
+import ProjectHandoverDetailView from "@/modules/handover/views/ProjectHandoverDetailView.vue";
+import ProjectHandoverVersionCreateView from "@/modules/handover/views/ProjectHandoverVersionCreateView.vue";
+import ProjectHandoverActionView from "@/modules/handover/views/ProjectHandoverActionView.vue";
+import ProjectSurveyListView from "@/modules/survey/views/ProjectSurveyListView.vue";
+import ProjectSurveyDetailView from "@/modules/survey/views/ProjectSurveyDetailView.vue";
+import ProjectSurveyVersionCreateView from "@/modules/survey/views/ProjectSurveyVersionCreateView.vue";
+import ProjectSurveyRoundView from "@/modules/survey/views/ProjectSurveyRoundView.vue";
+import ProjectSurveyAssignmentView from "@/modules/survey/views/ProjectSurveyAssignmentView.vue";
+import ProjectSurveyConclusionView from "@/modules/survey/views/ProjectSurveyConclusionView.vue";
+import ProjectRequirementListView from "@/modules/requirement/views/ProjectRequirementListView.vue";
+import ProjectRequirementDetailView from "@/modules/requirement/views/ProjectRequirementDetailView.vue";
+import ProjectRequirementDraftView from "@/modules/requirement/views/ProjectRequirementDraftView.vue";
+import CapabilityBaselineListView from "@/modules/capability/views/CapabilityBaselineListView.vue";
+import CapabilityBaselineDetailView from "@/modules/capability/views/CapabilityBaselineDetailView.vue";
+import CapabilityBaselineCreateView from "@/modules/capability/views/CapabilityBaselineCreateView.vue";
+import CapabilityVersionCreateView from "@/modules/capability/views/CapabilityVersionCreateView.vue";
+const GlobalCapabilityReviewView = () => import("@/modules/capability/views/GlobalCapabilityReviewView.vue");
+
+const GlobalPrototypeTemplateView = () => import("@/modules/prototype/views/GlobalPrototypeTemplateView.vue");
+const ProjectPrototypeDetailView = () => import("@/modules/prototype/views/ProjectPrototypeDetailView.vue");
+const ProjectPrototypeLinkView = () => import("@/modules/prototype/views/ProjectPrototypeLinkView.vue");
+const ProjectPrototypeListView = () => import("@/modules/prototype/views/ProjectPrototypeListView.vue");
+const ProjectPrototypePackageView = () => import("@/modules/prototype/views/ProjectPrototypePackageView.vue");
+const ProjectPrototypeTemplateView = () => import("@/modules/prototype/views/ProjectPrototypeTemplateView.vue");
+const ProjectPrototypeVersionView = () => import("@/modules/prototype/views/ProjectPrototypeVersionView.vue");
+const ProjectReferenceListView = () => import("@/modules/solution/views/ProjectReferenceListView.vue");
+const ProjectReferenceDetailView = () => import("@/modules/solution/views/ProjectReferenceDetailView.vue");
+const ProjectReferenceReviseView = () => import("@/modules/solution/views/ProjectReferenceReviseView.vue");
+const ProjectOutlineListView = () => import("@/modules/solution/views/ProjectOutlineListView.vue");
+const ProjectOutlineDetailView = () => import("@/modules/solution/views/ProjectOutlineDetailView.vue");
+const ProjectOutlineCreateView = () => import("@/modules/solution/views/ProjectOutlineCreateView.vue");
+const ProjectPlanListView = () => import("@/modules/plan/views/ProjectPlanListView.vue");
+const ProjectPlanCreateView = () => import("@/modules/plan/views/ProjectPlanCreateView.vue");
+const ProjectPlanDetailView = () => import("@/modules/plan/views/ProjectPlanDetailView.vue");
+const ProjectOutlineVersionCreateView = () => import("@/modules/solution/views/ProjectOutlineVersionCreateView.vue");
+const ProjectOutlineVersionListView = () => import("@/modules/solution/views/ProjectOutlineVersionListView.vue");
+const ProjectOutlineVersionDetailView = () => import("@/modules/solution/views/ProjectOutlineVersionDetailView.vue");
+const ProjectSectionVersionListView = () => import("@/modules/solution/views/ProjectSectionVersionListView.vue");
+const ProjectSectionVersionDetailView = () => import("@/modules/solution/views/ProjectSectionVersionDetailView.vue");
+const ProjectSectionVersionCreateView = () => import("@/modules/solution/views/ProjectSectionVersionCreateView.vue");
+const ProjectStructuredSpecCreateView = () => import("@/modules/solution/views/ProjectStructuredSpecCreateView.vue");
+const ProjectStructuredSpecListView = () => import("@/modules/solution/views/ProjectStructuredSpecListView.vue");
+const ProjectStructuredSpecDetailView = () => import("@/modules/solution/views/ProjectStructuredSpecDetailView.vue");
+const ProjectStructuredSpecReviseView = () => import("@/modules/solution/views/ProjectStructuredSpecReviseView.vue");
+const ProjectReviewView = () => import("@/modules/review/views/ProjectReviewView.vue");
+const ProjectReviewListView = () => import("@/modules/review/views/ProjectReviewListView.vue");
+const ProjectSectionListView = () => import("@/modules/solution/views/ProjectSectionListView.vue");
+const ProjectSectionDetailView = () => import("@/modules/solution/views/ProjectSectionDetailView.vue");
+const ProjectSectionCreateView = () => import("@/modules/solution/views/ProjectSectionCreateView.vue");
+const GlobalReferenceDeidentificationView = () => import("@/modules/solution/views/GlobalReferenceDeidentificationView.vue");
+const GlobalReferenceSourcePickerView = () => import("@/modules/solution/views/GlobalReferenceSourcePickerView.vue");
+const GlobalReferenceListView = () => import("@/modules/solution/views/GlobalReferenceListView.vue");
+const GlobalReferenceDetailView = () => import("@/modules/solution/views/GlobalReferenceDetailView.vue");
+
+export function createAppRouter(
+  history: RouterHistory = createWebHistory(),
+): Router {
+  return createRouter({
+    history,
+    routes: [
+      {
+        path: "/",
+        name: "home",
+        component: HomeView,
+      },
+      {
+        path: "/login",
+        name: "login",
+        component: LoginView,
+      },
+      {
+        path: "/projects",
+        name: "projects",
+        component: ProjectListView,
+      },
+      {
+        path: "/capability-baselines",
+        name: "capability-baselines",
+        component: CapabilityBaselineListView,
+      },
+      {
+        path: "/admin/capability-baselines/new",
+        name: "capability-baseline-create",
+        component: CapabilityBaselineCreateView,
+      },
+      {
+        path: "/capability-baselines/:baselineId",
+        name: "capability-baseline-detail",
+        component: CapabilityBaselineDetailView,
+      },
+      {
+        path: "/capability-baselines/:baselineId/versions/:versionId/reviews/:reviewId",
+        name: "global-capability-review",
+        component: GlobalCapabilityReviewView,
+      },
+      {
+        path: "/admin/capability-baselines/:baselineId/versions/new",
+        name: "capability-version-create",
+        component: CapabilityVersionCreateView,
+      },
+      {
+        path: "/admin/capability-documents/new",
+        name: "global-capability-document-upload",
+        component: GlobalCapabilityDocumentUploadView,
+      },
+      {
+        path: "/projects/new",
+        name: "project-create",
+        component: ProjectCreateView,
+      },
+      {
+        path: "/admin/users",
+        name: "admin-users",
+        component: AdminUserListView,
+      },
+      {
+        path: "/admin/users/new",
+        name: "admin-user-create",
+        component: AdminUserCreateView,
+      },
+      {
+        path: "/admin/users/:userId",
+        name: "admin-user-detail",
+        component: AdminUserDetailView,
+      },
+      {
+        path: "/admin/users/:userId/name",
+        name: "admin-user-name",
+        component: AdminUserNameView,
+      },
+      {
+        path: "/projects/:projectId/ai/new",
+        name: "project-ai-submit",
+        component: ProjectAISubmitView,
+      },
+      {
+        path: "/projects/:projectId/retrievals/new",
+        name: "project-retrieval-new",
+        component: ProjectRetrievalView,
+      },
+      {
+        path: "/projects/:projectId/retrievals/:runId",
+        name: "project-retrieval-detail",
+        component: ProjectRetrievalView,
+      },
+      {
+        path: "/projects/:projectId/ai/:taskId/suggestion",
+        name: "project-ai-suggestion",
+        component: ProjectAISuggestionView,
+      },
+      {
+        path: "/projects/:projectId/ai/:taskId",
+        name: "project-ai-task-detail",
+        component: ProjectAITaskDetailView,
+      },
+      {
+        path: "/projects/:projectId/ai",
+        name: "project-ai-workbench",
+        component: ProjectAIWorkbenchView,
+      },
+      {
+        path: "/projects/:projectId/handover-actions",
+        name: "project-handover-actions",
+        component: ProjectHandoverActionView,
+      },
+      {
+        path: "/projects/:projectId/handover",
+        name: "project-handover",
+        component: ProjectHandoverListView,
+      },
+      {
+        path: "/projects/:projectId/handover/new",
+        name: "project-handover-create",
+        component: ProjectHandoverCreateView,
+      },
+      {
+        path: "/projects/:projectId/handover/:analysisId/versions/new",
+        name: "project-handover-version-create",
+        component: ProjectHandoverVersionCreateView,
+      },
+      {
+        path: "/projects/:projectId/handover/:analysisId",
+        name: "project-handover-detail",
+        component: ProjectHandoverDetailView,
+      },
+      {
+        path: "/projects/:projectId/survey-conclusions",
+        name: "project-survey-conclusions",
+        component: ProjectSurveyConclusionView,
+      },
+      {
+        path: "/projects/:projectId/survey-rounds/:roundId/assignments",
+        name: "project-survey-assignments",
+        component: ProjectSurveyAssignmentView,
+      },
+      {
+        path: "/projects/:projectId/survey-rounds",
+        name: "project-survey-rounds",
+        component: ProjectSurveyRoundView,
+      },
+      {
+        path: "/projects/:projectId/surveys",
+        name: "project-surveys",
+        component: ProjectSurveyListView,
+      },
+      {
+        path: "/projects/:projectId/surveys/:surveyId/versions/new",
+        name: "project-survey-version-create",
+        component: ProjectSurveyVersionCreateView,
+      },
+      {
+        path: "/projects/:projectId/surveys/:surveyId",
+        name: "project-survey-detail",
+        component: ProjectSurveyDetailView,
+      },
+      {
+        path: "/projects/:projectId/requirements",
+        name: "project-requirements",
+        component: ProjectRequirementListView,
+      },
+      {
+        path: "/projects/:projectId/requirements/:requirementId",
+        name: "project-requirement-detail",
+        component: ProjectRequirementDetailView,
+      },
+      {
+        path: "/projects/:projectId/requirements/:requirementId/draft",
+        name: "project-requirement-draft",
+        component: ProjectRequirementDraftView,
+      },
+      {
+        path: "/projects/:projectId/workflow",
+        name: "project-workflow",
+        component: ProjectWorkflowView,
+      },
+      {
+        path: "/projects/:projectId/evidence",
+        name: "project-evidence",
+        component: ProjectEvidenceListView,
+      },
+      {
+        path: "/projects/:projectId/evidence/new",
+        name: "project-evidence-create",
+        component: ProjectEvidenceCreateView,
+      },
+      {
+        path: "/projects/:projectId/jobs/:jobId",
+        name: "project-job-detail",
+        component: ProjectJobDetailView,
+      },
+      {
+        path: "/projects/:projectId/jobs",
+        name: "project-jobs",
+        component: ProjectJobListView,
+      },
+      {
+        path: "/admin/evidence",
+        name: "global-evidence",
+        component: GlobalEvidenceListView,
+      },
+      {
+        path: "/admin/evidence/new",
+        name: "global-evidence-create",
+        component: GlobalEvidenceCreateView,
+      },
+      {
+        path: "/admin/reference-deidentification",
+        name: "global-reference-source-picker",
+        component: GlobalReferenceSourcePickerView,
+      },
+      {
+        path: "/admin/reference-solutions/:referenceId/revise",
+        name: "global-reference-revise",
+        component: GlobalReferenceSourcePickerView,
+        props: true,
+      },
+      {
+        path: "/admin/reference-solutions/:referenceId",
+        name: "global-reference-detail",
+        component: GlobalReferenceDetailView,
+      },
+      {
+        path: "/admin/reference-solutions",
+        name: "global-references",
+        component: GlobalReferenceListView,
+      },
+      {
+        path: "/admin/reference-deidentification/:evidenceId",
+        name: "global-reference-deidentification",
+        component: GlobalReferenceDeidentificationView,
+      },
+      {
+        path: "/admin/jobs/:jobId",
+        name: "admin-job-detail",
+        component: AdminJobDetailView,
+      },
+      {
+        path: "/admin/jobs",
+        name: "admin-jobs",
+        component: AdminJobListView,
+      },
+      {
+        path: "/admin/prototype-templates",
+        name: "global-prototype-templates",
+        component: GlobalPrototypeTemplateView,
+      },
+      {
+        path: "/projects/:projectId/documents/new",
+        name: "project-document-upload",
+        component: ProjectDocumentUploadView,
+      },
+      {
+        path: "/projects/:projectId/documents/:documentId/upload",
+        name: "project-document-version-upload",
+        component: ProjectDocumentUploadView,
+      },
+      {
+        path: "/projects/:projectId/documents/:documentId",
+        name: "project-document-detail",
+        component: ProjectDocumentDetailView,
+      },
+      {
+        path: "/projects/:projectId/documents",
+        name: "project-documents",
+        component: ProjectDocumentListView,
+      },
+      {
+        path: "/projects/:projectId/departments/new",
+        name: "project-department-create",
+        component: ProjectDepartmentCreateView,
+      },
+      {
+        path: "/projects/:projectId/departments",
+        name: "project-departments",
+        component: ProjectDepartmentListView,
+      },
+      {
+        path: "/projects/:projectId/members/new",
+        name: "project-member-create",
+        component: ProjectMemberCreateView,
+      },
+      {
+        path: "/projects/:projectId/members",
+        name: "project-members",
+        component: ProjectMemberListView,
+      },
+      {
+        path: "/projects/:projectId/prototype-packages",
+        name: "project-prototype-packages",
+        component: ProjectPrototypePackageView,
+      },
+      {
+        path: "/projects/:projectId/prototype-templates",
+        name: "project-prototype-templates",
+        component: ProjectPrototypeTemplateView,
+      },
+      {
+        path: "/projects/:projectId/prototype-links",
+        name: "project-prototype-links",
+        component: ProjectPrototypeLinkView,
+      },
+      {
+        path: "/projects/:projectId/prototypes/:prototypeId/versions/:versionId",
+        name: "project-prototype-version-detail",
+        component: ProjectPrototypeVersionView,
+      },
+      {
+        path: "/projects/:projectId/prototypes/:prototypeId/versions",
+        name: "project-prototype-versions",
+        component: ProjectPrototypeVersionView,
+      },
+      {
+        path: "/projects/:projectId/prototypes/:prototypeId",
+        name: "project-prototype-detail",
+        component: ProjectPrototypeDetailView,
+      },
+      {
+        path: "/projects/:projectId/prototypes",
+        name: "project-prototypes",
+        component: ProjectPrototypeListView,
+      },
+      {
+        path: "/projects/:projectId/solution-outlines/:outlineId/sections/new",
+        name: "project-section-create",
+        component: ProjectSectionCreateView,
+      },
+      {
+        path: "/projects/:projectId/reviews/:reviewId",
+        name: "project-review-detail",
+        component: ProjectReviewView,
+      },
+      {
+        path: "/projects/:projectId/reviews",
+        name: "project-reviews",
+        component: ProjectReviewListView,
+      },
+      {
+        path: "/projects/:projectId/structured-solution-specs/new",
+        name: "project-structured-spec-create",
+        component: ProjectStructuredSpecCreateView,
+      },
+      {
+        path: "/projects/:projectId/structured-solution-specs",
+        name: "project-structured-specs",
+        component: ProjectStructuredSpecListView,
+      },
+      {
+        path: "/projects/:projectId/structured-solution-specs/:specId/revise",
+        name: "project-structured-spec-revise",
+        component: ProjectStructuredSpecReviseView,
+      },
+      {
+        path: "/projects/:projectId/structured-solution-specs/:specId",
+        name: "project-structured-spec-detail",
+        component: ProjectStructuredSpecDetailView,
+      },
+      {
+        path: "/projects/:projectId/solution-sections/:sectionId/versions/new",
+        name: "project-section-version-create",
+        component: ProjectSectionVersionCreateView,
+      },
+      {
+        path: "/projects/:projectId/solution-sections/:sectionId/versions/:versionId",
+        name: "project-section-version-detail",
+        component: ProjectSectionVersionDetailView,
+      },
+      {
+        path: "/projects/:projectId/solution-sections/:sectionId/versions",
+        name: "project-section-versions",
+        component: ProjectSectionVersionListView,
+      },
+      {
+        path: "/projects/:projectId/solution-sections/:sectionId",
+        name: "project-section-detail",
+        component: ProjectSectionDetailView,
+      },
+      {
+        path: "/projects/:projectId/solution-sections",
+        name: "project-sections",
+        component: ProjectSectionListView,
+      },
+      {
+        path: "/projects/:projectId/plans/new",
+        name: "project-plan-create",
+        component: ProjectPlanCreateView,
+      },
+      {
+        path: "/projects/:projectId/plans/:planId",
+        name: "project-plan-detail",
+        component: ProjectPlanDetailView,
+      },
+      {
+        path: "/projects/:projectId/plans",
+        name: "project-plans",
+        component: ProjectPlanListView,
+      },
+      {
+        path: "/projects/:projectId/solution-outlines/new",
+        name: "project-outline-create",
+        component: ProjectOutlineCreateView,
+      },
+      {
+        path: "/projects/:projectId/solution-outlines/:outlineId/versions/new",
+        name: "project-outline-version-create",
+        component: ProjectOutlineVersionCreateView,
+      },
+      {
+        path: "/projects/:projectId/solution-outlines/:outlineId/versions/:versionId",
+        name: "project-outline-version-detail",
+        component: ProjectOutlineVersionDetailView,
+      },
+      {
+        path: "/projects/:projectId/solution-outlines/:outlineId/versions",
+        name: "project-outline-versions",
+        component: ProjectOutlineVersionListView,
+      },
+      {
+        path: "/projects/:projectId/solution-outlines/:outlineId",
+        name: "project-outline-detail",
+        component: ProjectOutlineDetailView,
+      },
+      {
+        path: "/projects/:projectId/solution-outlines",
+        name: "project-outlines",
+        component: ProjectOutlineListView,
+      },
+      {
+        path: "/projects/:projectId/reference-solutions/:referenceId/revise",
+        name: "project-reference-revise",
+        component: ProjectReferenceReviseView,
+      },
+      {
+        path: "/projects/:projectId/reference-solutions/:referenceId",
+        name: "project-reference-detail",
+        component: ProjectReferenceDetailView,
+      },
+      {
+        path: "/projects/:projectId/reference-solutions",
+        name: "project-references",
+        component: ProjectReferenceListView,
+      },
+      {
+        path: "/projects/:projectId",
+        name: "project-detail",
+        component: ProjectDetailView,
+      },
+      {
+        path: "/:pathMatch(.*)*",
+        name: "not-found",
+        component: NotFoundView,
+      },
+    ],
+    scrollBehavior: () => ({ top: 0 }),
+  });
+}

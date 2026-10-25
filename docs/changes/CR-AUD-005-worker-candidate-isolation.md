@@ -1,0 +1,38 @@
+# CR-AUD-005：后台候选竞争与异常来源隔离
+
+日期：2026-09-27；状态：IN_PROGRESS / P02_P07_BOUNDED_SCHEDULING_INTERNAL_PASS / RESIDUAL_FAILURE_AND_RELEASE_PENDING；持续授权：AI自主执行规则V1.1，用户最新允许兼容偏差先记录后实施，不待逐项批准。来源：P06-P13-P01真实PG证据，原冻结64cdf09与CR-AUD-004历史保留，Gate未通过。
+
+## 冲突/证据
+
+原无锁单hint→Audit Root锁→Jobs完整pair锁→claim_target SKIP LOCKED。完整pair已FOR UPDATE等待队首，因此后置SKIP LOCKED不能避开竞争。真实临时PG锁优先队首使55P03中止，六表无写，正常第二任务仍PENDING。合成队首payload损坏同样中止/六表无写；恢复后原组合能发布双方。验收脚本validation/aud-p06-p13-queue-isolation/verify.py只证明缺陷，不是公平验收。
+
+## 比较与选择
+
+- 不选：增加超时/无限重试，同一队首依旧阻塞；单过滤UUID，也不能处理Root/pair不一致。
+- 不选：自动删除、标FAILED或重写坏来源，缺原授权链不可猜终态；新增消息队列/缓存违背栈。
+- 选择最小分段实施：P13-P02新增Jobs专属**只锁不写**候选reservation，SKIP LOCKED在Audit/完整pair核验前发生，保原get_created/get_accepted/find_export/identity及最终claim核验、同UOWcommit和确认丢失恢复。候选锁不授正文或mutation权限。普通无锁peek兼容保留，不静默改其语义。
+- P13-P03另做有界候选游标/明确SOURCE_REJECTED分类隔离：完整Root不存在/确定不一致与DB断线、SystemActor失效、死锁、commit确认异常分开；后者必须失败关闭/原恢复，不可吞掉。对坏源不改变Job/Lease/Audit或重写权威源，仅技术调度向后推进，提供最小安全诊断。不得依靠无限增长本地排除集、静默改变业务优先级或把IDLE称全队列空。游标和错误DTO具体边界须先记录后实施。
+
+## 差异、风险、迁移/回滚
+
+候选reservation改变内部锁顺序，可能与既有Audit→Jobs路径产生死锁；保真实40P01有界重试，并验证独立Supervisor并发、不重复Claim、锁超时/断线不可猜成功。所有业务权限/来源签名/结果证明/既有API与Scope不变，不在本CR改Schema或依赖。若后续需持久隔离字段/API，另登记Schema/API影响及Migration计划后实施。
+
+无生产Migration；回滚撤新增内部Port/调度扩展，保历史提交与原坏源，不以回滚恢复作为已修复。新旧并发的事务互斥与死锁恢复要实际验证；候选锁事务使用现有Worker lock/statement/transaction limits，文件I/O仍在UOW外。
+
+## 验收计划/尚未完成
+
+锁住队首时第二任务仍能被另一实际Worker领取/发布且队首无Attempt；释放后队首发布；双Scope、两Worker竞争、真实deadlock/rollback/commit丢失恢复回归。坏payload/缺Root/错pair/正常任务混排、持续循环/有界内存/不隐瞒故障与停止行为验证。全局公平不凭局部测试声称，需明确负载/优先级语义。P13-P02/P03均未实施，完整Scope/Gate/正式材料/发行仍待。
+
+P13-P02更新：已先记录后增加独立reserve_next，旧peek无锁保留；真实双Scope锁住优先head时后续正常发布/首无Attempt，两个只锁UOW候选不同且六表无写；1116通过/2跳过、原双Scope单claim竞争/到期/回滚/确认恢复及wheel通过。新版反向锁序真实40P01未制造，P03坏源、全局公平仍待，CR不关闭，前文未实施为原计划历史状态。
+
+P13-P03-A01更新：独立scan_next与严格cursor/reservation已实现，单次一个只锁候选，固定INVALID_EXPORT_REF分类；游标仅技术位置，不作为权限/Lease证明。1119通过/2既有跳过，实际双Scope格式错误/零UUID坏head→正常候选→末尾六表无写，旧admission继续关闭/仍未接线，开发wheel通过。Root/pair分类、游标循环与安全诊断、真实deadlock仍待，CR不关闭。
+
+P13-P03-A02更新：显式后台isolated准入/严格来源拒绝DTO、只在完整只读UOW后游标推进/常数内存，原入口默认和对外AUDIT_UNAVAILABLE保留；未知DB/identity/commit异常不吞，Loop按poll等待/计数，CLI数量不代表终态。1125通过/2既有跳过，实际双Scope malformed/zeroUUID/缺Root/错pair保持六表无写拒绝，后续实际发布、坏Job无Attempt，恢复合成来源可发布；原确认恢复/真实CLI停止回归及wheel通过。Acceptance审计源真实故障矩阵、耗尽坏源、复杂Lease、反向锁序实际40P01/全局公平仍待，CR不关闭。
+
+P13-P04更新：真实双Scope反向Root→Job与Worker Job→Root形成8个40P01，pg_blocking_pids核实际竞争；单次原有界重试成功，连续三次上限失败且六表无写，同实例竞争释放后单Attempt/RELEASED Lease/结果发布。真实2个55P03非死锁/非坏源拒绝、失败无写后恢复。只测试事务内检测时间协调，原生产limits不改，原发布回归通过；新锁序此矩阵内部关闭，不外推长期公平/耗尽坏源/Acceptance实际故障/复杂Lease/正式发行，CR保持打开。
+
+P13-P05更新：新增独立expiry/JobId只读scan及常数cursor，旧peek/run默认保留；后台显式耗尽隔离、Owner只读原源预检且不授终态权，仍原expire/verify/提交后证明。1130通过/2既有跳过，实际双Scope第三次到期malformed/缺Root/错pair精确reason六表无写，健康后续发布、坏Job/Lease/Attempt全行不变，恢复测试来源后原收尾/真实commit-lost-ack/旧字节仍通过；真实CLI停止/旧发布/wheel通过。长期混排、Acceptance审计真实矩阵/复杂Lease/预检竞争仍待，CR保持打开。
+
+P13-P06更新：两轮真实持续Loop每轮12健康双Scope任务+4高优先坏源+1实际到期第三代坏源，健康全发布/坏Job-Lease-Attempt不动/true STOPPED，恢复普通来源后可发布，原安全收尾/actual lost-ack/字节/旧发布回归通过。Audit实际UPDATE被P0001不可变触发器拒绝、六表无写，未伪造真实Audit损坏通过；其专属分类保留unit范围。观察每轮91steps/78rejected/12executed，暴露正常claim清cursor的重复扫描开销；下一P07先记录后优化cursor回绕/新任务可见性，性能与无限流公平不冒充PASS，CR打开。
+
+P13-P07/P08更新：有界窗口保留拒绝位置、末尾或32次有结果调度动作回绕，1132无失败/2既有跳过；实际双Scope各41健康完成，新优先head在31个原任务完成后执行，坏技术行不动/STOPPED；固定混排各25steps/12拒绝/12完成。旧source修复同实例末尾回绕、提交确认、外部CLI停止、真实40P01/55P03和旧发布复验通过。P08依据实际代码/验证覆盖收口有限隔离子任务，不再将已完成源隔离标pending；参见 `docs/progress/aud-p06-p13-acceptance-closeout.md`。CR整体保持IN_PROGRESS，复杂Lease/预检竞争/真实损坏/长期负载/正式部署不被局部PASS覆盖。

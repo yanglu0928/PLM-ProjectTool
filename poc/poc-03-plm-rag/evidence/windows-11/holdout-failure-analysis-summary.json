@@ -1,0 +1,112 @@
+{
+  "schema_version": "poc-03.holdout-failure-analysis.v1",
+  "status": "DIAGNOSED",
+  "summary": {
+    "case_count": 50,
+    "classification_miss_count": 26,
+    "citation_miss_count": 13,
+    "retrieval_miss_count": 1,
+    "requirement_source_case_count": 17,
+    "requirement_source_classification_hit_count": 1,
+    "rank1_citation_count": 46,
+    "citation_miss_same_document_count": 5,
+    "citation_miss_full_expected_term_coverage_count": 8,
+    "citation_miss_partial_expected_term_coverage_count": 4
+  },
+  "classification_by_source_type": {
+    "CONTRACT": {
+      "cases": 7,
+      "citation_hits": 6,
+      "classification_hits": 0,
+      "retrieval_hits": 6
+    },
+    "STANDARD_CAPABILITY": {
+      "cases": 33,
+      "citation_hits": 24,
+      "classification_hits": 23,
+      "retrieval_hits": 33
+    },
+    "SURVEY": {
+      "cases": 2,
+      "citation_hits": 0,
+      "classification_hits": 1,
+      "retrieval_hits": 2
+    },
+    "TECHNICAL_AGREEMENT": {
+      "cases": 8,
+      "citation_hits": 7,
+      "classification_hits": 0,
+      "retrieval_hits": 8
+    }
+  },
+  "classification_by_expected_label": {
+    "INSUFFICIENT_INFORMATION": {
+      "cases": 13,
+      "classification_hits": 1
+    },
+    "NON_STANDARD": {
+      "cases": 10,
+      "classification_hits": 0
+    },
+    "NO_RELIABLE_MATCH": {
+      "cases": 1,
+      "classification_hits": 0
+    },
+    "PARTIALLY_SATISFIED": {
+      "cases": 3,
+      "classification_hits": 1
+    },
+    "STANDARD_SATISFIED": {
+      "cases": 23,
+      "classification_hits": 22
+    }
+  },
+  "classification_citation_quadrants": {
+    "classification_hit__citation_hit": 17,
+    "classification_hit__citation_miss": 7,
+    "classification_miss__citation_hit": 20,
+    "classification_miss__citation_miss": 6
+  },
+  "expected_chunk_rank_distribution": {
+    "0": 1,
+    "1": 37,
+    "2": 9,
+    "3": 2,
+    "5": 1
+  },
+  "citation_rank_distribution": {
+    "1": 46,
+    "2": 2,
+    "4": 1,
+    "5": 1
+  },
+  "citation_by_expected_chunk_rank": {
+    "0": {
+      "cases": 1,
+      "citation_hits": 0
+    },
+    "1": {
+      "cases": 37,
+      "citation_hits": 35
+    },
+    "2": {
+      "cases": 9,
+      "citation_hits": 2
+    },
+    "3": {
+      "cases": 2,
+      "citation_hits": 0
+    },
+    "5": {
+      "cases": 1,
+      "citation_hits": 0
+    }
+  },
+  "privacy": {
+    "queries_in_report": false,
+    "chunk_text_in_report": false,
+    "vectors_in_report": false,
+    "model_responses_in_report": false,
+    "reviewer_identity_in_report": false
+  }
+}

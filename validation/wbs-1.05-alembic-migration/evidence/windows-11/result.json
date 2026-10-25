@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "wbs": "1.05",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.15",
+  "postgresql_version": "18.6",
+  "pgvector_version": "0.8.6",
+  "sqlalchemy": "2.0.54",
+  "alembic": "1.20.0",
+  "psycopg": "3.3.5",
+  "head_revision": "20260924_0001",
+  "empty_upgrade_downgrade": true,
+  "data_upgrade_downgrade_reupgrade": true,
+  "probe_rows_preserved": 1,
+  "metadata_drift_count": 0,
+  "offline_sql_bytes": 418,
+  "backup_bytes": 3421,
+  "restore_verified": true,
+  "business_table_count": 0,
+  "external_call_count": 0
+}

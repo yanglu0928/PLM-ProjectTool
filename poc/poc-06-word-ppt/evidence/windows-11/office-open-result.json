@@ -1,0 +1,18 @@
+{
+  "platform": "Windows 11 Home 10.0.26200 x86-64",
+  "word": {
+    "status": "PASS",
+    "version": "16.0",
+    "page_count": 100,
+    "table_count": 9,
+    "inline_shape_count": 4,
+    "pdf_export": "PASS"
+  },
+  "powerpoint": {
+    "status": "PASS",
+    "version": "16.0",
+    "slide_count": 50,
+    "pdf_export": "PASS"
+  },
+  "status": "PASS"
+}

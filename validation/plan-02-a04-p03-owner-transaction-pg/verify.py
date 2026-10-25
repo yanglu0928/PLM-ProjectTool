@@ -1,0 +1,810 @@
+"""Disposable real PostgreSQL proof for the PlanVersion transaction owner.
+
+This reuses the existing synthetic Approved Solution fixture. It creates no
+customer data, starts no persistent service, and only writes to a disposable PG.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import hashlib
+import tempfile
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+import psycopg
+
+from plm_assistant.entrypoints.windows_plan_version import (
+    create_windows_plan_version_create_service,
+    create_windows_plan_version_validation_service,
+)
+from plm_assistant.modules.auth.infrastructure.project_write_access import (
+    SqlAlchemyProjectWriteAccess,
+)
+from plm_assistant.modules.plan.application.create_plan import (
+    CreatePlan, PlanCreateService,
+)
+from plm_assistant.modules.plan.application.create_plan_version import (
+    CreatePlanVersion, PlanVersionCreateError, PlanVersionCreateService,
+)
+from plm_assistant.modules.plan.application.validate_plan_version import (
+    PlanVersionValidationError, ValidatePlanVersion,
+)
+from plm_assistant.modules.plan.infrastructure.create_repository import (
+    SqlAlchemyPlanCreateRepository,
+)
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import (
+    SqlAlchemyIdempotencyReceipts,
+)
+from plm_assistant.modules.project.application.authorization import (
+    ProjectAuthorizationService,
+)
+from plm_assistant.modules.project.infrastructure.authorization_repository import (
+    SqlAlchemyProjectAuthorizationRepository,
+)
+from plm_assistant.modules.solution.application.outline_version_validation_contract import (
+    OutlineCurrentFactQuery,
+)
+
+
+ROOT = Path(__file__).resolve().parents[2]
+FULL_SOURCE_SPEC = importlib.util.spec_from_file_location(
+    "plan_owner_full_approved_solution_fixture",
+    ROOT / "validation/sol-03-a06-p03-a05-p03-a05-p02-full-source-pg/verify.py",
+)
+assert FULL_SOURCE_SPEC and FULL_SOURCE_SPEC.loader
+full = importlib.util.module_from_spec(FULL_SOURCE_SPEC)
+FULL_SOURCE_SPEC.loader.exec_module(full)
+
+
+def _main_fixture():
+    fixture = full.terminal.prior.prior.fixture
+    runner = fixture.prior.prior.prior.prior.prior.prior.prior.prior
+    return runner
+
+
+def _connection(port: int) -> dict[str, object]:
+    return {"host": "127.0.0.1", "port": port,
+            "user": "poc_admin", "dbname": "postgres"}
+
+
+def _restore_coverage_edge(context: dict[str, object]) -> None:
+    """Restore a real synthetic Requirement->approved Section trace after the
+    upstream fixture's intentional trace-revocation negative case."""
+    project, port = context["project"], context["port"]
+    with psycopg.connect(**_connection(port)) as db:
+        section, section_version, requirement, requirement_version = db.execute(
+            "SELECT s.solution_section_id,v.solution_section_version_id,"
+            "r.requirement_id,r.requirement_version_id "
+            "FROM plm.sol_sections s JOIN plm.sol_section_versions v "
+            "ON v.solution_section_id=s.solution_section_id AND v.project_id=s.project_id "
+            "JOIN plm.sol_section_requirement_refs r "
+            "ON r.solution_section_version_id=v.solution_section_version_id "
+            "WHERE s.project_id=%s AND s.current_approved_version_ref="
+            "v.solution_section_version_id ORDER BY v.version_no DESC LIMIT 1",
+            (project,),
+        ).fetchone()
+    creator, _ = full.terminal.prior._trace_services(
+        runtime=context["runtime"], license_guard=context["license_guard"],
+        audit=context["audit"],
+    )
+    trace_module = full.terminal.prior
+    creator.create_refs(trace_module.CreateTraceLinkRefs(
+        context["token"], context["csrf"], uuid.uuid4(), project,
+        trace_module.TraceResourceVersionRef(
+            "REQ-03", requirement, requirement_version),
+        trace_module.TraceResourceVersionRef(
+            "SOL-05", section, section_version),
+        "IMPLEMENTS",
+    ), idempotency_key="plan-owner-pg-coverage-restore-0001")
+
+
+def _solution_proof(service, context: dict[str, object]):
+    project, port = context["project"], context["port"]
+    with psycopg.connect(**_connection(port)) as db:
+        outline, version = db.execute(
+            "SELECT solution_outline_id,current_approved_version_ref "
+            "FROM plm.sol_outlines WHERE project_id=%s AND "
+            "current_approved_version_ref IS NOT NULL LIMIT 1", (project,),
+        ).fetchone()
+    if outline is None or version is None:
+        raise AssertionError("synthetic fixture has no current Approved Outline")
+    command = OutlineCurrentFactQuery(
+        context["token"], uuid.uuid4(), project, outline, version)
+    with context["runtime"].unit_of_work() as transaction:
+        proof = service._solution_proof.prove(transaction, command=command)
+    return command, proof
+
+
+def _approve_current_outline(context: dict[str, object], storage_root: Path) -> None:
+    from fastapi.testclient import TestClient
+    from plm_assistant.entrypoints.api import create_app
+    from plm_assistant.entrypoints.windows_project_review import (
+        create_windows_project_review_router,
+    )
+    from plm_assistant.entrypoints.windows_solution_outline import (
+        create_windows_outline_review_subject,
+        create_windows_outline_review_submission_router,
+    )
+    from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+    from plm_assistant.modules.auth.application.session_service import SessionService
+    from plm_assistant.modules.auth.infrastructure.session_repository import (
+        SqlAlchemySessionRepository,
+    )
+
+    project, port = context["project"], context["port"]
+    with psycopg.connect(**_connection(port)) as db:
+        outline, version = db.execute(
+            "SELECT solution_outline_id,solution_outline_version_id "
+            "FROM plm.sol_outline_versions WHERE project_id=%s "
+            "ORDER BY version_no DESC LIMIT 1", (project,),
+        ).fetchone()
+        reviewer = db.execute(
+            "SELECT m.user_id,u.credential_version FROM plm.prj_project_members m "
+            "JOIN plm.auth_users u ON u.user_id=m.user_id "
+            "WHERE m.project_id=%s AND m.project_role='CUSTOMER_MEMBER' "
+            "AND m.state='ACTIVE' ORDER BY m.effective_at LIMIT 1", (project,),
+        ).fetchone()
+    if reviewer is None:
+        raise AssertionError("synthetic approved Outline fixture has no Reviewer")
+    reviewer_id, credential_version = reviewer
+    reviewer_token, reviewer_csrf = uuid.uuid4().bytes + uuid.uuid4().bytes, uuid.uuid4().bytes + uuid.uuid4().bytes
+    with psycopg.connect(**_connection(port)) as db, db.transaction():
+        db.execute(
+            "INSERT INTO plm.auth_sessions(session_token_digest,csrf_digest,user_id,"
+            "credential_version,idle_expires_at,absolute_expires_at) VALUES "
+            "(%s,%s,%s,%s,statement_timestamp()+interval '30 minutes',"
+            "statement_timestamp()+interval '2 hours')",
+            (hashlib.sha256(reviewer_token).digest(),
+             hashlib.sha256(reviewer_csrf).digest(), reviewer_id, credential_version),
+        )
+
+    runtime, guard, audit = (context[key] for key in (
+        "runtime", "license_guard", "audit"))
+    origins = LoginOriginPolicy(["https://plm.example.test"])
+    sessions = SessionService(
+        unit_of_work=runtime.unit_of_work,
+        repository=SqlAlchemySessionRepository(), issue_access=object(), audit=audit)
+    documents, downloads, parse_results = (context[key] for key in (
+        "documents", "downloads", "parse_results"))
+    submit = create_windows_outline_review_submission_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=guard, audit=audit,
+        document_storage_root=storage_root,
+        parse_result_storage_root=storage_root,
+        documents=documents, downloads=downloads, parse_results=parse_results,
+    )
+    submit_path = (f"/api/v1/projects/{project}/solution-outlines/{outline}/"
+                   f"versions/{version}:submit-review")
+    submit_headers = full._headers(
+        context["token"], context["csrf"], "plan-owner-outline-submit-0001")
+    body = {
+        "reviewer_ids": [str(reviewer_id)],
+        "policy_ref": "SOLUTION_OUTLINE_ALL_V1",
+        "due_at": None, "submission_note": None,
+    }
+    with TestClient(create_app(solution_outline_review_submission_router=submit),
+                    base_url="https://plm.example.test") as app:
+        response = app.post(submit_path, headers=submit_headers, json=body)
+        assert response.status_code == 201, response.text
+        review_id = uuid.UUID(response.json()["data"]["review_id"])
+        round_id = uuid.UUID(response.json()["data"]["review_round_id"])
+
+    outline_subject = create_windows_outline_review_subject(
+        runtime=runtime, license_guard=guard, audit=audit,
+        document_storage_root=storage_root,
+        parse_result_storage_root=storage_root,
+        documents=documents, downloads=downloads, parse_results=parse_results,
+        terminal_context=True,
+    )
+    review_router = create_windows_project_review_router(
+        runtime, sessions=sessions, origins=origins,
+        license_guard=guard, audit=audit,
+        documents=documents, downloads=downloads, parse_results=parse_results,
+        outline_subject=outline_subject,
+    )
+    decide_path = (f"/api/v1/projects/{project}/reviews/{review_id}/rounds/"
+                   f"{round_id}:decide")
+    decision_headers = full._headers(
+        reviewer_token, reviewer_csrf, "plan-owner-outline-approve-0001")
+    with TestClient(create_app(review_command_router=review_router),
+                    base_url="https://plm.example.test") as app:
+        response = app.post(decide_path, headers=decision_headers,
+                            json={"decision": "APPROVE", "comment": None})
+        assert response.status_code == 200, response.text
+    with psycopg.connect(**_connection(port)) as db:
+        assert db.execute(
+            "SELECT current_approved_version_ref FROM plm.sol_outlines "
+            "WHERE solution_outline_id=%s", (outline,),
+        ).fetchone()[0] == version
+
+
+def _solution_ref(ref) -> dict[str, object]:
+    return {
+        "resource_kind": ref.resource_kind,
+        "resource_id": str(ref.resource_id),
+        "version_id": str(ref.version_id),
+        "spec_series_id": str(ref.spec_series_id) if ref.spec_series_id else None,
+        "spec_type": ref.spec_type,
+    }
+
+
+def _draft(proof, *, risk: str = "Synthetic acceptance risk") -> dict[str, object]:
+    outline_ref = {
+        "resource_kind": "OUTLINE", "resource_id": str(proof.outline_id),
+        "version_id": str(proof.outline_version_id),
+        "spec_series_id": None, "spec_type": None,
+    }
+    solution_refs = [outline_ref]
+    for section in proof.sections:
+        solution_refs.append({
+            "resource_kind": "SECTION", "resource_id": str(section.section_id),
+            "version_id": str(section.section_version_id),
+            "spec_series_id": None, "spec_type": None,
+        })
+        for qualified in section.qualified_specs:
+            solution_refs.append(_solution_ref(qualified.ref))
+    requirement_refs = [{
+        "requirement_id": str(ref.requirement_id),
+        "requirement_version_id": str(ref.requirement_version_id),
+    } for ref in proof.requirement_refs]
+    root_id, child_id = uuid.uuid4(), uuid.uuid4()
+
+    def item(*, item_id, code, name, parent, level, roles, conditions, acceptance):
+        return {
+            "wbs_item_id": str(item_id), "parent_item_id": str(parent) if parent else None,
+            "wbs_code": code, "name": name, "level": level,
+            "category": "IMPLEMENTATION", "owner_ref": None,
+            "support_role_refs": roles,
+            "planned_start": "2026-10-26", "planned_finish": "2026-10-27",
+            "duration_minutes": 480, "actual_start": None, "actual_finish": None,
+            "item_state": "NOT_STARTED", "entry_conditions": conditions,
+            "acceptance_criteria": acceptance,
+            "requirement_refs": requirement_refs,
+            "solution_refs": solution_refs, "prototype_refs": [],
+            "evidence_refs": [], "output_refs": [], "risk": risk,
+            "explicit_exclusion": None,
+        }
+
+    return {
+        "approved_solution_refs": solution_refs,
+        "wbs_items": [
+            item(item_id=root_id, code="1", name="Approved solution delivery",
+                 parent=None, level=1, roles=["PROJECT_MANAGER"],
+                 conditions=["Scope approved"], acceptance=["Delivery accepted"]),
+            item(item_id=child_id, code="1.1", name="Implement validated scope",
+                 parent=root_id, level=2, roles=["IMPLEMENTATION_MEMBER"],
+                 conditions=["Inputs fixed"], acceptance=["Tests pass"]),
+        ],
+        "dependencies": [{
+            "dependency_id": str(uuid.uuid4()),
+            "predecessor_item_id": str(root_id),
+            "successor_item_id": str(child_id),
+            "dependency_type": "FS", "lag": 0, "lag_unit": None,
+            "lag_reason": None,
+        }],
+        "milestones": [{
+            "name": "Synthetic milestone", "target_date": "2026-10-27",
+            "duration_days": 1, "acceptance_rule": "Tests pass",
+            "gate_ref": None, "wbs_item_refs": [str(root_id), str(child_id)],
+        }],
+        "calendar_ref": "CN_WORKDAY", "exclusions": [],
+    }
+
+
+def _snapshot_counts(port: int, plan_id: uuid.UUID) -> tuple[int, ...]:
+    tables = (
+        "pln_plan_versions", "pln_wbs_items", "pln_wbs_support_roles",
+        "pln_wbs_conditions", "pln_wbs_dependencies", "pln_milestones",
+        "pln_milestone_item_refs", "pln_item_solution_refs",
+        "pln_item_requirement_refs",
+    )
+    with psycopg.connect(**_connection(port)) as db:
+        return tuple(db.execute(
+            f"SELECT count(*) FROM plm.{table} WHERE plan_id=%s", (plan_id,),
+        ).fetchone()[0] for table in tables)
+
+
+def _verify_http_composition(context: dict[str, object], storage_root: Path,
+                             plan_id: uuid.UUID,
+                             proof) -> None:
+    from fastapi.testclient import TestClient
+    from plm_assistant.entrypoints.api import create_app
+    from plm_assistant.entrypoints.windows_plan_version import (
+        create_windows_plan_version_create_router,
+        create_windows_plan_version_read_router,
+        create_windows_plan_version_wbs_list_router,
+    )
+    from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+    from plm_assistant.modules.auth.application.session_service import SessionService
+    from plm_assistant.modules.auth.infrastructure.session_repository import (
+        SqlAlchemySessionRepository,
+    )
+
+    runtime, project = context["runtime"], context["project"]
+    origins = LoginOriginPolicy(["https://plm.example.test"])
+    sessions = SessionService(
+        unit_of_work=runtime.unit_of_work,
+        repository=SqlAlchemySessionRepository(), issue_access=object(),
+        audit=context["audit"],
+    )
+    router = create_windows_plan_version_create_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=context["license_guard"], audit=context["audit"],
+        document_storage_root=storage_root,
+        parse_result_storage_root=storage_root,
+        documents=context["documents"], downloads=context["downloads"],
+        parse_results=context["parse_results"],
+    )
+    path = f"/api/v1/projects/{project}/plans/{plan_id}/versions"
+    headers = {
+        "cookie": f"plm_session={context['token'].hex()}",
+        "origin": "https://plm.example.test",
+        "x-csrf-token": context["csrf"].hex(),
+        "idempotency-key": "plan-version-http-create-0001",
+    }
+    payload = _draft(proof, risk="Synthetic Windows HTTP composition")
+    with TestClient(create_app(plan_version_create_router=router),
+                    base_url="https://plm.example.test") as client:
+        response = client.post(path, headers=headers, json=payload)
+        assert response.status_code == 201, response.text
+        data = response.json()["data"]
+        assert data["project_id"] == str(project)
+        assert data["plan_id"] == str(plan_id)
+        assert data["version_no"] == 5 and data["version_state"] == "DRAFT", data
+        replay = client.post(path, headers=headers, json=payload)
+        assert replay.status_code == 201, replay.text
+        assert replay.json()["data"] == response.json()["data"]
+        conflict = client.post(path, headers=headers, json={
+            **payload, "calendar_ref": None,
+        })
+        assert conflict.status_code == 409, conflict.text
+        output_ref_payload = _draft(proof, risk="Unsupported output is closed")
+        output_ref_payload["wbs_items"][0]["output_refs"] = [str(uuid.uuid4())]
+        output_headers = {**headers, "idempotency-key": "plan-version-output-ref-0001"}
+        before = _snapshot_counts(context["port"], plan_id)
+        rejected = client.post(path, headers=output_headers, json=output_ref_payload)
+        assert rejected.status_code == 422, rejected.text
+        assert _snapshot_counts(context["port"], plan_id) == before
+
+    version_id = uuid.UUID(data["plan_version_id"])
+    read_router = create_windows_plan_version_read_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=context["license_guard"],
+    )
+    read_path = f"{path}/{version_id}"
+    with TestClient(create_app(plan_version_read_router=read_router),
+                    base_url="https://plm.example.test") as client:
+        response = client.get(read_path, headers={
+            key: value for key, value in headers.items()
+            if key in {"cookie", "origin"}
+        })
+        assert response.status_code == 200, response.text
+        snapshot = response.json()["data"]
+        assert snapshot["plan_version_id"] == str(version_id)
+        assert snapshot["plan_id"] == str(plan_id)
+        assert snapshot["version_no"] == 5 and snapshot["version_state"] == "DRAFT"
+        assert len(snapshot["wbs_items"]) == 2
+        assert len(snapshot["dependencies"]) == 1
+        assert len(snapshot["milestones"]) == 1
+        assert len(snapshot["approved_solution_refs"]) == len(
+            payload["approved_solution_refs"])
+        assert snapshot["wbs_items"][0]["solution_refs"]
+        cross_project = client.get(
+            f"/api/v1/projects/{uuid.uuid4()}/plans/{plan_id}/versions/{version_id}",
+            headers={key: value for key, value in headers.items()
+                     if key in {"cookie", "origin"}},
+        )
+        assert cross_project.status_code == 404, cross_project.text
+
+    from plm_assistant.modules.plan.api.wbs_list_cursor import (
+        PlanVersionWbsCursorCodec,
+    )
+    wbs_router = create_windows_plan_version_wbs_list_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=context["license_guard"],
+        cursors=PlanVersionWbsCursorCodec(b"w" * 32),
+    )
+    wbs_path = read_path + "/wbs-items?page_size=1"
+    wbs_headers = {key: value for key, value in headers.items()
+                   if key in {"cookie", "origin"}}
+    with TestClient(create_app(plan_version_wbs_list_router=wbs_router),
+                    base_url="https://plm.example.test") as client:
+        first_page = client.get(wbs_path, headers=wbs_headers)
+        assert first_page.status_code == 200, first_page.text
+        first_data = first_page.json()["data"]
+        assert len(first_data["items"]) == 1 and first_data["has_more"] is True
+        cursor = first_data["next_cursor"]
+        second_page = client.get(
+            f"{read_path}/wbs-items?page_size=1&cursor={cursor}",
+            headers=wbs_headers)
+        assert second_page.status_code == 200, second_page.text
+        second_data = second_page.json()["data"]
+        assert len(second_data["items"]) == 1 and second_data["has_more"] is False
+        assert first_data["items"][0]["wbs_item_id"] != second_data["items"][0]["wbs_item_id"]
+        cross_scope = client.get(
+            f"/api/v1/projects/{project}/plans/{uuid.uuid4()}/versions/"
+            f"{version_id}/wbs-items?page_size=1&cursor={cursor}",
+            headers=wbs_headers)
+        assert cross_scope.status_code == 400, cross_scope.text
+    print("PLAN_VERSION_WBS_LIST_HTTP_POSTGRESQL_PASS: fixed-version keyset pages, "
+          "session/project/plan/version-bound signed cursor")
+    print("PLAN_VERSION_GET_HTTP_POSTGRESQL_PASS: fixed version snapshot, full refs, "
+          "review/supersedes identity, member authorization and cross-project 404")
+
+
+class _FailingAudit:
+    def append(self, transaction, event) -> None:
+        raise RuntimeError("synthetic audit failure")
+
+
+def _verify_validation_owner(context: dict[str, object], storage_root: Path,
+                             plan_id: uuid.UUID, version_id: uuid.UUID) -> None:
+    from fastapi.testclient import TestClient
+    from plm_assistant.entrypoints.api import create_app
+    from plm_assistant.entrypoints.windows_plan_version import (
+        create_windows_plan_version_validation_router,
+    )
+    from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+    from plm_assistant.modules.auth.application.session_service import SessionService
+    from plm_assistant.modules.auth.infrastructure.session_repository import (
+        SqlAlchemySessionRepository,
+    )
+
+    with psycopg.connect(**_connection(context["port"])) as db:
+        actor = db.execute(
+            "SELECT user_id FROM plm.auth_sessions WHERE session_token_digest=%s",
+            (hashlib.sha256(context["token"]).digest(),),
+        ).fetchone()[0]
+        role = db.execute(
+            "SELECT project_role FROM plm.prj_project_members WHERE project_id=%s "
+            "AND user_id=%s AND state='ACTIVE'",
+            (context["project"], actor),
+        ).fetchone()
+    assert role is not None and role[0] in {
+        "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+    }, role
+    service = create_windows_plan_version_validation_service(
+        runtime=context["runtime"], license_guard=context["license_guard"],
+        audit=context["audit"], document_storage_root=storage_root,
+        parse_result_storage_root=storage_root, documents=context["documents"],
+        downloads=context["downloads"], parse_results=context["parse_results"],
+    )
+    command = ValidatePlanVersion(
+        context["token"], context["csrf"], uuid.uuid4(), context["project"],
+        plan_id, version_id, "plan-version-validate-pg-0001")
+    first = service.validate(command)
+    assert first.valid, first.blocking_issues
+    assert first.coverage_summary.solution_total > 0
+    replay = service.validate(command)
+    assert replay == first
+    assert len(first.blocking_issues) == 0
+    assert len(first.warnings) == 0
+    with psycopg.connect(**_connection(context["port"])) as db:
+        assert db.execute(
+            "SELECT count(*) FROM plm.pln_plan_version_validation_results "
+            "WHERE project_id=%s AND plan_id=%s AND plan_version_id=%s",
+            (context["project"], plan_id, version_id),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
+            "AND target_object_id=%s AND action='PLAN_VERSION_VALIDATED'",
+            (context["project"], version_id),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE actor_id=%s "
+            "AND project_id=%s AND operation='V1_PLAN_VERSION_VALIDATE'",
+            (actor, context["project"]),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT version_state FROM plm.pln_plan_versions WHERE plan_version_id=%s",
+            (version_id,),
+        ).fetchone()[0] == "DRAFT"
+
+    origins = LoginOriginPolicy(["https://plm.example.test"])
+    sessions = SessionService(
+        unit_of_work=context["runtime"].unit_of_work,
+        repository=SqlAlchemySessionRepository(), issue_access=object(),
+        audit=context["audit"])
+    router = create_windows_plan_version_validation_router(
+        runtime=context["runtime"], sessions=sessions, origins=origins,
+        license_guard=context["license_guard"], audit=context["audit"],
+        document_storage_root=storage_root, parse_result_storage_root=storage_root,
+        documents=context["documents"], downloads=context["downloads"],
+        parse_results=context["parse_results"],
+    )
+    path = (f"/api/v1/projects/{context['project']}/plans/{plan_id}/versions/"
+            f"{version_id}:validate")
+    headers = {
+        "cookie": f"plm_session={context['token'].hex()}",
+        "origin": "https://plm.example.test",
+        "x-csrf-token": context["csrf"].hex(),
+        "idempotency-key": "plan-version-validate-http-0001",
+    }
+
+    def counts() -> tuple[int, int, int]:
+        with psycopg.connect(**_connection(context["port"])) as db:
+            result_count = db.execute(
+                "SELECT count(*) FROM plm.pln_plan_version_validation_results "
+                "WHERE project_id=%s AND plan_id=%s AND plan_version_id=%s",
+                (context["project"], plan_id, version_id),
+            ).fetchone()[0]
+            audit_count = db.execute(
+                "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
+                "AND target_object_id=%s AND action='PLAN_VERSION_VALIDATED'",
+                (context["project"], version_id),
+            ).fetchone()[0]
+            receipt_count = db.execute(
+                "SELECT count(*) FROM plm.plt_idempotency_receipts "
+                "WHERE actor_id=%s AND project_id=%s "
+                "AND operation='V1_PLAN_VERSION_VALIDATE'",
+                (actor, context["project"]),
+            ).fetchone()[0]
+            return result_count, audit_count, receipt_count
+
+    before_http = counts()
+    with TestClient(create_app(plan_version_validation_router=router),
+                    base_url="https://plm.example.test") as client:
+        response = client.post(path, headers=headers)
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["valid"] is True and data["blocking_issues"] == [], data
+        assert data["warnings"] == [] and data["coverage_summary"]["solution_total"] > 0
+        assert data["checked_at"].endswith("Z")
+        assert set(data) == {
+            "valid", "blocking_issues", "warnings", "coverage_summary", "checked_at",
+        }
+        assert response.headers["cache-control"] == "no-store"
+        first_http = response.json()
+        assert first_http["trace_id"] == response.headers["x-trace-id"]
+        after_first_http = counts()
+        assert after_first_http == tuple(value + 1 for value in before_http)
+
+        replay_http = client.post(path, headers=headers)
+        assert replay_http.status_code == 200, replay_http.text
+        replay_payload = replay_http.json()
+        assert replay_payload["data"] == first_http["data"]
+        assert replay_payload["trace_id"] == replay_http.headers["x-trace-id"]
+        assert counts() == after_first_http
+
+        cross_project = client.post(
+            f"/api/v1/projects/{uuid.uuid4()}/plans/{plan_id}/versions/"
+            f"{version_id}:validate", headers=headers)
+        assert cross_project.status_code == 404, cross_project.text
+        bad_origin = client.post(path, headers={
+            **headers, "origin": "https://untrusted.example.test",
+            "idempotency-key": "plan-version-validate-origin-0001",
+        })
+        assert bad_origin.status_code == 403, bad_origin.text
+        assert counts() == after_first_http
+
+    # A same-project CUSTOMER_MEMBER has a valid synthetic Session but is not
+    # authorized for this project write operation.
+    with psycopg.connect(**_connection(context["port"])) as db:
+        read_only = db.execute(
+            "SELECT m.user_id,u.credential_version FROM plm.prj_project_members m "
+            "JOIN plm.auth_users u ON u.user_id=m.user_id "
+            "WHERE m.project_id=%s AND m.project_role='CUSTOMER_MEMBER' "
+            "AND m.state='ACTIVE' ORDER BY m.effective_at LIMIT 1",
+            (context["project"],),
+        ).fetchone()
+    if read_only is None:
+        raise AssertionError("synthetic Project has no read-only member")
+    read_token = uuid.uuid4().bytes + uuid.uuid4().bytes
+    read_csrf = uuid.uuid4().bytes + uuid.uuid4().bytes
+    with psycopg.connect(**_connection(context["port"])) as db, db.transaction():
+        db.execute(
+            "INSERT INTO plm.auth_sessions(session_token_digest,csrf_digest,user_id,"
+            "credential_version,idle_expires_at,absolute_expires_at) VALUES "
+            "(%s,%s,%s,%s,statement_timestamp()+interval '30 minutes',"
+            "statement_timestamp()+interval '2 hours')",
+            (hashlib.sha256(read_token).digest(), hashlib.sha256(read_csrf).digest(),
+             read_only[0], read_only[1]),
+        )
+    read_only_response = None
+    with TestClient(create_app(plan_version_validation_router=router),
+                    base_url="https://plm.example.test") as client:
+        read_only_response = client.post(path, headers={
+            **headers,
+            "cookie": f"plm_session={read_token.hex()}",
+            "x-csrf-token": read_csrf.hex(),
+            "idempotency-key": "plan-version-validate-readonly-0001",
+        })
+    assert read_only_response is not None
+    assert read_only_response.status_code == 404, read_only_response.text
+    assert counts() == after_first_http
+
+    failing_router = create_windows_plan_version_validation_router(
+        runtime=context["runtime"], sessions=sessions, origins=origins,
+        license_guard=context["license_guard"], audit=_FailingAudit(),
+        document_storage_root=storage_root, parse_result_storage_root=storage_root,
+        documents=context["documents"], downloads=context["downloads"],
+        parse_results=context["parse_results"],
+    )
+    with TestClient(create_app(plan_version_validation_router=failing_router),
+                    base_url="https://plm.example.test") as client:
+        audit_failure = client.post(path, headers={
+            **headers,
+            "idempotency-key": "plan-version-validate-http-audit-fail-0001",
+        })
+    assert audit_failure.status_code == 503, audit_failure.text
+    assert counts() == after_first_http
+
+    failing = create_windows_plan_version_validation_service(
+        runtime=context["runtime"], license_guard=context["license_guard"],
+        audit=_FailingAudit(), document_storage_root=storage_root,
+        parse_result_storage_root=storage_root, documents=context["documents"],
+        downloads=context["downloads"], parse_results=context["parse_results"],
+    )
+    rollback = ValidatePlanVersion(
+        context["token"], context["csrf"], uuid.uuid4(), context["project"],
+        plan_id, version_id, "plan-version-validate-audit-fail-0001")
+    try:
+        failing.validate(rollback)
+    except PlanVersionValidationError:
+        pass
+    else:
+        raise AssertionError("validation Audit failure did not abort the command")
+    with psycopg.connect(**_connection(context["port"])) as db:
+        assert db.execute(
+            "SELECT count(*) FROM plm.pln_plan_version_validation_results "
+            "WHERE project_id=%s AND plan_id=%s AND plan_version_id=%s",
+            (context["project"], plan_id, version_id),
+        ).fetchone()[0] == after_first_http[0]
+        assert db.execute(
+            "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
+            "AND target_object_id=%s AND action='PLAN_VERSION_VALIDATED'",
+            (context["project"], version_id),
+        ).fetchone()[0] == after_first_http[1]
+        assert db.execute(
+            "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE actor_id=%s "
+            "AND project_id=%s AND operation='V1_PLAN_VERSION_VALIDATE'",
+            (actor, context["project"]),
+        ).fetchone()[0] == after_first_http[2]
+    assert counts() == after_first_http
+    print("PLAN_VERSION_VALIDATION_OWNER_POSTGRESQL_PASS: current authorization/source proof, "
+          "first report replay, Audit/0189/Receipt atomic binding, immutable version state, "
+          "Audit failure rollback")
+    print("PLAN_VERSION_VALIDATE_HTTP_POSTGRESQL_PASS: real Windows router factory, "
+          "approved source proof, exact HTTP replay, cross-project/read-only/Origin denial, "
+          "HTTP Audit failure rollback and report/Audit/Receipt row-count atomicity")
+
+
+def verify_owner(context: dict[str, object]) -> None:
+    _restore_coverage_edge(context)
+    runtime, project = context["runtime"], context["project"]
+    authorization = ProjectAuthorizationService(
+        unit_of_work=runtime.unit_of_work,
+        repository=SqlAlchemyProjectAuthorizationRepository(),
+    )
+    plan_creator = PlanCreateService(
+        unit_of_work=runtime.unit_of_work, access=SqlAlchemyProjectWriteAccess(),
+        license_guard=context["license_guard"], authorization=authorization,
+        repository=SqlAlchemyPlanCreateRepository(),
+        receipts=SqlAlchemyIdempotencyReceipts(), audit=context["audit"],
+    )
+    plan = plan_creator.create(CreatePlan(
+        context["token"], context["csrf"], uuid.uuid4(), project,
+        "Synthetic Plan Owner Transaction Test", "plan-owner-root-create-0001",
+    ))
+    with tempfile.TemporaryDirectory(prefix="plan-owner-docs-") as root:
+        _approve_current_outline(context, Path(root))
+        service = create_windows_plan_version_create_service(
+            runtime=runtime, license_guard=context["license_guard"],
+            audit=context["audit"], document_storage_root=Path(root),
+            parse_result_storage_root=Path(root), documents=context["documents"],
+            downloads=context["downloads"], parse_results=context["parse_results"],
+        )
+        _, proof = _solution_proof(service, context)
+        draft = _draft(proof)
+        command = CreatePlanVersion(
+            context["token"], context["csrf"], uuid.uuid4(), project, plan.plan_id,
+            draft, "plan-version-create-pg-0001",
+        )
+        first = service.create(command)
+        replay = service.create(command)
+        assert first.plan_version_id == replay.plan_version_id
+        assert first.version_no == replay.version_no == 1
+        _verify_validation_owner(context, Path(root), plan.plan_id,
+                                 first.plan_version_id)
+        counts = _snapshot_counts(context["port"], plan.plan_id)
+        assert counts == (1, 2, 2, 4, 1, 1, 2, len(draft["approved_solution_refs"]) * 2,
+                          len(proof.requirement_refs) * 2), counts
+
+        conflict_draft = _draft(proof, risk="Changed payload under same idempotency key")
+        conflict = CreatePlanVersion(
+            context["token"], context["csrf"], uuid.uuid4(), project, plan.plan_id,
+            conflict_draft, command.idempotency_key,
+        )
+        try:
+            service.create(conflict)
+        except PlanVersionCreateError as error:
+            assert error.code == "CONFLICT_IDEMPOTENCY", error.code
+        else:
+            raise AssertionError("same-key payload conflict was accepted")
+        assert _snapshot_counts(context["port"], plan.plan_id) == counts
+
+        bad_draft = _draft(proof)
+        bad_version = str(uuid.uuid4())
+        bad_draft["approved_solution_refs"][0]["version_id"] = bad_version
+        for item in bad_draft["wbs_items"]:
+            item["solution_refs"][0]["version_id"] = bad_version
+        rejected = CreatePlanVersion(
+            context["token"], context["csrf"], uuid.uuid4(), project, plan.plan_id,
+            bad_draft, "plan-version-create-unapproved-source-0001",
+        )
+        try:
+            service.create(rejected)
+        except PlanVersionCreateError as error:
+            assert error.code == "PLAN_SOURCE_UNAVAILABLE", error.code
+        else:
+            raise AssertionError("unapproved Outline version was accepted")
+        assert _snapshot_counts(context["port"], plan.plan_id) == counts
+
+        rollback_command = CreatePlanVersion(
+            context["token"], context["csrf"], uuid.uuid4(), project, plan.plan_id,
+            _draft(proof, risk="Synthetic audit rollback"),
+            "plan-version-audit-failure-0001",
+        )
+        failing_audit_service = create_windows_plan_version_create_service(
+            runtime=runtime, license_guard=context["license_guard"],
+            audit=_FailingAudit(), document_storage_root=Path(root),
+            parse_result_storage_root=Path(root), documents=context["documents"],
+            downloads=context["downloads"], parse_results=context["parse_results"],
+        )
+        try:
+            failing_audit_service.create(rollback_command)
+        except PlanVersionCreateError:
+            pass
+        else:
+            raise AssertionError("synthetic Audit failure did not abort PlanVersion")
+        assert _snapshot_counts(context["port"], plan.plan_id) == counts
+        recovered = service.create(rollback_command)
+        assert recovered.version_no == 2
+        after_recovery = _snapshot_counts(context["port"], plan.plan_id)
+        assert after_recovery == tuple(
+            prior + increment for prior, increment in zip(
+                counts, (1, 2, 2, 4, 1, 1, 2,
+                         len(draft["approved_solution_refs"]) * 2,
+                         len(proof.requirement_refs) * 2), strict=True)
+        ), after_recovery
+
+        parallel = [CreatePlanVersion(
+            context["token"], context["csrf"], uuid.uuid4(), project, plan.plan_id,
+            _draft(proof, risk=f"Concurrent snapshot {index}"),
+            f"plan-version-parallel-create-{index:04d}",
+        ) for index in (1, 2)]
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            concurrent_results = list(pool.map(service.create, parallel))
+        assert sorted(item.version_no for item in concurrent_results) == [3, 4]
+        _verify_http_composition(context, Path(root), plan.plan_id, proof)
+
+    print("PLAN_VERSION_OWNER_POSTGRESQL_PASS: complete snapshot, current approved "
+          "source proof, same-key replay/conflict, invalid source rejection, "
+          "Audit rollback/retry and concurrent version numbering")
+
+
+def _with_plan_owner(case: str, **context) -> None:
+    assert case == "APPROVE"
+    full.original_terminal(case, **context)
+    full._outline_full(**context)
+    verify_owner(context)
+
+
+def main(pg_root: Path, vector_source: Path) -> None:
+    runner = _main_fixture()
+    runner.helper.PG_SOURCE = pg_root
+    runner.helper.VECTOR_SOURCE = vector_source
+    full.terminal._terminal = _with_plan_owner
+    full.terminal._run("APPROVE")
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--pg-root", type=Path, required=True)
+    parser.add_argument("--vector-source", type=Path, required=True)
+    arguments = parser.parse_args()
+    main(arguments.pg_root, arguments.vector_source)

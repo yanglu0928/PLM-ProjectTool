@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "wbs": "1.04",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.15",
+  "sqlalchemy": "2.0.54",
+  "psycopg": "3.3.5",
+  "postgresql_version_num": "180006",
+  "transaction_isolation": "read committed",
+  "application_name": "plm-project-tool",
+  "independent_backend_connections": true,
+  "session_inaccessible_after_exit": true,
+  "readiness": true,
+  "business_orm_count": 0,
+  "migration_count": 0,
+  "business_api_count": 0,
+  "external_call_count": 0
+}

@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "postgresql_version": "18.6",
+  "pgvector_version": "0.8.6",
+  "vector_dll_sha256": "e070cdd11882ddc2560d0ae242aab323b49f5f876481345c3bece9fe5bba2fd4",
+  "row_count_after_crud": 2,
+  "hnsw_index_method": "hnsw",
+  "nearest_label": "origin",
+  "completed_at_utc": "2026-09-17T07:45:42.6938795Z"
+}

@@ -1,0 +1,579 @@
+"""PostgreSQL row-lock and fencing implementation for the Job owner."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import timedelta
+
+from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy.orm import Session
+
+from plm_assistant.modules.jobs.application.lease import (
+    ClaimedJob, ClosedJobAttempt, JobLeaseError, ParserLeasePulse,
+)
+from plm_assistant.modules.jobs.application.lease_checkpoint import validate_checkpoint
+from plm_assistant.modules.jobs.application.failure_proof import FailedJobProof
+from plm_assistant.modules.jobs.application.retry_proof import RetryTransitionProof
+from plm_assistant.modules.jobs.application.execution_facts import AuditExportExecutionFacts
+from plm_assistant.modules.jobs.infrastructure.orm import JobAttemptRow, JobLeaseRow, JobRow
+
+
+class SqlAlchemyJobLeaseRepository:
+    def _expired_exhausted(self,transaction,job_id,fencing_token,worker_ref):
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        session=self._session(transaction);job,lease,attempt=self._current(session,job_id,fencing_token,worker_ref)
+        if (job.max_attempts!=3 or job.attempt_count!=3 or attempt.attempt_no!=3 or job.completed_at is not None
+                or job.lease_expires_at!=lease.lease_expires_at or attempt.error_code is not None):raise JobLeaseError('INCONSISTENT_LEASE')
+        now=self._now(session)
+        if lease.lease_expires_at>now:raise JobLeaseError('LEASE_NOT_EXPIRED')
+        return session,job,lease,attempt,now
+
+    def check_expired_exhausted(self,transaction,*,job_id,fencing_token,worker_ref):
+        _,job,_,_,_=self._expired_exhausted(transaction,job_id,fencing_token,worker_ref)
+        return self._claim(job)
+
+    def expire_exhausted(self,transaction,*,job_id,fencing_token,worker_ref):
+        session,job,lease,attempt,now=self._expired_exhausted(transaction,job_id,fencing_token,worker_ref)
+        lease.state='EXPIRED';attempt.completed_at=now;attempt.error_code='AUDIT_EXPORT_ATTEMPTS_EXHAUSTED'
+        job.state='FAILED';job.lease_expires_at=None;job.completed_at=now;session.flush()
+        return self._claim(job)
+
+    def check_exhausted_failed(self,transaction,*,job_id,fencing_token,worker_ref):
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        session=self._session(transaction)
+        job=session.scalar(select(JobRow).where(JobRow.job_id==job_id).with_for_update(of=JobRow))
+        if (job is None or job.state!='FAILED' or job.fencing_token!=fencing_token or job.max_attempts!=3
+                or job.attempt_count!=3 or job.lease_expires_at is not None or job.completed_at is None):raise JobLeaseError('STALE_LEASE')
+        lease=session.scalar(select(JobLeaseRow).where(JobLeaseRow.job_id==job_id,JobLeaseRow.fencing_token==fencing_token).with_for_update(of=JobLeaseRow))
+        attempt=self._attempt(session,job_id,fencing_token)
+        if (lease is None or lease.state!='EXPIRED' or lease.worker_ref!=worker_ref or attempt.worker_ref!=worker_ref
+                or attempt.attempt_no!=3 or attempt.error_code!='AUDIT_EXPORT_ATTEMPTS_EXHAUSTED'
+                or attempt.completed_at!=job.completed_at or not attempt.started_at<=job.completed_at
+                or lease.lease_expires_at>job.completed_at or lease.acquired_at>job.completed_at):raise JobLeaseError('INCONSISTENT_LEASE')
+        return FailedJobProof(self._claim(job),'AUDIT_EXPORT_ATTEMPTS_EXHAUSTED',job.completed_at)
+
+    def read_execution_facts(self,transaction,*,job_id,fencing_token,worker_ref):
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        session=self._session(transaction)
+        job=session.execute(select(JobRow).where(JobRow.job_id==job_id).with_for_update(of=JobRow)).scalar_one_or_none()
+        if job is None or job.max_attempts!=3 or job.fencing_token<fencing_token:raise JobLeaseError('STALE_LEASE')
+        lease=session.execute(select(JobLeaseRow).where(JobLeaseRow.job_id==job_id,JobLeaseRow.fencing_token==fencing_token)
+            .with_for_update(of=JobLeaseRow)).scalar_one_or_none()
+        attempt=self._attempt(session,job_id,fencing_token)
+        if (lease is None or lease.worker_ref!=worker_ref or attempt.worker_ref!=worker_ref
+                or not 1<=attempt.attempt_no<=job.attempt_count<=3):raise JobLeaseError('INCONSISTENT_LEASE')
+        current=job.fencing_token==fencing_token
+        if lease.state=='ACTIVE':
+            if (not current or job.state not in {'RUNNING','CANCEL_REQUESTED'} or job.completed_at is not None
+                    or attempt.completed_at is not None or attempt.error_code is not None
+                    or job.attempt_count!=attempt.attempt_no or job.lease_expires_at!=lease.lease_expires_at):raise JobLeaseError('INCONSISTENT_LEASE')
+        else:
+            if attempt.completed_at is None or attempt.completed_at<attempt.started_at:raise JobLeaseError('INCONSISTENT_ATTEMPT')
+            if current and (job.lease_expires_at is not None or job.attempt_count!=attempt.attempt_no
+                    or job.state not in {'RETRY_WAIT','SUCCEEDED','FAILED','CANCELLED'}):raise JobLeaseError('INCONSISTENT_LEASE')
+        now=self._now(session)
+        claim=ClaimedJob(job.job_id,job.job_type,job.scope,job.project_id,dict(job.payload_refs),job.trace_id,fencing_token,attempt.attempt_no)
+        return AuditExportExecutionFacts(claim,job.fencing_token,job.state,lease.state,
+            lease.state=='ACTIVE' and lease.lease_expires_at>now,attempt.error_code)
+
+    def check_retry_transition(self,transaction,*,job_id,fencing_token,worker_ref,delay_seconds):
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        if type(delay_seconds) is not int or delay_seconds not in {0,5,15}:raise JobLeaseError('VALIDATION_FAILED')
+        session=self._session(transaction)
+        job=session.execute(select(JobRow).where(JobRow.job_id==job_id).with_for_update(of=JobRow)).scalar_one_or_none()
+        if job is None or job.fencing_token<fencing_token or job.max_attempts!=3:raise JobLeaseError('STALE_LEASE')
+        lease=session.execute(select(JobLeaseRow).where(JobLeaseRow.job_id==job_id,JobLeaseRow.fencing_token==fencing_token)
+            .with_for_update(of=JobLeaseRow)).scalar_one_or_none()
+        attempt=self._attempt(session,job_id,fencing_token)
+        if (lease is None or lease.state!='RELEASED' or lease.worker_ref!=worker_ref or attempt.worker_ref!=worker_ref
+                or attempt.completed_at is None or attempt.error_code!='AUDIT_UNAVAILABLE'
+                or not 1<=attempt.attempt_no<=3 or job.attempt_count<attempt.attempt_no
+                or not attempt.started_at<=attempt.completed_at<lease.lease_expires_at
+                or lease.acquired_at>attempt.completed_at):raise JobLeaseError('INCONSISTENT_LEASE')
+        expected_delay={1:5,2:15,3:0}[attempt.attempt_no]
+        if delay_seconds!=expected_delay:raise JobLeaseError('VALIDATION_FAILED')
+        available=attempt.completed_at+timedelta(seconds=delay_seconds) if delay_seconds else None
+        if attempt.attempt_no==3:
+            if (job.state!='FAILED' or job.fencing_token!=fencing_token or job.attempt_count!=3
+                    or job.lease_expires_at is not None or job.completed_at!=attempt.completed_at):raise JobLeaseError('STALE_LEASE')
+        elif job.fencing_token==fencing_token:
+            if (job.state not in {'RETRY_WAIT','CANCELLED'} or job.lease_expires_at is not None
+                    or job.attempt_count!=attempt.attempt_no or job.available_at!=available
+                    or (job.state=='RETRY_WAIT' and job.completed_at is not None)):
+                raise JobLeaseError('INCONSISTENT_LEASE')
+        else:
+            next_attempt=session.execute(select(JobAttemptRow).where(JobAttemptRow.job_id==job_id,
+                JobAttemptRow.attempt_no==attempt.attempt_no+1).with_for_update(of=JobAttemptRow)).scalar_one_or_none()
+            if (next_attempt is None or next_attempt.fencing_token<=fencing_token
+                    or next_attempt.fencing_token>job.fencing_token
+                    or next_attempt.started_at<available):raise JobLeaseError('INCONSISTENT_ATTEMPT')
+        claim=ClaimedJob(job.job_id,job.job_type,job.scope,job.project_id,dict(job.payload_refs),job.trace_id,fencing_token,attempt.attempt_no)
+        return RetryTransitionProof(claim,'RETRY_WAIT' if delay_seconds else 'FAILED',attempt.started_at,attempt.completed_at,available)
+
+    def check_failed(self,transaction,*,job_id,fencing_token,worker_ref,error_code):
+        """No mutation: current terminal generation ended while its lease was alive.
+
+        Expiry/exhaustion failure and historical attempts are not this receipt.
+        """
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        if type(error_code) is not str or not error_code:raise JobLeaseError('VALIDATION_FAILED')
+        session=self._session(transaction)
+        job=session.execute(select(JobRow).where(JobRow.job_id==job_id).with_for_update(of=JobRow)).scalar_one_or_none()
+        if (job is None or job.state!='FAILED' or job.fencing_token!=fencing_token
+                or job.lease_expires_at is not None or job.completed_at is None):raise JobLeaseError('STALE_LEASE')
+        lease=session.execute(select(JobLeaseRow).where(JobLeaseRow.job_id==job_id,
+            JobLeaseRow.fencing_token==fencing_token).with_for_update(of=JobLeaseRow)).scalar_one_or_none()
+        attempt=self._attempt(session,job_id,fencing_token)
+        if (lease is None or lease.state!='RELEASED' or lease.worker_ref!=worker_ref
+                or attempt.worker_ref!=worker_ref or attempt.attempt_no!=job.attempt_count
+                or not 1<=attempt.attempt_no<=job.max_attempts or attempt.error_code!=error_code
+                or attempt.completed_at!=job.completed_at
+                or not attempt.started_at<=job.completed_at<lease.lease_expires_at
+                or lease.acquired_at>job.completed_at):raise JobLeaseError('INCONSISTENT_LEASE')
+        return FailedJobProof(self._claim(job),error_code,job.completed_at)
+
+    def check_succeeded(self, transaction: object, *, job_id: uuid.UUID,
+                        fencing_token: int, worker_ref: str) -> ClaimedJob:
+        """Read terminal success facts; never accept an expired ACTIVE lease as success."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token, worker_ref=worker_ref)
+        session=self._session(transaction)
+        job=session.execute(select(JobRow).where(JobRow.job_id==job_id)
+            .with_for_update(of=JobRow)).scalar_one_or_none()
+        if (job is None or job.state!='SUCCEEDED' or job.fencing_token!=fencing_token
+                or job.lease_expires_at is not None or job.completed_at is None):raise JobLeaseError('STALE_LEASE')
+        lease=session.execute(select(JobLeaseRow).where(JobLeaseRow.job_id==job_id,
+            JobLeaseRow.fencing_token==fencing_token).with_for_update(of=JobLeaseRow)).scalar_one_or_none()
+        attempt=self._attempt(session,job_id,fencing_token)
+        if (lease is None or lease.state!='RELEASED' or lease.worker_ref!=worker_ref
+                or attempt.worker_ref!=worker_ref or attempt.attempt_no!=job.attempt_count
+                or attempt.error_code is not None or attempt.completed_at!=job.completed_at
+                or not attempt.started_at<=job.completed_at<lease.lease_expires_at
+                or lease.acquired_at>job.completed_at):raise JobLeaseError('INCONSISTENT_LEASE')
+        return self._claim(job)
+
+    def check_current(self, transaction: object, *, job_id: uuid.UUID,
+                      fencing_token: int, worker_ref: str) -> ClaimedJob:
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token, worker_ref=worker_ref)
+        session = self._session(transaction)
+        job, lease, attempt = self._current(session, job_id, fencing_token, worker_ref)
+        now = self._now(session)
+        if (job.lease_expires_at is None or job.lease_expires_at <= now
+                or lease.lease_expires_at <= now):
+            raise JobLeaseError("STALE_LEASE")
+        if (job.lease_expires_at != lease.lease_expires_at
+                or job.attempt_count != attempt.attempt_no):
+            raise JobLeaseError("INCONSISTENT_LEASE")
+        return self._claim(job)
+
+    def closed_attempts_for_current(self, transaction: object, *, job_id: uuid.UUID,
+                                    fencing_token: int,
+                                    worker_ref: str) -> tuple[ClosedJobAttempt, ...]:
+        """Prove every predecessor while holding the current Job row lock."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token,
+                            worker_ref=worker_ref)
+        session = self._session(transaction)
+        job, lease, current = self._current(session, job_id, fencing_token, worker_ref)
+        now = self._now(session)
+        if (job.owner_module != "document" or job.job_type != "DOCUMENT_PARSE"
+                or job.attempt_count != current.attempt_no
+                or not 1 <= current.attempt_no <= job.max_attempts
+                or job.lease_expires_at is None or job.lease_expires_at <= now
+                or lease.lease_expires_at != job.lease_expires_at
+                or lease.lease_expires_at <= now):
+            raise JobLeaseError("STALE_LEASE")
+        attempts = session.scalars(select(JobAttemptRow).where(
+            JobAttemptRow.job_id == job_id,
+            JobAttemptRow.attempt_no < current.attempt_no,
+        ).order_by(JobAttemptRow.attempt_no)).all()
+        leases = session.scalars(select(JobLeaseRow).where(
+            JobLeaseRow.job_id == job_id,
+            JobLeaseRow.fencing_token < fencing_token,
+        )).all()
+        if (len(attempts) != current.attempt_no - 1
+                or len(leases) != len(attempts)
+                or [row.attempt_no for row in attempts]
+                   != list(range(1, current.attempt_no))):
+            raise JobLeaseError("INCONSISTENT_ATTEMPT")
+        by_token = {row.fencing_token: row for row in leases}
+        if len(by_token) != len(leases):
+            raise JobLeaseError("INCONSISTENT_ATTEMPT")
+        result: list[ClosedJobAttempt] = []
+        previous_token = 0
+        for row in attempts:
+            old_lease = by_token.pop(row.fencing_token, None)
+            if (old_lease is None or row.fencing_token <= previous_token
+                    or row.worker_ref != old_lease.worker_ref
+                    or row.completed_at is None or row.error_code is None
+                    or row.started_at > row.completed_at
+                    or row.completed_at > current.started_at
+                    or old_lease.acquired_at > row.started_at
+                    or old_lease.state not in {"EXPIRED", "RELEASED"}
+                    or (old_lease.state == "EXPIRED"
+                        and (row.error_code != "LEASE_EXPIRED"
+                             or row.completed_at < old_lease.lease_expires_at))
+                    or (old_lease.state == "RELEASED"
+                        and row.completed_at >= old_lease.lease_expires_at)):
+                raise JobLeaseError("INCONSISTENT_ATTEMPT")
+            result.append(ClosedJobAttempt(row.attempt_no, row.fencing_token,
+                                           old_lease.state, row.completed_at,
+                                           row.error_code))
+            previous_token = row.fencing_token
+        if by_token:
+            raise JobLeaseError("INCONSISTENT_ATTEMPT")
+        return tuple(result)
+
+    def claim_next(self, transaction: object, *, worker_ref: str,
+                   lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(transaction, worker_ref=worker_ref,
+                                         lease_seconds=lease_seconds,
+                                         owner_filter=None)
+
+    def claim_next_parse(self, transaction: object, *, worker_ref: str,
+                         lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(transaction, worker_ref=worker_ref,
+                                         lease_seconds=lease_seconds,
+                                         owner_filter=("document", "DOCUMENT_PARSE"))
+
+    def claim_next_ai_task(self, transaction: object, *, worker_ref: str,
+                           lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(
+            transaction, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            owner_filter=("ai", "AI_TASK_EXECUTE"),
+        )
+
+    def claim_next_rag_build(self, transaction: object, *, worker_ref: str,
+                             lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(
+            transaction, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            owner_filter=("rag", "RAG_INDEX_BUILD"),
+        )
+
+    def claim_next_rag_retrieval(self, transaction: object, *, worker_ref: str,
+                                 lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(
+            transaction, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            owner_filter=("rag", "RAG_RETRIEVAL"),
+        )
+
+    def _claim_next_filtered(self, transaction: object, *, worker_ref: str,
+                             lease_seconds: int,
+                             owner_filter: tuple[str, str] | None) -> ClaimedJob | None:
+        session = self._session(transaction)
+        # Limit one claim per transaction. Exhausted jobs are terminalized before
+        # trying the next row, so they cannot starve a ready job indefinitely.
+        for _ in range(100):
+            now = self._now(session)
+            conditions = [or_(
+                and_(JobRow.state.in_(("PENDING", "RETRY_WAIT")), JobRow.available_at <= now),
+                and_(JobRow.state == "RUNNING", JobRow.lease_expires_at <= now,
+                     or_(JobRow.owner_module != "ai",
+                         JobRow.job_type != "AI_TASK_EXECUTE"),
+                     or_(JobRow.owner_module != "rag",
+                          JobRow.job_type != "RAG_INDEX_BUILD"),
+                     or_(JobRow.owner_module != "rag",
+                          JobRow.job_type != "RAG_RETRIEVAL")),
+            )]
+            if owner_filter is not None:
+                conditions.extend((JobRow.owner_module == owner_filter[0],
+                                   JobRow.job_type == owner_filter[1]))
+            else:
+                # RAG Build and Retrieval have multi-aggregate terminal state.
+                # A generic claimant must never split their owner aggregates.
+                conditions.append(or_(
+                    JobRow.owner_module != "rag",
+                    JobRow.job_type != "RAG_INDEX_BUILD",
+                ))
+                conditions.append(or_(
+                    JobRow.owner_module != "rag",
+                    JobRow.job_type != "RAG_RETRIEVAL",
+                ))
+            job = session.execute(select(JobRow).where(*conditions)
+                .order_by(JobRow.priority.desc(), JobRow.available_at, JobRow.job_id)
+                .limit(1).with_for_update(of=JobRow, skip_locked=True)).scalar_one_or_none()
+            if job is None:
+                return None
+            if job.state == "RUNNING":
+                previous = self._lease(session, job.job_id, job.fencing_token)
+                if previous.lease_expires_at > now:
+                    raise JobLeaseError("INCONSISTENT_LEASE")
+                previous.state = "EXPIRED"
+                attempt = self._attempt(session, job.job_id, job.fencing_token)
+                attempt.completed_at = now
+                attempt.error_code = "LEASE_EXPIRED"
+                session.flush()
+            elif session.execute(select(JobLeaseRow.lease_id).where(
+                JobLeaseRow.job_id == job.job_id, JobLeaseRow.state == "ACTIVE",
+            )).scalar_one_or_none() is not None:
+                raise JobLeaseError("INCONSISTENT_LEASE")
+            if job.attempt_count >= job.max_attempts:
+                job.state = "FAILED"
+                job.lease_expires_at = None
+                job.completed_at = now
+                session.flush()
+                continue
+            job.attempt_count += 1
+            job.fencing_token += 1
+            job.state = "RUNNING"
+            job.lease_expires_at = now + timedelta(seconds=lease_seconds)
+            session.add(JobLeaseRow(job_id=job.job_id, worker_ref=worker_ref,
+                                    fencing_token=job.fencing_token,
+                                    lease_expires_at=job.lease_expires_at))
+            session.add(JobAttemptRow(job_id=job.job_id, attempt_no=job.attempt_count,
+                                      worker_ref=worker_ref,
+                                      fencing_token=job.fencing_token))
+            session.flush()
+            return self._claim(job)
+        raise JobLeaseError("CLAIM_BATCH_LIMIT")
+
+    def heartbeat(self, transaction: object, *, job_id: uuid.UUID,
+                  fencing_token: int, worker_ref: str, lease_seconds: int) -> None:
+        session = self._session(transaction)
+        job, lease, _ = self._current(session, job_id, fencing_token, worker_ref)
+        now = self._now(session)
+        if job.lease_expires_at is None or job.lease_expires_at <= now or lease.lease_expires_at <= now:
+            raise JobLeaseError("STALE_LEASE")
+        until = now + timedelta(seconds=lease_seconds)
+        job.lease_expires_at = until
+        lease.lease_expires_at = until
+        lease.heartbeat_at = now
+        session.flush()
+
+    def pulse_parse(self, transaction: object, *, job_id: uuid.UUID,
+                    fencing_token: int, worker_ref: str,
+                    lease_seconds: int) -> ParserLeasePulse:
+        """Renew only RUNNING; a cancel request is a checkpoint, not a lease error."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token,
+                            worker_ref=worker_ref)
+        if type(lease_seconds) is not int or not 1 <= lease_seconds <= 3600:
+            raise JobLeaseError("INVALID_LEASE_DURATION")
+        session = self._session(transaction)
+        job = session.scalar(select(JobRow).where(JobRow.job_id == job_id)
+            .with_for_update(of=JobRow).execution_options(populate_existing=True))
+        if (job is None or job.owner_module != "document"
+                or job.job_type != "DOCUMENT_PARSE"
+                or job.state not in {"RUNNING", "CANCEL_REQUESTED"}
+                or job.fencing_token != fencing_token or job.completed_at is not None
+                or not 1 <= job.attempt_count <= job.max_attempts <= 3):
+            raise JobLeaseError("STALE_LEASE")
+        lease = self._lease(session, job_id, fencing_token)
+        attempt = self._attempt(session, job_id, fencing_token)
+        now = self._now(session)
+        if (lease.worker_ref != worker_ref or attempt.worker_ref != worker_ref
+                or attempt.attempt_no != job.attempt_count
+                or attempt.completed_at is not None or attempt.error_code is not None
+                or job.lease_expires_at != lease.lease_expires_at
+                or job.lease_expires_at is None or job.lease_expires_at <= now):
+            raise JobLeaseError("STALE_LEASE")
+        if job.state == "CANCEL_REQUESTED":
+            if (job.cancel_requested_by is None or job.cancel_reason is None
+                    or job.cancel_requested_at is None
+                    or job.cancel_requested_at < lease.acquired_at):
+                raise JobLeaseError("INCONSISTENT_LEASE")
+            return ParserLeasePulse(self._claim(job), "CANCEL_REQUESTED")
+        until = now + timedelta(seconds=lease_seconds)
+        job.lease_expires_at = until
+        lease.lease_expires_at = until
+        lease.heartbeat_at = now
+        session.flush()
+        return ParserLeasePulse(self._claim(job), "RUNNING")
+
+    def acknowledge_parse_cancel(self, transaction: object, *, job_id: uuid.UUID,
+                                 fencing_token: int, worker_ref: str) -> ClaimedJob:
+        """Caller owns Document/Audit changes and must commit them with this update."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token,
+                            worker_ref=worker_ref)
+        session = self._session(transaction)
+        job = session.scalar(select(JobRow).where(JobRow.job_id == job_id)
+            .with_for_update(of=JobRow).execution_options(populate_existing=True))
+        if (job is None or job.owner_module != "document"
+                or job.job_type != "DOCUMENT_PARSE" or job.state != "CANCEL_REQUESTED"
+                or job.fencing_token != fencing_token or job.completed_at is not None
+                or not 1 <= job.attempt_count <= job.max_attempts <= 3):
+            raise JobLeaseError("STALE_LEASE")
+        lease = self._lease(session, job_id, fencing_token)
+        attempt = self._attempt(session, job_id, fencing_token)
+        now = self._now(session)
+        if (lease.worker_ref != worker_ref or attempt.worker_ref != worker_ref
+                or attempt.attempt_no != job.attempt_count
+                or attempt.completed_at is not None or attempt.error_code is not None
+                or job.lease_expires_at != lease.lease_expires_at
+                or job.lease_expires_at is None or job.lease_expires_at <= now
+                or job.cancel_requested_by is None or job.cancel_reason is None
+                or job.cancel_requested_at is None
+                or job.cancel_requested_at < lease.acquired_at):
+            raise JobLeaseError("STALE_LEASE")
+        claim = self._claim(job)
+        lease.state = "RELEASED"
+        attempt.completed_at = now
+        attempt.error_code = "JOB_CANCELLED"
+        job.state = "CANCELLED"
+        job.lease_expires_at = None
+        job.completed_at = now
+        session.flush()
+        return claim
+
+    def expired_parse_cancel_facts(self, transaction: object, *, job_id: uuid.UUID,
+                                   fencing_token: int, worker_ref: str):
+        """Lock the current generation; PostgreSQL time, not a scheduler hint, decides expiry."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token,
+                            worker_ref=worker_ref)
+        session = self._session(transaction)
+        job = session.scalar(select(JobRow).where(JobRow.job_id == job_id)
+            .with_for_update(of=JobRow).execution_options(populate_existing=True))
+        if (job is None or (job.owner_module, job.job_type, job.scope)
+                != ("document", "DOCUMENT_PARSE", "PROJECT")
+                or job.state != "CANCEL_REQUESTED" or job.fencing_token != fencing_token
+                or job.completed_at is not None or not 1 <= job.attempt_count <= job.max_attempts <= 3):
+            raise JobLeaseError("STALE_LEASE")
+        lease = self._lease(session, job_id, fencing_token)
+        attempt = self._attempt(session, job_id, fencing_token)
+        now = self._now(session)
+        if (lease.worker_ref != worker_ref or attempt.worker_ref != worker_ref
+                or lease.state != "ACTIVE" or attempt.attempt_no != job.attempt_count
+                or attempt.completed_at is not None or attempt.error_code is not None
+                or job.lease_expires_at is None
+                or job.lease_expires_at != lease.lease_expires_at
+                or job.lease_expires_at > now or job.cancel_requested_by is None
+                or job.cancel_reason is None or job.cancel_requested_at is None
+                or job.cancel_requested_at < lease.acquired_at):
+            raise JobLeaseError("STALE_LEASE")
+        return self._claim(job), job.cancel_requested_by, job.cancel_requested_at
+
+    def recover_expired_parse_cancel(self, transaction: object, *, job_id: uuid.UUID,
+                                     fencing_token: int, worker_ref: str) -> ClaimedJob:
+        claim, _, _ = self.expired_parse_cancel_facts(transaction, job_id=job_id,
+            fencing_token=fencing_token, worker_ref=worker_ref)
+        session = self._session(transaction)
+        job = session.get(JobRow, job_id)
+        lease = self._lease(session, job_id, fencing_token)
+        attempt = self._attempt(session, job_id, fencing_token)
+        now = self._now(session)
+        lease.state = "EXPIRED"
+        attempt.completed_at = now
+        attempt.error_code = "JOB_CANCELLED"
+        job.state = "CANCELLED"
+        job.lease_expires_at = None
+        job.completed_at = now
+        session.flush()
+        return claim
+
+    def recovered_parse_cancel_facts(self, transaction: object, *, job_id: uuid.UUID,
+                                     fencing_token: int, worker_ref: str):
+        """Read-only exact terminal generation, including original cancellation metadata."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token,
+                            worker_ref=worker_ref)
+        session = self._session(transaction)
+        job = session.scalar(select(JobRow).where(JobRow.job_id == job_id))
+        lease = session.scalar(select(JobLeaseRow).where(
+            JobLeaseRow.job_id == job_id, JobLeaseRow.fencing_token == fencing_token))
+        attempt = session.scalar(select(JobAttemptRow).where(
+            JobAttemptRow.job_id == job_id, JobAttemptRow.fencing_token == fencing_token))
+        if (job is None or lease is None or attempt is None
+                or (job.owner_module, job.job_type, job.scope) !=
+                    ("document", "DOCUMENT_PARSE", "PROJECT")
+                or job.state != "CANCELLED" or job.fencing_token != fencing_token
+                or job.lease_expires_at is not None or job.completed_at is None
+                or not 1 <= job.attempt_count <= job.max_attempts <= 3
+                or lease.state != "EXPIRED" or lease.worker_ref != worker_ref
+                or attempt.worker_ref != worker_ref
+                or attempt.attempt_no != job.attempt_count
+                or attempt.completed_at is None or attempt.error_code != "JOB_CANCELLED"
+                or attempt.completed_at != job.completed_at
+                or job.completed_at < lease.lease_expires_at
+                or job.cancel_requested_by is None or job.cancel_reason is None
+                or job.cancel_requested_at is None
+                or job.cancel_requested_at < lease.acquired_at):
+            raise JobLeaseError("STALE_LEASE")
+        return self._claim(job), job.cancel_requested_by, job.cancel_requested_at, job.completed_at
+
+    def finish(self, transaction: object, *, job_id: uuid.UUID,
+               fencing_token: int, worker_ref: str) -> ClaimedJob:
+        session = self._session(transaction)
+        job, lease, attempt = self._current(session, job_id, fencing_token, worker_ref)
+        now = self._now(session)
+        if job.lease_expires_at is None or job.lease_expires_at <= now or lease.lease_expires_at <= now:
+            raise JobLeaseError("STALE_LEASE")
+        claim = self._claim(job)
+        job.state = "SUCCEEDED"
+        job.lease_expires_at = None
+        job.completed_at = now
+        lease.state = "RELEASED"
+        attempt.completed_at = now
+        session.flush()
+        return claim
+
+    def retry_or_fail(self, transaction: object, *, job_id: uuid.UUID,
+                      fencing_token: int, worker_ref: str,
+                      error_code: str, retryable: bool, delay_seconds: int) -> str:
+        session = self._session(transaction)
+        job, lease, attempt = self._current(session, job_id, fencing_token, worker_ref)
+        now = self._now(session)
+        if job.lease_expires_at is None or job.lease_expires_at <= now or lease.lease_expires_at <= now:
+            raise JobLeaseError("STALE_LEASE")
+        lease.state = "RELEASED"
+        attempt.completed_at = now
+        attempt.error_code = error_code
+        job.lease_expires_at = None
+        if retryable and job.attempt_count < job.max_attempts:
+            job.state = "RETRY_WAIT"
+            job.available_at = now + timedelta(seconds=delay_seconds)
+        else:
+            job.state = "FAILED"
+            job.completed_at = now
+        session.flush()
+        return job.state
+
+    @staticmethod
+    def _session(transaction: object) -> Session:
+        try:
+            session = transaction.session  # type: ignore[attr-defined]
+        except (AttributeError, RuntimeError):
+            raise JobLeaseError("JOB_STORE_UNAVAILABLE") from None
+        if not isinstance(session, Session) or not session.in_transaction():
+            raise JobLeaseError("JOB_STORE_UNAVAILABLE")
+        return session
+
+    @staticmethod
+    def _now(session: Session):
+        return session.execute(select(func.clock_timestamp())).scalar_one()
+
+    @staticmethod
+    def _claim(job: JobRow) -> ClaimedJob:
+        return ClaimedJob(job.job_id, job.job_type, job.scope, job.project_id,
+                          dict(job.payload_refs), job.trace_id,
+                          job.fencing_token, job.attempt_count)
+
+    @staticmethod
+    def _lease(session: Session, job_id: uuid.UUID, token: int) -> JobLeaseRow:
+        lease = session.execute(select(JobLeaseRow).where(
+            JobLeaseRow.job_id == job_id,
+            JobLeaseRow.fencing_token == token,
+            JobLeaseRow.state == "ACTIVE",
+        ).with_for_update(of=JobLeaseRow)).scalar_one_or_none()
+        if lease is None:
+            raise JobLeaseError("STALE_LEASE")
+        return lease
+
+    @staticmethod
+    def _attempt(session: Session, job_id: uuid.UUID, token: int) -> JobAttemptRow:
+        attempt = session.execute(select(JobAttemptRow).where(
+            JobAttemptRow.job_id == job_id,
+            JobAttemptRow.fencing_token == token,
+        ).with_for_update(of=JobAttemptRow)).scalar_one_or_none()
+        if attempt is None:
+            raise JobLeaseError("INCONSISTENT_ATTEMPT")
+        return attempt
+
+    def _current(self, session: Session, job_id: uuid.UUID,
+                 token: int, worker_ref: str) -> tuple[JobRow, JobLeaseRow, JobAttemptRow]:
+        job = session.execute(select(JobRow).where(JobRow.job_id == job_id)
+                              .with_for_update(of=JobRow)).scalar_one_or_none()
+        if job is None or job.state != "RUNNING" or job.fencing_token != token:
+            raise JobLeaseError("STALE_LEASE")
+        lease = self._lease(session, job_id, token)
+        if lease.worker_ref != worker_ref:
+            raise JobLeaseError("STALE_LEASE")
+        attempt = self._attempt(session, job_id, token)
+        if attempt.worker_ref != worker_ref or attempt.completed_at is not None:
+            raise JobLeaseError("STALE_LEASE")
+        return job, lease, attempt

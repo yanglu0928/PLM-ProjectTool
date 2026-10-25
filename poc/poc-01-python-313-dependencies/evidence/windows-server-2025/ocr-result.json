@@ -1,0 +1,18 @@
+{
+  "platform": {
+    "system": "Windows",
+    "release": "2025Server",
+    "version": "10.0.26100"
+  },
+  "python_version": "3.13.15",
+  "tesseract_languages": ["chi_sim", "eng"],
+  "ghostscript": "gswin64c.exe",
+  "output_type": "pdfa-2",
+  "deskew": true,
+  "pdfa_validated": true,
+  "ocrmypdf_exit_code": 0,
+  "expected_terms_passed": 5,
+  "expected_terms_total": 5,
+  "term_recall": 1.0,
+  "status": "PASS"
+}

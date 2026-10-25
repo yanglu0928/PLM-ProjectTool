@@ -1,0 +1,8 @@
+Looking in links: d:\AI����\PLM��Ŀʵʩ��������\artifacts\poc-01\windows\wheelhouse
+Requirement already satisfied: pip in .\.poc-runtime\poc-01\windows-offline\Lib\site-packages (26.2.1)
+Processing .\artifacts\poc-01\windows\wheelhouse\setuptools-84.0.0-py3-none-any.whl
+Processing .\artifacts\poc-01\windows\wheelhouse\wheel-0.48.0-py3-none-any.whl
+Processing .\artifacts\poc-01\windows\wheelhouse\packaging-26.3-py3-none-any.whl (from wheel)
+Installing collected packages: setuptools, packaging, wheel
+
+Successfully installed packaging-26.3 setuptools-84.0.0 wheel-0.48.0

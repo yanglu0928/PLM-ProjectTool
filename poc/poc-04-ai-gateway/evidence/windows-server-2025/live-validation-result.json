@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "model": "deepseek-flash",
+  "base_url": "https://api.deepseek.com",
+  "secret_value_recorded": false,
+  "response_content_recorded": false,
+  "scenarios": [
+    {
+      "name": "live_text",
+      "status": "PASS",
+      "duration_seconds": 1.055,
+      "expected_output_match": true
+    },
+    {
+      "name": "live_sse_stream",
+      "status": "PASS",
+      "duration_seconds": 0.804,
+      "expected_output_match": true
+    },
+    {
+      "name": "live_structured_json",
+      "status": "PASS",
+      "duration_seconds": 0.918,
+      "expected_output_match": true
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "checked_at_utc": "2026-09-17T06:23:34.2704348Z",
+  "platform": {
+    "caption": "Microsoft Windows 11 Home Chinese",
+    "version": "10.0.26200",
+    "build_number": "26200",
+    "architecture": "x86-64",
+    "logical_processors": 32,
+    "memory_gb": 31.63,
+    "data_drive_free_gb": 435.29,
+    "is_administrator": false
+  },
+  "local_state": {
+    "postgresql_installed": false,
+    "postgresql_service_count": 0,
+    "visual_studio_cpp_available": false,
+    "cl_available": false,
+    "nmake_available": false,
+    "git_available": true
+  },
+  "official_assets": {
+    "postgresql_version": "18.6",
+    "installer": {
+      "available": true,
+      "status_code": 200,
+      "content_length": 375833688
+    },
+    "binaries_zip": {
+      "available": true,
+      "status_code": 200,
+      "content_length": 343808005
+    },
+    "pgvector": {
+      "version": "0.8.6",
+      "tag": "v0.8.6",
+      "commit": "8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c",
+      "postgresql_18_windows_build_documented": true
+    }
+  },
+  "assessment": {
+    "status": "READY_FOR_ASSET_PREPARATION",
+    "postgresql_assets_available": true,
+    "pgvector_source_available": true,
+    "windows_build_toolchain_ready": false
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "schema_version": "poc-03.holdout-coverage-result.v1",
+  "status": "PASS",
+  "summary": {
+    "case_count": 50,
+    "unique_query_count": 50,
+    "unique_candidate_count": 50,
+    "unique_chunk_count": 50,
+    "source_type_counts": {
+      "CONTRACT": 7,
+      "STANDARD_CAPABILITY": 33,
+      "SURVEY": 2,
+      "TECHNICAL_AGREEMENT": 8
+    },
+    "classification_counts": {
+      "INSUFFICIENT_INFORMATION": 13,
+      "NON_STANDARD": 10,
+      "NO_RELIABLE_MATCH": 1,
+      "PARTIALLY_SATISFIED": 3,
+      "STANDARD_SATISFIED": 23
+    }
+  },
+  "checks": {
+    "exactly_50_cases": true,
+    "unique_case_ids": true,
+    "unique_candidate_ids": true,
+    "distinct_query_per_case": true,
+    "unique_locked_chunk_per_case": true,
+    "all_source_types_present": true,
+    "source_type_quotas_match": true,
+    "all_final_classifications_present": true,
+    "all_cases_human_approved": true,
+    "all_cases_project_scoped": true,
+    "citation_lock_aligned": true,
+    "holdout_isolation_enforced": true
+  },
+  "missing_source_types": [],
+  "missing_classifications": [],
+  "privacy": {
+    "queries_committed": false,
+    "answer_terms_committed": false,
+    "reviewer_names_committed": false,
+    "dataset_committed": false,
+    "source_names_committed": false
+  }
+}
