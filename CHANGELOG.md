@@ -4,7 +4,9 @@
 
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A03`：当前非发行候选的包内 PostgreSQL 18.6/pgvector 0.8.6 空库与合成历史行 `20261024_0185` migration/downgrade/re-upgrade 通过；loopback HTTPS synthetic login/Session=200、无License项目403。48临时Vault目标及PG/API/Caddy进程/测试目录清理，候选 SHA 未变。Windows 11 合成技术验收；正式产品公钥/License、客户/发行信任均未验，`release_eligible=false`。详情见 P51-A03 记录。
 
-- 2026-10-25 / `PLT-PKG-01-A09-P51-A04` 前置检查：将同一新候选接入已修正的 Survey Review Edge/PG 验收器，确认 ProjectManager成员只读、受指派Reviewer可见决定控件及精确 SurveyVersion 深链，并以零决定为硬条件。仅一次性合成数据，执行中。
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A04`：当前候选 SHA `3cbd68aa…f2326f455` 的 Survey Review 真实Edge/HTTPS/PG18合成链通过。成员读取成功且无决定按钮；指定Reviewer的列表、详情、固定版本链接与按钮正确；Review决定为0、批准指针NULL、Audit/回执存在。临时服务/Vault/profile/目录已清理，非发行/非客户信任。终端中文列表标签显示乱码但验收器内部精确断言通过，详见进度记录。
+
+- 2026-10-25 / `PILOT-CHAIN-A02`：更新Prototype→Solution→Plan→Output路线；旧Plan模块缺失结论已失效，当前PlanVersion受Outline/Section/StructuredSpec固定批准来源Owner阻断，选择 `SOL-03-A06-P01` 作为下一项。纯静态审计，无程序/API/Schema变化；Pilot仍NOT_READY。详见 `docs/progress/pilot-chain-a02-current-route-audit.md`。
 
 - 2026-10-25：新增 `PLT-PKG-01-A09-P51-A01` 当前源码 Windows 11 非发行安装前置核查。正式公钥缺失，正式安装继续阻塞；将后续限定为最新源码候选在独立临时 ASCII 根的离线安装/启动/停止/清理验收，禁止触碰正式安装根/生产SCM/现有数据库或把合成信任写成正式通过。此项只读计划，无产品/API/Schema/Migration变化。详见进度记录。
 
