@@ -24,6 +24,14 @@ from verify_windows_unified_extract import verify as verify_stage
 KIND = "WINDOWS11_CURRENT_APP_NON_RELEASE_CANDIDATE"
 
 
+def _target_rehearsal(callback, default, candidate: Path, stage: Path,
+                      layout: Path) -> dict[str, object]:
+    evidence = (callback or default)(candidate, candidate, stage, layout)
+    if not isinstance(evidence, dict):
+        raise ValueError("target layout rehearsal must return evidence")
+    return evidence
+
+
 def _prior_archive_attestation(candidate: Path, expected_sha256: str,
                                attestation: Path) -> tuple[int, int]:
     try:
@@ -83,7 +91,8 @@ def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[st
 def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
           expected_sha256: str, *, synthetic_license_document_factory=None,
           licensed_https_probe=None, fast_reuse_verified_stage: bool = False,
-          prior_attestation: Path | None = None) -> dict[str, object]:
+          prior_attestation: Path | None = None,
+          target_layout_rehearser=None) -> dict[str, object]:
     validate_output_root(pristine)
     validate_output_root(target)
     if pristine == target or stage in {pristine, target}:
@@ -128,15 +137,27 @@ def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
         if (_candidate != candidate or _source != candidate or _stage != stage or
                 layout.resolve(strict=True).parent != Path(tempfile.gettempdir()).resolve(strict=True)):
             raise ValueError("current layout source differs")
+        persistent = (target_layout_evidence or {}).get("persistent_files", {})
+        if not isinstance(persistent, dict):
+            raise ValueError("persistent layout evidence rejected")
         landed = {path.relative_to(layout).as_posix().casefold()
                   for path in layout.rglob("*") if path.is_file()}
-        if landed != {name.casefold() for name in mapping.values()}:
+        expected_files = {name.casefold() for name in mapping.values()} | {
+            str(name).casefold() for name in persistent
+        }
+        if landed != expected_files:
             raise ValueError("current layout file inventory differs")
+        for relative, expected_sha in persistent.items():
+            if digest_path(layout / Path(relative)) != expected_sha:
+                raise ValueError("persistent layout marker differs: " + str(relative))
         if not fast_reuse_verified_stage:
             for source, destination in mapping.items():
                 expected = hashes[source] if source in hashes else digest_path(stage / source)
                 if digest_path(layout / destination) != expected:
                     raise ValueError("current layout hash differs: " + destination)
+        # Keep the smoke's package-file count comparable to its pristine verifier;
+        # persistent marker files are independently hash-checked above and reported
+        # by the A16 rehearsal evidence, not counted as candidate payload.
         return {"mapping_sha256": mapping_sha, "file_count": len(mapping)}
 
     def place_layout(_candidate: Path, _source: Path, _stage: Path, layout: Path) -> dict:
@@ -165,11 +186,20 @@ def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
             raise ValueError("current layout count differs")
         return result
 
+    target_layout_evidence: dict[str, object] | None = None
+
+    def rehearse_target(_candidate: Path, _source: Path, _stage: Path, layout: Path) -> dict:
+        nonlocal target_layout_evidence
+        evidence = _target_rehearsal(target_layout_rehearser, place_layout,
+                                     _candidate, _stage, layout)
+        target_layout_evidence = evidence
+        return evidence
+
     place_layout(candidate, candidate, stage, pristine)
     try:
         result = original_smoke(candidate, candidate, stage, pristine, target,
                                 layout_verifier=check_layout,
-                                layout_rehearser=place_layout,
+                                layout_rehearser=rehearse_target,
                                 synthetic_license_document_factory=synthetic_license_document_factory,
                                 licensed_https_probe=licensed_https_probe)
         if (result.get("synthetic_layout_file_count_before_injection") != count + len(META)
@@ -185,6 +215,7 @@ def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
             raise ValueError("current candidate changed during smoke")
         return {**result, "status": "SYNTHETIC_CURRENT_APP_PACKAGED_HTTPS_PASS",
                 "candidate_sha256": expected_sha256, "legal_clearance": False,
+                "target_layout_evidence": target_layout_evidence,
                 "archive_sha256_reused_from_prior_attestation": archive_stat is not None}
     finally:
         temp = Path(tempfile.gettempdir()).resolve(strict=True)

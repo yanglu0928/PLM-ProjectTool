@@ -10,10 +10,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from smoke_current_app_packaged_https import (  # noqa: E402
     _inputs,
     _prior_archive_attestation,
+    _target_rehearsal,
 )
 
 
 class CurrentAppHttpsBoundaryTests(unittest.TestCase):
+    def test_target_rehearsal_uses_upgrade_callback_and_requires_evidence(self) -> None:
+        candidate = Path("candidate.zip")
+        stage = Path("stage")
+        target = Path("target")
+        seen = []
+
+        def upgrade(_candidate, _source, _stage, layout):
+            seen.append(layout)
+            return {"status": "UPGRADED_LAYOUT_READY", "layout": str(layout)}
+
+        evidence = _target_rehearsal(upgrade, lambda *_: self.fail("default used"),
+                                     candidate, stage, target)
+        self.assertEqual(seen, [target])
+        self.assertEqual(evidence["status"], "UPGRADED_LAYOUT_READY")
+        with self.assertRaisesRegex(ValueError, "return evidence"):
+            _target_rehearsal(lambda *_: None, upgrade, candidate, stage, target)
+
     def test_prior_attestation_binds_candidate_name_size_sha_and_nonrelease_flags(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             parent = Path(directory) / "current-app-candidate-test"
