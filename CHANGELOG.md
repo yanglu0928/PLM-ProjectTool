@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/PKG-PILOT-01-A04-P07 完成交接批准→调研定义创建入口的只读前置核查：后端 Survey Create 已在 Windows 组合中装配且交接批准问题可作为受控来源，但前端尚无创建桥接/按钮。兼容性：仅核对 Windows 11 已验切片与当前源码，Windows Server 2025/Debian 13 未实测。升级/回滚：纯文档，无 API/Schema/数据迁移或用户功能变化。验证：路由、权限、来源证明与调研列表/详情代码核对；调研写链未运行。已知问题：调研定义/版本实际创建与访谈资料、正式信任/安装/UAT/Gate/Pilot/Release 仍未完成；转 `SUR-07-A01`。
+
 - 2026-10-25：0.1.0-dev.0/HND-05-A05-P06 从干净源提交重建 Windows 11 后端 wheel 与非发行候选包（SHA-256 `4cd0b60aaa439fd9e0a349233b065fa79bc6caacceaca017ec80791957fe3dc7`），新增可重复包内交接 Review 验收夹具，不改冻结 API/Schema/权限。兼容性：仅 Windows 11 合成信任环境已实测；Windows Server 2025/Debian 13 未实测。升级/回滚：无数据库迁移，本候选替换旧非发行候选用于内部验证，旧包/合法 Review/Audit 保留；正式安装/升级仍未验。验证：22,196载荷独立清洁解包逐件哈希、临时布局及 Edge/HTTPS/隔离 PG18 交接送审→固定版本核对→合成客户批准、同号重放、唯一决定/Audit/收据与匿名/外项目/非评审人/错项目/合成失效 License 拒绝，第四轮退出0；前三轮夹具偏差留痕，进程/临时库/布局清理。已知问题：本包 `release_eligible=false`、`legal_clearance=false`；真人客户确认、正式公钥/服务账户/CA、License 自然到期/撤销、调研及后续完整链、离线安装升级、UAT/Gate 3～7/Pilot/正式三平台 Release 未通过。
 
 - 2026-10-25：0.1.0-dev.0/HND-05-A05-P05 交接评审详情把本轮固定 VersionId 传给交接详情精确深链，保留普通分析返回入口与方案类版本链接。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License/数据迁移；可撤链接，不删除 Review/Audit。验证：两页定向12、前端全量2012、typecheck/build退出0。已知问题：新前后端/前端组合尚未打入固定包验证真实 Edge/HTTPS/PG 决定与拒绝；真人客户确认、正式信任/安装/UAT/Gate/Pilot/Release 未通过。
