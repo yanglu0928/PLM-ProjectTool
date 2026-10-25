@@ -1465,6 +1465,7 @@ class ProductionLoginTests(unittest.TestCase):
         egress_router = APIRouter()
         retrieval_router, retrieval_cancel_router = APIRouter(), APIRouter()
         validation_router = APIRouter()
+        validation_service = Mock()
         retrieval_cancel_owner = Mock(cancel=Mock())
 
         @egress_router.post("/api/v1/projects/{project_id}/egress-previews", status_code=204)
@@ -1521,8 +1522,8 @@ class ProductionLoginTests(unittest.TestCase):
                         cancellation_owner=retrieval_cancel_owner,
                     )) as retrieval_factory, patch(
                     "plm_assistant.entrypoints.production_login."
-                    "create_windows_plan_version_validation_router",
-                    return_value=validation_router,
+                    "create_windows_plan_version_validation_composition",
+                    return_value=(validation_router, validation_service),
                     ) as validation_factory:
             app = create_production_platform_write_app(settings)
         license_factory.assert_called_once()
@@ -1566,6 +1567,8 @@ class ProductionLoginTests(unittest.TestCase):
                       outline_owner)
         self.assertIs(self.project_review_factory.call_args.kwargs["outline_subject"],
                       outline_owner)
+        self.assertIs(self.project_review_factory.call_args.kwargs[
+            "plan_version_validation"], validation_service)
         self.assertTrue(any(
             getattr(route, "path", "") ==
             "/api/v1/projects/{project_id}/solution-outlines/{outline_id}/"

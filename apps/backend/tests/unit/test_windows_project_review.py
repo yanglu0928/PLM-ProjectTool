@@ -11,6 +11,10 @@ from plm_assistant.entrypoints.windows_project_review import (
 )
 from plm_assistant.modules.review.application.subject_registry import (
     ProjectReviewSubjectReadRegistry,
+    ProjectReviewSubjectRegistry,
+)
+from plm_assistant.modules.plan.application.plan_version_review_terminal import (
+    PlanVersionReviewSubjectOwner,
 )
 from plm_assistant.modules.solution.application.outline_review_subject import (
     OutlineReviewSubjectOwner,
@@ -18,6 +22,52 @@ from plm_assistant.modules.solution.application.outline_review_subject import (
 
 
 class WindowsProjectReviewCompositionTests(unittest.TestCase):
+    def test_plan_review_owner_is_only_registered_when_explicit_evaluator_is_supplied(self):
+        runtime = Mock()
+        runtime.unit_of_work = Mock()
+        evaluator = Mock()
+        evaluator.evaluate_snapshot_in_transaction = Mock()
+        prototype = Mock(SUBJECT_TYPE="PRT-03")
+        for name in (
+            "authorize_create", "authorize_replay", "prepare_start_in_transaction",
+            "finalize_start_in_transaction", "assert_active_lock_in_transaction",
+            "require_start_replay_access_in_transaction",
+            "require_transition_access_in_transaction", "assert_transition_lock_in_transaction",
+            "consume_terminal_in_transaction", "assert_terminal_consumed_in_transaction",
+            "require_transition_replay_access_in_transaction",
+        ):
+            setattr(prototype, name, Mock())
+        with patch(
+            "plm_assistant.entrypoints.windows_project_review.create_windows_prototype_review_subject",
+            return_value=prototype,
+        ), patch(
+            "plm_assistant.entrypoints.windows_project_review.ProjectReviewSubjectRegistry",
+            wraps=ProjectReviewSubjectRegistry,
+        ) as registry:
+            create_windows_project_review_router(
+                runtime, sessions=Mock(), origins=Mock(), license_guard=Mock(),
+                audit=Mock(), plan_version_validation=evaluator,
+            )
+        registered = registry.call_args.args[0]
+        plan_owner = next(owner for owner in registered if owner.SUBJECT_TYPE == "PLN-02")
+        self.assertIs(type(plan_owner), PlanVersionReviewSubjectOwner)
+        self.assertIs(plan_owner._readiness._evaluator, evaluator)
+        self.assertEqual(1, sum(owner.SUBJECT_TYPE == "PLN-02" for owner in registered))
+
+        with patch(
+            "plm_assistant.entrypoints.windows_project_review.create_windows_prototype_review_subject",
+            return_value=prototype,
+        ), patch(
+            "plm_assistant.entrypoints.windows_project_review.ProjectReviewSubjectRegistry",
+            wraps=ProjectReviewSubjectRegistry,
+        ) as default_registry:
+            create_windows_project_review_router(
+                runtime, sessions=Mock(), origins=Mock(), license_guard=Mock(),
+                audit=Mock(),
+            )
+        self.assertNotIn("PLN-02", tuple(
+            owner.SUBJECT_TYPE for owner in default_registry.call_args.args[0]))
+
     def test_explicit_outline_subject_registered_for_read_list_and_commands(self):
         runtime = Mock()
         runtime.unit_of_work = Mock()

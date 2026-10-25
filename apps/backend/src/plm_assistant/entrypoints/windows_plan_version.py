@@ -161,6 +161,22 @@ def create_windows_plan_version_validation_router(
     document_storage_root: Path, parse_result_storage_root: Path,
     documents, downloads, parse_results,
 ):
+    return create_windows_plan_version_validation_composition(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=license_guard, audit=audit,
+        document_storage_root=document_storage_root,
+        parse_result_storage_root=parse_result_storage_root,
+        documents=documents, downloads=downloads,
+        parse_results=parse_results,
+    )[0]
+
+
+def create_windows_plan_version_validation_composition(
+    *, runtime, sessions, origins, license_guard, audit,
+    document_storage_root: Path, parse_result_storage_root: Path,
+    documents, downloads, parse_results,
+):
+    """Return the explicit Windows validation route and its exact evaluator."""
     if any(value is None for value in (sessions, origins)):
         raise WindowsPlanVersionStartupError()
     try:
@@ -170,8 +186,9 @@ def create_windows_plan_version_validation_router(
             parse_result_storage_root=parse_result_storage_root,
             documents=documents, downloads=downloads,
             parse_results=parse_results)
-        return create_plan_version_validate_router(
+        router = create_plan_version_validate_router(
             sessions=sessions, origins=origins, validations=service)
+        return router, service
     except Exception:
         raise WindowsPlanVersionStartupError() from None
 

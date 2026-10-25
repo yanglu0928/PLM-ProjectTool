@@ -35,6 +35,7 @@ from plm_assistant.modules.project.application.authorization import AuthorizedPr
 from plm_assistant.modules.project.application.reviewers import ProjectReviewerFacts
 from plm_assistant.modules.review.application.project_persistence import ProjectReviewPersistenceService
 from plm_assistant.modules.review.application.transition_command import DecideReviewRound, WithdrawReviewRound, ReviewTransitionCommandService, ReviewTransitionCommandError
+from plm_assistant.modules.review.application.subject_registry import ProjectReviewSubjectRegistry
 from plm_assistant.modules.review.domain.round_progress import ReviewDecisionKind
 from plm_assistant.modules.review.infrastructure.create_repository import SqlAlchemyReviewCreationRepository
 from plm_assistant.modules.review.infrastructure.start_repository import SqlAlchemyReviewStartRepository
@@ -105,16 +106,17 @@ def main(port: int) -> None:
                 readiness = PlanVersionReviewReadinessService(repository=SqlAlchemyPlanVersionReviewReadinessRepository(), evaluator=evaluator)
                 audit = AuditService(SqlAlchemyAuditRepository())
                 owner = PlanVersionReviewSubjectOwner(repository=SqlAlchemyPlanReviewSubjectRepository(), reviewers=reviewer_facts, readiness=readiness, audit=audit)
+                subject_registry = ProjectReviewSubjectRegistry((owner,))
                 receipts = SqlAlchemyIdempotencyReceipts()
                 starts = SqlAlchemyReviewStartRepository()
-                persistence = ProjectReviewPersistenceService(creation_repository=SqlAlchemyReviewCreationRepository(), round_repository=starts, audit=audit, subjects=owner, clock=lambda: now)
+                persistence = ProjectReviewPersistenceService(creation_repository=SqlAlchemyReviewCreationRepository(), round_repository=starts, audit=audit, subjects=subject_registry, clock=lambda: now)
                 submit = PlanVersionReviewSubmissionService(unit_of_work=uow, access=access, license_guard=license_guard,
                     authorization=projects, reviewers=Mock(), receipts=receipts,
                     replay_repository=SqlAlchemyProjectReviewSubmissionRepository(), reviews=persistence,
-                    subjects=owner, scope_repository=SqlAlchemyPlanReviewSubjectRepository(), clock=lambda: now)
+                    subjects=subject_registry, scope_repository=SqlAlchemyPlanReviewSubjectRepository(), clock=lambda: now)
                 transition = ReviewTransitionCommandService(unit_of_work=uow, access=access, projects=projects,
                     license_guard=license_guard, repository=SqlAlchemyReviewTransitionRepository(), receipts=receipts,
-                    audit=audit, subjects=owner, clock=lambda: now)
+                    audit=audit, subjects=subject_registry, clock=lambda: now)
                 started = []
                 for index, (plan_id, version_id) in enumerate(plans):
                     if index > 0:
@@ -146,11 +148,12 @@ def main(port: int) -> None:
                     repository=SqlAlchemyPlanReviewSubjectRepository(),
                     reviewers=reviewer_facts, readiness=readiness,
                     audit=FailPlanTerminalAudit())
+                failing_registry = ProjectReviewSubjectRegistry((failing_owner,))
                 failing_transition = ReviewTransitionCommandService(
                     unit_of_work=uow, access=access, projects=projects,
                     license_guard=license_guard,
                     repository=SqlAlchemyReviewTransitionRepository(),
-                    receipts=receipts, audit=audit, subjects=failing_owner,
+                    receipts=receipts, audit=audit, subjects=failing_registry,
                     clock=lambda: now)
                 try:
                     failing_transition.withdraw_idempotent(withdraw, idempotency_key=key)
@@ -190,7 +193,7 @@ def main(port: int) -> None:
                     raise AssertionError("migration 0210 allowed loss of real withdrawal history")
                 with connect(db_name) as db:
                     assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20261026_0210"
-                print("PLAN_VERSION_REVIEW_TERMINAL_PG_PASS: real Migrations 0210/0200/0190, Approved pointer, old Approved SUPERSEDED, WITHDRAWN-to-RETURNED result, Review+Plan Audits, receipts and exact idempotent replays; Session/License/Project/reviewer/source proof test doubles")
+                print("PLAN_VERSION_REVIEW_REGISTRY_TERMINAL_PG_PASS: real Migrations 0210/0200/0190, ProjectReviewSubjectRegistry, Approved pointer, old Approved SUPERSEDED, WITHDRAWN-to-RETURNED result, Review+Plan Audits, receipts and exact idempotent replays; Session/License/Project/reviewer/source proof test doubles")
             finally:
                 engine.dispose()
         finally:

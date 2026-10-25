@@ -290,7 +290,7 @@ def create_windows_project_review_list_router(
 def create_windows_project_review_router(
     runtime, *, sessions, origins, license_guard, audit,
     documents=None, downloads=None, parse_results=None,
-    outline_subject=None,
+    outline_subject=None, plan_version_validation=None,
 ) -> APIRouter:
     """Compose one frozen Router with all approved PROJECT Subject Owners."""
     if any(value is None for value in (
@@ -348,6 +348,32 @@ def create_windows_project_review_router(
             reviewers=reviewers, audit=audit,
         )
         subject_owners = [handover, survey, requirement, prototype]
+        if plan_version_validation is not None:
+            if not callable(getattr(
+                    plan_version_validation,
+                    "evaluate_snapshot_in_transaction", None)):
+                raise ValueError("PlanVersion current evaluator unavailable")
+            from plm_assistant.modules.plan.application.plan_review_readiness import (
+                PlanVersionReviewReadinessService,
+            )
+            from plm_assistant.modules.plan.application.plan_version_review_terminal import (
+                PlanVersionReviewSubjectOwner,
+            )
+            from plm_assistant.modules.plan.infrastructure.plan_review_readiness_repository import (
+                SqlAlchemyPlanVersionReviewReadinessRepository,
+            )
+            from plm_assistant.modules.plan.infrastructure.plan_review_subject_repository import (
+                SqlAlchemyPlanReviewSubjectRepository,
+            )
+            subject_owners.append(PlanVersionReviewSubjectOwner(
+                repository=SqlAlchemyPlanReviewSubjectRepository(),
+                reviewers=reviewers,
+                readiness=PlanVersionReviewReadinessService(
+                    repository=SqlAlchemyPlanVersionReviewReadinessRepository(),
+                    evaluator=plan_version_validation,
+                ),
+                audit=audit,
+            ))
         if all(dependency_shape):
             document_proofs = DocumentFixedSourceProofService(
                 documents=documents, downloads=downloads,
