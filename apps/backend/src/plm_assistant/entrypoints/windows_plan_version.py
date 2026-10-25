@@ -22,6 +22,9 @@ from plm_assistant.modules.plan.api.read_plan_version import (
 from plm_assistant.modules.plan.api.list_plan_version_wbs import (
     create_plan_version_wbs_list_router,
 )
+from plm_assistant.modules.plan.api.validate_plan_version import (
+    create_plan_version_validate_router,
+)
 from plm_assistant.modules.plan.api.wbs_list_cursor import (
     PlanVersionWbsCursorCodec,
 )
@@ -149,6 +152,26 @@ def create_windows_plan_version_wbs_list_router(
             repository=SqlAlchemyPlanVersionWbsReadRepository())
         return create_plan_version_wbs_list_router(
             sessions=sessions, origins=origins, reads=reads, cursors=cursors)
+    except Exception:
+        raise WindowsPlanVersionStartupError() from None
+
+
+def create_windows_plan_version_validation_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    document_storage_root: Path, parse_result_storage_root: Path,
+    documents, downloads, parse_results,
+):
+    if any(value is None for value in (sessions, origins)):
+        raise WindowsPlanVersionStartupError()
+    try:
+        service = create_windows_plan_version_validation_service(
+            runtime=runtime, license_guard=license_guard, audit=audit,
+            document_storage_root=document_storage_root,
+            parse_result_storage_root=parse_result_storage_root,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results)
+        return create_plan_version_validate_router(
+            sessions=sessions, origins=origins, validations=service)
     except Exception:
         raise WindowsPlanVersionStartupError() from None
 
