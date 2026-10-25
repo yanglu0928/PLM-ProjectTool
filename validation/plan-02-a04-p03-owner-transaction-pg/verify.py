@@ -441,11 +441,30 @@ class _FailingAudit:
 
 def _verify_validation_owner(context: dict[str, object], storage_root: Path,
                              plan_id: uuid.UUID, version_id: uuid.UUID) -> None:
+    from fastapi.testclient import TestClient
+    from plm_assistant.entrypoints.api import create_app
+    from plm_assistant.entrypoints.windows_plan_version import (
+        create_windows_plan_version_validation_router,
+    )
+    from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+    from plm_assistant.modules.auth.application.session_service import SessionService
+    from plm_assistant.modules.auth.infrastructure.session_repository import (
+        SqlAlchemySessionRepository,
+    )
+
     with psycopg.connect(**_connection(context["port"])) as db:
         actor = db.execute(
             "SELECT user_id FROM plm.auth_sessions WHERE session_token_digest=%s",
             (hashlib.sha256(context["token"]).digest(),),
         ).fetchone()[0]
+        role = db.execute(
+            "SELECT project_role FROM plm.prj_project_members WHERE project_id=%s "
+            "AND user_id=%s AND state='ACTIVE'",
+            (context["project"], actor),
+        ).fetchone()
+    assert role is not None and role[0] in {
+        "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+    }, role
     service = create_windows_plan_version_validation_service(
         runtime=context["runtime"], license_guard=context["license_guard"],
         audit=context["audit"], document_storage_root=storage_root,
@@ -483,6 +502,135 @@ def _verify_validation_owner(context: dict[str, object], storage_root: Path,
             (version_id,),
         ).fetchone()[0] == "DRAFT"
 
+    origins = LoginOriginPolicy(["https://plm.example.test"])
+    sessions = SessionService(
+        unit_of_work=context["runtime"].unit_of_work,
+        repository=SqlAlchemySessionRepository(), issue_access=object(),
+        audit=context["audit"])
+    router = create_windows_plan_version_validation_router(
+        runtime=context["runtime"], sessions=sessions, origins=origins,
+        license_guard=context["license_guard"], audit=context["audit"],
+        document_storage_root=storage_root, parse_result_storage_root=storage_root,
+        documents=context["documents"], downloads=context["downloads"],
+        parse_results=context["parse_results"],
+    )
+    path = (f"/api/v1/projects/{context['project']}/plans/{plan_id}/versions/"
+            f"{version_id}:validate")
+    headers = {
+        "cookie": f"plm_session={context['token'].hex()}",
+        "origin": "https://plm.example.test",
+        "x-csrf-token": context["csrf"].hex(),
+        "idempotency-key": "plan-version-validate-http-0001",
+    }
+
+    def counts() -> tuple[int, int, int]:
+        with psycopg.connect(**_connection(context["port"])) as db:
+            result_count = db.execute(
+                "SELECT count(*) FROM plm.pln_plan_version_validation_results "
+                "WHERE project_id=%s AND plan_id=%s AND plan_version_id=%s",
+                (context["project"], plan_id, version_id),
+            ).fetchone()[0]
+            audit_count = db.execute(
+                "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
+                "AND target_object_id=%s AND action='PLAN_VERSION_VALIDATED'",
+                (context["project"], version_id),
+            ).fetchone()[0]
+            receipt_count = db.execute(
+                "SELECT count(*) FROM plm.plt_idempotency_receipts "
+                "WHERE actor_id=%s AND project_id=%s "
+                "AND operation='V1_PLAN_VERSION_VALIDATE'",
+                (actor, context["project"]),
+            ).fetchone()[0]
+            return result_count, audit_count, receipt_count
+
+    before_http = counts()
+    with TestClient(create_app(plan_version_validation_router=router),
+                    base_url="https://plm.example.test") as client:
+        response = client.post(path, headers=headers)
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["valid"] is True and data["blocking_issues"] == [], data
+        assert data["warnings"] == [] and data["coverage_summary"]["solution_total"] > 0
+        assert data["checked_at"].endswith("Z")
+        assert set(data) == {
+            "valid", "blocking_issues", "warnings", "coverage_summary", "checked_at",
+        }
+        assert response.headers["cache-control"] == "no-store"
+        first_http = response.json()
+        assert first_http["trace_id"] == response.headers["x-trace-id"]
+        after_first_http = counts()
+        assert after_first_http == tuple(value + 1 for value in before_http)
+
+        replay_http = client.post(path, headers=headers)
+        assert replay_http.status_code == 200, replay_http.text
+        replay_payload = replay_http.json()
+        assert replay_payload["data"] == first_http["data"]
+        assert replay_payload["trace_id"] == replay_http.headers["x-trace-id"]
+        assert counts() == after_first_http
+
+        cross_project = client.post(
+            f"/api/v1/projects/{uuid.uuid4()}/plans/{plan_id}/versions/"
+            f"{version_id}:validate", headers=headers)
+        assert cross_project.status_code == 404, cross_project.text
+        bad_origin = client.post(path, headers={
+            **headers, "origin": "https://untrusted.example.test",
+            "idempotency-key": "plan-version-validate-origin-0001",
+        })
+        assert bad_origin.status_code == 403, bad_origin.text
+        assert counts() == after_first_http
+
+    # A same-project CUSTOMER_MEMBER has a valid synthetic Session but is not
+    # authorized for this project write operation.
+    with psycopg.connect(**_connection(context["port"])) as db:
+        read_only = db.execute(
+            "SELECT m.user_id,u.credential_version FROM plm.prj_project_members m "
+            "JOIN plm.auth_users u ON u.user_id=m.user_id "
+            "WHERE m.project_id=%s AND m.project_role='CUSTOMER_MEMBER' "
+            "AND m.state='ACTIVE' ORDER BY m.effective_at LIMIT 1",
+            (context["project"],),
+        ).fetchone()
+    if read_only is None:
+        raise AssertionError("synthetic Project has no read-only member")
+    read_token = uuid.uuid4().bytes + uuid.uuid4().bytes
+    read_csrf = uuid.uuid4().bytes + uuid.uuid4().bytes
+    with psycopg.connect(**_connection(context["port"])) as db, db.transaction():
+        db.execute(
+            "INSERT INTO plm.auth_sessions(session_token_digest,csrf_digest,user_id,"
+            "credential_version,idle_expires_at,absolute_expires_at) VALUES "
+            "(%s,%s,%s,%s,statement_timestamp()+interval '30 minutes',"
+            "statement_timestamp()+interval '2 hours')",
+            (hashlib.sha256(read_token).digest(), hashlib.sha256(read_csrf).digest(),
+             read_only[0], read_only[1]),
+        )
+    read_only_response = None
+    with TestClient(create_app(plan_version_validation_router=router),
+                    base_url="https://plm.example.test") as client:
+        read_only_response = client.post(path, headers={
+            **headers,
+            "cookie": f"plm_session={read_token.hex()}",
+            "x-csrf-token": read_csrf.hex(),
+            "idempotency-key": "plan-version-validate-readonly-0001",
+        })
+    assert read_only_response is not None
+    assert read_only_response.status_code == 404, read_only_response.text
+    assert counts() == after_first_http
+
+    failing_router = create_windows_plan_version_validation_router(
+        runtime=context["runtime"], sessions=sessions, origins=origins,
+        license_guard=context["license_guard"], audit=_FailingAudit(),
+        document_storage_root=storage_root, parse_result_storage_root=storage_root,
+        documents=context["documents"], downloads=context["downloads"],
+        parse_results=context["parse_results"],
+    )
+    with TestClient(create_app(plan_version_validation_router=failing_router),
+                    base_url="https://plm.example.test") as client:
+        audit_failure = client.post(path, headers={
+            **headers,
+            "idempotency-key": "plan-version-validate-http-audit-fail-0001",
+        })
+    assert audit_failure.status_code == 503, audit_failure.text
+    assert counts() == after_first_http
+
     failing = create_windows_plan_version_validation_service(
         runtime=context["runtime"], license_guard=context["license_guard"],
         audit=_FailingAudit(), document_storage_root=storage_root,
@@ -503,15 +651,24 @@ def _verify_validation_owner(context: dict[str, object], storage_root: Path,
             "SELECT count(*) FROM plm.pln_plan_version_validation_results "
             "WHERE project_id=%s AND plan_id=%s AND plan_version_id=%s",
             (context["project"], plan_id, version_id),
-        ).fetchone()[0] == 1
+        ).fetchone()[0] == after_first_http[0]
+        assert db.execute(
+            "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
+            "AND target_object_id=%s AND action='PLAN_VERSION_VALIDATED'",
+            (context["project"], version_id),
+        ).fetchone()[0] == after_first_http[1]
         assert db.execute(
             "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE actor_id=%s "
             "AND project_id=%s AND operation='V1_PLAN_VERSION_VALIDATE'",
             (actor, context["project"]),
-        ).fetchone()[0] == 1
+        ).fetchone()[0] == after_first_http[2]
+    assert counts() == after_first_http
     print("PLAN_VERSION_VALIDATION_OWNER_POSTGRESQL_PASS: current authorization/source proof, "
           "first report replay, Audit/0189/Receipt atomic binding, immutable version state, "
           "Audit failure rollback")
+    print("PLAN_VERSION_VALIDATE_HTTP_POSTGRESQL_PASS: real Windows router factory, "
+          "approved source proof, exact HTTP replay, cross-project/read-only/Origin denial, "
+          "HTTP Audit failure rollback and report/Audit/Receipt row-count atomicity")
 
 
 def verify_owner(context: dict[str, object]) -> None:
