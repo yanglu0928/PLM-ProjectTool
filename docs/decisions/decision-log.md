@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## PLAN-02-A04-P04-A04-P03-P04-S03：拆分PlanVersion创建前置与原子写入
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03`。
+- Evidence：冻结API-04的PlanVersion/WBS DTO仅为语义字段摘要；后端无可执行请求/结果模型。现有Approved Solution proof只读，未锁定所有可变来源指针。聚合写入还需完整字段校验、确定性fingerprint、持久幂等、不可变响应重建及Audit。
+- Decision：将原聚合写Owner任务拆为P01严格内部模型/纯校验/规范化/指纹（不写数据库）与P02同事务聚合持久化、来源复核、幂等和Audit。HTTP/平台装配另行验收，非空OutputArtifact引用失败关闭。
+- Impact/Rollback：只是内部实现次序细化，不改冻结API路径、字段语义、权限或数据；不产生Schema/API迁移。本片仅核查文档，若不继续实施可撤回拆分，运行代码无影响。
+- Verification：冻结合同/仓库源码核查；未运行功能测试。Pilot/Gate/Release状态不变。
+
 ## CR-PLAN-002：补齐 PlanVersion 冻结草稿快照的持久化字段
 
 - Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04`。
