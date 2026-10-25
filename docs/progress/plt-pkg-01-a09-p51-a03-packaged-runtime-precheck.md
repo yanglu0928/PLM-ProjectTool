@@ -1,6 +1,6 @@
 # PLT-PKG-01-A09-P51-A03：当前候选包内迁移与HTTPS隔离运行
 
-日期：2026-10-25；状态：`PREFLIGHT_PASS_RUN_PENDING`。
+日期：2026-10-25；状态：`SYNTHETIC_CURRENT_APP_PACKAGED_MIGRATION_HTTPS_PASS`。
 
 ## 编码前检查
 
@@ -20,3 +20,14 @@
 3. 对精确临时目录、临时Vault目标及测试进程作独立清理检查；失败则记录并修复验收工具，不降低正式信任边界。
 
 这项只证明 Windows 11 非发行技术路径可运行，不证明真实License、安装可交给用户、三平台、法律、完整UAT、Gate或Pilot通过。
+
+## 实际执行与偏差
+
+- Migration：最终命令 `SYNTHETIC_CURRENT_APP_PACKAGED_PG18_MIGRATION_PASS`；固定候选 SHA 未变，包内 PG18.6/pgvector 0.8.6，`20261024_0185` 空库升级、synthetic existing row 保留、可控 downgrade/re-upgrade 通过；没有接触现有数据库，`release_eligible=false`。
+- 首次传入尚不存在的临时目录作为 `--root`，工具要求该参数是已清洁提取的候选根，故失败于输入前置，无数据库初始化。第二次创建了空目录但参数语义仍错误，工具因路径不等于 `plm-current-app-stage-*` 既有提取根而拒绝；该 AI 创建的精确空目录经检查为空后删除。随后改用本次已验 stage 根，Migration PASS。无测试断言失败/无未知数据清理。
+- HTTPS：`SYNTHETIC_CURRENT_APP_PACKAGED_HTTPS_PASS`；在包内 Python、PG18、Caddy loopback/HTTPS 下 synthetic login=200、Session=200、未授权License项目=403；临时生成的 synthetic public key 仅进入临时布局，绝不进入候选；48个临时凭据目标均清理，API/Caddy/PostgreSQL进程停止，测试文件/临时库已清理，脚本复核候选未变。报告字段 `formal_trust_provisioned=false`、`legal_clearance=false`、`release_eligible=false`。
+- 外层复核候选 SHA-256 仍为 `3cbd68aaad08b111fdf809575915358d7d7737a266990ed6bd3df23f2326f455`；P51-A02的stage与atomic file placement目录暂留供后续隔离包验证。没有真实客户数据/事实、SCM或正式安装根参与。
+
+## 结果与限制
+
+`PLT-PKG-01-A09-P51-A03` 仅以合成技术数据证明最新 Windows 11 非发行候选随包迁移与HTTPS登录失败关闭链可运行；前端完整真实业务链仍需对这份新候选独立复验。真实公钥/License、操作员签发与备份仪式、正式服务账户/ACL/安装升级、法律放行、AI质量、UAT、Gate 3～7、Windows Server 2025及Debian 13均未关闭。候选不是可对外/正式交付包。

@@ -2,7 +2,7 @@
 
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A02`：新增仅供开发验证的当前应用非发行候选原子文件落地演练器，避免误复用只接受 P33 候选的旧 P39 工具；只写入全新 ASCII 临时根，逐件哈希读回成功后原子发布，失败仅清理本工具持有的私有临时目录。10项含旧P39/stage回归通过；基于 `c2ec928a` 构建候选 SHA `3cbd68aaad08b111fdf809575915358d7d7737a266990ed6bd3df23f2326f455`，22,197项清洁提取与原子落地/独立清点通过。兼容性：不改变产品、API、Schema、Migration、服务、系统证书或正式安装根；`release_eligible=false`。不代表服务启动、License、Pilot或发行通过。详见 `CR-PKG-011` 与 P51-A02 进度记录。
 
-- 2026-10-25 / `PLT-PKG-01-A09-P51-A03` 前置检查：已确认当前候选可复用隔离 PostgreSQL 18/0185 Migration 与 synthetic HTTPS/License smoke；下一步只在 Windows 11 一次性ASCII临时环境运行，使用合成历史行和合成信任，检查失败关闭、服务停止与清理。不触碰正式安装根/SCM/现有数据库，结果不构成正式License或发行信任。执行中。
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A03`：当前非发行候选的包内 PostgreSQL 18.6/pgvector 0.8.6 空库与合成历史行 `20261024_0185` migration/downgrade/re-upgrade 通过；loopback HTTPS synthetic login/Session=200、无License项目403。48临时Vault目标及PG/API/Caddy进程/测试目录清理，候选 SHA 未变。Windows 11 合成技术验收；正式产品公钥/License、客户/发行信任均未验，`release_eligible=false`。详情见 P51-A03 记录。
 
 - 2026-10-25：新增 `PLT-PKG-01-A09-P51-A01` 当前源码 Windows 11 非发行安装前置核查。正式公钥缺失，正式安装继续阻塞；将后续限定为最新源码候选在独立临时 ASCII 根的离线安装/启动/停止/清理验收，禁止触碰正式安装根/生产SCM/现有数据库或把合成信任写成正式通过。此项只读计划，无产品/API/Schema/Migration变化。详见进度记录。
 
