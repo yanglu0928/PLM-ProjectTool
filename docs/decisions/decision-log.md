@@ -1,10 +1,18 @@
 # 自主决策记录
 
+## CR-PLAN-003：补齐WBS Prototype固定版本引用Schema
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P01`。
+- Evidence：Gate 2冻结DM-05明确WBS包含Prototype refs；Plan 0186没有Prototype引用表；Prototype侧已有 `(prototype_version_id, prototype_id, project_id)` 可复合引用目标。忽略引用会丢字段，裸UUID/JSON不能证明身份归属。
+- Decision：依持续授权登记CR-PLAN-003，选择0186后追加 `pln_item_prototype_refs` typed owned table、固定Prototype版本复合FK、ordinal/去重和失败关闭历史守卫；在Plan Owner实现前完成Migration及PostgreSQL负例验收。该关系只证明固定引用身份/归属，不代表Approved；应用Owner仍要同事务验证当前批准事实。
+- Impact/Rollback：不改外部API字段/业务语义，无既有数据回填。无新行时允许向下迁移；产生正式引用后拒绝降级并采用向前修复。原Gate2冻结提交`64cdf09`保留。
+- Verification：源码/数据模型审计，CR已记录；0187尚未实施，故无Migration PASS结论。
+
 ## PLAN-02-A04-P04-A04-P03-P04-S03：拆分PlanVersion创建前置与原子写入
 
 - Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03`。
 - Evidence：冻结API-04的PlanVersion/WBS DTO仅为语义字段摘要；后端无可执行请求/结果模型。现有Approved Solution proof只读，未锁定所有可变来源指针。聚合写入还需完整字段校验、确定性fingerprint、持久幂等、不可变响应重建及Audit。
-- Decision：将原聚合写Owner任务拆为P01严格内部模型/纯校验/规范化/指纹（不写数据库）与P02同事务聚合持久化、来源复核、幂等和Audit。HTTP/平台装配另行验收，非空OutputArtifact引用失败关闭。
+- Decision：将原聚合写Owner任务拆为P01严格内部模型/纯校验/规范化/指纹（不写数据库）、P02补齐Prototype固定引用Schema、P03同事务聚合持久化/来源复核/幂等/Audit。HTTP/平台装配另行验收，非空OutputArtifact引用失败关闭。
 - Impact/Rollback：只是内部实现次序细化，不改冻结API路径、字段语义、权限或数据；不产生Schema/API迁移。本片仅核查文档，若不继续实施可撤回拆分，运行代码无影响。
 - Verification：冻结合同/仓库源码核查；未运行功能测试。Pilot/Gate/Release状态不变。
 

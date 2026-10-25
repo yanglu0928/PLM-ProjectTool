@@ -234,7 +234,7 @@ class OrmMetadataTests(unittest.TestCase):
         self.assertIn('plm.pln_item_evidence_refs', Base.metadata.tables)
         historical_metadata.discard('plm.pln_item_evidence_refs')
         for table in ('plm.pln_version_exclusions', 'plm.pln_wbs_support_roles',
-                      'plm.pln_wbs_conditions'):
+                      'plm.pln_wbs_conditions', 'plm.pln_item_prototype_refs'):
             self.assertIn(table, Base.metadata.tables)
             historical_metadata.discard(table)
         self.assertIn('plm.job_parse_cancel_versions', Base.metadata.tables)

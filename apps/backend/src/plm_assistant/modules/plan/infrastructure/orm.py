@@ -623,6 +623,42 @@ class PlanWbsSolutionRefRow(Base):
     ordinal: Mapped[int] = mapped_column(nullable=False)
 
 
+class PlanWbsPrototypeRefRow(Base):
+    """Fixed PrototypeVersion refs owned by one WBS item snapshot."""
+
+    __tablename__ = "pln_item_prototype_refs"
+    __table_args__ = (
+        UniqueConstraint("wbs_item_id", "prototype_version_id",
+                         name="uq_pln_item_prototypes__item_version"),
+        UniqueConstraint("wbs_item_id", "ordinal",
+                         name="uq_pln_item_prototypes__item_ordinal"),
+        ForeignKeyConstraint(
+            ["wbs_item_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_wbs_items.wbs_item_id", "plm.pln_wbs_items.plan_version_id",
+             "plm.pln_wbs_items.plan_id", "plm.pln_wbs_items.project_id"],
+            name="fk_pln_item_prototypes__wbs", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["prototype_version_id", "prototype_id", "project_id"],
+            ["plm.prt_prototype_versions.prototype_version_id",
+             "plm.prt_prototype_versions.prototype_id",
+             "plm.prt_prototype_versions.project_id"],
+            name="fk_pln_item_prototypes__prototype_version", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_pln_item_prototypes__ordinal"),
+        Index("ix_pln_item_prototypes__project_version", "project_id", "plan_version_id"),
+        {"schema": "plm"},
+    )
+
+    item_prototype_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    wbs_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prototype_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(nullable=False)
+
+
 class PlanWbsEvidenceRefRow(Base):
     """Closed fixed Evidence reference with database-proved Scope and Project."""
 

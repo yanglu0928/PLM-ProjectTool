@@ -10,6 +10,7 @@ from plm_assistant.modules.plan.infrastructure.orm import (
     PlanVersionRow,
     PlanWbsConditionRow,
     PlanWbsItemRow,
+    PlanWbsPrototypeRefRow,
     PlanWbsSupportRoleRow,
 )
 
@@ -67,6 +68,23 @@ class PlanVersionSnapshotSchemaTests(unittest.TestCase):
         self.assertIn("PlanVersion snapshot history prevents downgrade",
                       inspect.getsource(migration.downgrade))
         self.assertIn("calendar_ref IS NOT NULL", inspect.getsource(migration._has_snapshot_history))
+
+    def test_prototype_refs_use_composite_project_and_version_identity(self) -> None:
+        table = PlanWbsPrototypeRefRow.__table__
+        foreign_keys = {fk.name: tuple(element.target_fullname for element in fk.elements)
+                        for fk in table.foreign_key_constraints}
+        self.assertEqual(foreign_keys["fk_pln_item_prototypes__prototype_version"], (
+            "plm.prt_prototype_versions.prototype_version_id",
+            "plm.prt_prototype_versions.prototype_id",
+            "plm.prt_prototype_versions.project_id",
+        ))
+        self.assertIn("uq_pln_item_prototypes__item_version",
+                      {constraint.name for constraint in table.constraints})
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261026_0187_plan_wbs_prototype_refs")
+        self.assertEqual(migration.down_revision, "20261026_0186")
+        self.assertIn("Plan WBS Prototype ref history prevents downgrade",
+                      inspect.getsource(migration.downgrade))
 
 
 if __name__ == "__main__":
