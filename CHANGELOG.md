@@ -1,10 +1,18 @@
 # 版本说明
 
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A08`：当前固定Windows 11非发行候选新增Plan跨项目读取隔离证据。同一合成成员读取其他项目下同一Plan ID返回404且不回显目标身份；PG确认原Plan/Audit/幂等收据唯一、无跨项目写入。完整候选包Edge/HTTPS/隔离PG回归退出0，SHA不变且临时资源清理。兼容性：只扩展一次性验证器的可选参数，无产品/API/Schema/Migration/依赖变化；`release_eligible=false`、`legal_clearance=false`。已知未决：PlanVersion、完整纵向链、正式信任/安装、Pilot/Gate及多平台未验；smoke单测6/6通过，复用当前候选包依赖目录运行。
+
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A07`：当前固定候选包内Edge/HTTPS/PG Plan身份创建201/读取200通过；数据库确认ACTIVE、批准指针NULL、唯一Audit/收据。无PlanVersion/WBS/Review决定/Output。兼容性：仅新增隔离验证器，无产品/API/Schema/Migration/依赖变化；候选非发行，正式信任/完整链/Pilot/Gate仍待。详见P51-A07进度记录。
+
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A06`：当前固定候选包内Edge/HTTPS/PG Solution Outline身份创建201/读取200通过，批准指针NULL且唯一Audit/收据。由于当前候选空项目fixture不具备既有Approved Section，遵循失败关闭边界，范围仅身份，不伪造客户批准、不声称版本/Trace/Review通过。兼容性：只新增一次性验证器，无产品/API/Schema/Migration/依赖变化；候选非发行、Pilot/Gate未过。详见P51-A06进度记录。
+
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A02`：新增仅供开发验证的当前应用非发行候选原子文件落地演练器，避免误复用只接受 P33 候选的旧 P39 工具；只写入全新 ASCII 临时根，逐件哈希读回成功后原子发布，失败仅清理本工具持有的私有临时目录。10项含旧P39/stage回归通过；基于 `c2ec928a` 构建候选 SHA `3cbd68aaad08b111fdf809575915358d7d7737a266990ed6bd3df23f2326f455`，22,197项清洁提取与原子落地/独立清点通过。兼容性：不改变产品、API、Schema、Migration、服务、系统证书或正式安装根；`release_eligible=false`。不代表服务启动、License、Pilot或发行通过。详见 `CR-PKG-011` 与 P51-A02 进度记录。
 
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A03`：当前非发行候选的包内 PostgreSQL 18.6/pgvector 0.8.6 空库与合成历史行 `20261024_0185` migration/downgrade/re-upgrade 通过；loopback HTTPS synthetic login/Session=200、无License项目403。48临时Vault目标及PG/API/Caddy进程/测试目录清理，候选 SHA 未变。Windows 11 合成技术验收；正式产品公钥/License、客户/发行信任均未验，`release_eligible=false`。详情见 P51-A03 记录。
 
 - 2026-10-25 / `PLT-PKG-01-A09-P51-A04`：当前候选 SHA `3cbd68aa…f2326f455` 的 Survey Review 真实Edge/HTTPS/PG18合成链通过。成员读取成功且无决定按钮；指定Reviewer的列表、详情、固定版本链接与按钮正确；Review决定为0、批准指针NULL、Audit/回执存在。临时服务/Vault/profile/目录已清理，非发行/非客户信任。终端中文列表标签显示乱码但验收器内部精确断言通过，详见进度记录。
+
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A05`：当前候选SHA `3cbd68aa…f2326f455` 包内Prototype真实Edge/HTTPS/PG合成验收通过。浏览器完成身份/Package成员/模板固定文档与批准需求/DRAFT/Validate/送Review/只读Review链接；数据库`IN_REVIEW`、Review决定0、批准指针NULL、完成回执绑定Review Round。48项临时Vault、PG/API/Caddy/Edge/profile及测试布局清理，候选未变。快路径复用P51-A02已逐字节验证stage并建立隔离同卷hardlink overlay；合成Fixture在上游过期License负例前执行。无产品/API/Schema/Migration变更。兼容范围仅Windows11合成候选；`release_eligible=false`、`legal_clearance=false`，Pilot/正式信任/Gate/多平台/完整纵向链仍未过。详见P51-A05进度记录。
 
 - 2026-10-25 / `PILOT-CHAIN-A02`：源码审计发现旧A01的Plan身份建议及SOL-03 Outline Review前置均已完成；路线改为固定P51当前候选的Prototype包内Edge/HTTPS/PG验收。纯静态审计，无产品代码/API/Schema变化；Pilot仍NOT_READY。详见 `docs/progress/pilot-chain-a02-current-route-audit.md`。
 

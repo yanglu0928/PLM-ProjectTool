@@ -5,16 +5,24 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const [origin, projectId, outputRoot] = process.argv.slice(2);
-if (!origin?.startsWith("http://127.0.0.1:") || !/^[0-9a-f-]{36}$/.test(projectId ?? "") || !outputRoot) {
+const username = process.env.PLM_PROTOTYPE_TEST_USERNAME ?? "Synthetic Handover Manager";
+const password = process.env.PLM_PROTOTYPE_TEST_PASSWORD ?? "synthetic-handover-browser-password";
+const reviewerLabel = process.env.PLM_PROTOTYPE_TEST_REVIEWER_LABEL ?? "Conclusion customer reviewer";
+if (!/^(https:\/\/localhost:\d+|http:\/\/127\.0\.0\.1:\d+)$/.test(origin ?? "")
+  || !/^[0-9a-f-]{36}$/.test(projectId ?? "") || !outputRoot || !username || !password) {
   throw new Error("owned arguments required");
 }
 await mkdir(outputRoot, { recursive: true });
 const profile = await mkdtemp(join(tmpdir(), "plm-prt-edge-"));
 const port = 10000 + (process.pid % 40000);
+const edgeArgs = ["--headless=new", "--remote-debugging-address=127.0.0.1",
+  `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
+  "--no-first-run", "--disable-features=msEdgeFirstRunExperience", "--window-size=1440,2600"];
+if (origin.startsWith("https://")) edgeArgs.push("--ignore-certificate-errors");
+edgeArgs.push(`${origin}/login`);
 const edge = spawn(
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-  ["--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
-    "--no-first-run", "--disable-features=msEdgeFirstRunExperience", "--window-size=1440,2600", `${origin}/login`],
+  edgeArgs,
   { stdio: "ignore", windowsHide: true },
 );
 
@@ -122,14 +130,11 @@ try {
   await waitFor("document.querySelector('#login-username')", "login");
   await evaluate(`(()=>{const set=(s,v)=>{const x=document.querySelector(s),d=Object.getOwnPropertyDescriptor(
     Object.getPrototypeOf(x),'value');d.set.call(x,v);x.dispatchEvent(new Event('input',{bubbles:true}))};
-    set('#login-username','Synthetic Handover Manager');set('#login-password','synthetic-handover-browser-password')})()`);
+    set('#login-username',${JSON.stringify(username)});set('#login-password',${JSON.stringify(password)})})()`);
   await evaluate("document.querySelector('button[type=submit]').click()");
   await waitFor("document.body.innerText.includes('登录成功。')", "login success");
-  await clickText("我的项目");
-  await waitFor("document.body.innerText.includes('Survey schema')", "project list");
-  await clickText("Survey schema");
-  await waitFor("document.body.innerText.includes('维护项目原型、固定版本与需求覆盖')", "project detail");
-  await clickText("维护项目原型、固定版本与需求覆盖");
+  const prototypeRoute = `/projects/${projectId}/prototypes`;
+  await evaluate(`history.pushState({},'',${JSON.stringify(prototypeRoute)});dispatchEvent(new PopStateEvent('popstate'))`);
   await waitFor("document.querySelector('input[maxlength=\"255\"]')&&!document.querySelector('input[maxlength=\"255\"]').disabled&&document.body.innerText.includes('创建原型身份')", "prototype list");
 
   const prototypeName = "受控审批交互原型";
@@ -140,6 +145,7 @@ try {
 
   await clickText("原型包");
   await waitFor("document.body.innerText.includes('创建原型包')", "package page");
+  await waitFor("document.querySelector('input[maxlength=\"255\"]')&&!document.querySelector('input[maxlength=\"255\"]').disabled&&[...document.querySelectorAll('input[type=checkbox]')].some(x=>!x.disabled)", "package form ready");
   await setLabel("原型包名称", "实施交付原型包");
   await clickLabelContaining("我确认只创建组织容器");
   await clickText("创建");
@@ -156,6 +162,7 @@ try {
   await waitFor("document.body.innerText.includes('原型范围与固定版本')", "prototype list return");
   await clickText("原型模板");
   await waitFor("document.body.innerText.includes('创建项目模板')", "template page");
+  await waitFor("document.querySelector('input[maxlength=\"255\"]')&&!document.querySelector('input[maxlength=\"255\"]').disabled&&[...document.querySelectorAll('fieldset')].some(f=>f.querySelector('legend')?.textContent.includes('固定项目文档版本')&&f.querySelector('input[type=checkbox]'))", "fixed project document candidates");
   await setLabel("模板名称", "审批工作流模板");
   await clickFirstInFieldset("固定项目文档版本");
   await clickLabelContaining("我已人工核对布局、组件、终端和固定文档");
@@ -176,7 +183,7 @@ try {
   await waitFor("document.body.innerText.includes('不可变DRAFT版本已创建')", "version created");
   await clickText("运行服务端当前事实校验");
   await waitFor("document.body.innerText.includes('服务端当前事实校验通过')", "version validated");
-  await clickLabelContaining("Conclusion customer reviewer");
+  await clickLabelContaining(reviewerLabel);
   await clickText("提交正式评审");
   await waitFor("document.body.innerText.includes('评审回执不是批准结论')", "version submitted");
   const reviewShot = await screenshot("02-version-in-review.png");

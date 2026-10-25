@@ -182,6 +182,11 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     public = private.public_key().public_bytes(serialization.Encoding.Raw,
                                                  serialization.PublicFormat.Raw)
     selected_mac = sorted(windows_local_macs())[0]
+    if synthetic_license_document_factory is not None:
+        shape_probe = synthetic_license_document_factory(private, selected_mac)
+        if type(shape_probe) is not bytes or not 1 <= len(shape_probe) <= 16384:
+            raise ValueError("synthetic signed document rejected")
+        del shape_probe
     # The disposable trust document is created only after the package, database,
     # API and HTTPS listener are ready. This keeps short-lived synthetic License
     # validity windows tied to the actual licensed probe, not archive hashing/setup.
@@ -329,7 +334,13 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                 def connect_db():
                     return psycopg.connect(host="127.0.0.1", port=pg_port, user=role,
                                           password=password, dbname=database, autocommit=True)
+                def connect_fixture_db():
+                    # Privileged fixture access is confined to this disposable DB;
+                    # product/API assertions continue through the least-privileged app role.
+                    return psycopg.connect(host="127.0.0.1", port=pg_port, user="poc_admin",
+                                           dbname=database, autocommit=True)
                 licensed_https_probe(client=client, connect_db=connect_db,
+                                     fixture_db=connect_fixture_db,
                                      user_id=user, signed_document=signed_document,
                                      selected_mac=selected_mac, login=login, origin=origin)
         outcome = {"status": "SYNTHETIC_PACKAGED_PLATFORM_WRITE_HTTPS_PASS",

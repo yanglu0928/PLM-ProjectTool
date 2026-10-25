@@ -54,6 +54,7 @@ def seed_observer(context: dict, project: uuid.UUID) -> uuid.UUID:
 
 def browser_probe(**context) -> None:
     after_approval_probe = context.pop("after_approval_probe", None)
+    before_expiry_probe = context.pop("before_expiry_probe", None)
     after_expiry_probe = context.pop("after_expiry_probe", None)
     base["browser_probe"](**context)
     origin = context["origin"]
@@ -154,6 +155,9 @@ def browser_probe(**context) -> None:
         after_approval_probe(**context, project=project, analysis=analysis,
                              version=version, observer_id=observer_id,
                              observer_client=observer_client, observer_csrf=csrf)
+    if before_expiry_probe is not None:
+        before_expiry_probe(**context, project=project, observer_client=observer_client,
+                            observer_csrf=csrf)
     # Synthetic EXPIRED projection only; this does not prove natural time expiry.
     with context["connect_db"]() as db, db.transaction():
         active_id, old_version = db.execute(
