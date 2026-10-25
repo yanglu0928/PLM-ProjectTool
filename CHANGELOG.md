@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25 / `PLT-PKG-01-A09-P51-A02`：新增仅供开发验证的当前应用非发行候选原子文件落地演练器，避免误复用只接受 P33 候选的旧 P39 工具；只写入全新 ASCII 临时根，逐件哈希读回成功后原子发布，失败仅清理本工具持有的私有临时目录。验证：定向5项通过。兼容性：不改变产品、API、Schema、Migration、服务、系统证书或正式安装根；`release_eligible=false`。当前只完成单测，真实当前候选的临时落地验收待执行；不代表安装、应用启动、License、Pilot或发行通过。详见 `CR-PKG-011` 与 P51-A02 进度记录。
+
 - 2026-10-25：新增 `PLT-PKG-01-A09-P51-A01` 当前源码 Windows 11 非发行安装前置核查。正式公钥缺失，正式安装继续阻塞；将后续限定为最新源码候选在独立临时 ASCII 根的离线安装/启动/停止/清理验收，禁止触碰正式安装根/生产SCM/现有数据库或把合成信任写成正式通过。此项只读计划，无产品/API/Schema/Migration变化。详见进度记录。
 
 - 2026-10-25 / 0.1.0-dev.0：完成 `SUR-07-A12-P05/P06` Survey Review 包级只读与权限验收，并记录 `CR-SUR-014`。Windows 11 非发行候选 SHA-256 `050f37207985e5f407ac713373b2713bc24cafe67a3a36a8b5adc4e786aecfce` 清洁解包及 Edge/HTTPS/隔离 PG18 合成验收通过；项目成员可读，只有受指派 Reviewer 显示决定控件，Review/Round、Reviewer PENDING、Audit/收据符合预期，未提交决定且批准指针为空。兼容性：仅 Windows 11 合成环境；Windows Server 2025/Debian 13 未实测。升级/回滚：无 Schema/API/Migration，CR-SUR-014 不改冻结合同。已知限制：候选 `release_eligible=false`、`legal_clearance=false`，不构成 Pilot、Gate 或正式发行；正式信任、安装升级、真实客户确认、完整 UAT 仍待。详见 P05/P06 进度记录。
