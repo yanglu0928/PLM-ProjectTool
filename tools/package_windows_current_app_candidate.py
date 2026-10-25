@@ -26,6 +26,7 @@ APP_PREFIX = "payload/runtime/packages/plm_assistant/"
 DIST_PREFIX = f"payload/runtime/packages/plm_project_tool_backend-{VERSION}.dist-info/"
 FRONTEND_PREFIX = "payload/frontend/dist/"
 SIDE_CARS = {"manifest.json", "payload-sha256sums.txt", "third-party-inventory.json"}
+SCRATCH_EXCLUDE_PATHSPEC = ":(exclude).tmp/**"
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 COMMIT = re.compile(r"[0-9a-f]{40}\Z")
 
@@ -264,6 +265,14 @@ def build_candidate(parent_path: Path, wheel_path: Path, frontend_dist: Path,
         return result
 
 
+def _untracked_outside_user_scratch() -> bool:
+    dirty = subprocess.check_output([
+        "git", "status", "--porcelain", "--untracked-files=all", "--",
+        ".", SCRATCH_EXCLUDE_PATHSPEC,
+    ], text=True).strip()
+    return bool(dirty)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--parent", required=True, type=Path)
@@ -277,10 +286,7 @@ def main() -> int:
     # User-owned local scratch data is not a packaging input; all other untracked
     # files and every tracked change still invalidate source-commit provenance.
     tracked_dirty = subprocess.run(["git", "diff", "--quiet", "HEAD"], check=False).returncode
-    dirty = subprocess.check_output([
-        "git", "status", "--porcelain", "--untracked-files=all", "--",
-        ".", ":(exclude).tmp/",
-    ], text=True).strip()
+    dirty = _untracked_outside_user_scratch()
     if head != args.source_commit or tracked_dirty or dirty:
         raise ValueError("source commit must be clean HEAD")
     result = build_candidate(args.parent, args.wheel, args.frontend_dist,

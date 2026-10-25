@@ -30,3 +30,4 @@ Survey Review subject application/repository、Windows Review composition、定�
 - 后端全量：4102 passed、3 skipped、6153 subtests passed；`compileall`、`git diff --check` 通过。
 - 旧 standalone PG 验证入口启动失败：本机测试 PG 端口连接超时（服务未监听）；没有产品测试断言失败。新包内 Edge/HTTPS/PG18 验收还需重建候选执行，故本 WBS 尚未标 PASS。
 - 验收偏差：P03 曾认定后端 Review Owner/GET 已注册，实际只覆盖送审写 Owner，未核对读取 Owner Registry；此结论已更正并在 CR-SUR-014 追溯。
+- 候选构建偏差：首轮打包器因 Git pathspec 过滤失败，把保留的 `.tmp/` 解包文件误报为源码污染。修正候选清洁检查为递归排除 `.tmp/**`，回归测试6/6通过；保留所有 scratch 数据。该构建工具修正已记录在 CR-SUR-014，待提交后继续干净候选构建。

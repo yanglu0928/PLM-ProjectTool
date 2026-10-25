@@ -27,6 +27,8 @@
 
 - 2026-10-25 `SUR-07-A12-P06` / `CR-SUR-014`：P05 复验发现 ProjectManager 送审成功后，合成 Reviewer Review GET 仍为 404。源码核查发现 `SurveyReviewSubjectOwner` 缺 `authorize_read`，Windows 专用 Review GET/List registry 未注册 Survey Owner；此前 P03 前置检查漏查只读 Owner/组合注册。新增当前成员与活动 Survey/准确 SurveyVersion 归属证明，并注册到 Windows GET/List；无 API/Schema/Migration 变化。定向34通过，后端全量4102 passed/3 skipped/6153子例、compileall和diff-check通过。独立 standalone PG 因本机端口未监听失败；待新固定包内 Edge/HTTPS/PG18复验。P05 不通过、旧候选仅作失败证据；见 `docs/changes/CR-SUR-014-review-read-owner.md` 与 `docs/progress/sur-07-a12-p06-survey-review-read-owner.md`。
 
+- 2026-10-25 P06 候选构建工具偏差：打包器旧 pathspec 未实际排除保留的 `.tmp/` 文件，导致新候选构建误拒；改用递归 `:(exclude).tmp/**` 并增加回归测试，打包器测试6/6通过。只改变本机非发行候选的源码清洁检查，未触碰/提交 scratch 内容；新提交后继续构建。详见 CR-SUR-014。
+
 - 2026-10-25 `SUR-07-A12-P05`：固定候选 SHA `fbd0bea95b370258ef211443e77a8bc3deab60dd1df01e762826cea199752720` 完成清洁解包及 Handover→Survey DRAFT/Validate/原子送审等上游真实 Edge/HTTPS/隔离 PG 回归；首次 ProjectManager Review 404 符合未受指派身份，但原夹具身份不适用于对象级授权。数据库确认的合成指派 Reviewer 登录后 Review GET 仍 404，发现 CR-SUR-014 Owner/Windows 组合缺口。`P05=INCOMPLETE`，候选不得交付；决策数维持零且批准指针为空。见 `docs/changes/CR-SUR-014-review-read-owner.md` 与 `docs/progress/sur-07-a12-p05-review-ui-packaged.md`。修复后须从新提交重建候选。
 
 - 2026-10-25 `SUR-07-A12-P04`：前端 Review Client 增加精确 `SRV-02 + SURVEY_ALL_V1` 投影；待办标签和详情主题正确；Review活动轮深链传递固定 SurveyVersion ID，Survey详情直读该版本。复用通用Reviewer显式确认、RETURN意见和未知结果同操作号恢复；未改 API/Schema/Migration/权限/依赖。定向29、前端全量2045（192文件）、typecheck和402 modules生产构建通过；chunk >500 KB 警告保留。新 dist 包内Edge/PG18待P05；见 `docs/progress/sur-07-a12-p04-survey-review-ui.md`。

@@ -7,10 +7,13 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from package_windows_current_app_candidate import build_candidate  # noqa: E402
+from package_windows_current_app_candidate import (  # noqa: E402
+    SCRATCH_EXCLUDE_PATHSPEC, _untracked_outside_user_scratch, build_candidate,
+)
 
 
 def digest(path: Path) -> str:
@@ -18,6 +21,18 @@ def digest(path: Path) -> str:
 
 
 class CurrentAppCandidateTests(unittest.TestCase):
+    def test_cleanliness_check_excludes_only_user_tmp_tree(self) -> None:
+        with patch("package_windows_current_app_candidate.subprocess.check_output",
+                   return_value="") as check:
+            self.assertFalse(_untracked_outside_user_scratch())
+        args = check.call_args.args[0]
+        self.assertEqual(args[-1], SCRATCH_EXCLUDE_PATHSPEC)
+        self.assertEqual(SCRATCH_EXCLUDE_PATHSPEC, ":(exclude).tmp/**")
+        check.return_value = "?? docs/untracked-result.md"
+        with patch("package_windows_current_app_candidate.subprocess.check_output",
+                   return_value=check.return_value):
+            self.assertTrue(_untracked_outside_user_scratch())
+
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
