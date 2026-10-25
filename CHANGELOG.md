@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P02-P05-P04 完成 Windows 11 固定非发行候选包 License 自然失效验收：签名 `valid_to` 越期后 Review 固定版本/条目读取与决定均拒绝，Review/轮次/批准指针/决策记录保持不变且过期拒绝审计存在。兼容性：仅 Windows 11 合成信任和隔离 PostgreSQL 18 验证，Server 2025/Debian 13 未实测。升级/回滚：仅修改验收工具，无产品 API/Schema/Migration/License 行为变化；无业务数据迁移。验证：22,199 件候选包清洁解包、包内 Edge/HTTPS/PG 实测、候选 SHA 前后不变、临时进程/布局/Vault 清理通过；夹具修复与细节见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p04-license-natural-expiry.md`。已知问题：候选 `release_eligible=false`、`legal_clearance=false`；正式信任、安装升级、真人确认、Gate 3/Pilot/正式三平台发行均未通过。
+
 - 2026-10-25：0.1.0-dev.0/SUR-07-A11 为 Survey DRAFT 增加 ProjectManager 原子送审及当前项目客户评审人面板：完整分页读取成员、只列 ACTIVE 客户角色、最多选择32人并显式确认。冻结 `SURVEY_ALL_V1` 请求使用单个原子 endpoint；未知结果保留同一评审人集合和幂等操作号。201回执只显示 IN_REVIEW，不是客户批准。兼容性：仅接入冻结 API，无 Schema/Migration/License/依赖变化；Server 2025/Debian 13 未实测。验证：前端2041项、类型检查、构建通过（主包体积警告仍在）；真实客户评审与后端/数据库回归未在本 WBS 重跑。已知问题：自然失效/撤销负例、实际包内纵向浏览器、正式信任、Pilot/Gate/三平台发行待后续。
 
 - 2026-10-25：0.1.0-dev.0/SUR-07-A10 为 Survey DRAFT 当前固定版本增加安全 Validate 命令桥、严格报告解析及详情页面板；显示计数、阻断项、时间和审计事件。入口限定项目管理/实施角色，未知结果保留原幂等操作号，明确报告不改变状态、不等于送审/批准/客户确认。兼容性：只增加前端调用已冻结 API，无 API/Schema/License/依赖变化；Server 2025/Debian 13 未实测。升级/回滚：无需数据迁移；移除视图入口可回退，不影响已留审计。验证：前端全量测试2040项、类型检查通过、生产构建通过（399 modules；主包体积警告保留），见 `docs/progress/sur-07-a10-survey-version-validation-ui.md`。已知问题：A11送审、自然失效/撤销负例、正式信任、Pilot/Gate/三平台发行仍待。

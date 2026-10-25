@@ -182,12 +182,12 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     public = private.public_key().public_bytes(serialization.Encoding.Raw,
                                                  serialization.PublicFormat.Raw)
     selected_mac = sorted(windows_local_macs())[0]
-    signed_document = (synthetic_license_document_factory(private, selected_mac)
-                       if synthetic_license_document_factory is not None else None)
-    del private
-    if synthetic_license_document_factory is not None and (
-            type(signed_document) is not bytes or not 1 <= len(signed_document) <= 16384):
-        raise ValueError("synthetic signed document rejected")
+    # The disposable trust document is created only after the package, database,
+    # API and HTTPS listener are ready. This keeps short-lived synthetic License
+    # validity windows tied to the actual licensed probe, not archive hashing/setup.
+    signed_document = None
+    if synthetic_license_document_factory is None:
+        del private
     place_layout(candidate, source, stage, target)
     if check_layout(candidate, source, stage, target) != verified:
         raise ValueError("fresh synthetic layout differs before trust injection")
@@ -322,6 +322,10 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             if project.status_code == 404 or project.status_code < 400:
                 raise ValueError("unlicensed protected Project route not closed")
             if licensed_https_probe is not None:
+                signed_document = synthetic_license_document_factory(private, selected_mac)
+                del private
+                if type(signed_document) is not bytes or not 1 <= len(signed_document) <= 16384:
+                    raise ValueError("synthetic signed document rejected")
                 def connect_db():
                     return psycopg.connect(host="127.0.0.1", port=pg_port, user=role,
                                           password=password, dbname=database, autocommit=True)

@@ -35,3 +35,4 @@
 - 2026-10-24 / `P05-P01`：从提交 `2caf1752` 构建不可发行当前候选 SHA `f2a2385538b111a1a36e3761086e0f4e5749554a3c57bde8941c0fb11080e095`，清洁解包及包内 PG/API/HTTPS/Edge 来源→基线身份通过；固定 Review 包内决定尚未验，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p01-current-package.md`。
 - 2026-10-24 / `P05-P02`：同候选 SHA 下包内 HTTPS/Edge/PG 合成双条目资格→版本→送审→受分配者决定→批准指针及 Audit 通过；匿名/未分配/篡改游标拒绝，扩展负例与正式信任仍未验，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p02-packaged-review.md`。
 - 2026-10-24 / `P05-P03`：同包补停用 Reviewer、跨会话游标、未分配者写拒绝、终态同号回执重放和异号拒绝；PG 决定/Audit 唯一，候选/资源清理通过。License 自然失效仍留 P05-P04，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p03-packaged-negative.md`。
+- 2026-10-25 / `P05-P04`：同一候选 SHA `f2a23855…` 的 Windows 11 包内真实签名 License 自然越期后，固定版本/条目 GET 与决定 POST 均拒绝；Review/Round 保持 `IN_REVIEW`、零决定、批准指针为空，License `EXPIRED` 拒绝审计存在。候选、临时服务/数据库、Vault key 与安装布局清理通过，退出0；仅合成信任，不代表 Pilot/发行。此前四次验收运行均为测试夹具问题，第五轮通过，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-p05-p04-license-natural-expiry.md`。

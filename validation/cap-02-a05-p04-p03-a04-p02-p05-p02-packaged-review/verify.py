@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import subprocess
 import sys
+import time
 import uuid
+from datetime import datetime, timedelta, timezone
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
@@ -32,6 +35,27 @@ evidence = load("_cap_review_package_evidence", ROOT / "validation" /
                 "evd-05-a02-packaged-edge" / "verify.py")
 workflow = evidence.workflow
 EXTENDED_NEGATIVE = os.environ.get("PLM_CAP_PACKAGED_REVIEW_NEGATIVE") == "1"
+LICENSE_EXPIRY_NEGATIVE = os.environ.get("PLM_CAP_PACKAGED_REVIEW_LICENSE_EXPIRY") == "1"
+
+
+def synthetic_document(private, selected_mac: str) -> bytes:
+    if not LICENSE_EXPIRY_NEGATIVE:
+        return workflow.synthetic_document(private, selected_mac)
+    now = datetime.now(timezone.utc)
+    payload = {
+        "license_id": "synthetic-capability-review-expiry",
+        "customer": "synthetic-only",
+        "machine_fingerprint": workflow.machine_fingerprint_hash(selected_mac).hex(),
+        "valid_from": (now - timedelta(days=1)).isoformat(),
+        "valid_to": (now + timedelta(minutes=8)).isoformat(),
+        "issue_time": (now - timedelta(days=2)).isoformat(),
+        "schema_version": "plm.license.v1",
+    }
+    canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False,
+                           separators=(",", ":")).encode("utf-8")
+    return json.dumps({"algorithm": "Ed25519", "payload": payload,
+                       "signature": base64.b64encode(private.sign(canonical)).decode("ascii")},
+                      sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
 
 def expect(response: httpx.Response, status: int) -> dict:
@@ -158,6 +182,62 @@ def probe(**context) -> None:
     ), 201)
     review_id, round_id = submitted["review_id"], submitted["review_round_id"]
     review_path = f"/api/v1/global/reviews/{review_id}"
+    if LICENSE_EXPIRY_NEGATIVE:
+        first_session, first_csrf = login_user(origin, "Synthetic Capability Reviewer One")
+        second_session, _ = login_user(origin, "Synthetic Capability Reviewer Two")
+        try:
+            detail = expect(first_session.get(review_path), 200)
+            fixed = expect(first_session.get(review_path + "/fixed-version"), 200)
+            page = expect(second_session.get(review_path + "/fixed-items?page_size=1"), 200)
+            assert detail["state"] == "IN_REVIEW"
+            assert fixed["version"]["baseline_version_id"] == version_id and len(page["items"]) == 1
+            valid_to = datetime.fromisoformat(
+                json.loads(context["signed_document"])["payload"]["valid_to"])
+            remaining = (valid_to - datetime.now(timezone.utc)).total_seconds()
+            if remaining <= 0 or remaining > 8 * 60:
+                raise AssertionError("synthetic License expiry window is outside the bounded test interval")
+            print(f"Synthetic License valid; waiting {remaining:.1f}s for signed valid_to to pass", flush=True)
+            time.sleep(remaining + 2)
+
+            def license_denied(response: httpx.Response) -> None:
+                assert response.status_code == 403, (response.status_code, response.text[:300])
+                payload = response.json()
+                assert payload.get("error", {}).get("code") == "LICENSE_OPERATION_DENIED", payload
+
+            license_denied(first_session.get(review_path + "/fixed-version"))
+            license_denied(second_session.get(review_path + "/fixed-items?page_size=1"))
+            license_denied(first_session.post(
+                review_path + f"/rounds/{round_id}:decide",
+                headers=headers(origin, first_csrf, key=str(uuid.uuid4())),
+                json={"decision": "APPROVE", "comment": None},
+            ))
+        finally:
+            first_session.close()
+            second_session.close()
+        with connect_db() as db:
+            state = db.execute(
+                "SELECT r.review_state,r.active_round_id,b.current_approved_version_ref "
+                "FROM plm.rvw_reviews r "
+                "JOIN plm.cap_baselines b ON b.baseline_id=%s WHERE r.review_id=%s",
+                (baseline_id, review_id),
+            ).fetchone()
+            decisions = db.execute(
+                "SELECT count(*) FROM plm.rvw_review_decisions WHERE review_id=%s", (review_id,),
+            ).fetchone()[0]
+            expiry_audit = db.execute(
+                "SELECT count(*) FROM plm.aud_events WHERE action='LICENSE_RUNTIME_CHECK' "
+                "AND outcome='DENIED' AND reason_code='EXPIRED'",
+            ).fetchone()[0]
+            review_audit = db.execute(
+                "SELECT count(*) FROM plm.aud_events WHERE action='REVIEW_DECISION_RECORDED' "
+                "AND target_object_id=%s", (round_id,),
+            ).fetchone()[0]
+            assert state[0] == "IN_REVIEW" and str(state[1]) == round_id and state[2] is None, state
+            assert decisions == 0 and expiry_audit >= 1 and review_audit == 0, (
+                decisions, expiry_audit, review_audit)
+        print("CAP_02_P05_P04_LICENSE_NATURAL_EXPIRY_PASS: fixed reads and decision denied; Review and pointer unchanged",
+              flush=True)
+        return
     with httpx.Client(base_url=origin, verify=False, timeout=8, trust_env=False) as anon:
         assert anon.get(review_path + "/fixed-version").status_code == 401
     outsider, outsider_csrf = login_user(origin, "Synthetic Capability Outsider")
@@ -255,7 +335,7 @@ def main() -> int:
     args = parser.parse_args()
     print(json.dumps(smoke(
         args.candidate, args.stage, args.pristine, args.target, args.expected_sha256,
-        synthetic_license_document_factory=workflow.synthetic_document,
+        synthetic_license_document_factory=synthetic_document,
         licensed_https_probe=probe,
     ), ensure_ascii=False, indent=2))
     return 0
