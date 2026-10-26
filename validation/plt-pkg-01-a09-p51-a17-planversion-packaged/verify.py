@@ -29,6 +29,7 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
     import hashlib
 
     from fastapi.testclient import TestClient
+    import httpx
     from plm_assistant.entrypoints.api import create_app
     from plm_assistant.entrypoints.windows_project_review import (
         create_windows_project_review_router,
