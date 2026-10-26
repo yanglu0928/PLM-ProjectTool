@@ -14,6 +14,7 @@ from pathlib import Path
 from plm_assistant.entrypoints.windows_plan_cursor import (
     PLAN_LIST_CURSOR_KEY_REF, ProductionPlanCursorStartupError,
     create_windows_plan_list_cursor_codec,
+    create_windows_plan_version_list_cursor_codec,
     create_windows_plan_version_wbs_cursor_codec,
 )
 from plm_assistant.entrypoints.windows_solution_outline_cursor import OUTLINE_LIST_CURSOR_KEY_REF
@@ -25,6 +26,7 @@ from plm_assistant.modules.platform.infrastructure.windows_secret_key_provider i
 )
 from plm_assistant.modules.plan.api.list_cursor import PlanListCursorCodec
 from plm_assistant.modules.plan.api.wbs_list_cursor import PlanVersionWbsCursorCodec
+from plm_assistant.modules.plan.api.version_list_cursor import PlanVersionListCursorCodec
 
 
 class Resolver:
@@ -46,7 +48,9 @@ class WindowsPlanCursorTests(unittest.TestCase):
         self.assertEqual([PLAN_LIST_CURSOR_KEY_REF], resolver.calls)
         self.assertIsInstance(create_windows_plan_version_wbs_cursor_codec(
             resolver=resolver), PlanVersionWbsCursorCodec)
-        self.assertEqual([PLAN_LIST_CURSOR_KEY_REF, PLAN_LIST_CURSOR_KEY_REF],
+        self.assertIsInstance(create_windows_plan_version_list_cursor_codec(
+            resolver=resolver), PlanVersionListCursorCodec)
+        self.assertEqual([PLAN_LIST_CURSOR_KEY_REF] * 3,
                          resolver.calls)
         for bad in (None, b"short", b"p" * 31):
             with self.subTest(bad=bad), self.assertRaises(
@@ -55,6 +59,9 @@ class WindowsPlanCursorTests(unittest.TestCase):
             with self.subTest(wbs_bad=bad), self.assertRaises(
                     ProductionPlanCursorStartupError):
                 create_windows_plan_version_wbs_cursor_codec(resolver=Resolver(bad))
+            with self.subTest(version_bad=bad), self.assertRaises(
+                    ProductionPlanCursorStartupError):
+                create_windows_plan_version_list_cursor_codec(resolver=Resolver(bad))
 
     @unittest.skipUnless(sys.platform == "win32", "Windows Credential Manager only")
     def test_temporary_vault_loss_and_encrypted_backup_restore(self):

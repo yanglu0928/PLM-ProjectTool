@@ -30,6 +30,7 @@ from plm_assistant.modules.solution.api.global_reference_list_cursor import Glob
 from plm_assistant.modules.solution.application.global_reference_candidate_cursor import GlobalReferenceCandidateCursorCodec
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.plan.api.list_cursor import PlanListCursorCodec
+from plm_assistant.modules.plan.api.version_list_cursor import PlanVersionListCursorCodec
 from plm_assistant.modules.trace.application.page_graph import TraceGraphCursorCodec
 from plm_assistant.modules.solution.api.outline_version_list_cursor import OutlineVersionListCursorCodec
 from plm_assistant.modules.solution.application.outline_review_subject import OutlineReviewSubjectOwner
@@ -674,6 +675,11 @@ class ProductionLoginTests(unittest.TestCase):
         ))
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login."
+            "create_windows_plan_version_list_cursor_codec",
+            return_value=PlanVersionListCursorCodec(b"p" * 32),
+        ))
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
             "create_windows_outline_version_list_cursor_codec",
             return_value=OutlineVersionListCursorCodec(b"v" * 32),
         ))
@@ -1178,6 +1184,9 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans"
             ).status_code, 401)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
+                "00000000-0000-0000-0000-000000000002/versions").status_code, 401)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
                 "00000000-0000-0000-0000-000000000002").status_code, 401)

@@ -22,6 +22,9 @@ from plm_assistant.modules.plan.api.read_plan_version import (
 from plm_assistant.modules.plan.api.list_plan_version_wbs import (
     create_plan_version_wbs_list_router,
 )
+from plm_assistant.modules.plan.api.list_plan_versions import (
+    create_plan_version_list_router,
+)
 from plm_assistant.modules.plan.api.validate_plan_version import (
     create_plan_version_validate_router,
 )
@@ -30,6 +33,9 @@ from plm_assistant.modules.plan.api.submit_plan_version_review import (
 )
 from plm_assistant.modules.plan.api.wbs_list_cursor import (
     PlanVersionWbsCursorCodec,
+)
+from plm_assistant.modules.plan.api.version_list_cursor import (
+    PlanVersionListCursorCodec,
 )
 from plm_assistant.modules.plan.application.create_plan_version import (
     PlanVersionCreateService,
@@ -43,6 +49,9 @@ from plm_assistant.modules.plan.application.read_plan_version import (
 from plm_assistant.modules.plan.application.list_plan_version_wbs import (
     PlanVersionWbsReadService,
 )
+from plm_assistant.modules.plan.application.list_plan_versions import (
+    PlanVersionListService,
+)
 from plm_assistant.modules.plan.application.validate_plan_version import (
     PlanVersionValidationService,
 )
@@ -54,6 +63,9 @@ from plm_assistant.modules.plan.infrastructure.plan_version_read_repository impo
 )
 from plm_assistant.modules.plan.infrastructure.plan_version_wbs_read_repository import (
     SqlAlchemyPlanVersionWbsReadRepository,
+)
+from plm_assistant.modules.plan.infrastructure.plan_version_list_repository import (
+    SqlAlchemyPlanVersionListRepository,
 )
 from plm_assistant.modules.plan.infrastructure.plan_version_validation_results import (
     SqlAlchemyPlanVersionValidationRepository,
@@ -93,6 +105,27 @@ from plm_assistant.modules.solution.infrastructure.section_version_read_reposito
 
 class WindowsPlanVersionStartupError(RuntimeError):
     """The explicit PlanVersion source-proof composition is unavailable."""
+
+
+def create_windows_plan_version_list_router(
+    *, runtime, sessions, origins, license_guard,
+    cursors: PlanVersionListCursorCodec,
+):
+    if (any(value is None for value in (runtime, sessions, origins, license_guard, cursors))
+            or type(cursors) is not PlanVersionListCursorCodec):
+        raise WindowsPlanVersionStartupError()
+    try:
+        service = PlanVersionListService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(), license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            repository=SqlAlchemyPlanVersionListRepository())
+        return create_plan_version_list_router(
+            sessions=sessions, origins=origins, reads=service, cursors=cursors)
+    except Exception:
+        raise WindowsPlanVersionStartupError() from None
 
 
 def create_windows_plan_version_create_router(

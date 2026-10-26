@@ -140,6 +140,7 @@ def create_app(
     plan_version_create_router: APIRouter | None = None,
     plan_version_read_router: APIRouter | None = None,
     plan_version_wbs_list_router: APIRouter | None = None,
+    plan_version_list_router: APIRouter | None = None,
     plan_version_validation_router: APIRouter | None = None,
     plan_read_router: APIRouter | None = None,
     plan_list_router: APIRouter | None = None,
@@ -428,6 +429,8 @@ def create_app(
         app.include_router(plan_version_read_router)
     if plan_version_wbs_list_router is not None:
         app.include_router(plan_version_wbs_list_router)
+    if plan_version_list_router is not None:
+        app.include_router(plan_version_list_router)
     if plan_version_validation_router is not None:
         app.include_router(plan_version_validation_router)
     if plan_read_router is not None:
