@@ -1,4 +1,5 @@
 # 版本说明
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P05-A02`（编码前）：确认既有PlanVersion PG/HTTP证据与Plan身份Edge Harness不能单独证明完整批准需求UI闭环；记录新增隔离Windows Edge/PG Harness要求，强制D盘浏览器Profile及临时数据，合成身份/信任须明示。无产品代码变更。详见A02前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P05-A01`（`PASS_SCOPE_LIMITED`）：Approved Solution候选补充逐条读取固定RequirementRef及批准版本；Create UI支持多WBS根任务与用户显式需求映射，覆盖不全拒绝预览/创建，来源刷新变化失败关闭，读回校验全部任务。无API/Schema/Migration变化。前端全量199 files/2066 tests、typecheck/build通过；未运行Edge/PG E2E，后续A02完成。详见结果记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P05-A01`（编码前）：核查现有Requirement根/固定版本只读Client及冻结WBS多任务/RequirementRef映射合同，确定逐条重读并显式映射、未覆盖关闭创建；不改后端/API/Schema/Migration。详见A01前置记录。
 - 2026-10-26 / `CR-PLAN-010`与`PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P05`（编码前）：记录PlanVersion Create UI空需求映射导致真实Approved需求集必然Validate/Review阻断的基线缺口；按持续授权选择用户显式多WBS映射，不改冻结API/Schema/Migration，并将工作拆为A01映射UI、A02 Win11 Edge/PG闭环。无程序变化；详见CR及前置核查。
