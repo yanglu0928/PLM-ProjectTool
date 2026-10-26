@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## CR-PLAN-010：PlanVersion首版需求覆盖输入与WBS映射
+
+- Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P05`浏览器闭环前置核查。
+- Evidence：现有Create UI提交空`requirement_refs`；冻结Coverage Owner对Approved Outline中未映射需求返回`REQUIREMENT_UNCOVERED`，Review Readiness亦事务内复查。
+- Decision：依`CR-EXEC-001`持续授权选择B，增加多个WBS任务及用户显式Requirement固定版本映射；禁止AI自动映射，不伪造排除决定，不改API/Schema/Migration。拆分A01 UI与A02真实Edge/PG闭环。
+- Impact/Rollback：复杂度增加但消除真实项目必然阻断；回退前端组件即可，无持久化迁移或破坏性变化。
+- Verification：Requirement读取/映射完整性与未覆盖阻止测试、前端全回归；A02再进行Win11 Edge→PG完整链路，受限替身必须清晰披露。
+
 ## CR-PLAN-005：PlanVersion首版受控代码集
 
 - Date/WBS：2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A02`。

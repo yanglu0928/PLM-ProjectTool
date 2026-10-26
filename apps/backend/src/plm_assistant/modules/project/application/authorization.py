@@ -58,10 +58,12 @@ POLICIES: dict[str, _Policy] = {
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
         lock_reads=True,
     ),
+    "PLAN_VERSION_SUBMIT_REVIEW": _Policy(MANAGERS, True),
     "PLAN_VERSION_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "PLAN_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "PLAN_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "PLAN_VERSION_WBS_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "PLAN_VERSION_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_OUTLINE_VERSION_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
     ),

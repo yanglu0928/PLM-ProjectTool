@@ -73,6 +73,11 @@ const ProjectOutlineCreateView = () => import("@/modules/solution/views/ProjectO
 const ProjectPlanListView = () => import("@/modules/plan/views/ProjectPlanListView.vue");
 const ProjectPlanCreateView = () => import("@/modules/plan/views/ProjectPlanCreateView.vue");
 const ProjectPlanDetailView = () => import("@/modules/plan/views/ProjectPlanDetailView.vue");
+const ProjectPlanVersionListView = () => import("@/modules/plan/views/ProjectPlanVersionListView.vue");
+const ProjectPlanVersionDetailView = () => import("@/modules/plan/views/ProjectPlanVersionDetailView.vue");
+const ProjectPlanVersionCreateView = () => import("@/modules/plan/views/ProjectPlanVersionCreateView.vue");
+const ProjectPlanVersionValidateView = () => import("@/modules/plan/views/ProjectPlanVersionValidateView.vue");
+const ProjectPlanVersionSubmitReviewView = () => import("@/modules/plan/views/ProjectPlanVersionSubmitReviewView.vue");
 const ProjectOutlineVersionCreateView = () => import("@/modules/solution/views/ProjectOutlineVersionCreateView.vue");
 const ProjectOutlineVersionListView = () => import("@/modules/solution/views/ProjectOutlineVersionListView.vue");
 const ProjectOutlineVersionDetailView = () => import("@/modules/solution/views/ProjectOutlineVersionDetailView.vue");
@@ -484,6 +489,31 @@ export function createAppRouter(
         path: "/projects/:projectId/plans/new",
         name: "project-plan-create",
         component: ProjectPlanCreateView,
+      },
+      {
+        path: "/projects/:projectId/plans/:planId/versions/new",
+        name: "project-plan-version-create",
+        component: ProjectPlanVersionCreateView,
+      },
+      {
+        path: "/projects/:projectId/plans/:planId/versions/:versionId/submit-review",
+        name: "project-plan-version-submit-review",
+        component: ProjectPlanVersionSubmitReviewView,
+      },
+      {
+        path: "/projects/:projectId/plans/:planId/versions/:versionId/validate",
+        name: "project-plan-version-validate",
+        component: ProjectPlanVersionValidateView,
+      },
+      {
+        path: "/projects/:projectId/plans/:planId/versions/:versionId",
+        name: "project-plan-version-detail",
+        component: ProjectPlanVersionDetailView,
+      },
+      {
+        path: "/projects/:projectId/plans/:planId/versions",
+        name: "project-plan-versions",
+        component: ProjectPlanVersionListView,
       },
       {
         path: "/projects/:projectId/plans/:planId",

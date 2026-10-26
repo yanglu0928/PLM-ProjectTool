@@ -30,6 +30,7 @@ from plm_assistant.modules.solution.api.global_reference_list_cursor import Glob
 from plm_assistant.modules.solution.application.global_reference_candidate_cursor import GlobalReferenceCandidateCursorCodec
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.plan.api.list_cursor import PlanListCursorCodec
+from plm_assistant.modules.plan.api.version_list_cursor import PlanVersionListCursorCodec
 from plm_assistant.modules.trace.application.page_graph import TraceGraphCursorCodec
 from plm_assistant.modules.solution.api.outline_version_list_cursor import OutlineVersionListCursorCodec
 from plm_assistant.modules.solution.application.outline_review_subject import OutlineReviewSubjectOwner
@@ -674,6 +675,11 @@ class ProductionLoginTests(unittest.TestCase):
         ))
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login."
+            "create_windows_plan_version_list_cursor_codec",
+            return_value=PlanVersionListCursorCodec(b"p" * 32),
+        ))
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
             "create_windows_outline_version_list_cursor_codec",
             return_value=OutlineVersionListCursorCodec(b"v" * 32),
         ))
@@ -1174,10 +1180,17 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
                 "00000000-0000-0000-0000-000000000002/versions/"
-                "00000000-0000-0000-0000-000000000003:validate").status_code, 404)
+                "00000000-0000-0000-0000-000000000003:validate").status_code, 405)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
+                "00000000-0000-0000-0000-000000000002/versions/"
+                "00000000-0000-0000-0000-000000000003").status_code, 401)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans"
             ).status_code, 401)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
+                "00000000-0000-0000-0000-000000000002/versions").status_code, 401)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
                 "00000000-0000-0000-0000-000000000002").status_code, 401)
@@ -1465,6 +1478,10 @@ class ProductionLoginTests(unittest.TestCase):
         egress_router = APIRouter()
         retrieval_router, retrieval_cancel_router = APIRouter(), APIRouter()
         validation_router = APIRouter()
+        plan_version_create_router = APIRouter()
+        plan_version_create_router.add_api_route(
+            "/api/v1/projects/{project_id}/plans/{plan_id}/versions",
+            lambda: None, methods=["POST"])
         plan_submit_router = APIRouter()
         plan_submit_router.add_api_route(
             "/api/v1/projects/{project_id}/plans/{plan_id}/versions/"
@@ -1532,7 +1549,11 @@ class ProductionLoginTests(unittest.TestCase):
                     "plm_assistant.entrypoints.production_login."
                     "create_windows_plan_version_review_submission_router",
                     return_value=plan_submit_router,
-                    ) as plan_submit_router_factory:
+                    ) as plan_submit_router_factory, patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_plan_version_create_router",
+                    return_value=plan_version_create_router,
+                    ) as plan_version_create_factory:
             app = create_production_platform_write_app(settings)
         license_factory.assert_called_once()
         write_factory.assert_called_once()
@@ -1554,6 +1575,19 @@ class ProductionLoginTests(unittest.TestCase):
             getattr(route, "path", "") ==
             "/api/v1/projects/{project_id}/plans/{plan_id}/versions/"
             "{plan_version_id}:validate"
+            and "POST" in getattr(route, "methods", ())
+            for included in app.routes
+            for route in getattr(
+                getattr(included, "original_router", None), "routes", ())
+        ))
+        plan_version_create_factory.assert_called_once()
+        for name in ("runtime", "sessions", "origins", "license_guard", "audit",
+                     "document_storage_root", "parse_result_storage_root",
+                     "documents", "downloads", "parse_results"):
+            self.assertIsNotNone(plan_version_create_factory.call_args.kwargs[name])
+        self.assertTrue(any(
+            getattr(route, "path", "") ==
+            "/api/v1/projects/{project_id}/plans/{plan_id}/versions"
             and "POST" in getattr(route, "methods", ())
             for included in app.routes
             for route in getattr(
