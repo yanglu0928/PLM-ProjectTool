@@ -1,7 +1,7 @@
 # PLT-PKG-01-A09-P51-A17：候选构建完成，包内 PlanVersion 验收受阻
 
 - 日期：2026-10-26
-- 状态：`BLOCKED_MISSING_APPROVED_SECTION_FIXTURE`
+- 状态：`IN_PROGRESS_BLOCKED_LOW_C_DRIVE_SPACE`
 - Phase/WBS：Phase 2 / `PLT-PKG-01-A09-P51-A17`
 - 源提交：`65a8598b4a03fd393749e1dc6a4dbacce3acde12`
 
@@ -18,9 +18,13 @@
 - 已按 `DEC-20261026-P51-A17-packaged-fixture-context.md` 将 PG 端口、数据库名、API 数据根和本次合成公钥定位附着于 smoke 的 `fixture_db` 能力，避免扩展多层 callback kwargs；真实 License Guard、Audit、Document/Download/ParseResult 组件组合成功。
 - 清洁 stage 仅从 `D:\PLM-Test-Temp\p51-a17-20261026\plm-current-app-stage-p51a17-301232ba` 只读核验后复制到新的 `D:\PLM-Test-Temp\p51-a17-20261026\PLMToolTemp\plm-current-app-stage-p51a17-retry-20261026`；22,246/22,246 文件与摘要一致。运行时使用 `-B`，该 stage 未出现额外 pyc。
 - 新 harness 多次启动包内 PostgreSQL 18/HTTPS，Handover、Evidence、Capability、Survey 既有合成前置链均有通过证据；复用 Outline source fixture 时确认随机数据库需绑定正确数据库名，已修正。
-- **当前实际阻塞**：本次合成项目不存在 `sol_section_versions` 对应的已批准 Section 来源，既有包内前置 Handover/Survey 不会生成 SOL Section。业务 Outline Owner fixture 依赖已有批准 Section；因此尚未能构造 Approved Outline，A17 PlanVersion Edge 浏览器旅程仍未启动。未直接 SQL 伪造批准，也未绕过 Owner。
+- **当前实际阻塞**：A17 的真实 SOL Section/Review Owner 夹具尚未能运行到建立 Section；此前因 observer 与 manager Session proof 配对错误触发 `AUTH_ACCESS_DENIED`。修复已实施但未实测。随后遇到 C 盘极低空间，不能安全重跑完整 packaged smoke；PlanVersion Edge 浏览器旅程未启动。未直接 SQL 伪造批准，也未绕过 Owner。
 - 包内重复运行出现两类无关旧验收噪声：一轮 Evidence Edge target 启动超时，另一轮 Survey Edge 清理临时 Chromium Profile 时 EBUSY。没有把它们判为 A17 产品失败；从 A17 smoke 的 post-review 无关 Survey 驱动中隔离，明确见 DEC。
 - 首次依赖探测曾在旧 D 盘 stage 生成 `__pycache__`，完整性检查正确拒绝；该旧 stage保留为失败调试副本，不作为验收输入。之后使用干净复制 stage。候选 ZIP未修改，SHA仍需在最终验收末次复核。
+- 本轮复验发现底层包烟测依赖进程默认 `tempfile` 路径，已改为显式 `PLM_TEST_TEMP_ROOT` 并强制 D 盘 `PLMToolTemp`，stderr 仅落在本轮 D 盘 run 内且只投影安全摘要；另对 health readiness 超时附最近状态码/无响应结论。AST 与差异空白检查通过。
+- 一份既有直接 D 盘 stage 多 646 个非清洁额外文件，被前置校验拒绝且未作为验收输入。改用此前记录的清洁 stage，新建 D 盘副本总清单 22,249 件；候选包内上游 Edge/PG 链通过，进入 `_approved_section_fixture` 后在 Outline Create Owner 被 `AUTH_ACCESS_DENIED` 拒绝。
+- 已定位为上游 Handover Review 验收器把共享 client 留在 observer 身份，造成夹具误将 observer cookie 与 manager CSRF 配对。已改为通过包内正式 Login HTTP 获取 manager Session，并断言 `data.user.user_id` 与 manager UUID 一致；最新修正尚未运行验证。
+- 当前 C 盘仅剩约 28 MiB；为避免系统盘进一步耗尽，暂停完整包验收。所有本轮 smoke 数据设在 D 盘，但 Windows 宿主进程仍需本机系统空间。没有删除或移动 C 盘 Temp 文件。
 
 ## 未通过/阻塞
 
@@ -39,6 +43,6 @@
 - Changed：新增编码前检查及包验收 harness；未修改产品代码。
 - Files：本记录、`docs/changes/DEC-20261026-P51-A17-packaged-fixture-context.md`、`validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py`、`run-edge-browser.mjs`、`tools/smoke_packaged_platform_write_https.py`、`tools/smoke_current_app_packaged_https.py`、`STATUS.md`、`CHANGELOG.md`。
 - Migration/API：无。
-- Tests：AST语法与 `git diff --check` 通过；候选既有 manifest/inventory/hash证据保持有效；本轮 package chain上游多项通过但总 smoke受上述来源缺失/旧Edge不稳定未退出0。PlanVersion浏览器步骤未启动。
-- Result：`BLOCKED_MISSING_APPROVED_SECTION_FIXTURE`。
-- Next：先以 SOL Section Create/Review Owner 在同一 disposable PG中建立清楚标注的合成批准来源，再运行 Outline Owner；不得将直接数据库插入状态作为 Approved 证据。然后完成 PlanVersion Edge/HTTPS/PG、SQL、Secret、清理和远端同步验收。
+- Tests：AST语法与 `git diff --check` 通过；候选既有 manifest/inventory/hash证据保持有效；本轮 packaged 上游 Edge/PG 多项通过。A17 Source Owner 因 Session/CSRF 夹具错误失败；修正尚未复验。当前未运行 PlanVersion 浏览器步骤。
+- Result：`IN_PROGRESS_BLOCKED_LOW_C_DRIVE_SPACE`；manager Session/CSRF 夹具修复未验证。
+- Next：恢复充足 C 盘可用空间后，从 D 盘已摘要核验 stage 重跑 smoke；先确认 Login 身份，再经 SOL Section Create/Review Owner 建立合成批准来源、运行 Outline Owner，完成 PlanVersion Edge/HTTPS/PG、SQL、Secret、清理和远端同步验收。不得将直接数据库插入状态作为 Approved 证据。

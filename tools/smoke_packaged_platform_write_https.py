@@ -147,12 +147,36 @@ def _stop_process(process: subprocess.Popen | None) -> None:
         process.wait(timeout=12)
 
 
-def _wait_http(client: httpx.Client, path: str, process: subprocess.Popen, *, seconds: int = 30) -> None:
+def _startup_log_summary(path: Path) -> str:
+    """Return exception class/location only; never expose raw startup logs."""
+    try:
+        raw = path.read_bytes()[-65536:]
+    except OSError:
+        return "startup-log-unavailable"
+    lines = raw.decode("utf-8", errors="replace").splitlines()
+    for index in range(len(lines) - 1, -1, -1):
+        line = lines[index].strip()
+        match = re.search(r"([\w.]+(?:Error|Exception))(?::.*)?$", line)
+        if match:
+            location = ""
+            for prior in reversed(lines[:index]):
+                frame = re.search(r'File "([^"]+)", line (\d+)', prior)
+                if frame:
+                    location = f"@{Path(frame.group(1)).name}:{frame.group(2)}"
+                    break
+            return match.group(1) + location
+    return "startup-log-sha256:" + hashlib.sha256(raw).hexdigest()[:12]
+
+
+def _wait_http(client: httpx.Client, path: str, process: subprocess.Popen, *,
+               seconds: int = 30, diagnostic_log: Path | None = None) -> None:
     deadline = time.monotonic() + seconds
+    last_status: int | None = None
     while time.monotonic() < deadline:
         if process.poll() is not None:
-            diagnostic = "stderr unavailable"
-            if process.stderr is not None:
+            diagnostic = (_startup_log_summary(diagnostic_log)
+                          if diagnostic_log is not None else "stderr unavailable")
+            if diagnostic_log is None and process.stderr is not None:
                 raw = process.stderr.read(65536)
                 lines = raw.decode("utf-8", errors="replace").splitlines()
                 for line in reversed(lines):
@@ -170,10 +194,14 @@ def _wait_http(client: httpx.Client, path: str, process: subprocess.Popen, *, se
             response = client.get(path)
             if response.status_code == 200:
                 return
+            last_status = response.status_code
         except (httpx.ConnectError, httpx.ReadError):
             pass
         time.sleep(.1)
-    raise ValueError("packaged production child did not become ready")
+    diagnostic = (_startup_log_summary(diagnostic_log)
+                  if diagnostic_log is not None else "startup-log-unavailable")
+    status = f"; last_http_status={last_status}" if last_status is not None else "; no_http_response"
+    raise ValueError("packaged production child did not become ready: " + diagnostic + status)
 
 
 def _diagnose_packaged_factory(runtime: Path, bootstrap: Path,
@@ -206,6 +234,16 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         raise ValueError("Windows isolated smoke only")
     if (synthetic_license_document_factory is None) != (licensed_https_probe is None):
         raise ValueError("synthetic licensed HTTPS callbacks must be paired")
+    temp_root = Path(os.environ.get("PLM_TEST_TEMP_ROOT", r"D:\PLMToolTemp"))
+    if (not temp_root.is_absolute() or temp_root.drive.upper() != "D:"
+            or temp_root.name != "PLMToolTemp" or not str(temp_root).isascii()):
+        raise ValueError("packaged platform smoke requires an explicit ASCII D: PLMToolTemp root")
+    temp_root = temp_root.resolve(strict=True)
+    if not temp_root.is_dir():
+        raise ValueError("packaged platform smoke temp root is not a directory")
+    # The nested layout verifier and installer use tempfile.gettempdir(); pin
+    # that process-wide root before either helper can allocate or validate paths.
+    tempfile.tempdir = str(temp_root)
     check_layout = layout_verifier or verify_layout
     place_layout = layout_rehearser or rehearse
     verified = check_layout(candidate, source, stage, pristine)
@@ -240,7 +278,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     (target / "SYNTHETIC-TRUST-NOT-FOR-RELEASE.txt").write_text(
         "Synthetic public trust fixture only; this layout is not the fixed release candidate.\n",
         encoding="ascii")
-    run = Path(tempfile.mkdtemp(prefix="plm-p42-platform-write-", dir=tempfile.gettempdir()))
+    run = Path(tempfile.mkdtemp(prefix="plm-p42-platform-write-", dir=temp_root))
     pg, runtime, caddy = (target / "runtime/pgsql/bin", target / "runtime/python/python.exe",
                           target / "runtime/caddy/caddy.exe")
     pg_port, api_port, https_port = _port(), _port(), _port()
@@ -248,6 +286,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         pg_port, api_port, https_port = _port(), _port(), _port()
     data, log = run / "pgdata", run / "postgresql.log"
     api_process = caddy_process = None
+    api_log = run / "packaged-api-startup.log"
     pg_started = False
     pg_restart_count = 0
     pg_logical_restore_count = 0
@@ -479,16 +518,17 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                        str(bootstrap), "--platform-write"]
 
         def start_api() -> subprocess.Popen:
-            return subprocess.Popen(
-                api_command, stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, env=env,
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+            with api_log.open("ab") as diagnostic:
+                return subprocess.Popen(
+                    api_command, stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL, stderr=diagnostic, env=env,
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
 
         api_process = start_api()
         with httpx.Client(base_url=f"http://127.0.0.1:{api_port}", timeout=3,
                           trust_env=False) as direct:
             try:
-                _wait_http(direct, "/health/ready", api_process)
+                _wait_http(direct, "/health/ready", api_process, diagnostic_log=api_log)
             except ValueError as startup_error:
                 diagnostic = _diagnose_packaged_factory(runtime, bootstrap, env)
                 raise ValueError(f"{startup_error}; packaged factory={diagnostic}") from None
@@ -513,7 +553,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             with httpx.Client(base_url=f"http://127.0.0.1:{api_port}", timeout=3,
                               trust_env=False) as direct:
                 try:
-                    _wait_http(direct, "/health/ready", api_process)
+                    _wait_http(direct, "/health/ready", api_process, diagnostic_log=api_log)
                 except ValueError as startup_error:
                     diagnostic = _diagnose_packaged_factory(runtime, bootstrap, env)
                     raise ValueError(
@@ -659,7 +699,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                 cleanup_errors.append("vault-remains")
         except (OSError, ValueError):
             cleanup_errors.append("vault-inventory")
-        if (run.parent.resolve(strict=True) != Path(tempfile.gettempdir()).resolve(strict=True)
+        if (run.parent.resolve(strict=True) != temp_root
                 or not run.name.startswith("plm-p42-platform-write-")
                 or target.parent != run.parent or not target.name.startswith("plm-install-rehearsal-")):
             cleanup_errors.append("scope")
