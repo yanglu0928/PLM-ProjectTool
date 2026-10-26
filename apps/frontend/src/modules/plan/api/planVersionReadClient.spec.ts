@@ -11,6 +11,14 @@ const row = { plan_version_id: version, plan_id: plan, project_id: project, vers
 function response(data: unknown, status = 200) { return new Response(JSON.stringify({ data, trace_id: trace }), { status,
   headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Trace-Id": trace } }); }
 describe("PlanVersionReadClient", () => {
+  it("calls the fetcher without binding the client as its receiver", async () => {
+    const fetcher = vi.fn(function (this: unknown) {
+      expect(this).toBeUndefined();
+      return Promise.resolve(response({ items: [], next_cursor: null, has_more: false }));
+    }) as unknown as typeof fetch;
+    await new PlanVersionReadClient(fetcher).list(project, plan);
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
   it("reads frozen list and fixed snapshot endpoints with strict envelopes", async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(response({ items: [row], next_cursor: null, has_more: false }))
       .mockResolvedValueOnce(response({ ...row, calendar_ref: "WORKING_DAYS", approved_solution_refs: [], wbs_items: [], dependencies: [], milestones: [], exclusions: [] }));

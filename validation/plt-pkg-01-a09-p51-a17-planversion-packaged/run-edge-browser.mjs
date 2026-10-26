@@ -24,7 +24,7 @@ const edge = spawn("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedg
     "--ignore-certificate-errors", "about:blank"], { stdio: "ignore", windowsHide: true });
 const pause = ms => new Promise(done => setTimeout(done, ms));
 let socket, serial = 0;
-const pending = new Map(), responses = [], errors = [];
+const pending = new Map(), requests = [], responses = [], failures = [], errors = [];
 function send(method, params = {}) {
   const id = ++serial; socket.send(JSON.stringify({ id, method, params }));
   return new Promise((resolveCall, rejectCall) => pending.set(id, { resolve: resolveCall, reject: rejectCall }));
@@ -40,7 +40,7 @@ async function waitFor(expression, label) {
     catch (error) { if (!String(error).includes("Execution context was destroyed")) throw error; }
     await pause(100);
   }
-  throw new Error(`Timed out ${label}: ${JSON.stringify(await evaluate("({url:location.href,text:document.body?.innerText?.slice(-1800)})"))}; API=${JSON.stringify(responses.slice(-12))}`);
+  throw new Error(`Timed out ${label}: ${JSON.stringify(await evaluate("({url:location.href,text:document.body?.innerText?.slice(-1800)})"))}; API=${JSON.stringify({requests:requests.slice(-12),responses:responses.slice(-12),failures:failures.slice(-12)})}`);
 }
 async function click(label) {
   if (!await evaluate(`(()=>{const e=[...document.querySelectorAll('button,a')].find(x=>x.textContent.trim()===${JSON.stringify(label)});if(!e||e.disabled)return false;e.click();return true})()`)) throw new Error(`Missing action: ${label}`);
@@ -72,7 +72,9 @@ try {
   socket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
     if (event.method === "Runtime.exceptionThrown") errors.push(event.params.exceptionDetails?.text ?? "browser exception");
+    if (event.method === "Network.requestWillBeSent" && event.params.request.url.includes("/api/")) requests.push({ url: event.params.request.url, method: event.params.request.method });
     if (event.method === "Network.responseReceived" && event.params.response.url.includes("/api/")) responses.push({ url: event.params.response.url, status: event.params.response.status });
+    if (event.method === "Network.loadingFailed" && event.params.requestId) failures.push({ requestId: event.params.requestId, error: event.params.errorText, blockedReason: event.params.blockedReason ?? null, canceled: event.params.canceled ?? false });
     if (!event.id || !pending.has(event.id)) return;
     const task = pending.get(event.id); pending.delete(event.id); event.error ? task.reject(new Error(event.error.message)) : task.resolve(event.result);
   });
@@ -93,10 +95,13 @@ try {
   await evaluate("(()=>{const e=document.querySelectorAll('input[type=checkbox]')[1];e.checked=true;e.dispatchEvent(new Event('change',{bubbles:true}))})()");
   await click("预览完整草稿"); await waitFor("document.body?.innerText?.includes('创建前预览')", "draft preview");
   await click("确认创建草稿版本"); await waitFor("document.body?.innerText?.includes('草稿版本已创建：')", "PlanVersion create receipt");
-  const version = await evaluate("location.pathname.split('/').at(-1)");
+  const version = await evaluate("(()=>{const e=[...document.querySelectorAll('a')].find(x=>x.textContent.trim()==='查看固定版本');return e?.getAttribute('href')?.split('/').at(-1)??null})()");
   if (!uuid.test(version)) throw new Error("Created PlanVersion identity missing");
-  await click("查看固定版本"); await waitFor("document.body?.innerText?.includes('计划固定版本快照')", "fixed read");
-  if (!responses.some(x => x.status === 201 && x.url.includes(`/plans/${plan}/versions`)) || !responses.some(x => x.status === 200 && x.url.includes(`/plans/${plan}/versions/${version}`))) throw new Error("PlanVersion Create/GET HTTP evidence missing");
+  await click("查看固定版本");
+  await waitFor(`document.body?.innerText?.includes(${JSON.stringify(version)})`, "fixed version detail loaded");
+  const createResponse = responses.find(x => x.status === 201 && x.url.includes(`/plans/${plan}/versions`));
+  const detailResponse = responses.find(x => x.status === 200 && x.url.includes(`/plans/${plan}/versions/${version}`));
+  if (!createResponse || !detailResponse) throw new Error(`PlanVersion Create/GET HTTP evidence missing: plan=${plan}; version=${version}; observed=${JSON.stringify(responses.filter(x => x.url.includes("/plans/")))}`);
   await click("核查此固定版本"); await waitFor("document.querySelector('button')?.textContent.includes('执行Validate')", "Validate page"); await click("执行Validate");
   await waitFor("document.body?.innerText?.includes('验证通过')||document.body?.innerText?.includes('发现阻断问题')", "validation result");
   if (await evaluate("document.body?.innerText?.includes('发现阻断问题')") || await evaluate("(()=>{const m=(document.body?.innerText??'').match(/未覆盖需求\\s*(\\d+)/);return m?Number(m[1]):null})()") !== 0) throw new Error("PlanVersion Validate not PASS / uncovered count not zero");

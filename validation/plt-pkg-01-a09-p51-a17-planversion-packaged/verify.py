@@ -24,7 +24,7 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
                               actor: uuid.UUID, requirement: uuid.UUID,
                               requirement_version: uuid.UUID,
                               document_version: uuid.UUID,
-                              evidence: uuid.UUID) -> None:
+                              evidence: uuid.UUID) -> tuple[bytes, bytes]:
     """Create a synthetic Approved Section through real SOL/Review Owners."""
     import hashlib
 
@@ -42,6 +42,9 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
     from plm_assistant.modules.auth.application.session_service import SessionService
     from plm_assistant.modules.auth.infrastructure.project_read_access import (
         SqlAlchemyProjectReadAccess,
+    )
+    from plm_assistant.modules.auth.infrastructure.project_member_patch_access import (
+        SqlAlchemyProjectMemberPatchAccess,
     )
     from plm_assistant.modules.auth.infrastructure.project_write_access import (
         SqlAlchemyProjectWriteAccess,
@@ -70,8 +73,14 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
     from plm_assistant.modules.project.application.authorization import (
         ProjectAuthorizationService,
     )
+    from plm_assistant.modules.project.application.patch_member import (
+        PatchProjectMember, ProjectMemberPatchService,
+    )
     from plm_assistant.modules.project.infrastructure.authorization_repository import (
         SqlAlchemyProjectAuthorizationRepository,
+    )
+    from plm_assistant.modules.project.infrastructure.member_patch_repository import (
+        SqlAlchemyProjectMemberPatchRepository,
     )
     from plm_assistant.modules.requirement.application.outline_version_proof import (
         OutlineRequirementUseProofService,
@@ -186,18 +195,17 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
 
     with fixture_db() as db:
         source = db.execute(
-            "SELECT f.storage_locator FROM plm.doc_document_versions v "
+            "SELECT f.storage_locator,f.sha256,f.size_bytes FROM plm.doc_document_versions v "
             "JOIN plm.doc_file_objects f ON f.file_object_id=v.file_object_id "
             "WHERE v.document_version_id=%s AND v.project_id=%s",
             (document_version, project),
         ).fetchone()
     assert source is not None, "synthetic fixed Document source missing"
-    locator = source[0]
-    content = b"Synthetic Prototype fixed document; not customer information.\n"
-    assert hashlib.sha256(content).digest() is not None
-    source_path = Path(fixture_db.data_root) / "private-documents" / locator
-    source_path.parent.mkdir(parents=True, exist_ok=True)
-    source_path.write_bytes(content)
+    source_path = Path(fixture_db.data_root) / source[0]
+    assert (source_path.is_file()
+            and source_path.stat().st_size == source[2]
+            and hashlib.sha256(source_path.read_bytes()).digest() == bytes(source[1])), (
+                "synthetic fixed Document bytes do not match the canonical FileObject locator")
     draft = SectionVersionDraftInput(
         project, section.solution_section_id, "A17 synthetic implementation section",
         document_version, None,
@@ -270,7 +278,7 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
             "idempotency-key": "a17-section-submit-0001"}, json={
                 "reviewer_ids": [str(reviewer[0])],
                 "policy_ref": "SOLUTION_SECTION_ALL_V1",
-                "due_at": None, "submission_note": "Synthetic package fixture",
+                "due_at": None, "submission_note": None,
             })
         assert submitted.status_code == 201, submitted.text
         review_id = uuid.UUID(submitted.json()["data"]["review_id"])
@@ -300,7 +308,29 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
         ).fetchone()
     assert approved == ("APPROVED", version.solution_section_version_id,
                         "APPROVED", "APPROVED"), approved
+    with fixture_db() as db:
+        outline_reviewer = db.execute(
+            "SELECT m.project_member_id,m.lock_version,m.project_role "
+            "FROM plm.prj_project_members m JOIN plm.auth_users u "
+            "ON u.user_id=m.user_id WHERE m.project_id=%s "
+            "AND u.username_normalized='synthetic handover customer' "
+            "AND m.state='ACTIVE'", (project,),
+        ).fetchone()
+    assert outline_reviewer is not None, "synthetic Outline Reviewer membership missing"
+    if outline_reviewer[2] != "CUSTOMER_MEMBER":
+        member_patcher = ProjectMemberPatchService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectMemberPatchAccess(),
+            license_guard=guard, authorization=authorization,
+            repository=SqlAlchemyProjectMemberPatchRepository(), audit=audit,
+        )
+        patched = member_patcher.patch(PatchProjectMember(
+            token, csrf, uuid.uuid4(), project, outline_reviewer[0],
+            outline_reviewer[1], role="CUSTOMER_MEMBER",
+        ))
+        assert patched.role == "CUSTOMER_MEMBER", patched
     print("P51_A17_SYNTHETIC_SECTION_OWNER_REVIEW_PASS", flush=True)
+    return token, csrf
 
 
 def skip_unrelated_survey_followups(_state, **_context) -> None:
@@ -486,7 +516,7 @@ def packaged_planversion_probe(**context) -> None:
             ).fetchone()
         assert evidence_row is not None, "packaged synthetic Evidence source missing"
         try:
-            _approved_section_fixture(
+            outline_owner_token, outline_owner_csrf = _approved_section_fixture(
                 context, project=project, actor=actor,
                 requirement=requirement, requirement_version=requirement_version,
                 document_version=document_version, evidence=evidence_row[0],
@@ -494,8 +524,7 @@ def packaged_planversion_probe(**context) -> None:
         except Exception:
             runtime.dispose()
             raise
-        token = bytes.fromhex(context["client"].cookies["plm_session"])
-        csrf = bytes.fromhex(context["login"].json()["data"]["csrf_token"])
+        token, csrf = outline_owner_token, outline_owner_csrf
         try:
             outline_fixture = plan_edge["owner"].full
             # The source fixture historically targets a database named
@@ -505,13 +534,21 @@ def packaged_planversion_probe(**context) -> None:
                 "host": "127.0.0.1", "port": port, "user": "poc_admin",
                 "dbname": fixture_db.database,
             }
-            outline_fixture._outline_full(**(context | {
+            plan_edge["owner"]._connection = lambda port: {
+                "host": "127.0.0.1", "port": port, "user": "poc_admin",
+                "dbname": fixture_db.database,
+            }
+            outline_context = context | {
                 "port": fixture_db.pg_port,
                 "runtime": runtime, "manager": actor, "token": token,
                 "csrf": csrf, "license_guard": licenses.guard,
                 "audit": audit, "documents": documents,
                 "downloads": downloads, "parse_results": parse_results,
-            }))
+            }
+            outline_fixture._outline_full(**outline_context)
+            plan_edge["owner"]._restore_coverage_edge(outline_context)
+            plan_edge["owner"]._approve_current_outline(
+                outline_context, Path(fixture_db.data_root))
         finally:
             runtime.dispose()
     with fixture_db() as db:

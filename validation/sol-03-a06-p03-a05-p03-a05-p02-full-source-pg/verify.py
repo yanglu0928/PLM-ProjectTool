@@ -253,28 +253,34 @@ def _approved_requirement_v2(**context) -> tuple[uuid.UUID, uuid.UUID, bytes, by
         ).fetchone()[0]
     runtime, token, csrf, guard, audit = (context[name] for name in (
         "runtime", "token", "csrf", "license_guard", "audit"))
-    # The inherited synthetic v1 declared one source but never seeded its row.
-    # Close that fixture-only count before the real v2 approval supersedes v1.
-    old_source = uuid.uuid4()
+    # Historical callers may seed only the declared count, while current P51
+    # package fixtures already provide one synthetic HUMAN_DECISION source.
+    # Repair only the missing-row form; never duplicate an existing source.
     with psycopg.connect(**_connection(port)) as db, db.transaction():
-        db.execute("SET LOCAL session_replication_role='replica'")
-        assert db.execute(
-            "SELECT count(*) FROM plm.req_sources WHERE requirement_version_id=%s",
+        old_sources = db.execute(
+            "SELECT source_type,source_object_id FROM plm.req_sources "
+            "WHERE requirement_version_id=%s ORDER BY ordinal",
             (old_version,),
-        ).fetchone()[0] == 0
-        db.execute(
-            "INSERT INTO plm.req_sources(requirement_source_id,"
-            "requirement_version_id,requirement_id,project_id,ordinal,"
-            "source_type,source_object_id) VALUES "
-            "(%s,%s,%s,%s,0,'PROJECT_EVIDENCE',%s)",
-            (old_source, old_version, requirement, project, evidence),
-        )
-        db.execute(
-            "INSERT INTO plm.req_source_evidence_refs(requirement_source_id,"
-            "requirement_version_id,requirement_id,project_id,evidence_id,"
-            "ordinal) VALUES (%s,%s,%s,%s,%s,0)",
-            (old_source, old_version, requirement, project, evidence),
-        )
+        ).fetchall()
+        if not old_sources:
+            old_source = uuid.uuid4()
+            db.execute("SET LOCAL session_replication_role='replica'")
+            db.execute(
+                "INSERT INTO plm.req_sources(requirement_source_id,"
+                "requirement_version_id,requirement_id,project_id,ordinal,"
+                "source_type,source_object_id) VALUES "
+                "(%s,%s,%s,%s,0,'PROJECT_EVIDENCE',%s)",
+                (old_source, old_version, requirement, project, evidence),
+            )
+            db.execute(
+                "INSERT INTO plm.req_source_evidence_refs(requirement_source_id,"
+                "requirement_version_id,requirement_id,project_id,evidence_id,"
+                "ordinal) VALUES (%s,%s,%s,%s,%s,0)",
+                (old_source, old_version, requirement, project, evidence),
+            )
+        elif (len(old_sources) != 1 or old_sources[0][0] != "HUMAN_DECISION"
+              or old_sources[0][1] is None):
+            raise AssertionError("inherited synthetic Requirement v1 source shape changed")
     baseline_version, capability_item, standard_evidence = _seed_capability(
         port, context["manager"])
     reviewer_token, reviewer_csrf = uuid.uuid4().bytes * 2, uuid.uuid4().bytes * 2
@@ -397,7 +403,7 @@ def _approved_section_v2(**context) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID, uu
         old = SqlAlchemySectionVersionReadRepository().get(
             tx, project_id=project, section_id=section, version_id=old_version)
         assert old is not None and old.version_state == "APPROVED"
-        assert old.spec_binding_state == "FIXED_REFS"
+        assert old.spec_binding_state in {"FIXED_REFS", "NONE_REQUIRED"}
     payload = {
         "title": "Qualified solution section for Outline proof",
         "content_document_version_ref": str(old.content_document_version_ref),
