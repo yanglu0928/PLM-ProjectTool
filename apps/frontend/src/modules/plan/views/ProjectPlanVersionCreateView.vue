@@ -15,8 +15,11 @@ const creator = toRaw(props.creator ?? new PlanVersionWriteClient(session));
 const candidateLoader = props.candidateLoader ?? loadPlanApprovedSolutions;
 const route = useRoute(); const router = useRouter();
 const candidates = ref<readonly PlanApprovedSolution[]>([]); const selectedId = ref("");
-const name = ref(""); const code = ref("TASK-001"); const category = ref("IMPLEMENTATION");
-const entryText = ref(""); const acceptanceText = ref(""); const start = ref(""); const finish = ref(""); const risk = ref("");
+interface TaskDraft { key: string; name: string; code: string; category: string; entryText: string;
+  acceptanceText: string; start: string; finish: string; risk: string; requirementIds: string[] }
+const newTask = (index: number): TaskDraft => ({ key: crypto.randomUUID(), name: "", code: `TASK-${String(index).padStart(3, "0")}`,
+  category: "IMPLEMENTATION", entryText: "", acceptanceText: "", start: "", finish: "", risk: "", requirementIds: [] });
+const tasks = ref<TaskDraft[]>([newTask(1)]);
 const loading = ref(false); const busy = ref(false); const error = ref(""); const preview = ref(false);
 const createdId = ref(""); const locked = ref(false); const confirmRetry = ref(false);
 const pending = ref<{ project: string; plan: string; actor: string; draft: Readonly<Record<string, unknown>>; key: string } | null>(null);
@@ -56,8 +59,7 @@ async function loadCandidates() {
 }
 watch(() => [route.params.projectId, route.params.planId], () => {
   generation++; candidates.value = []; selectedId.value = ""; loading.value = false; busy.value = false;
-  name.value = ""; code.value = "TASK-001"; category.value = "IMPLEMENTATION";
-  entryText.value = ""; acceptanceText.value = ""; start.value = ""; finish.value = ""; risk.value = "";
+  tasks.value = [newTask(1)];
   restore(); void loadCandidates();
 }, { immediate: true });
 onUnmounted(() => { mounted = false; generation++; });
@@ -69,27 +71,43 @@ function lines(value: string, required: boolean, label: string): string[] {
   return rows;
 }
 function chosen(): PlanApprovedSolution {
-  const found = candidates.value.filter(item => item.outline.solution_outline_version_id === selectedId.value);
+  const target = selectedId.value || candidates.value[0]?.outline.solution_outline_version_id;
+  const found = candidates.value.filter(item => item.outline.solution_outline_version_id === target);
   if (found.length !== 1) throw new Error("请选择一个已批准且已核实的Solution固定版本。"); return found[0]!;
 }
+function visibleRequirements() {
+  return candidates.value.find(item => item.outline.solution_outline_version_id === selectedId.value)?.requirements
+    ?? candidates.value[0]?.requirements ?? [];
+}
 function draftFor(candidate: PlanApprovedSolution) {
-  const taskId = crypto.randomUUID(); const taskRefs = candidate.refs.map(ref => ({ ...ref }));
-  const startDate = start.value || null, finishDate = finish.value || null;
-  if ((startDate === null) !== (finishDate === null) || startDate && finishDate && finishDate < startDate)
-    throw new Error("计划开始和结束日期需同时填写，且结束日期不得早于开始日期。");
-  return Object.freeze({ approved_solution_refs: candidate.refs.map(ref => ({ ...ref })),
-    wbs_items: [{ wbs_item_id: taskId, parent_item_id: null, wbs_code: code.value.trim(), name: name.value.trim(),
-      level: 1, category: category.value, owner_ref: null, support_role_refs: [], planned_start: startDate,
+  if (!tasks.value.length || tasks.value.length > 100) throw new Error("WBS任务数量需在1至100项之间。");
+  const codes = tasks.value.map(task => task.code.trim());
+  if (codes.some(code => !code || code.length > 64 || !/^[A-Z][A-Z0-9_-]*$/.test(code)) || new Set(codes).size !== codes.length)
+    throw new Error("每项WBS编号必须唯一，并以大写字母开头，仅使用大写字母、数字、连字符或下划线。");
+  const requirementKeys = candidate.requirements.map(item => `${item.requirement_id}|${item.requirement_version_id}`);
+  const assigned = new Set(tasks.value.flatMap(task => task.requirementIds));
+  if (requirementKeys.some(key => !assigned.has(key)) || [...assigned].some(key => !requirementKeys.includes(key)))
+    throw new Error("请将每一项已批准需求至少分配到一个WBS任务；不可遗漏或引用其他需求。");
+  const taskItems = tasks.value.map(task => {
+    const startDate = task.start || null, finishDate = task.finish || null;
+    if (!task.name.trim() || task.name.trim().length > 500) throw new Error("每项WBS任务都需要填写不超过500字的任务名称。");
+    if ((startDate === null) !== (finishDate === null) || startDate && finishDate && finishDate < startDate)
+      throw new Error("计划开始和结束日期需同时填写，且结束日期不得早于开始日期。");
+    const requirementRefs = candidate.requirements.filter(item => task.requirementIds.includes(`${item.requirement_id}|${item.requirement_version_id}`))
+      .map(item => ({ requirement_id: item.requirement_id, requirement_version_id: item.requirement_version_id }));
+    return { wbs_item_id: crypto.randomUUID(), parent_item_id: null, wbs_code: task.code.trim(), name: task.name.trim(),
+      level: 1, category: task.category, owner_ref: null, support_role_refs: [], planned_start: startDate,
       planned_finish: finishDate, duration_minutes: null, actual_start: null, actual_finish: null,
-      item_state: "NOT_STARTED", entry_conditions: lines(entryText.value, false, "准入条件"),
-      acceptance_criteria: lines(acceptanceText.value, true, "验收标准"), requirement_refs: [],
-      solution_refs: taskRefs, prototype_refs: [], evidence_refs: [], output_refs: [], risk: risk.value.trim() || null,
-      explicit_exclusion: null }], dependencies: [], milestones: [], calendar_ref: "CN_WORKDAY", exclusions: [] });
+      item_state: "NOT_STARTED", entry_conditions: lines(task.entryText, false, "准入条件"),
+      acceptance_criteria: lines(task.acceptanceText, true, "验收标准"), requirement_refs: requirementRefs,
+      solution_refs: candidate.refs.map(ref => ({ ...ref })), prototype_refs: [], evidence_refs: [], output_refs: [],
+      risk: task.risk.trim() || null, explicit_exclusion: null };
+  });
+  return Object.freeze({ approved_solution_refs: candidate.refs.map(ref => ({ ...ref })),
+    wbs_items: taskItems, dependencies: [], milestones: [], calendar_ref: "CN_WORKDAY", exclusions: [] });
 }
 function showPreview() {
   if (!authorized() || pending.value || locked.value) return;
-  if (!name.value.trim() || name.value.trim().length > 500 || !code.value.trim() || code.value.trim().length > 64
-    || !/^[A-Z][A-Z0-9_]*$/.test(category.value)) { error.value = "请输入计划任务名称、任务编号和有效分类。"; return; }
   try { draftFor(chosen()); error.value = ""; preview.value = true; }
   catch (failure) { error.value = failure instanceof Error ? failure.message : "计划版本内容无效。"; }
 }
@@ -99,19 +117,25 @@ function sameRefs(a: readonly PlanSolutionFixedRef[], b: readonly PlanSolutionFi
   return left.length === right.length && left.every((item, index) => item === right[index]);
 }
 function sameJson(a: unknown, b: unknown) { return JSON.stringify(a) === JSON.stringify(b); }
+function sameRequirements(a: PlanApprovedSolution["requirements"], b: PlanApprovedSolution["requirements"]) {
+  return sameJson(a.map(item => `${item.requirement_id}|${item.requirement_version_id}`).sort(),
+    b.map(item => `${item.requirement_id}|${item.requirement_version_id}`).sort());
+}
 function readbackMatches(fixed: Awaited<ReturnType<PlanVersionReadClient["detail"]>>,
   created: string, draft: Readonly<Record<string, unknown>>) {
-  const expected = (draft.wbs_items as readonly Record<string, unknown>[])[0];
-  const actual = fixed.wbs_items[0] as Record<string, unknown> | undefined;
-  if (!expected || !actual || fixed.plan_version_id !== created || fixed.version_state !== "DRAFT"
-    || fixed.version_no < 1 || fixed.calendar_ref !== draft.calendar_ref || fixed.wbs_items.length !== 1
+  const expectedItems = draft.wbs_items as readonly Record<string, unknown>[];
+  if (fixed.plan_version_id !== created || fixed.version_state !== "DRAFT"
+    || fixed.version_no < 1 || fixed.calendar_ref !== draft.calendar_ref || fixed.wbs_items.length !== expectedItems.length
     || fixed.dependencies.length || fixed.milestones.length || fixed.exclusions.length
     || !sameRefs(fixed.approved_solution_refs as readonly PlanSolutionFixedRef[], draft.approved_solution_refs as readonly PlanSolutionFixedRef[])) return false;
-  return ["wbs_item_id", "parent_item_id", "wbs_code", "name", "level", "category", "owner_ref",
+  const fields = ["wbs_item_id", "parent_item_id", "wbs_code", "name", "level", "category", "owner_ref",
     "support_role_refs", "planned_start", "planned_finish", "duration_minutes", "actual_start", "actual_finish",
     "item_state", "entry_conditions", "acceptance_criteria", "requirement_refs", "solution_refs",
-    "prototype_refs", "evidence_refs", "output_refs", "risk", "explicit_exclusion"]
-    .every(field => sameJson(actual[field], expected[field]));
+    "prototype_refs", "evidence_refs", "output_refs", "risk", "explicit_exclusion"];
+  return expectedItems.every((expected, index) => {
+    const actual = fixed.wbs_items[index] as Record<string, unknown> | undefined;
+    return !!actual && fields.every(field => sameJson(actual[field], expected[field]));
+  });
 }
 async function submit() {
   if (!authorized() || busy.value || locked.value || createdId.value || (pending.value && !confirmRetry.value)) return;
@@ -125,7 +149,8 @@ async function submit() {
     try {
       const refreshed = await candidateLoader(project);
       const current = refreshed.filter(item => item.outline.solution_outline_version_id === candidate.outline.solution_outline_version_id);
-      if (current.length !== 1 || !sameRefs(candidate.refs, current[0]!.refs)) throw new Error("已批准方案来源刚刚变化；请重新读取并确认新的固定来源。");
+      if (current.length !== 1 || !sameRefs(candidate.refs, current[0]!.refs)
+        || !sameRequirements(candidate.requirements, current[0]!.requirements)) throw new Error("已批准方案或需求固定来源刚刚变化；请重新读取并确认新的固定来源。");
       draft = draftFor(current[0]!);
     } catch (failure) { if (mounted && run === generation) error.value = failure instanceof Error ? failure.message : "来源复核失败。"; busy.value = false; return; }
     if (!mounted || run !== generation || project !== projectId() || plan !== planId()) { busy.value = false; return; }
@@ -161,7 +186,7 @@ async function submit() {
   <p class="warning">本操作只创建不可变 DRAFT。新版本须单独执行Validate和Review；创建不代表已批准、客户确认或交付。</p>
   <p><RouterLink :to="{ name: 'project-plan-detail', params: { projectId: route.params.projectId, planId: route.params.planId } }">返回计划详情</RouterLink></p>
   <p v-if="!authorized()" role="status">仅当前项目负责人或实施成员可创建；请确认会话与项目权限。</p><template v-else>
-    <p v-if="error" role="alert">{{ error }}</p><p v-if="loading" role="status">正在核对已批准方案及其章节/专项固定版本…</p>
+    <p v-if="error" role="alert">{{ error }}</p><p v-if="loading" role="status">正在核对已批准方案、需求、章节和专项的固定版本…</p>
     <button v-if="!pending && !locked" type="button" :disabled="loading || busy" @click="loadCandidates">{{ loading ? "正在核对…" : "刷新已批准方案" }}</button>
     <p v-if="!loading && !candidates.length && !pending" role="status">没有可完整核对的当前已批准方案；请先完成方案批准并刷新。</p>
     <p v-if="createdId" role="status">草稿版本已创建：<RouterLink :to="{ name: 'project-plan-version-detail', params: { projectId: projectId(), planId: planId(), versionId: createdId } }">查看固定版本</RouterLink></p>
@@ -176,22 +201,36 @@ async function submit() {
             <details><summary>查看固定章节与专项来源</summary><ul><li v-for="source in item.display.slice(1)" :key="source">{{ source }}</li></ul></details>
           </label>
         </fieldset>
-        <fieldset :disabled="busy || loading || preview"><legend>2. 填写计划WBS根任务</legend>
-          <label for="plan-version-task-name">任务名称</label><input id="plan-version-task-name" v-model="name" required maxlength="500" />
-          <label for="plan-version-task-code">WBS编号</label><input id="plan-version-task-code" v-model="code" required maxlength="64" />
-          <label for="plan-version-task-category">任务分类</label><select id="plan-version-task-category" v-model="category"><option v-for="item in ['ANALYSIS','DESIGN','IMPLEMENTATION','TEST','DEPLOYMENT','TRAINING','ACCEPTANCE','PROJECT_MANAGEMENT','OTHER']" :key="item" :value="item">{{ item }}</option></select>
-          <label for="plan-version-entry">准入条件（每行一条，可选）</label><textarea id="plan-version-entry" v-model="entryText" rows="3" maxlength="200000" />
-          <label for="plan-version-acceptance">验收标准（每行一条，必填）</label><textarea id="plan-version-acceptance" v-model="acceptanceText" aria-required="true" rows="4" maxlength="200000" />
-          <label for="plan-version-start">计划开始日期（可选）</label><input id="plan-version-start" v-model="start" type="date" />
-          <label for="plan-version-finish">计划完成日期（可选；须与开始日期配对）</label><input id="plan-version-finish" v-model="finish" type="date" />
-          <label for="plan-version-risk">风险说明（可选）</label><textarea id="plan-version-risk" v-model="risk" rows="3" maxlength="2000" />
+        <fieldset :disabled="busy || loading || preview"><legend>2. 建立WBS任务并逐项映射已批准需求</legend>
+          <p>每项固定需求必须至少分配给一项任务；可多选。系统不会自动判断归属，也不会替代正式排除或延期决定。</p>
+          <article v-for="(task, index) in tasks" :key="task.key" class="task-card">
+            <h3>任务 {{ index + 1 }}</h3>
+            <label :for="`task-name-${index}`">任务名称</label><input :id="`task-name-${index}`" v-model="task.name" required maxlength="500" />
+            <label :for="`task-code-${index}`">WBS编号</label><input :id="`task-code-${index}`" v-model="task.code" required maxlength="64" />
+            <label :for="`task-category-${index}`">任务分类</label><select :id="`task-category-${index}`" v-model="task.category"><option v-for="item in ['ANALYSIS','DESIGN','IMPLEMENTATION','TEST','DEPLOYMENT','TRAINING','ACCEPTANCE','PROJECT_MANAGEMENT','OTHER']" :key="item" :value="item">{{ item }}</option></select>
+            <fieldset class="requirement-map"><legend>关联需求（未覆盖将无法创建）</legend>
+              <label v-for="req in visibleRequirements()" :key="`${req.requirement_id}|${req.requirement_version_id}`">
+                <input v-model="task.requirementIds" type="checkbox" :value="`${req.requirement_id}|${req.requirement_version_id}`" />
+                <span>{{ req.requirement_code }} · v{{ req.version_no }} · {{ req.title || req.statement }}</span>
+                <RouterLink :to="{ name: 'project-requirement-detail', params: { projectId: projectId(), requirementId: req.requirement_id } }" target="_blank" rel="noopener">查看需求</RouterLink>
+              </label><p v-if="!visibleRequirements().length">本方案没有固定需求引用；如不符合项目范围，请先完善并批准方案需求。</p>
+            </fieldset>
+            <label :for="`task-entry-${index}`">准入条件（每行一条，可选）</label><textarea :id="`task-entry-${index}`" v-model="task.entryText" rows="3" maxlength="200000" />
+            <label :for="`task-acceptance-${index}`">验收标准（每行一条，必填）</label><textarea :id="`task-acceptance-${index}`" v-model="task.acceptanceText" aria-required="true" rows="4" maxlength="200000" />
+            <label :for="`task-start-${index}`">计划开始日期（可选）</label><input :id="`task-start-${index}`" v-model="task.start" type="date" />
+            <label :for="`task-finish-${index}`">计划完成日期（可选；须与开始日期配对）</label><input :id="`task-finish-${index}`" v-model="task.finish" type="date" />
+            <label :for="`task-risk-${index}`">风险说明（可选）</label><textarea :id="`task-risk-${index}`" v-model="task.risk" rows="3" maxlength="2000" />
+            <button v-if="tasks.length > 1" type="button" @click="tasks.splice(index, 1)">删除此任务</button>
+          </article>
+          <button type="button" :disabled="tasks.length >= 100" @click="tasks.push(newTask(tasks.length + 1))">增加WBS任务</button>
         </fieldset>
         <button type="button" :disabled="busy || loading || !selectedId" @click="showPreview">预览完整草稿</button>
         <div v-if="preview" class="preview" aria-label="草稿内容预览"><h2>创建前预览</h2>
-          <p>Solution固定来源：{{ chosen().display.join("；") }}</p><p>WBS根任务：{{ code }} · {{ name }}</p><p>分类：{{ category }} · 日历：CN_WORKDAY</p>
-          <h3>准入条件</h3><ul><li v-for="(item, i) in lines(entryText, false, '准入条件')" :key="i">{{ item }}</li></ul>
-          <h3>验收标准</h3><ul><li v-for="(item, i) in lines(acceptanceText, true, '验收标准')" :key="i">{{ item }}</li></ul>
-          <p>将创建不可变 DRAFT；无依赖、里程碑或排除项。创建后需单独Validate与Review。</p>
+          <p>Solution固定来源：{{ chosen().display.join("；") }}</p><p>固定需求：{{ chosen().requirements.length }}项 · 日历：CN_WORKDAY</p>
+          <article v-for="(task, index) in tasks" :key="task.key"><h3>{{ task.code }} · {{ task.name }}</h3><p>分类：{{ task.category }}</p>
+            <p>关联需求：{{ chosen().requirements.filter(req => task.requirementIds.includes(`${req.requirement_id}|${req.requirement_version_id}`)).map(req => req.requirement_code).join("、") || "无" }}</p>
+            <h4>验收标准</h4><ul><li v-for="(item, i) in lines(task.acceptanceText, true, '验收标准')" :key="i">{{ item }}</li></ul>
+          </article><p>将创建不可变DRAFT；无依赖、里程碑或人工排除声明。创建后需单独Validate与Review。</p>
           <button type="button" :disabled="busy" @click="preview = false">返回修改</button>
           <button type="button" :disabled="busy" @click="submit">{{ busy ? "正在核对并创建…" : "确认创建草稿版本" }}</button>
         </div>
@@ -199,4 +238,4 @@ async function submit() {
     </form>
   </template>
 </section></template>
-<style scoped>.plan-version-create{max-width:56rem;margin:1rem auto;padding:1.5rem;background:#fff;border-radius:1rem}.plan-version-create form{display:grid;gap:.8rem}.plan-version-create fieldset{display:grid;gap:.6rem;border:1px solid #d8dee7;border-radius:.6rem;padding:1rem}.plan-version-create input:not([type=radio]):not([type=checkbox]),.plan-version-create select,.plan-version-create textarea{max-width:48rem;width:100%;padding:.55rem}.plan-version-create fieldset label{display:flex;gap:.5rem;align-items:flex-start}.plan-version-create .warning{padding:.8rem 1rem;border-left:.3rem solid #d29b42;background:#fff8e9}.plan-version-create [role=alert]{color:#a21d25}.preview{padding:1rem;border:1px solid #8795a6;border-radius:.7rem;background:#f8fafc}</style>
+<style scoped>.plan-version-create{max-width:56rem;margin:1rem auto;padding:1.5rem;background:#fff;border-radius:1rem}.plan-version-create form{display:grid;gap:.8rem}.plan-version-create fieldset{display:grid;gap:.6rem;border:1px solid #d8dee7;border-radius:.6rem;padding:1rem}.plan-version-create input:not([type=radio]):not([type=checkbox]),.plan-version-create select,.plan-version-create textarea{max-width:48rem;width:100%;padding:.55rem}.plan-version-create fieldset label{display:flex;gap:.5rem;align-items:flex-start}.plan-version-create .task-card{display:grid;gap:.5rem;border:1px solid #d8dee7;border-radius:.5rem;padding:1rem}.plan-version-create .requirement-map{margin:.5rem 0}.plan-version-create .warning{padding:.8rem 1rem;border-left:.3rem solid #d29b42;background:#fff8e9}.plan-version-create [role=alert]{color:#a21d25}.preview{padding:1rem;border:1px solid #8795a6;border-radius:.7rem;background:#f8fafc}</style>

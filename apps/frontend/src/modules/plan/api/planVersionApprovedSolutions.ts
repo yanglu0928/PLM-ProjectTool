@@ -5,11 +5,21 @@ import { SectionReadClient } from "@/modules/solution/api/sectionReadClient";
 import { SectionVersionReadClient } from "@/modules/solution/api/sectionVersionReadClient";
 import { StructuredSpecListClient } from "@/modules/solution/api/structuredSpecListClient";
 import { StructuredSpecReadClient } from "@/modules/solution/api/structuredSpecReadClient";
+import { RequirementReadClient } from "@/modules/requirement/api/requirementReadClient";
 
 export interface PlanApprovedSolution {
   readonly outline: OutlineVersionDetail;
   readonly refs: readonly PlanSolutionFixedRef[];
+  readonly requirements: readonly PlanApprovedRequirement[];
   readonly display: readonly string[];
+}
+export interface PlanApprovedRequirement {
+  readonly requirement_id: string;
+  readonly requirement_version_id: string;
+  readonly requirement_code: string;
+  readonly version_no: number;
+  readonly title: string | null;
+  readonly statement: string;
 }
 export interface PlanSolutionFixedRef {
   readonly resource_kind: string; readonly resource_id: string; readonly version_id: string;
@@ -22,6 +32,7 @@ export interface PlanApprovedSolutionReaders {
   readonly sectionVersions: Pick<SectionVersionReadClient, "detail">;
   readonly specs: Pick<StructuredSpecListClient, "list">;
   readonly specDetails: Pick<StructuredSpecReadClient, "detail">;
+  readonly requirements: Pick<RequirementReadClient, "getRequirement" | "getVersion">;
 }
 export class PlanApprovedSolutionError extends Error {
   constructor() { super("已批准方案的固定来源无法完整核对，已停止创建；请刷新后重试。"); this.name = "PlanApprovedSolutionError"; }
@@ -55,6 +66,7 @@ export async function loadPlanApprovedSolutions(project: string,
     outlines: new OutlineReadClient(), outlineVersions: new OutlineVersionReadClient(),
     sections: new SectionReadClient(), sectionVersions: new SectionVersionReadClient(),
     specs: new StructuredSpecListClient(), specDetails: new StructuredSpecReadClient(),
+    requirements: new RequirementReadClient(),
   }): Promise<readonly PlanApprovedSolution[]> {
   if (!validId(project)) throw new PlanApprovedSolutionError();
   try {
@@ -71,6 +83,24 @@ export async function loadPlanApprovedSolutions(project: string,
         || current.outline_state !== "ACTIVE" || current.current_approved_version_ref !== outline.current_approved_version_ref) return null;
       const version = await readers.outlineVersions.detail(project, current.solution_outline_id, current.current_approved_version_ref);
       if (version.version_state !== "APPROVED") return null;
+      const requirements = await mapLimited(version.requirement_refs, 4, async fixedRef => {
+        const root = await readers.requirements.getRequirement(project, fixedRef.requirement_id);
+        if (root.project_id !== project || root.requirement_id !== fixedRef.requirement_id
+          || root.state !== "ACTIVE" || root.current_approved_version_ref !== fixedRef.requirement_version_id) {
+          throw new PlanApprovedSolutionError();
+        }
+        const detail = await readers.requirements.getVersion(project, fixedRef.requirement_id, fixedRef.requirement_version_id);
+        if (detail.project_id !== project || detail.requirement_id !== fixedRef.requirement_id
+          || detail.requirement_version_id !== fixedRef.requirement_version_id || detail.state !== "APPROVED") {
+          throw new PlanApprovedSolutionError();
+        }
+        return Object.freeze({ requirement_id: fixedRef.requirement_id,
+          requirement_version_id: fixedRef.requirement_version_id, requirement_code: root.requirement_code,
+          version_no: detail.version_no, title: detail.title, statement: detail.statement });
+      });
+      if (new Set(requirements.map(item => `${item.requirement_id}|${item.requirement_version_id}`)).size !== requirements.length) {
+        throw new PlanApprovedSolutionError();
+      }
       const sectionRefs = await mapLimited(version.section_ids, 4, async sectionId => {
         const section = await readers.sections.current(project, sectionId);
         if (section.project_id !== project || section.solution_outline_id !== current.solution_outline_id
@@ -94,7 +124,7 @@ export async function loadPlanApprovedSolutions(project: string,
       });
       const refs = [ref("OUTLINE", current.solution_outline_id, version.solution_outline_version_id),
         ...sectionRefs.flatMap(item => item.refs)];
-      return Object.freeze({ outline: version, refs: Object.freeze(refs),
+      return Object.freeze({ outline: version, refs: Object.freeze(refs), requirements: Object.freeze(requirements),
         display: Object.freeze([`方案 ${current.name} · v${version.version_no}`,
           ...sectionRefs.flatMap(item => item.display)]) });
     });

@@ -26,6 +26,7 @@ function readers(sectionState = "APPROVED") { return {
   sectionVersions: { detail: vi.fn().mockResolvedValue({ ...sectionDetail, version_state: sectionState }) },
   specs: { list: vi.fn().mockResolvedValue({ items: [], has_more: false, next_cursor: null }) },
   specDetails: { detail: vi.fn() },
+  requirements: { getRequirement: vi.fn(), getVersion: vi.fn() },
 }; }
 describe("PlanVersion Approved Solution candidate reconstruction", () => {
   it("pins only the current approved outline and its current approved section", async () => {
@@ -38,5 +39,21 @@ describe("PlanVersion Approved Solution candidate reconstruction", () => {
   });
   it("fails closed when a fixed section is not approved", async () => {
     await expect(loadPlanApprovedSolutions(project, readers("DRAFT"))).rejects.toBeInstanceOf(PlanApprovedSolutionError);
+  });
+  it("reads each exact approved Requirement version and fails closed if the current pointer moved", async () => {
+    const api = readers();
+    const requirement = "61234567-89ab-4cde-8123-456789abcdef", requirementVersion = "71234567-89ab-4cde-8123-456789abcdef";
+    api.outlineVersions.detail.mockResolvedValue({ ...outlineDetail, declared_requirement_count: 1,
+      requirement_refs: [{ requirement_id: requirement, requirement_version_id: requirementVersion }] });
+    api.requirements.getRequirement.mockResolvedValue({ requirement_id: requirement, project_id: project,
+      requirement_code: "REQ-1", state: "ACTIVE", current_approved_version_ref: requirementVersion });
+    api.requirements.getVersion.mockResolvedValue({ requirement_id: requirement, project_id: project,
+      requirement_version_id: requirementVersion, version_no: 3, state: "APPROVED", title: "需求标题", statement: "需求正文" });
+    const [solution] = await loadPlanApprovedSolutions(project, api);
+    expect(solution?.requirements).toEqual([{ requirement_id: requirement, requirement_version_id: requirementVersion,
+      requirement_code: "REQ-1", version_no: 3, title: "需求标题", statement: "需求正文" }]);
+    api.requirements.getRequirement.mockResolvedValue({ requirement_id: requirement, project_id: project,
+      requirement_code: "REQ-1", state: "ACTIVE", current_approved_version_ref: user });
+    await expect(loadPlanApprovedSolutions(project, api)).rejects.toBeInstanceOf(PlanApprovedSolutionError);
   });
 });

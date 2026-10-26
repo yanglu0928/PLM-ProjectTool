@@ -1,4 +1,5 @@
 # 版本说明
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P05-A01`（`PASS_SCOPE_LIMITED`）：Approved Solution候选补充逐条读取固定RequirementRef及批准版本；Create UI支持多WBS根任务与用户显式需求映射，覆盖不全拒绝预览/创建，来源刷新变化失败关闭，读回校验全部任务。无API/Schema/Migration变化。前端全量199 files/2066 tests、typecheck/build通过；未运行Edge/PG E2E，后续A02完成。详见结果记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P05-A01`（编码前）：核查现有Requirement根/固定版本只读Client及冻结WBS多任务/RequirementRef映射合同，确定逐条重读并显式映射、未覆盖关闭创建；不改后端/API/Schema/Migration。详见A01前置记录。
 - 2026-10-26 / `CR-PLAN-010`与`PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P05`（编码前）：记录PlanVersion Create UI空需求映射导致真实Approved需求集必然Validate/Review阻断的基线缺口；按持续授权选择用户显式多WBS映射，不改冻结API/Schema/Migration，并将工作拆为A01映射UI、A02 Win11 Edge/PG闭环。无程序变化；详见CR及前置核查。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P04`：新增固定PlanVersion原子Review送审页；PM从完整成员历史选择活动客户评审人并显式确认，持久固定reviewer集合/Key，未知结果原Key重试，成功只显示IN_REVIEW回执而不称批准。无API/Schema/Migration变化。前端199文件/2064测试、typecheck/build通过；后端送审相关27 passed。复用既有Win11/PG18合成真实HTTP/事务证据，Edge闭环下一片验收。详见P09-P04结果。
