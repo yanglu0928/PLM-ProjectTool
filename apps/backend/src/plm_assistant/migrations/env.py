@@ -49,6 +49,7 @@ from plm_assistant.modules.requirement.infrastructure import orm as requirement_
 from plm_assistant.modules.prototype.infrastructure import orm as prototype_orm  # noqa: F401 - register PRT-01/02 tables
 from plm_assistant.modules.solution.infrastructure import orm as solution_orm  # noqa: F401 - register SOL-02/04 tables
 from plm_assistant.modules.plan.infrastructure import orm as plan_orm  # noqa: F401 - register PLN-01 table
+from plm_assistant.modules.output.infrastructure import orm as output_orm  # noqa: F401 - register OUT-01 tables
 
 
 config = context.config

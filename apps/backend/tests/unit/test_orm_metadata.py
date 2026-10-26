@@ -241,6 +241,12 @@ class OrmMetadataTests(unittest.TestCase):
                       'plm.pln_wbs_conditions', 'plm.pln_item_prototype_refs'):
             self.assertIn(table, Base.metadata.tables)
             historical_metadata.discard(table)
+        for table in (
+            'plm.out_requests', 'plm.out_context_snapshots',
+            'plm.out_context_source_refs', 'plm.out_context_evidence_refs',
+        ):
+            self.assertIn(table, Base.metadata.tables)
+            historical_metadata.discard(table)
         self.assertIn('plm.job_parse_cancel_versions', Base.metadata.tables)
         self.assertIn('plm.plt_maintenance_state', Base.metadata.tables)
         for table in (export_orm.exports, export_orm.members, export_orm.captures, export_orm.acceptances):
