@@ -17,6 +17,10 @@ function mayRead() {
   return mounted && !!session.view && !session.view.password_change_required
     && session.view.authorized_projects.some(item => item.project_id === projectId());
 }
+function mayCreateVersion() {
+  return mayRead() && session.canSubmit && session.view?.authorized_projects.some(item =>
+    item.project_id === projectId() && (item.role === "PROJECT_MANAGER" || item.role === "IMPLEMENTATION_MEMBER"));
+}
 async function load() {
   if (!mayRead() || busy.value) return;
   const project = projectId(), plan = planId(), run = ++generation;
@@ -51,6 +55,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="current"><h2>{{ current.name }}</h2>
         <p><RouterLink :to="{ name: 'project-plan-versions', params: { projectId: current.project_id, planId: current.plan_id } }">查看计划版本历史</RouterLink></p>
+        <p v-if="mayCreateVersion()"><RouterLink :to="{ name: 'project-plan-version-create', params: { projectId: current.project_id, planId: current.plan_id } }">创建计划草稿版本</RouterLink></p>
         <dl><dt>计划状态</dt><dd>{{ current.plan_state === "ARCHIVED" ? "已归档" : "活动中" }}</dd>
           <dt>批准版引用</dt><dd>尚无已审批计划版本</dd>
           <dt>创建时间</dt><dd><time :datetime="current.created_at">{{ new Date(current.created_at).toLocaleString("zh-CN") }}</time></dd>

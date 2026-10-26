@@ -1,4 +1,5 @@
 # 版本说明
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P02`：不可变PlanVersion草稿创建页及显式Windows写组合完成；支持Approved Solution Outline固定候选、WBS根任务与验收条件、完整预览、原幂等请求重试和固定ID读回。未改API/Schema/Migration。前端全量197 files/2057 tests及typecheck/build、后端4190/3/6219、Win11隔离PG18 SQL+HTTP创建/固定读取通过。测试身份/权限/来源证明为合成；Gate/Pilot/Release未通过。详见P09-P02结果。
 
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P07`：固定PlanVersion工作页核查发现创建请求会立即生成不可变完整快照，空壳后补不成立；需先选当前批准Outline固定版本并完成至少一个WBS根条目/验收条件，创建前显式确认不可编辑内容。首片确定为新版本创建→按Location/version ID读回，Validate与原子送审另切；不伪造Plan版本历史列表，Output refs不支持须先阻止。本项仅静态核查。详见P06-P07前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P06`（PlanVersion写Client `PASS_SCOPE_LIMITED`）：新增经SessionClient受限桥接的快照创建、bodyless Validate和原子送审Client；严格解析请求/响应、固定送审policy/null字段、Reviewer排序/PM限制、错误状态、幂等单次写与不确定结果保持。前端定向176通过、全量193文件2050通过、typecheck与Vite build通过。首轮全量与build并行造成Node OOM，限并发串行后通过；build主JS >500 kB警告未纳入本片。无页面/Edge/真实信任验收。详见P06-P06实施记录。

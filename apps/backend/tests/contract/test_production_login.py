@@ -1478,6 +1478,10 @@ class ProductionLoginTests(unittest.TestCase):
         egress_router = APIRouter()
         retrieval_router, retrieval_cancel_router = APIRouter(), APIRouter()
         validation_router = APIRouter()
+        plan_version_create_router = APIRouter()
+        plan_version_create_router.add_api_route(
+            "/api/v1/projects/{project_id}/plans/{plan_id}/versions",
+            lambda: None, methods=["POST"])
         plan_submit_router = APIRouter()
         plan_submit_router.add_api_route(
             "/api/v1/projects/{project_id}/plans/{plan_id}/versions/"
@@ -1545,7 +1549,11 @@ class ProductionLoginTests(unittest.TestCase):
                     "plm_assistant.entrypoints.production_login."
                     "create_windows_plan_version_review_submission_router",
                     return_value=plan_submit_router,
-                    ) as plan_submit_router_factory:
+                    ) as plan_submit_router_factory, patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_plan_version_create_router",
+                    return_value=plan_version_create_router,
+                    ) as plan_version_create_factory:
             app = create_production_platform_write_app(settings)
         license_factory.assert_called_once()
         write_factory.assert_called_once()
@@ -1567,6 +1575,19 @@ class ProductionLoginTests(unittest.TestCase):
             getattr(route, "path", "") ==
             "/api/v1/projects/{project_id}/plans/{plan_id}/versions/"
             "{plan_version_id}:validate"
+            and "POST" in getattr(route, "methods", ())
+            for included in app.routes
+            for route in getattr(
+                getattr(included, "original_router", None), "routes", ())
+        ))
+        plan_version_create_factory.assert_called_once()
+        for name in ("runtime", "sessions", "origins", "license_guard", "audit",
+                     "document_storage_root", "parse_result_storage_root",
+                     "documents", "downloads", "parse_results"):
+            self.assertIsNotNone(plan_version_create_factory.call_args.kwargs[name])
+        self.assertTrue(any(
+            getattr(route, "path", "") ==
+            "/api/v1/projects/{project_id}/plans/{plan_id}/versions"
             and "POST" in getattr(route, "methods", ())
             for included in app.routes
             for route in getattr(
