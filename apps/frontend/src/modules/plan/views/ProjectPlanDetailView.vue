@@ -50,6 +50,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <button type="button" :disabled="busy" @click="load()">{{ busy ? "正在读取…" : "重新读取计划" }}</button>
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="current"><h2>{{ current.name }}</h2>
+        <p><RouterLink :to="{ name: 'project-plan-versions', params: { projectId: current.project_id, planId: current.plan_id } }">查看计划版本历史</RouterLink></p>
         <dl><dt>计划状态</dt><dd>{{ current.plan_state === "ARCHIVED" ? "已归档" : "活动中" }}</dd>
           <dt>批准版引用</dt><dd>尚无已审批计划版本</dd>
           <dt>创建时间</dt><dd><time :datetime="current.created_at">{{ new Date(current.created_at).toLocaleString("zh-CN") }}</time></dd>

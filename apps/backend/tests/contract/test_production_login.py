@@ -1180,7 +1180,11 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
                 "00000000-0000-0000-0000-000000000002/versions/"
-                "00000000-0000-0000-0000-000000000003:validate").status_code, 404)
+                "00000000-0000-0000-0000-000000000003:validate").status_code, 405)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
+                "00000000-0000-0000-0000-000000000002/versions/"
+                "00000000-0000-0000-0000-000000000003").status_code, 401)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans"
             ).status_code, 401)

@@ -73,6 +73,8 @@ const ProjectOutlineCreateView = () => import("@/modules/solution/views/ProjectO
 const ProjectPlanListView = () => import("@/modules/plan/views/ProjectPlanListView.vue");
 const ProjectPlanCreateView = () => import("@/modules/plan/views/ProjectPlanCreateView.vue");
 const ProjectPlanDetailView = () => import("@/modules/plan/views/ProjectPlanDetailView.vue");
+const ProjectPlanVersionListView = () => import("@/modules/plan/views/ProjectPlanVersionListView.vue");
+const ProjectPlanVersionDetailView = () => import("@/modules/plan/views/ProjectPlanVersionDetailView.vue");
 const ProjectOutlineVersionCreateView = () => import("@/modules/solution/views/ProjectOutlineVersionCreateView.vue");
 const ProjectOutlineVersionListView = () => import("@/modules/solution/views/ProjectOutlineVersionListView.vue");
 const ProjectOutlineVersionDetailView = () => import("@/modules/solution/views/ProjectOutlineVersionDetailView.vue");
@@ -484,6 +486,16 @@ export function createAppRouter(
         path: "/projects/:projectId/plans/new",
         name: "project-plan-create",
         component: ProjectPlanCreateView,
+      },
+      {
+        path: "/projects/:projectId/plans/:planId/versions/:versionId",
+        name: "project-plan-version-detail",
+        component: ProjectPlanVersionDetailView,
+      },
+      {
+        path: "/projects/:projectId/plans/:planId/versions",
+        name: "project-plan-versions",
+        component: ProjectPlanVersionListView,
       },
       {
         path: "/projects/:projectId/plans/:planId",
