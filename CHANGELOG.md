@@ -4434,3 +4434,4 @@
 # Unreleased
 
 - 2026-10-26：启动 `PLT-PKG-01-A09-P51-A17`。完成包内PlanVersion Edge/HTTPS/PG复验编码前检查；固定父候选、pgvector来源与哈希、合成身份/来源边界和D盘隔离验收路径。此时尚未构建或验证新候选。
+- 2026-10-26：P51-A17 从源提交 `65a8598b` 派生非发行候选 `83ba6a6e…48ef83f5`，22,246 payload files；D盘全量清洁stage校验通过。包内上游HTTPS/PG smoke通过既有合成检查，但 PlanVersion Edge/HTTPS/PG旅程未到达，因验收callback缺少 Approved Outline builder 所需Runtime/License/存储fixture上下文而阻塞；详见结果记录。未修改产品API/Schema/Migration；不代表Pilot/Gate/Release通过。
