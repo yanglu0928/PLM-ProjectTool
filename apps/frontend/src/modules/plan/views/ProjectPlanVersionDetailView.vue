@@ -13,6 +13,8 @@ const planId = () => typeof route.params.planId === "string" ? route.params.plan
 const versionId = () => typeof route.params.versionId === "string" ? route.params.versionId : "";
 function mayRead() { return mounted && !!session.view && !session.view.password_change_required
   && session.view.authorized_projects.some(p => p.project_id === projectId()); }
+function mayValidate() { return mayRead() && session.canSubmit && session.view?.authorized_projects.some(p => p.project_id === projectId()
+  && (p.role === "PROJECT_MANAGER" || p.role === "IMPLEMENTATION_MEMBER")); }
 async function load() { if (!mayRead() || busy.value) return; const project = projectId(), plan = planId(), version = versionId(), run = ++generation;
   busy.value = true; error.value = ""; current.value = null;
   try { const value = await reader.detail(project, plan, version); if (!mounted || run !== generation || project !== projectId() || plan !== planId() || version !== versionId()) return; current.value = value; }
@@ -34,6 +36,7 @@ const pretty = (v: unknown) => JSON.stringify(v, null, 2);
       <dt>版本ID</dt><dd>{{ current.plan_version_id }}</dd><dt>创建人</dt><dd>{{ current.created_by }}</dd><dt>前序版本</dt><dd>{{ current.supersedes_version_ref ?? "无" }}</dd>
       <dt>评审引用</dt><dd>{{ current.review_ref ?? "无" }}</dd><dt>评审轮次</dt><dd>{{ current.review_round_ref ?? "无" }}</dd>
       <dt>创建时间</dt><dd><time :datetime="current.created_at">{{ new Date(current.created_at).toLocaleString("zh-CN") }}</time></dd></dl>
+      <p v-if="mayValidate()"><RouterLink :to="{ name: 'project-plan-version-validate', params: { projectId: current.project_id, planId: current.plan_id, versionId: current.plan_version_id } }">核查此固定版本</RouterLink></p>
       <h3>日历固定引用</h3><pre>{{ pretty(current.calendar_ref) }}</pre>
       <h3>Approved Solution 固定引用（{{ current.approved_solution_refs.length }}）</h3><pre>{{ pretty(current.approved_solution_refs) }}</pre>
       <h3>WBS 固定快照（{{ current.wbs_items.length }}）</h3><pre>{{ pretty(current.wbs_items) }}</pre>
