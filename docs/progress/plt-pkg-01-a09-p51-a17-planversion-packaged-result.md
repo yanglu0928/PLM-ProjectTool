@@ -24,7 +24,7 @@
 
 - `pnpm build` 使用的预置 Node 崩溃；随后本机 Node 24 类型分析因 Windows 可提交虚拟内存仅约 0.9 GB 而 OOM。未修改 pagefile、未结束其他进程。
 - 首次 stage 参数校验在创建目标前拒绝了非直接 Temp 子目录；随后在精确目标下成功。没有覆盖或删除历史 stage。
-- 两次 smoke 失败后候选包和已验证 stage 保持原样；smoke runner 按自身 finally 停止并清理其拥有的服务/布局。用户 `.tmp/` 未改动。
+- 每次失败 smoke 后候选包和已验证 stage 保持原样；smoke runner 按自身 finally 停止并清理其拥有的服务/布局。用户 `.tmp/` 未改动。
 
 ## Changed / Files / Migration / API / Tests
 
