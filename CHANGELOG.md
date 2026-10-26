@@ -1,4 +1,5 @@
 # 版本说明
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P05-A01`（编码前）：核查现有Requirement根/固定版本只读Client及冻结WBS多任务/RequirementRef映射合同，确定逐条重读并显式映射、未覆盖关闭创建；不改后端/API/Schema/Migration。详见A01前置记录。
 - 2026-10-26 / `CR-PLAN-010`与`PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P05`（编码前）：记录PlanVersion Create UI空需求映射导致真实Approved需求集必然Validate/Review阻断的基线缺口；按持续授权选择用户显式多WBS映射，不改冻结API/Schema/Migration，并将工作拆为A01映射UI、A02 Win11 Edge/PG闭环。无程序变化；详见CR及前置核查。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P04`：新增固定PlanVersion原子Review送审页；PM从完整成员历史选择活动客户评审人并显式确认，持久固定reviewer集合/Key，未知结果原Key重试，成功只显示IN_REVIEW回执而不称批准。无API/Schema/Migration变化。前端199文件/2064测试、typecheck/build通过；后端送审相关27 passed。复用既有Win11/PG18合成真实HTTP/事务证据，Edge闭环下一片验收。详见P09-P04结果。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P04`（编码前）：核对冻结PlanVersion原子SubmitReview、同事务readiness/客户评审人资格Owner、显式Windows写组合及成员分页Client，确定独立送审页面仅选择ACTIVE客户评审角色、固定reviewer集合与幂等Key；没有API/Schema/后端变更。仅新增前置核查，无程序变化/功能测试。详见P09-P04前置记录。
