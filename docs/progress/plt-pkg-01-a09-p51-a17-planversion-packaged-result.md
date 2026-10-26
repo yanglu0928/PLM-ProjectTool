@@ -24,7 +24,8 @@
 - 本轮复验发现底层包烟测依赖进程默认 `tempfile` 路径，已改为显式 `PLM_TEST_TEMP_ROOT` 并强制 D 盘 `PLMToolTemp`，stderr 仅落在本轮 D 盘 run 内且只投影安全摘要；另对 health readiness 超时附最近状态码/无响应结论。AST 与差异空白检查通过。
 - 一份既有直接 D 盘 stage 多 646 个非清洁额外文件，被前置校验拒绝且未作为验收输入。改用此前记录的清洁 stage，新建 D 盘副本总清单 22,249 件；候选包内上游 Edge/PG 链通过，进入 `_approved_section_fixture` 后在 Outline Create Owner 被 `AUTH_ACCESS_DENIED` 拒绝。
 - 已定位为上游 Handover Review 验收器把共享 client 留在 observer 身份，造成夹具误将 observer cookie 与 manager CSRF 配对。已改为通过包内正式 Login HTTP 获取 manager Session，并断言 `data.user.user_id` 与 manager UUID 一致；最新修正尚未运行验证。
-- 当前 C 盘仅剩约 28 MiB；为避免系统盘进一步耗尽，暂停完整包验收。所有本轮 smoke 数据设在 D 盘，但 Windows 宿主进程仍需本机系统空间。没有删除或移动 C 盘 Temp 文件。
+- C 盘 Temp 盘点后，将 10 个 `plm-current-app-stage-*` 暂存目录复制至 `D:\PLM-Test-Temp\c-temp-program-migration-20261026`，共 199,718 个文件/12,512,565,082 字节；逐目录文件数、总字节和三份清单 SHA-256 一致。完整载荷逐文件摘要未在此次迁移中重跑；C 源目录保留。
+- 迁移完成后 C 盘可用空间读数为 0 字节。为避免系统盘进一步耗尽，暂停完整包验收。所有本轮 smoke 数据设在 D 盘，但 Windows 宿主进程仍需本机系统空间。其他 Temp 文件、客户资料和 `plm-plan-*` 测试数据库目录未触碰；详见 `docs/progress/2026-10-26-c-temp-program-migration.md`。
 
 ## 未通过/阻塞
 
