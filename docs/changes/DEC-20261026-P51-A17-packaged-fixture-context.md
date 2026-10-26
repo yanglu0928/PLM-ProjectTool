@@ -68,3 +68,7 @@ A17 在调用 PlanVersion fixture 后不重复运行与本 WBS 无关的 Survey 
 - 决定：仅扩展本机 synthetic Edge 验收器，记录与本轮 PlanVersion URL 匹配的 Network.requestWillBeSent、responseReceived 和 loadingFailed 安全摘要，并保留现有精确 UUID/200 验收；不记录请求头、正文、Cookie、凭据或完整日志。若已发请求，则据状态/失败原因定位；否则检查路由 Session 授权前置。随后仍需完整包内 Edge/HTTPS/PG 验收，候选标志不变。
 - 第二次完整 A17 复验确认：详情路由已打开且 Session 有权，UI `load()` 返回“暂时无法读取”；无 Detail requestWillBeSent、无 response、无 network failure。只读代码发现 PlanVersionReadClient 以 `this.fetcher(...)` 调用原生 Window.fetch，而 SessionClient 明确避免同一接收者调用；浏览器原生 fetch 会因非法 receiver 在网络发送前抛错，被客户端映射成通用 unavailable。属于生产前端读取器缺陷，影响 Detail GET 与列表 GET。
 - 决定：按持续授权登记本项产品缺陷修正（CR-P51-A17-READ-FETCHER）：像 SessionClient 一样先取本地 fetcher 再以无 receiver 形式调用；补一项 receiver-free 单测，跑读取客户端/视图定向测试及前端全量 typecheck/build。随后重新构建源提交绑定的新候选并完整包内 Edge/HTTPS/PG 验收；保留旧候选及其摘要。无 API/Schema/数据库变化，风险仅为 fetch 调用上下文，回滚恢复原调用并保留候选历史。
+- 修复后新候选实际观察到 PlanVersion Create 201、Detail GET 200（两次）且页面成功呈现 WBS 固定快照，确认产品读取修复生效。验收器随后在等待创建回执时超时：现行 Create View 创建成功后按设计自动导航到固定 Detail 路由，脚本继续假设停留在创建页面。
+- 决定：仅调整 A17 Edge 验收器，点击确认 Create 后等待当前计划下的固定版本路由，提取且校验 URL 中具体 UUID，再等待该 UUID 的 Detail 内容；之后仍检查 Create 201/匹配 Detail 200。保留旧候选历史；不修改产品路由、API、权限或业务行为。
+- 初次路由条件只检查 `/versions/` 前缀，和创建页 `/versions/new` 重叠，故立即读到字面段 `new` 并被 UUID 断言拒绝；没有因此把错误页面计作通过。
+- 决定：收紧为匹配 `/versions/<36字符UUID>` 的完整详情路径后再提取 ID；保留创建后页面正文 UUID 与 HTTP 201/200 双证据。
