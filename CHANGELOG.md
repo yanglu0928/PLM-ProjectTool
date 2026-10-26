@@ -1,4 +1,5 @@
 # 版本说明
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P04`：新增固定PlanVersion原子Review送审页；PM从完整成员历史选择活动客户评审人并显式确认，持久固定reviewer集合/Key，未知结果原Key重试，成功只显示IN_REVIEW回执而不称批准。无API/Schema/Migration变化。前端199文件/2064测试、typecheck/build通过；后端送审相关27 passed。复用既有Win11/PG18合成真实HTTP/事务证据，Edge闭环下一片验收。详见P09-P04结果。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P04`（编码前）：核对冻结PlanVersion原子SubmitReview、同事务readiness/客户评审人资格Owner、显式Windows写组合及成员分页Client，确定独立送审页面仅选择ACTIVE客户评审角色、固定reviewer集合与幂等Key；没有API/Schema/后端变更。仅新增前置核查，无程序变化/功能测试。详见P09-P04前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P03`：增加固定PlanVersion独立Validate入口与报告页，显式点击后执行并显示问题/警告/覆盖计数/检查时间；不自动送审，未知结果保留原幂等操作号。未变更API/Schema/Migration。前端全量198文件/2060测试、typecheck/build通过，后端Validate相关62 passed/40子断言通过；复用同日既有Win11/PG18真实HTTP/Owner合成证据。正式信任/Gate/Pilot/Release未通过。详见P09-P03结果。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P03`（编码前）：复核冻结Validate合同、Owner、Windows显式组合与严格前端Client，确定只新增固定PlanVersion上下文内的独立Validate页面；Validate有持久化/Audit副作用，明确不自动执行、不混入Review、不将PASS解释为批准。仅增前置核查，无程序/API/Schema/Migration变化、未运行功能测试。详见P09-P03前置记录。
