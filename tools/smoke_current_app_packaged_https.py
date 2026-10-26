@@ -125,8 +125,14 @@ def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
         actual = {p.relative_to(resolved).as_posix() for p in resolved.rglob("*")
                   if p.is_file() and p.name not in {"manifest.json", "payload-sha256sums.txt",
                                                     "third-party-inventory.json"}}
-        if actual != set(hashes) or any(p.is_symlink() for p in resolved.rglob("*")):
-            raise ValueError("current stage inventory or link boundary differs")
+        links = [p.relative_to(resolved).as_posix() for p in resolved.rglob("*")
+                 if p.is_symlink()]
+        if actual != set(hashes) or links:
+            raise ValueError(
+                "current stage inventory or link boundary differs "
+                f"(missing={len(set(hashes) - actual)}, extra={len(actual - set(hashes))}, "
+                f"links={len(links)})"
+            )
         mapping, mapping_sha = exact_mapping([*hashes, *META])
         if len(mapping) != count + len(META):
             raise ValueError("current app layout mapping count differs")

@@ -587,6 +587,13 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                     # product/API assertions continue through the least-privileged app role.
                     return psycopg.connect(host="127.0.0.1", port=pg_port, user="poc_admin",
                                            dbname=database, autocommit=True)
+                # Keep package-specific fixture metadata attached to the already
+                # forwarded DB capability, rather than adding callback kwargs that
+                # older layered probes reject.
+                connect_fixture_db.pg_port = pg_port
+                connect_fixture_db.database = database
+                connect_fixture_db.data_root = api_data
+                connect_fixture_db.product_public_key_file = public_file
                 restart_token = _ACTIVE_API_RESTART.set(restart_api)
                 postgres_restart_token = _ACTIVE_POSTGRES_RESTART.set(restart_postgres)
                 restore_token = _ACTIVE_POSTGRES_LOGICAL_RESTORE.set(
@@ -595,7 +602,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                     licensed_https_probe(client=client, connect_db=connect_db,
                                          fixture_db=connect_fixture_db,
                                          user_id=user, signed_document=signed_document,
-                                         selected_mac=selected_mac, login=login, origin=origin)
+                                         selected_mac=selected_mac, login=login, origin=origin,
+                                         )
                 finally:
                     _ACTIVE_POSTGRES_LOGICAL_RESTORE.reset(restore_token)
                     _ACTIVE_POSTGRES_RESTART.reset(postgres_restart_token)
