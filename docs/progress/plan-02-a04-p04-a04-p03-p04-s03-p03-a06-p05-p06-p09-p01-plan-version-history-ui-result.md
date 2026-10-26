@@ -17,6 +17,7 @@
 - 后端：完整 pytest `4190 passed / 3 skipped / 6219 subtests passed`。
 - Windows 11 + 隔离 PostgreSQL 18：migration upgrade/check、真实 SQL 固定版本读取及 HTTP 返回快照通过；跨计划固定版本读取返回 404。Session、License 与 Project 授权为合成替身，不代表正式信任/UAT。
 - 后端 wheel 在 D 盘临时输出构建成功，并确认包含 `production_login.py` 与 Windows PlanVersion composition 模块。
+- 后续P09-P02编码前复核发现PlanVersion `calendar_ref` 是冻结的受限代码字符串（非UUID）；前端固定快照校验已按后端输入约束改为验证代码格式，并新增回归用例。该修正不改变API/Schema。
 - 生产只读启动合同：显式只读模式固定版本 GET 未登录返回 401；login-only 未装配该路由。动态 GET 路由对误用 POST 的 `:validate` 路径产生 405（仅方法未允许，不存在 Validate 写处理器）；login-only 仍返回 404。记录为框架对路径匹配的正常方法响应，不改变写权限边界。
 - Secret/客户数据：无客户数据进入验证；提交前仅允许本项源代码、测试与文档进入暂存。
 

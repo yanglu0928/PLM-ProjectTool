@@ -13,11 +13,12 @@ function response(data: unknown, status = 200) { return new Response(JSON.string
 describe("PlanVersionReadClient", () => {
   it("reads frozen list and fixed snapshot endpoints with strict envelopes", async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(response({ items: [row], next_cursor: null, has_more: false }))
-      .mockResolvedValueOnce(response({ ...row, calendar_ref: null, approved_solution_refs: [], wbs_items: [], dependencies: [], milestones: [], exclusions: [] }));
+      .mockResolvedValueOnce(response({ ...row, calendar_ref: "WORKING_DAYS", approved_solution_refs: [], wbs_items: [], dependencies: [], milestones: [], exclusions: [] }));
     const client = new PlanVersionReadClient(fetcher as typeof fetch);
     expect((await client.list(project, plan)).items[0]?.plan_version_id).toBe(version);
     expect(fetcher.mock.calls[0]?.[0]).toContain(`/projects/${project}/plans/${plan}/versions?page_size=50`);
-    expect((await client.detail(project, plan, version)).wbs_items).toEqual([]);
+    const detail = await client.detail(project, plan, version);
+    expect(detail.calendar_ref).toBe("WORKING_DAYS"); expect(detail.wbs_items).toEqual([]);
     expect(fetcher.mock.calls[1]?.[0]).toBe(`/api/v1/projects/${project}/plans/${plan}/versions/${version}`);
   });
   it("fails closed on unexpected fixed snapshot fields or invalid path identity", async () => {

@@ -25,6 +25,8 @@
 
 ## 自动执行策略
 
+- 2026-10-26 `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P02`：P09-P01只读列表/固定快照UI通过限界验收后，完成下一任务编码前核查。发现Create HTTP factory/Client/Owner已存在但生产Windows写组合尚未装载；本项需实现完整Approved Solution固定版本选取、WBS根任务/Acceptance输入、幂等草稿Create与固定ID读回，并仅挂显式写模式。无合同/Schema变更。详见P09-P02前置记录。
+
 - 2026-10-26 `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P01`：历史列表和固定快照只读页面及显式Windows只读装配完成；前端全量/typecheck/build、后端全量4190/3/6219及Win11隔离PG18真实SQL+HTTP读取通过。Session/License/Project授权仍为合成替身；Validate/Review/Create未在本WBS实现，Gate/Pilot/Release不变。下一项P09-P02做完整不可变Create表单。详见P09-P01结果。
 
 - 2026-10-26 `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P01`：编码前核查通过。将原P09拆分为先完成只读历史列表/固定快照页，再实现完整不可变Create表单；本项只消费冻结List/Get并显式装配既有Get Owner。无代码/API/Schema变化。详见P09-P01前置记录。

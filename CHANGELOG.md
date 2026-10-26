@@ -4419,3 +4419,5 @@
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P08`：实现冻结`PLAN_VERSION_LIST`只读HTTP、成员授权、项目/Plan双重作用域SQL keyset与显式Windows只读组合；Win11隔离PG18分页通过，定向19/875、全后端4190/3/6219及backend wheel构建通过。无Schema/Migration/API Contract变化；合成身份授权。Gate/Pilot/正式Release不变。详见P06-P08结果记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P01`：编码前核查通过，将PlanVersion UI按只读历史浏览与完整不可变Create拆为两个验收切片；本记录不代表代码或测试完成。详见P09-P01前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P01`：增加PlanVersion历史及固定快照只读页面、严格读取Client和显式Windows只读GET装配；前端全量2053、后端4190/3/6219、Win11隔离PG18 SQL+HTTP固定读取通过。无Schema/Migration/API变化；授权依赖合成验证，非Gate/Pilot/Release结论。详见P09-P01结果记录。
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P02`：完成下一项不可变PlanVersion草稿创建UI编码前核查。既有Create Owner/HTTP factory及写Client不等于Windows生产写组合已装配；实现范围包含已批准Solution固定版本候选核对、WBS根任务/Acceptance、幂等Create、固定ID读回与显式写模式限制；无合同/Schema变化。本记录尚非代码完成。
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P01`：P09-P02前置复核发现并修正固定快照Client对`calendar_ref`的误判：冻结值为受限代码字符串而非UUID；更新严格读取校验及回归用例，无API/Schema变化。记录见P09-P01结果文件。

@@ -7,7 +7,7 @@ export interface PlanVersionSummary {
   readonly review_round_ref: string | null; readonly created_at: string;
 }
 export interface PlanVersionDetail extends PlanVersionSummary {
-  readonly calendar_ref: unknown;
+  readonly calendar_ref: string | null;
   readonly approved_solution_refs: readonly unknown[];
   readonly wbs_items: readonly unknown[];
   readonly dependencies: readonly unknown[];
@@ -25,6 +25,7 @@ export class PlanVersionReadError extends Error {
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const cursor = /^[A-Za-z0-9_-]{1,4096}\.[A-Za-z0-9_-]{43}$/;
 const stamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/;
+const calendarCode = /^[A-Z][A-Z0-9_]{0,127}$/;
 const states = ["DRAFT", "IN_REVIEW", "APPROVED", "RETURNED", "SUPERSEDED", "RESTRICTED"];
 const summaryKeys = ["plan_version_id", "plan_id", "project_id", "version_no", "version_state", "created_by",
   "supersedes_version_ref", "review_ref", "review_round_ref", "created_at"] as const;
@@ -57,7 +58,7 @@ export function parsePlanVersionPage(v: unknown, project: string, plan: string, 
 }
 export function parsePlanVersionDetail(v: unknown, project: string, plan: string, version: string): PlanVersionDetail {
   const base = summary(v, project, plan, version);
-  if (!record(v) || !maybeId(v.calendar_ref)
+  if (!record(v) || !(v.calendar_ref === null || typeof v.calendar_ref === "string" && calendarCode.test(v.calendar_ref))
     || !Array.isArray(v.approved_solution_refs) || !v.approved_solution_refs.every(record)
     || !Array.isArray(v.wbs_items) || !v.wbs_items.every(record)
     || !Array.isArray(v.dependencies) || !v.dependencies.every(record)
