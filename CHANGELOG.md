@@ -1,4 +1,5 @@
 # 版本说明
+- 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P03`（编码前）：复核冻结Validate合同、Owner、Windows显式组合与严格前端Client，确定只新增固定PlanVersion上下文内的独立Validate页面；Validate有持久化/Audit副作用，明确不自动执行、不混入Review、不将PASS解释为批准。仅增前置核查，无程序/API/Schema/Migration变化、未运行功能测试。详见P09-P03前置记录。
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P02`：不可变PlanVersion草稿创建页及显式Windows写组合完成；支持Approved Solution Outline固定候选、WBS根任务与验收条件、完整预览、原幂等请求重试和固定ID读回。未改API/Schema/Migration。前端全量197 files/2057 tests及typecheck/build、后端4190/3/6219、Win11隔离PG18 SQL+HTTP创建/固定读取通过。测试身份/权限/来源证明为合成；Gate/Pilot/Release未通过。详见P09-P02结果。
 
 - 2026-10-26 / `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P07`：固定PlanVersion工作页核查发现创建请求会立即生成不可变完整快照，空壳后补不成立；需先选当前批准Outline固定版本并完成至少一个WBS根条目/验收条件，创建前显式确认不可编辑内容。首片确定为新版本创建→按Location/version ID读回，Validate与原子送审另切；不伪造Plan版本历史列表，Output refs不支持须先阻止。本项仅静态核查。详见P06-P07前置记录。
