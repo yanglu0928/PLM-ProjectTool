@@ -22,11 +22,6 @@ PG_BINARY_ARCHIVE = {
     "size": 343808005,
     "sha256": "fbe23da234ee31547bf8a36d29dfd81e82b849df2d2b78d2eecb43d360252f8c",
 }
-PGVECTOR_SOURCE_ARCHIVE = {
-    "name": "pgvector-0.8.6.zip",
-    "size": 214357,
-    "sha256": "250f5f488a5e512c8781c338608dfac32ae34f97088970a1b5bb8f5be797caf8",
-}
 RUNTIME_TEXT_HASHES = {
     "server_license.txt": "39294f3f5b41533b307e118ee37c356f32cbc7746fc97e8b91f1b49a9068a24e",
 }
@@ -53,13 +48,13 @@ def safe_name(value: str) -> str:
 
 def official_inputs(downloads: Path) -> dict:
     inputs = []
-    for spec in (PG_BINARY_ARCHIVE, PGVECTOR_SOURCE_ARCHIVE):
+    for spec in (PG_BINARY_ARCHIVE,):
         path = downloads / spec["name"]
         if (not path.is_file() or path.stat().st_size != spec["size"]
                 or digest(path) != spec["sha256"]):
             raise ValueError(f"official input identity mismatch: {spec['name']}")
         inputs.append({"name": spec["name"], "size_bytes": spec["size"], "sha256": spec["sha256"]})
-    return {"edb_binary_archive": inputs[0], "pgvector_source_archive": inputs[1]}
+    return {"edb_binary_archive": inputs[0]}
 
 
 def select_payload(pg_root: Path, source_root: Path) -> list[tuple[Path, str]]:
@@ -146,7 +141,7 @@ def build(downloads: Path, pg_root: Path, source_root: Path, output_parent: Path
             "review_status": "REVIEW_REQUIRED",
             "postgresql": {"version": "18.6", "binary_archive_sha256": inputs["edb_binary_archive"]["sha256"]},
             "pgvector": {"version": "0.8.6", "source_commit": PGVECTOR_COMMIT,
-                         "source_archive_sha256": inputs["pgvector_source_archive"]["sha256"],
+                         "source_identity": "git commit " + PGVECTOR_COMMIT,
                          "compiled_vector_dll_sha256": digest(vector_dll)},
         }
         inventory_bytes = (json.dumps(inventory, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
