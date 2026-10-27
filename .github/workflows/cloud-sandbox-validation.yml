@@ -157,3 +157,40 @@ jobs:
             ${{ runner.temp }}/plm-python-embed-output-${{ github.run_id }}/*.json
           if-no-files-found: error
           retention-days: 14
+
+  rebuild-embedded-backend:
+    name: Assemble embedded Python with same-run backend and Windows wheelhouse
+    needs: [backend, rebuild-python-embed]
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download same-commit backend wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-backend-wheel-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-backend-wheel
+      - name: Download same-run embedded Python base
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-python-embed-rebuilt-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-python-embed-base
+      - name: Resolve, install and verify the embedded backend runtime
+        shell: pwsh
+        run: |
+          $workRoot = Join-Path $env:RUNNER_TEMP ("plm-embedded-backend-" + $env:GITHUB_RUN_ID)
+          $outputRoot = Join-Path $env:RUNNER_TEMP ("plm-embedded-backend-output-" + $env:GITHUB_RUN_ID)
+          python .\tools\build_windows_embedded_backend_cloud_candidate.py --work-root $workRoot --output-root $outputRoot --backend-artifact (Join-Path $env:RUNNER_TEMP "plm-backend-wheel") --runtime-artifact (Join-Path $env:RUNNER_TEMP "plm-python-embed-base") --source-commit $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { throw "Cloud embedded backend assembly failed" }
+      - name: Upload non-release embedded backend candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-embedded-backend-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-embedded-backend-output-${{ github.run_id }}/*.zip
+            ${{ runner.temp }}/plm-embedded-backend-output-${{ github.run_id }}/*.json
+          if-no-files-found: error
+          retention-days: 14
