@@ -191,8 +191,16 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
         raise ValueError("required backend runtime distributions missing: " + ", ".join(sorted(missing)))
 
     system_root = os.environ.get("SystemRoot", r"C:\\Windows")
-    env = {"SystemRoot": system_root, "WINDIR": system_root,
-           "PATH": str(runtime) + os.pathsep + str(Path(system_root) / "System32")}
+    profile = work_root / "profile"
+    model_cache = work_root / "model-cache"
+    profile.mkdir()
+    model_cache.mkdir()
+    env = {
+        "SystemRoot": system_root, "WINDIR": system_root,
+        "USERPROFILE": str(profile), "HOME": str(profile),
+        "MODELSCOPE_CACHE": str(model_cache),
+        "PATH": str(runtime) + os.pathsep + str(Path(system_root) / "System32"),
+    }
     probe = (
         "import sys,ssl,sqlite3,ctypes,plm_assistant,fastapi,sqlalchemy,alembic,"
         "psycopg,pgvector,paddle,paddleocr,paddlex,numpy,fitz,openpyxl,docx,pptx;"
