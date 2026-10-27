@@ -223,7 +223,8 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
                 or not path.resolve().is_relative_to(runtime_root)):
             raise ValueError("runtime candidate contains linked/out-of-root file")
         relative_path = path.relative_to(runtime).as_posix()
-        if relative_path == "packages/future/backports/test/badcert.pem":
+        if (relative_path.startswith("packages/future/backports/test/")
+                and path.suffix.lower() == ".pem"):
             excluded_paths.append(relative_path)
             continue
         if path.suffix.lower() == ".pem" and relative_path == "packages/certifi/cacert.pem":
