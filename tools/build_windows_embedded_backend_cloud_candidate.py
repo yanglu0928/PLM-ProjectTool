@@ -211,6 +211,7 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
         raise ValueError("embedded backend clean-path import failed: " + check.stderr[-4000:])
 
     file_hashes: dict[str, str] = {}
+    excluded_paths: list[str] = []
     runtime_root = runtime.resolve()
     for path in sorted(runtime.rglob("*")):
         if path.is_dir():
@@ -222,6 +223,9 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
                 or not path.resolve().is_relative_to(runtime_root)):
             raise ValueError("runtime candidate contains linked/out-of-root file")
         relative_path = path.relative_to(runtime).as_posix()
+        if relative_path == "packages/future/backports/test/badcert.pem":
+            excluded_paths.append(relative_path)
+            continue
         if path.suffix.lower() == ".pem" and relative_path == "packages/certifi/cacert.pem":
             pem_bundle = path.read_bytes()
             if (b"-----BEGIN CERTIFICATE-----" not in pem_bundle
@@ -255,6 +259,7 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
         "distribution_count": inventory["distribution_count"],
         "embedded_import_probe": "PASS",
         "payload_file_count": len(file_hashes),
+        "excluded_test_fixtures": excluded_paths,
         "known_gaps": ["third-party legal review remains open",
                        "no PostgreSQL/OCR native runtime/models are integrated",
                        "not an installer and not a complete Pilot package"],
