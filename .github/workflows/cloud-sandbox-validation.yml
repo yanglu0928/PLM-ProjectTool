@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/cloud-sandbox-execution
+      - feature/cloud-build-artifacts
   pull_request:
     branches:
       - main
@@ -39,6 +40,26 @@ jobs:
         run: python -m unittest discover -s tests -p "test_*.py"
       - name: Build backend wheel
         run: python -m pip wheel --no-deps --wheel-dir dist .
+      - name: Create build provenance manifest
+        run: |
+          $wheel = Get-ChildItem dist/*.whl | Select-Object -First 1
+          $digest = (Get-FileHash $wheel.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = @{
+            source_commit = "${{ github.sha }}"
+            workflow_run = $env:GITHUB_RUN_ID
+            component = "backend-wheel"
+            file = $wheel.Name
+            sha256 = $digest
+            release_eligible = $false
+          } | ConvertTo-Json
+          Set-Content -Path dist/cloud-build-manifest.json -Value $manifest -Encoding utf8
+      - name: Upload backend wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-backend-wheel-${{ github.sha }}
+          path: apps/backend/dist/
+          if-no-files-found: error
+          retention-days: 14
 
   frontend:
     name: Frontend tests and production build
@@ -61,3 +82,26 @@ jobs:
         run: pnpm test
       - name: Typecheck and build frontend
         run: pnpm build
+      - name: Create build provenance manifest
+        run: |
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path("dist")
+          files = sorted(p for p in root.rglob("*") if p.is_file())
+          manifest = {
+              "source_commit": os.environ["GITHUB_SHA"],
+              "workflow_run": os.environ["GITHUB_RUN_ID"],
+              "component": "frontend-dist",
+              "files": {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in files},
+              "release_eligible": False,
+          }
+          (root / "cloud-build-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+          PY
+      - name: Upload frontend production files
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: apps/frontend/dist/
+          if-no-files-found: error
+          retention-days: 14
