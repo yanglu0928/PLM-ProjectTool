@@ -136,10 +136,14 @@ def build(args: argparse.Namespace) -> dict:
         raise ValueError("frontend artifact inventory incomplete")
 
     embedded_zip = one_file(args.embedded_dir, "*.zip")
-    embedded_summary = one_file(args.embedded_dir, "*.json")
+    embedded_summary = args.embedded_dir / "embedded-backend-summary.json"
+    if not embedded_summary.is_file() or embedded_summary.is_symlink():
+        raise ValueError("embedded backend summary missing")
     embedded_result = read_json(embedded_summary)
     if (embedded_result.get("release_eligible") is not False
-            or embedded_result.get("status") != "WINDOWS_EMBEDDED_BACKEND_CANDIDATE_INTEGRITY_PASS"):
+            or embedded_result.get("status") != "NON_RELEASE_EMBEDDED_BACKEND_INTEGRITY_PASS"
+            or embedded_result.get("source_commit") != commit
+            or embedded_result.get("archive_sha256") != sha_file(embedded_zip)):
         raise ValueError("embedded candidate verification summary mismatch")
     embedded_manifest, embedded_hashes, embedded_inventory = checked_zip(
         embedded_zip, "embedded", commit)
@@ -148,7 +152,9 @@ def build(args: argparse.Namespace) -> dict:
         raise ValueError("embedded manifest identity mismatch")
 
     pg_zip = one_file(args.pg_dir, "*.zip")
-    pg_summary = one_file(args.pg_dir, "*.json")
+    pg_summary = args.pg_dir / "pg18-rebuilt-summary.json"
+    if not pg_summary.is_file() or pg_summary.is_symlink():
+        raise ValueError("PG18 rebuild summary missing")
     pg_result = read_json(pg_summary)
     if (pg_result.get("status") != "NON_RELEASE_PG18_RUNTIME_REBUILT_INTEGRITY_PASS"
             or pg_result.get("release_eligible") is not False
