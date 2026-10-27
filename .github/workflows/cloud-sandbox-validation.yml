@@ -19,7 +19,7 @@ concurrency:
 jobs:
   backend:
     name: Backend tests and wheel
-    runs-on: ubuntu-latest
+    runs-on: windows-2025
     timeout-minutes: 90
     defaults:
       run:
