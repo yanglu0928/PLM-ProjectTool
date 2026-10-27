@@ -21,3 +21,5 @@
 - 调整：将云端 runner 改为 GitHub 托管的 Windows Server 2025 windows-2025，以匹配 Windows 专属行为的沙箱验收；将 pytest 纳入 test extra；调整前端 pnpm 安装顺序并用后续 PR 运行复验。
 - 兼容性说明：Windows Server 2025 是隔离托管 VM，仍非 Windows 11 实机；通过结果只作为云端模拟证据，不等于 Windows 11/Gate/Pilot/发行 PASS。
 - 风险/回滚：依赖新增仅属于测试 extra，不进入生产依赖；工作流可在 feature 分支通过后续提交回滚。失败测试必须保留失败并修复，不降低测试范围。
+
+- Windows Server 2025 rerun result: frontend tests/typecheck/build passed. Backend installed dependencies and ran 3,849 tests; one test failed because its input temp path used the 8.3 short username while the service plan correctly emitted the resolved long path. Planned narrow test correction: assert the canonical resolved executable/config paths; preserve all product behavior and assertions on quoting, command shape, and no secret leakage. This remains an unresolved failure until cloud rerun.
