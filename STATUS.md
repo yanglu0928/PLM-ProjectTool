@@ -6,9 +6,9 @@
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
-|Execution Note|按用户 2026-10-27 指令，用户本机不运行代码，所有构建和运行仅在GitHub hosted runner。PR #55 / run 40457725517源码、前端、PG18/pgvector、Python base、embedded backend及parent assembly全部PASS。完整Windows父包候选artifact 12712678647（353,438,279 bytes，2026-11-10到期）；ZIP SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`。含20,111个payload文件，未安装、未启动数据库，`release_eligible=false`、`legal_clearance=false`。真实OCR模型、安装服务/ACL/正式信任和包内端到端仍待；Pilot/Release NOT_READY。|
-|Current WBS|`PLT-PKG-01-A09-P51-A18`：同run后端embedded runtime、frontend dist和PG18/pgvector sidecar已完成父包候选集成及hash读回。run 40457725517，artifact 12712678647，ZIP SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`。编码前检查与证据在 `docs/progress/plt-pkg-01-a09-p51-a18-parent-package-precheck.md`；CR-EXEC-005～010及结果在PR #55。|
-|Latest WBS Status|`WINDOWS_PARENT_PACKAGE_NON_RELEASE_CANDIDATE_INTEGRITY_PASS`；hosted run 40457725517所有组件构建和父包集成PASS；20,111 payload files、94 backend distributions、101 frontend dist files、1,629 PG18/pgvector files。artifact 12712678647；353,438,279 bytes；archive SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`。Manifest明确 `release_eligible=false`、`legal_clearance=false`、`installation_performed=false`、`database_started=false`。未验真实OCR推理、Windows服务/ACL/正式信任、安装升级、包内Edge/HTTPS、Gate/Pilot/Release。|
+|Execution Note|按用户2026-10-27指令，用户本机不运行程序；仅GitHub hosted runner。PR #55 run 40466454597源码、前端、PG18/pgvector、Python base、embedded backend、父包组装和A19临时PG smoke全PASS。父包artifact 12716703530（353,438,357 bytes，至2026-11-10）；ZIP SHA-256 `259af5595251083e8e67abe648727cb2410930455278d97fe2eb1067971498c1`。Smoke artifact 12717400427确认D盘runner temp、PG18.6/pgvector0.8.6、仅loopback、临时库和清理成功。包仍未安装应用/未启动产品API，非发行且无法律放行；Pilot/Release NOT_READY。|
+|Current WBS|`PLT-PKG-01-A09-P51-A19`：同run完整父包在hosted Windows D盘runner临时目录完成clean extraction/hash校验，包内PostgreSQL 18.6初始化、启动、loopback查询并创建vector0.8.6扩展，fast stop和临时目录清理通过。Run 40466454597；父包artifact 12716703530；smoke摘要artifact 12717400427。首次pipe hang及修复见CR-EXEC-011；完整证据 `docs/progress/plt-pkg-01-a09-p51-a19-parent-pg-smoke-result.md`。|
+|Latest WBS Status|`PARENT_PG18_TEMP_LIFECYCLE_PASS_LIMITED`；Windows2025 hosted run 40466454597全组件/父包/smoke jobs成功。Parent ZIP SHA-256 `259af5595251083e8e67abe648727cb2410930455278d97fe2eb1067971498c1`，artifact 12716703530，353,438,357 bytes；20,111 files摘要及extract逐项校验。Smoke artifact 12717400427：PG18.6+pgvector0.8.6、仅127.0.0.1、D盘临时数据目录、正常停止/清理。`product_api_started=false`、`production_installation=false`、`license_trust_used=false`；应用/License/ACL/OCR/Edge/Gate/Pilot/Release不在本WBS验收。|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / AI_04_A02_P02_SCHEMA_PASS / AI_04_A03_P02_INPUT_IDENTITY_PASS / AI_04_A04_A02_EGRESS_PREVIEW_SCHEMA_PASS / AI_04_A04_P03_EGRESS_AUTHORIZATION_SCHEMA_PASS / AI_04_A04_P04_EGRESS_PREVIEW_SERVICE_PASS / AI_04_A04_P05_EGRESS_AUTHORIZATION_SERVICE_PASS / AI_04_A04_P06_EGRESS_OWNER_TASK_PASS / AI_04_A04_P07_EGRESS_HTTP_CONTRACT_PASS / AI_04_A04_P08_EGRESS_HTTP_WINDOWS_PASS / AI_04_A04_P09_EGRESS_DEPLOYMENT_POLICY_PASS / AI_04_A05_P02_TASK_SUBMISSION_SCHEMA_PASS / AI_04_A05_P03_TASK_POLICY_PROMPT_OWNER_PASS / AI_04_A06_P03_P02_A03_DOCUMENT_CONTENT_PG_PASS / AI_05_A06_P04_WINDOWS_BROWSER_PASS / AI_05_A07_WINDOWS_WORKBENCH_PASS / RAG_DOCUMENT_CHUNK_SCHEMA_PASS / RAG_EMBEDDING_RECORD_SCHEMA_PASS / RAG_EMBEDDING_BUILD_PLAN_SCHEMA_PASS / RAG_EMBEDDING_BUILD_BEGIN_PASS / RAG_EMBEDDING_BUILD_RECONCILIATION_PASS / RAG_EMBEDDING_BATCH_SEND_FENCE_PASS / RAG_EMBEDDING_EXECUTION_CONTRACT_PASS / RAG_EMBEDDING_ADAPTER_PASS / RAG_EMBEDDING_RESPONSE_CONTRACT_PASS / RAG_EMBEDDING_BATCH_SUCCESS_PASS / RAG_EMBEDDING_BATCH_FAILURE_PASS / RAG_EMBEDDING_BATCH_WORKER_PASS / RAG_EMBEDDING_INDEX_VALIDATION_PRECHECK_PASS / RAG_EMBEDDING_INDEX_VALIDATION_SCHEMA_PASS / RAG_EMBEDDING_INDEX_READY_OWNER_PASS / RAG_EMBEDDING_INDEX_QUALITY_SCHEMA_PASS / RAG_04_A05_P02_RETRIEVAL_WORKER_CONTEXT_PASS / RAG_04_A06_P03_RETRIEVAL_READ_OWNER_PASS / RAG_04_A06_P04_RETRIEVAL_HTTP_PASS / RAG_04_A06_P05_RETRIEVAL_CANCEL_OWNER_PASS / RAG_04_A06_P06_WINDOWS_COMPOSITION_PASS / RAG_04_A06_P07_FRONTEND_PASS / RAG_04_A06_P08_WINDOWS_BROWSER_PASS / GATE_3_A01_EVIDENCE_AUDIT_COMPLETE / GATE_3_BLOCKED_PLATFORM_OWNER_QUALITY_TRUST_PERFORMANCE / CAP_01_A02_CAPABILITY_SCHEMA_PASS / CAP_01_A03_P01_BASELINE_CREATE_PASS / CAP_01_A03_P02_VERSION_CREATE_PASS / CAP_01_A03_P03_VERSION_VALIDATE_PASS / CAP_01_A04_A02_GLOBAL_REVIEW_KERNEL_PASS / CAP_01_A04_A03_CAPABILITY_SUBJECT_PASS / CAP_01_A04_A04_TERMINAL_FORMALIZATION_PASS / CAP_01_A05_A01_HTTP_PRECHECK_PASS / CAP_01_A05_A02_READ_OWNER_PASS / CAP_01_A05_A03_STATE_OWNER_PASS / CAP_01_A05_A04_COMMAND_HTTP_PASS / CAP_01_A05_A05_SUBMIT_REVIEW_PASS / CAP_01_A05_A06_READ_HTTP_PASS / CAP_01_A05_A07_WINDOWS_COMPOSITION_PASS / HND_01_A01_RUNTIME_PRECHECK_PASS / HND_01_A02_ANALYSIS_SCHEMA_PASS / HND_01_A03_P01_ANALYSIS_CREATE_PASS / HND_01_A03_P02_VERSION_CREATE_PASS / HND_01_A03_P03_VERSION_VALIDATE_PASS / HND_01_A04_A01_REVIEW_PRECHECK_PASS / HND_01_A04_A02_P01_REVIEW_SCHEMA_PASS / HND_01_A04_A02_P02_REVIEW_OWNER_PASS / HND_01_A04_A02_P03_REVIEW_HTTP_PASS / HND_01_A05_A04_COMMAND_HTTP_PASS / HND_01_A05_A05_SUBMIT_REVIEW_PASS / HND_01_A05_A06_READ_HTTP_PASS / HND_01_A05_A07_WINDOWS_COMPOSITION_PASS / HND_02_A01_ACTION_SCHEMA_PASS / HND_02_A02_ACTION_CREATE_PASS / HND_02_A03_A01_STATE_PRECHECK_PASS / HND_02_A03_A02_LIFECYCLE_SCHEMA_PASS / HND_02_A03_A03_ACTION_PATCH_PASS / HND_02_A03_A04_ACTION_START_PASS / HND_02_A03_A05_ACTION_SUBMIT_PASS / HND_02_A03_A06_ACTION_VERIFY_PASS / HND_02_A03_A07_ACTION_CLOSE_CANCEL_PASS / HND_03_A01_WORKFLOW_QUALIFICATION_PRECHECK_PASS / HND_03_A02_WORKFLOW_QUALIFICATION_CONTRACT_PASS / HND_03_A03_CURRENT_FACT_OWNER_INTERNAL_PASS / HND_03_A04_WORKFLOW_QUALIFICATION_PG_PASS / WFL_01_A07_P07_A05_WINDOWS_HTTP_PG_PASS / WFL_01_A07_P07_A10_WINDOWS_BROWSER_PASS / WFL_02_A02_A01_TRANSITION_COMMAND_PRECHECK_PASS / WFL_02_A02_A02_TRANSITION_APPEND_PG_PASS / WFL_02_A02_A03_TRANSITION_SERVICE_PG_PASS / WFL_02_A02_A04_TRANSITION_HTTP_PASS / WFL_02_A02_A05_WINDOWS_HTTP_PG_PASS / WFL_02_A02_A06_TRANSITION_FRONTEND_PASS / WFL_02_A02_A07_WINDOWS_BROWSER_PASS / WFL_02_A02_A08_STAGE_NUMBERING_PASS / SUR_01_A01_RUNTIME_PRECHECK_PASS / SUR_01_A02_DEFINITION_SCHEMA_PASS / SUR_01_A03_P01_SURVEY_CREATE_PASS / SUR_01_A03_P02_A01_SOURCE_PROOF_PRECHECK_PASS / SUR_01_A03_P02_A02_SOURCE_PROOFS_PASS / SUR_01_A03_P02_A03_VERSION_CREATE_PASS / SUR_01_A03_P03_VERSION_VALIDATE_PASS / SUR_01_A04_A01_REVIEW_PRECHECK_PASS / SUR_01_A04_A02_P01_REVIEW_SCHEMA_PASS / SUR_01_A04_A02_P02_REVIEW_OWNER_PASS / SUR_01_A04_A02_P03_REVIEW_HTTP_PASS / SUR_01_A04_A02_P04_WINDOWS_HTTP_PASS / SUR_01_A05_A02_DEFINITION_READ_OWNER_PASS / SUR_01_A05_A03_SURVEY_STATE_OWNER_PASS / SUR_01_A05_A04_COMMAND_HTTP_PASS / SUR_01_A05_A05_SUBMIT_REVIEW_PASS / SUR_01_A05_A06_READ_HTTP_PASS / SUR_01_A05_A07_WINDOWS_COMPOSITION_PASS / SUR_01_A06_A04_P01_SOURCE_LOCATION_PRECHECK_PASS / SUR_01_A06_A04_P02_SOURCE_LOCATION_INTERNAL_PASS / SUR_01_A06_A04_P03_SOURCE_LOCATION_HTTP_PASS / SUR_01_A06_A05_P01_FRONTEND_PASS / SUR_01_A06_A05_P02_WINDOWS_BROWSER_PASS / SUR_02_A01_RUNTIME_PRECHECK_PASS / SUR_02_A05_ROUND_STATE_PASS / SUR_03_A01_RESPONSE_PRECHECK_PASS / SUR_03_A08_ASSIGNMENT_RESPONSE_HTTP_PASS / SUR_03_A09_ASSIGNMENT_EDGE_BROWSER_PASS / SUR_04_A01_CONCLUSION_PRECHECK_PASS / SUR_04_A02_CONCLUSION_SCHEMA_PASS / SUR_04_A03_CONCLUSION_SOURCE_PROOFS_PASS / SUR_04_A04_CONCLUSION_CREATE_READ_PASS / SUR_04_A05_CONCLUSION_VALIDATION_PASS / SUR_04_A06_CONCLUSION_REVIEW_PASS / SUR_05_A04_CONCLUSION_FRONTEND_PASS / SUR_05_A05_CONCLUSION_EDGE_BROWSER_PASS / SUR_06_A01_WORKFLOW_QUALIFICATION_PRECHECK_PASS / SUR_06_A02_WORKFLOW_QUALIFICATION_REGISTRY_PASS / SUR_06_A03_SURVEY_WORKFLOW_OWNER_PASS / SUR_06_A04_WORKFLOW_REGISTRY_WIRING_PASS / SUR_06_A05_WORKFLOW_PG_PASS / SUR_06_A06_WORKFLOW_FRONTEND_PASS / REQ_01_A01_RUNTIME_PRECHECK_PASS / REQ_01_A02_IDENTITY_SCHEMA_PASS / REQ_01_A03_P01_IDENTITY_CREATE_PASS / REQ_01_A03_P02_PACKAGE_MUTATION_PASS / REQ_01_A10_A02_IDENTITY_READ_PASS / REQ_01_A10_A03_P01_PATCH_CONTRACT_PASS / PRT_01_A03_A04_PROTOTYPE_MUTATION_PASS / PRT_01_A03_A05_SCOPE_DECISION_PASS / PRT_01_A07_A03_P02_APPROVAL_TRACE_MANIFEST_PASS / PRT_01_A10_A05_P04_LINK_PAGE_PASS / STRUCTURED_SPEC_VALIDATE_WINDOWS_BROWSER_PASS / STRUCTURED_SPEC_DESIGN_READINESS_PASS / STRUCTURED_SPEC_TRACE_COVERAGE_PASS / STRUCTURED_SPEC_REVIEW_OWNER_PASS / CAP_02_P05_P04_LICENSE_NATURAL_EXPIRY_PASS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -19,11 +19,11 @@
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；当前增量至`20261026_0210`（0188 Plan append-only guards；0189 CR-PLAN-006不可变Validate报告回执；0190 CR-PLAN-007 Review状态事件守卫；0200 CR-PLAN-008 Approved pointer守卫；0210 CR-PLAN-009真实WITHDRAWN结果）；此前历史保留|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|AI04A05-P02 Win11/PG18.6 Schema0070空/历史库升降重升、drift、约束负例、后端2136运行/3跳过及wheel PASS；AI04A04-P08 Win11/PG18.6真实HTTP组合、P07合同5、后端2130运行/3跳过、wheel PASS；AI04A04-P07合同5、后端2130运行/3跳过、wheel PASS；DOC05A05-P07 三视图定向26、前端全量970项/typecheck/build PASS；DOC05A05-P06 定向44、前端全量960项/typecheck/build PASS；DOC05A05-P05 定向149、前端全量916项/typecheck/build PASS；DOC05A05-P04 定向30、前端全量910项/typecheck/build PASS；DOC05A05-P03 定向143、前端全量880项/typecheck/build PASS；DOC05A05-P02 定向31、前端全量876项/typecheck/build PASS；DOC05A05-P01 SessionClient 定向139、前端全量845项/typecheck/build PASS；A05真实浏览器/PG审计、A06 Auth UTC-Z真实网络与后端1558无失败/2跳过、A07导航浏览器；A08-P02前端85及真实PG改密HTTP内部链通过、浏览器最终提交待人工；A09前端86跨路由合同；PRJ05A01客户端123、A02列表131、A03详情139；A04真实浏览器及独立HTTP/PG合成读链通过；PRJ05A05-P01前端147桥接、P02前端173创建客户端、P03-A01候选读取205、P03-A02创建页面212/typecheck/build合同；P04真实IAB/PG创建通过。AUT05A10-P01前端219私有User写桥接、P02前端249安全客户端、P03前端258页面合同；P04-A01隔离ASGI/PG写链通过。AUT05A11-P01前端265/typecheck/build用户只读页合同通过，P02 Windows11本机合成浏览器/PG匿名/普通用户拦截、Admin两用户列表/刷新及临时资源清理通过。AUT05A12-P01前端271状态传输合同，P02前端292状态响应合同，P03前端309详情强ETag合同，P04前端320/typecheck/build启停页面合同通过；P05-A01实际Windows11隔离ASGI/PG User启停/会话/历史重放和临时源清理exit0（首轮PG服务停止，恢复后重跑）。AUT05A13-P01～P03前端362/typecheck/build，P04隔离浏览器同用户改名v0→v1、旧名拒绝/新名登录及SQL一审计、临时清理和原只读API回归exit0（首轮PG服务停止，恢复后重跑）。新凭据浏览器提交待人工，正式HTTPS/信任/性能/三平台/全UAT仍未验，CR008 FAIL/Gate/包待|
-|Latest Test Summary|GitHub Actions run 40457725517（hosted Windows Server 2025）：backend tests/wheel、frontend tests/typecheck/build、PG18/pgvector rebuild、Python 3.13.15 base、embedded backend wheelhouse clean-path assembly、20,111项父包组件路径/摘要读回全部通过。父包artifact 12712678647，archive SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`。这是云端完整性候选，不等于安装或产品启动、OCR模型运行、真实信任、用户验收或Release。|
-|Next WBS|`PLT-PKG-01-A09-P51-A19`：在GitHub hosted Windows Server 2025 runner 的 runner-owned 临时目录做新父包清洁落地/启动前验收；只用同run候选并验证配置、PostgreSQL初始化/启动/关闭和应用入口失败关闭边界，明确不导入或伪装正式License信任。临时目录在runner回收时清理，不使用用户本机；若运行链被缺失的正式信任/服务账户材料阻断，记录并转向可独立完成的安装/信任装配任务。|
-|Latest Validation|GitHub Actions run 40457725517：Windows Server 2025 hosted runner完成全部输入构建和父包集成，输出20,111 files父包ZIP SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`，artifact 12712678647，353,438,279 bytes，至2026-11-10保留。组件和总manifest读回验证通过。尚未做安装、数据库启动、API/Edge/HTTPS或OCR推理；不代表Pilot/Gate/正式发行。|
+|Latest Test Summary|Hosted Windows run 40466454597：backend tests/wheel、frontend tests/typecheck/build、PG18 sidecar、Python3.13.15 embed、embedded backend、父包组装/全量读回全部成功；A19再清洁解包20,111项并在D盘临时根验证PostgreSQL18.6和pgvector0.8.6创建/查询/停止。父包artifact 12716703530，smoke summary 12717400427。首轮pg_ctl管道挂起和查询断言误判已记录并修复；run 40458978359不计通过。产品API、OCR模型、正式信任、安装升级、用户验收和正式发行仍未验。|
+|Next WBS|`PLT-PKG-01-A09-P51-A20`：核查并完成父包内应用启动配置与API loopback/health的runner-only集成验收。先确认bootstrap非Secret配置、PG schema/migration入口、正式License信任依赖和运行入口；使用空临时PG与合成数据，不注入/伪装正式信任。正式公钥/License缺失时记录应用fail-closed，并继续不依赖其材料的配置/安装器准备，绝不把PG启动结果当产品可用。|
+|Latest Validation|GitHub Actions hosted Windows run 40466454597所有build/assemble和clean extraction/PostgreSQL smoke jobs终态成功；20,111项父包完整性校验，PostgreSQL18.6/pgvector0.8.6在D盘runner临时目录启动和查询后fast stop/清理。父包artifact 12716703530，SHA-256 `259af5595251083e8e67abe648727cb2410930455278d97fe2eb1067971498c1`；smoke summary artifact 12717400427。CR-EXEC-011记录首次挂起及防继承pipe的修复。产品API/License/正式安装、Pilot/Gate/Release未验。|
 
-- 2026-10-27 `PLT-PKG-01-A09-P51-A17`：PR #55 hosted Windows run 40456511998 完成源码/前端/Python base/PG18 sidecar/embedded backend assembly全量云端验证。输出 297 MB 非发行候选 artifact 12712399237，逐文件哈希读回通过。ModelScope临时profile/cache前置、certifi公共CA bundle以及future PEM测试夹具的受限处理分别记录在CR-EXEC-008/009/010。仍缺真实OCR模型推理、PG集成、原生组件与完整父包安装/Edge/HTTPS验收；Pilot/Release不变。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A18`：PR #55 hosted run 40457725517 将同run frontend dist、Python 3.13.15 embedded backend（94 distributions）与PG18.6/pgvector 0.8.6（1,629文件）组合为20,111项父包候选；组件来源/摘要校验和最终ZIP逐项readback通过。产物SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`，artifact 12712678647。明确未安装、未启动数据库、非发行/未法律放行；包内Edge/OCR模型/正式信任等证据尚缺。\n\n## 自动执行策略
+- 2026-10-27 `PLT-PKG-01-A09-P51-A17`：PR #55 hosted Windows run 40456511998 完成源码/前端/Python base/PG18 sidecar/embedded backend assembly全量云端验证。输出 297 MB 非发行候选 artifact 12712399237，逐文件哈希读回通过。ModelScope临时profile/cache前置、certifi公共CA bundle以及future PEM测试夹具的受限处理分别记录在CR-EXEC-008/009/010。仍缺真实OCR模型推理、PG集成、原生组件与完整父包安装/Edge/HTTPS验收；Pilot/Release不变。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A18`：PR #55 hosted run 40457725517 将同run frontend dist、Python 3.13.15 embedded backend（94 distributions）与PG18.6/pgvector 0.8.6（1,629文件）组合为20,111项父包候选；组件来源/摘要校验和最终ZIP逐项readback通过。产物SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`，artifact 12712678647。明确未安装、未启动数据库、非发行/未法律放行；包内Edge/OCR模型/正式信任等证据尚缺。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A19`：首次run 40458978359因pg_ctl stdout pipe继承挂起被取消，按CR-EXEC-011修复；run 40464618526暴露多语句psql状态行导致版本断言误判；拆分查询后run 40466454597成功。在D盘hosted runner temp清洁解包20,111项并逐项校验，同包PG18.6/pgvector0.8.6临时初始化/loopback查询/创建扩展/fast stop/临时目录清理全通过。父包artifact 12716703530，SHA-256 `259af5595251083e8e67abe648727cb2410930455278d97fe2eb1067971498c1`；smoke artifact 12717400427。`product_api_started=false`、正式trust未用，故仅`PASS_LIMITED`。详见 `docs/progress/plt-pkg-01-a09-p51-a19-parent-pg-smoke-result.md`。\n\n## 自动执行策略
 
 - 2026-10-26 `PLAN-02-A04-P04-A04-P03-P04-S03-P03-A06-P05-P06-P09-P02`：P09-P01只读列表/固定快照UI通过限界验收后，完成下一任务编码前核查。发现Create HTTP factory/Client/Owner已存在但生产Windows写组合尚未装载；本项需实现完整Approved Solution固定版本选取、WBS根任务/Acceptance输入、幂等草稿Create与固定ID读回，并仅挂显式写模式。无合同/Schema变更。详见P09-P02前置记录。
 
@@ -97,8 +97,7 @@
 
 - 2026-10-25 `SUR-07-A04`：静态核查交接 `analysis_item_id` 与版本内 `analysis_item_row_id` 是不同 UUID，Survey 首版 HANDOVER_ITEM 来源没有公开受权发现入口；先登记 `CR-SUR-013` 兼容新增只读候选操作、隔离与验证计划，不改冻结写合同或把 MANUAL 伪装固定来源。仅前置/CR，通过不等于版本创建，见 `docs/progress/sur-07-a04-survey-version-source-precheck.md`。
 
-- 2026-10-25 `SUR-07-A03`：从干净提交重建 Windows 11 非发行候选 SHA `fea9bb41…4bad194`，独立清洁解包22,196载荷；包内 Edge/HTTPS/PG 合成交接批准后调研定义 UI 创建/原号重放、唯一 Audit/收据、匿名/错项目/只读角色/合成失效拒绝和临时清理退出0。未产生调研问题版本或真人确认；Pilot/Gate/Release NOT_READY，见 `docs/progress/sur-07-a03-survey-create-packaged.md`。- 2026-10-25 `SUR-07-A02`：既有调研列表新增受权创建表单，原名称/原号 sessionStorage 恢复、未知结果须显式核对重试、坏记录/冲突锁定及成功导航；定向10、前端全量2022/typecheck/build退出0。包内 Edge/PG 未验，Pilot/Gate/Release NOT_READY，见 `docs/progress/sur-07-a02-survey-create-view.md`。
-- 2026-10-25 `SUR-07-A01`：新增冻结 Survey Create 私有 Session CSRF/幂等桥接、严格调研定义客户端和定向4项；前端全量2016/typecheck/build退出0。无 Schema/API/依赖变更；页面/实际 HTTP/PG/包内创建未验，Pilot/Gate/Release NOT_READY，见 `docs/progress/sur-07-a01-survey-create-client.md`。
+- 2026-10-25 `SUR-07-A03`：从干净提交重建 Windows 11 非发行候选 SHA `fea9bb41…4bad194`，独立清洁解包22,196载荷；包内 Edge/HTTPS/PG 合成交接批准后调研定义 UI 创建/原号重放、唯一 Audit/收据、匿名/错项目/只读角色/合成失效拒绝和临时清理退出0。未产生调研问题版本或真人确认；Pilot/Gate/Release NOT_READY，见 `docs/progress/sur-07-a03-survey-create-packaged.md`。- 2026-10-25 `SUR-07-A02`：既有调研列表新增受权创建表单，原名称/原号 sessionStorage 恢复、未知结果须显式核对重试、坏记录/冲突锁定及成功导航；定向10、前端全量2022/typecheck/build退出0。包内 Edge/PG 未验，Pilot/Gate/Release NOT_READY，见 `docs/progress/sur-07-a02-survey-create-view.md`。- 2026-10-25 `SUR-07-A01`：新增冻结 Survey Create 私有 Session CSRF/幂等桥接、严格调研定义客户端和定向4项；前端全量2016/typecheck/build退出0。无 Schema/API/依赖变更；页面/实际 HTTP/PG/包内创建未验，Pilot/Gate/Release NOT_READY，见 `docs/progress/sur-07-a01-survey-create-client.md`。
 
 - 2026-10-25 `PKG-PILOT-01-A04-P07`：核查交接已批准版本问题转 CONFIRMED、Survey HANDOVER_ITEM 当前来源证明和 Windows Survey Create 装配；确认前端调研列表/详情只有读取、无创建桥接/入口。只读前置核查通过，转 `SUR-07-A01`；Pilot/Gate/Release NOT_READY，见 `docs/progress/pkg-pilot-01-a04-p07-survey-entry-precheck.md`。
 
@@ -197,8 +196,7 @@
 - 2026-10-24 `SOL-03-A06-P04-P03-A06-P01`：受控平台读/列表显式登记SOL-03、写模式送审及决定同一Owner，缺来源失败关闭；合同49项/2子例、后端全量4066/3跳过/6114子例通过。正式信任/生产启动未验，见`docs/progress/sol-03-a06-p04-p03-a06-p01-windows-outline-review-composition.md`。- 2026-10-24 `SOL-03-A06-P04-P03-A05-P02-A03`：Windows 11真实Edge 155/隔离PG18.6合成负责人送审、独立客户待办/固定版本/批准/历史/跨项目无残留，PG批准指针/两不可变结果/Audit闭合脚本exit0；正式信任/Pilot仍待，见`docs/progress/sol-03-a06-p04-p03-a05-p02-a03-outline-review-edge-browser.md`。
 - 2026-10-24 `SOL-03-A06-P04-P03-A05-P02-A02`：固定OutlineVersion负责人客户评审面板、严核SOL-03送审回执及同号重试，前端全量1867项/typecheck/build通过；真实浏览器与现时验证报告UI未验，见`docs/progress/sol-03-a06-p04-p03-a05-p02-a02-outline-review-manager-submit-ui.md`。- 2026-10-24 `SOL-03-A06-P04-P03-A05-P02-A01`：方案大纲客户待办、统一Review精确SOL-03策略与本轮固定OutlineVersion导航前端全量1860项/typecheck/build通过；真实浏览器与送审入口未验，见`docs/progress/sol-03-a06-p04-p03-a05-p02-a01-outline-review-customer-ui.md`。
 - 2026-10-24 `SOL-03-A06-P04-P03-A05-P01`：统一Review读/列表/命令显式注册SOL-03，Win11隔离PG合成客户读取/撤源拒绝/恢复后批准及指针/结果/Audit脚本exit0；真实浏览器与正式信任仍待，见`docs/progress/sol-03-a06-p04-p03-a05-p01-outline-review-dispatch.md`。- 2026-10-24 `SOL-03-A06-P04-P03-A04-P02`：Win11隔离PG18.6完整来源HTTP201/同Key回放与错误请求拒绝、单Review/Round/快照/START/收据脚本exit0；终态路由/浏览器仍待，见`docs/progress/sol-03-a06-p04-p03-a04-p02-outline-review-http-pg.md`。
-- 2026-10-24 `SOL-03-A06-P04-P03-A04-P01`：冻结Outline送审可选HTTP合同11项与后端全量4063/3跳过通过；默认404，未挂载Windows或真实HTTP/PG，见`docs/progress/sol-03-a06-p04-p03-a04-p01-outline-review-http-contract.md`。
-- 2026-10-24 `SOL-03-A06-P04-P03-A03-P02`：完整当前来源和统一Review同库START、回放与撤Trace后终态重证拒绝在隔离Win11/PG18.6脚本exit0；公开路由/真实客户仍待，见`docs/progress/sol-03-a06-p04-p03-a03-p02-outline-review-pg-composition.md`。
+- 2026-10-24 `SOL-03-A06-P04-P03-A04-P01`：冻结Outline送审可选HTTP合同11项与后端全量4063/3跳过通过；默认404，未挂载Windows或真实HTTP/PG，见`docs/progress/sol-03-a06-p04-p03-a04-p01-outline-review-http-contract.md`。- 2026-10-24 `SOL-03-A06-P04-P03-A03-P02`：完整当前来源和统一Review同库START、回放与撤Trace后终态重证拒绝在隔离Win11/PG18.6脚本exit0；公开路由/真实客户仍待，见`docs/progress/sol-03-a06-p04-p03-a03-p02-outline-review-pg-composition.md`。
 - 2026-10-24 `SOL-03-A06-P04-P03-A03-P01`：Outline内部提交服务、仅ProjectManager权限及固定幂等回放合同通过定向17和后端全量4052/3跳过；未做真实PG服务整链，见`docs/progress/sol-03-a06-p04-p03-a03-p01-outline-review-submit-service.md`。
 - 2026-10-24 `SOL-03-A06-P04-P03-A02`：内部Outline统一Review Subject、最新版本锁/客户确认人资格/批准前重证及数据库状态闭合；定向29、隔离PG合成START回滚/批准指针闭合通过。未开放正式送审/真实客户签署，见`docs/progress/sol-03-a06-p04-p03-a02-outline-review-subject.md`。
 - 2026-10-24 `SOL-03-A06-P04-P03-A01`：内部查询允许IN_REVIEW现时三维重证而公开VALIDATE仍限DRAFT覆盖，定向21、全量4016/3跳过通过；未装配Review Subject，见`docs/progress/sol-03-a06-p04-p03-a01-outline-review-current-query.md`。
@@ -298,7 +296,6 @@
 - PLAN-01-A04-P04 将Plan当前身份写入Windows两种显式平台组合，专用Vault游标钥缺失即拒启动；Win11可弃PG18.6真实Session/ASGI CREATE→GET→LIST五页、重放/隔离/撤权/License，临时Vault备份恢复，后端全量3809通过/3跳过、wheel入包，见 `docs/progress/plan-01-a04-p04-windows-composition.md`。合成信任不代表正式发行；转P05前端。
 
 - PLAN-01-A04-P03 增加专用签名/范围绑定PLAN_LIST游标和默认关闭HTTP，将内部列表公开前改为时间/ID降序；Win11/PG18.6同时间戳续页、撤权/License/零读Audit，合同5项/19子例、后端全量3806通过/3跳过、wheel入包，见 `docs/progress/plan-01-a04-p03-list-http.md`。转P04 Windows真实装配。
-
 - PLAN-01-A04-P02 新增默认关闭PLAN_GET详情HTTP，安全200/trace/ETag投影与认证/Host/隔离合同通过，定向8项/9子例、后端全量3801通过/3跳过及wheel入包，见 `docs/progress/plan-01-a04-p02-get-http.md`。转P03专用LIST游标。
 
 - PLAN-01-A04-P01 新增默认关闭PLAN_CREATE HTTP及Plan自有严格JSON/UUID解析，定向7项/21子例、后端全量3798通过/3跳过、wheel入包；未接Windows真实组合，见 `docs/progress/plan-01-a04-p01-create-http.md`。转P02读取网络合同。
@@ -397,7 +394,6 @@
 - SOL-06-A11-P06 新增项目级专项历史列表、严格摘要/分页客户端、项目与创建/详情导航；定向34项、前端全量1794项、typecheck/build通过，见 `docs/progress/sol-06-a11-p06-structured-spec-list-frontend.md`。Edge真实链留P07。
 
 - SOL-06-A11-P05 将专项列表接入 Windows 显式只读/读写模式，新增当前账户专用 Credential Manager 密钥并在缺失时 fail-closed；Win11可弃PG18.6真实HTTP两页/成员/隔离/拒绝、后端全量3648项及wheel 1399条目通过，见 `docs/progress/sol-06-a11-p05-structured-spec-list-windows.md`。正式服务账户密钥与UI/Edge仍待。
-
 - SOL-06-A11-P04 新增默认关闭的专项版本列表 GET、最小摘要与专用签名分页；联合定向、后端全量3644项和wheel 1398条目通过，见 `docs/progress/sol-06-a11-p04-structured-spec-list-http.md`。Windows实际装配留P05。
 
 - SOL-06-A11-P03 新增专项版本列表专用 HMAC 游标，绑定 family/Session/ProjectId/page_size/位置；篡改及跨上下文负例3项/12子例通过，见 `docs/progress/sol-06-a11-p03-structured-spec-list-cursor.md`。正式密钥与HTTP装配仍待。
@@ -498,7 +494,6 @@
 - SOL-05-A02-P03 复用 Requirement-owned 同事务当前批准版本证明，隔离 PG 正负例复跑通过；不把需求批准误称章节覆盖，详见 `docs/progress/sol-05-a02-p03-section-requirement-use-proof.md`。
 
 - SOL-05-A02-P02 新增 SectionVersion 正文 PROJECT DocumentVersion 固定身份、同事务授权与物理文件证明适配器；单元/后端全量通过，未解锁0138，详见 `docs/progress/sol-05-a02-p02-section-document-content-proof.md`。
-
 - SOL-05-A01 静态核对 SectionVersion 0138 表仍闭锁、Owner不存在；SOL-05-A02-P01 有界 DRAFT 输入合同和单元/全量后端回归通过，但未开放写入/API，详见 `docs/progress/sol-05-a01-section-version-precheck.md` 与 `docs/progress/sol-05-a02-p01-section-version-input.md`。
 
 - PRT-01-A11-A05-P04-P24 同序20并发复核出现临时池业务P95比默认池更差，不能据连接路径更短更改生产配置；详见 `docs/progress/prt-01-a11-a05-p04-p24-load-variability.md`。
@@ -597,7 +592,6 @@
 - SOL-01-A11-P01/CR-SOL-015 修复 Reference Revise 首次结果 ETag 对版本序号的错误推导，0151 保存真实根锁版本；Win11 隔离 PG18.6 迁移、偏离锁版本 ASGI/重放及后端 3376 通过/3 跳过。前端 A11 尚待；详情见 `docs/progress/sol-01-a11-reference-etag-snapshot.md`。
 
 - SOL-01-A10 明确前端 Revise 必须从当前 GET 取 ETag、选择可核验来源，GLOBAL 变更来源需新脱敏确认；不提供裸 UUID 自由表单，也不把历史 201 当当前。A11～A14 分片待实现；详情见 `docs/progress/sol-01-a10-reference-revise-ui-precheck.md`。
-
 - SOL-01-A09 Reference Revise PROJECT/GLOBAL 只在 Windows 显式写模式装载；Win11 隔离 PG 两路实际来源/Session 与构造失败释放、后端 3375 通过/3 跳过。UI/浏览器及正式目标账户/Gate3 未通过；详情见 `docs/progress/sol-01-a09-reference-revise-windows.md`。
 
 - SOL-01-A08 新增默认关闭的 PROJECT/GLOBAL Reference Revise POST；Win11 隔离 PG 真实 ASGI/Session/来源与首次结果历史重放通过，后端 3373 通过/3 跳过。Windows 显式写组合/UI/浏览器及 Gate3 未通过；详情见 `docs/progress/sol-01-a08-reference-revise-http-pg.md`。
@@ -697,8 +691,7 @@
 - PRT-01-A10-A06 已注册八个Prototype命名路由和两类导航，七页面动态拆包；共享身份失效/替换或Prototype
   写401时立即退出业务页，卸载清除pending并拒绝迟到响应。前端1599项及构建通过，进入A07真实浏览器闭环。
 - PRT-01-A10-A05-P04 已完成Link列表/创建/撤销/替换页面：双端当前批准Version交叉核对，验收标准按
-  稳定引用逐条完整分区，缺引用关闭写入；替换锁定逻辑身份，三类写操作原样恢复。A05完成，进入A06。
-- PRT-01-A10-A05-P03 已完成Version结构化页面：业务候选形成固定输入，Interaction不可执行、Coverage自动
+  稳定引用逐条完整分区，缺引用关闭写入；替换锁定逻辑身份，三类写操作原样恢复。A05完成，进入A06。- PRT-01-A10-A05-P03 已完成Version结构化页面：业务候选形成固定输入，Interaction不可执行、Coverage自动
   计算；创建/校验/送审原操作恢复，校验非批准且仅PM送审。路由留A06，进入Link页面。
 - PRT-01-A10-A05-P02-P02 已完成独立GLOBAL Template管理员页面：不借项目身份，使用GLOBAL固定文档、
   结构化合同和原操作恢复；非管理员不读取。路由仍留A06，进入Version页面。
@@ -797,7 +790,6 @@
 
 - PRT-01-A07-A01 已固定`PRT-03 + PROTOTYPE_ALL_V1`、最新DRAFT/当前事实、批准指针、旧版SUPERSEDE、
   退回保留旧指针和批准Trace边界；拆为Migration/Subject/Trace/Submit四项，纯文档PASS，进入0132。
-
 - PRT-01-A06-A04 已新增Version倒序List、固定历史Get和非状态迁移ValidationReport；重证当前输入并写Audit但
   不改变Version/正式指针。Win11/PG18.6、后端3136/3及wheel1205项通过，A06完成并进入A07。
 
@@ -898,7 +890,6 @@
   Evidence必须显式点击并按当前Session重证，路由/版本切换清旧且迟到响应丢弃；五要素验收、能力人工
   确认、假设/排除/依赖和待确认警示已呈现。新增8场景、前端全量1516、typecheck/build通过；
   进入A04结构化写页，真实Edge/PG留A05。
-
 - 2026-10-08/REQ-01-A11-A02 新增Requirement identity/version严格只读客户端；父级、强ETag、
   opaque cursor、声明计数、连续ordinal、列表顺序和安全错误均失败关闭。定向26、前端全量1508及
   typecheck通过；进入A03读取/来源定位页面。
@@ -997,7 +988,6 @@
 - 2026-10-07/REQ-01-A05-A04 新增Human Decision proof，绑定不可变DEFER/REJECT决定、首成功结果和
   精确Evidence集合；五类来源同事务闭环并区分当前Evidence撤销与历史决定不变。Win11/PG18.6错配、
   隔离、零写/drift，定向24、后端2992/3、wheel1137项通过；A05完成进入A06。
-
 - 2026-10-07/REQ-01-A05-A03 新增Evidence/Capability Requirement专用proof；Evidence不复制locator，
   Capability绑定当前GLOBAL Version/Item与精确审批Snapshot。Win11/PG18.6撤销/漂移/隔离/零写/drift、
   定向16、后端2990/3、wheel1135项通过；进入A04 Human Decision与五类闭环。
@@ -1097,7 +1087,6 @@
 - 2026-10-07/SUR-04-A03 新增VALIDATED链尾Response、PROJECT_RECORD Evidence、HND-03当前状态和SUCCEEDED SURVEY_ANALYZE非正式建议四类Owner proof；Win11/PG18.6隔离/负例/零写、后端2917/3、wheel1093通过；进入A04 create/list/get。
 
 - 2026-10-07/SUR-04-A02 新增SRV-05五表ORM/Migration0109；Win11/PG18.6验证CLOSED Round、VALIDATED链尾Response、Evidence/HND-03快照、series、不可变及历史拒降，后端2911/3、wheel1087通过；进入A03来源proof adapters。
-
 - 2026-10-07/SUR-04-A01 核清SRV-05五表/五Operation运行实现为零，登记CR-SUR-009；固定series/version、类型化Evidence/open issue、当前来源重证和独立Review subject，风险接受Owner缺失时失败关闭；进入A02 Schema0109。
 
 - 2026-10-07/SUR-03-A09 新增Assignment/Response严格客户端与友好工作台；Win11真实Edge经生产Vue/FastAPI/PG18.6完成OPEN→四Response→SUBMIT→VALIDATE→CLOSE，SQL 1 CLOSED/1 VALIDATED/4+4/10+10，前端1466项通过，进入SUR-04-A01 Conclusion前置核查。
@@ -1198,7 +1187,6 @@
 - 2026-10-06/WFL-01-A07-P07-A05 Windows写模式接入真实Checklist组合；Win11/PG18.6真实Handover资格、HTTP PASS/重放和Record/Audit/receipt通过。CR-WFL-007将Document/Parse固定证明改为复用调用方事务，修复首次复验发现的Session自锁且不降低授权。进入P07-A06前端接线。
 
 - 2026-10-06/WFL-01-A07-P07-A04 新增默认关闭的冻结Checklist POST；严格安全/格式、强If-Match、幂等和409 Gate错误投影通过，当时Record版本与当前Workflow ETag分离。进入P07-A05 Windows真实组合。
-
 - 2026-10-05/WFL-01-A07-P07-A03 新增受权Checklist命令，仅注册两项Handover策略；CR-WFL-006以服务端唯一当前Analysis保持冻结DTO不变，原历史回执/Audit回滚/并发/Win11-PG18均PASS。进入P07-A04 HTTP。
 
 - 2026-10-05/WFL-01-A07-P07-A02 新增Workflow-owned不可变Checklist追加Repository与内容摘要复算；Win11/PG18.6首次/更正、调用方回滚、锁序、双写冲突、Evidence事实和篡改拒绝PASS。无Schema/API变化，进入P07-A03。
@@ -1297,7 +1285,6 @@
 - 2026-10-05/CAP-01-A05-A03 新增Schema0095和Capability元数据/状态Owner；Win11/PG18.6证明强ETag、Review写栅栏、正式指针限制、双重放、Archive终态和历史拒降，后端2579/3跳过、wheel Capability43+Migration4通过。进入A05-A04。
 
 - 2026-10-05/CAP-01-A05-A02 新增当前Session/User/License/Project事实驱动的Capability读取Owner与两域签名游标；Win11/PG18.6证明管理员全历史、项目成员仅当前APPROVED、旧版隐藏和非成员拒绝，后端2572/3跳过、wheel Capability36通过。进入A05-A03。
-
 - 2026-10-05/CAP-01-A05-A01 核清十二个冻结Capability HTTP均未挂载；按读取Owner/游标、状态Owner、普通命令、送审、读取Router和Windows组合分解A02～A07。项目成员只读当前APPROVED投影，进入A05-A02。
 
 - 2026-10-05/CAP-01-A04-A04 新增Schema0094和终态消费；Win11/PG18.6完成首版批准、退回、撤回、继续升版、再次批准及旧正式版SUPERSEDED，后端2559/3跳过和wheel定向通过。进入A05前置核查，Gate3仍阻塞。
@@ -1398,7 +1385,6 @@
 - 2026-10-04/RAG-02-A02 新增Schema0077：Index与精确Chunk成员同事务创建，提交时复算有序快照；模型/维度/Scope/profile强绑定，成员封存，Build Owner落地前仅PLANNED。Win11/PG18.6迁移、drift和负例通过；后端2356/3跳过、wheel828项。进入RAG-03-A01。
 
 - 2026-10-04/RAG-02-A01 核清Index的Scope/purpose/version、AIModel/dimension、逐Chunk精确来源快照和半实现失败关闭边界；登记CR-RAG-002，决定A02只允许PLANNED，Build/Validation/Embedding完成前不开放状态转换或HTTP。仅文档，进入RAG-02-A02。
-
 - 2026-10-04/RAG-01-A02 新增Schema0076与DocumentChunk ORM；固定Scope、Document/成功ParseResult来源、切分代次、locator/category、正文SHA-256和历史状态，以`simple` FTS/GIN提供确定性候选，不复制Index/向量。Win11/PG18.6空/历史库迁移、负例、drift和有数据拒降通过；后端2352/3跳过、wheel827项。进入RAG-02-A01。
 
 - 2026-10-04/RAG-01-A01 确认生产仓库无rag模块/表/API，PoC链路和已见数据不得直接移植；固定按Chunk→Index→Embedding/Build→Retrieval/Context分层实施，质量48%/74% FAIL与Gate3新集阻塞保持。仅文档，无代码/Schema/外发；进入RAG-01-A02。
@@ -1497,7 +1483,6 @@
 - 2026-10-03/AI-04-A06-P04-P04-A06 完成Windows显式生产组合；Task Policy存在时装配Prompt/Document Owner、Envelope/Plan Builder与Repository，缺失时AI_TASK失败关闭。Win11/PG18.6真实HTTP链、定向45、后端2206运行/3跳过及wheel通过；首次证据Prompt夹具不兼容返回安全503，修正后新库完整重跑。无Schema/依赖/外发，进入P04-P05下游PlanRef绑定。
 
 - 2026-10-03/AI-04-A06-P04-P04-A05 收紧AI_TASK Preview HTTP为五字段Task Plan且拒绝客户端计数/hash，非AI保持原形态；合同6、后端2205运行/3跳过及wheel通过。冻结提交保留，变更由CR-AI-016追溯；无Schema/依赖/外发，A06进入Windows真实组合。
-
 - 2026-10-03/AI-04-A06-P04-P04-A04 完成AI_TASK Preview/Plan内部原子事务；Win11/PG18.6服务端Envelope、Preview/Plan/Source/Audit/Receipt提交、精确重放、参数冲突、Audit全回滚、零Invocation及旧Preview兼容，后端2204运行/3跳过及wheel通过。无Schema/公开API/依赖/外发，A05切HTTP合同。
 
 - 2026-10-03/AI-04-A06-P04-P04-A03 新增Document Preview规划精确投影；Win11/PG18.6 CustomerManager Preview/执行权限分离、当前ParseRecord、私有结果、行锁、摘要、零Invocation及旧执行PG回归，后端2202运行/3跳过及wheel通过。首轮仅临时目录创建顺序错误，修正后新资源完整重跑；无Schema/API/依赖/外发，A04进入原子Preview事务。
@@ -1598,7 +1583,6 @@
 - 2026-10-02/AI-03-A06-P03 新增内部 PromptTemplate 退役服务/仓储，保留旧活动指针，根/Audit/0062结果/收据同事务；Win11隔离PG18管理员/CSRF/许可、DRAFT/ACTIVE、同Key并发/重放/Audit回滚/撤权PASS，单元2、后端2087运行/3跳过、开发wheel通过。HTTP/生产装配/Invocation/Gate3/可用包待。
 
 - 2026-10-02/AI-03-A06-P02 按CR-AI-009/DEC-690新增退役首次结果ORM/Migration0062。首轮约束名超长、次轮NULL三值逻辑负例失败，修复后Win11隔离PG18空/有历史升降、drift=0、复合FK/形态/Audit唯一/不可变/非空拒降PASS；后端2085运行/3跳过、开发wheel通过。服务/API/生产迁移/Gate3/可用包未过。
-
 - 2026-10-02/AI-03-A06-P01 静态核对冻结退役200与可变根/通用UUID收据冲突，登记CR-AI-009/DEC-689：后续0062独立不可变退役首次结果，原冻结提交不改；本项仅设计，无新运行测试或程序/数据库变更。
 
 - 2026-10-02/AI-03-A05-P05 只读核查生产挂载前置：包内 Prompt 公钥/签名清单均缺，入口仅有可选注入点、无生产组合；正式人工审查/备份/目标账户发行验收亦无证据。按 CR-AI-007 维持404，不生成测试材料冒充正式信任；该生产挂载项 `PRECONDITION_BLOCKED`，转向独立 A06。
@@ -1697,7 +1681,6 @@
 - 2026-10-02/AI-01-A05-P04-A03-P02 单次钉 IP/原域名证书验证/固定无客户数据 HTTPS 探针，发送前后重验与精确 SecretVersionId；Win11 本机合成 TLS/临时 CA、未受信证书、异常响应及清零 PASS，后端1963运行/3跳过，开发 wheel PASS。生产 Worker/结果发布/真实外发、正式信任/三平台/Gate/UAT/可用包均未验。
 
 - 2026-10-02/AI-01-A03-P04-A02-P02 Provider配置受控部分PATCH可选HTTP，强If-Match、可选客户端幂等Key与冻结200/ETag；Win11隔离ASGI/PG18真实Session成功/重放/权限/许可/Secret/撤权PASS，后端1931运行/3跳过、开发wheelPASS。正式写组合/信任/Gate/可用包未验。
-
 - 2026-10-02/AI-01-A03-P04-A02-P01 受控部分字段Provider配置追加于PG行锁内合并，以原始变更集指纹幂等；Win11隔离PG18不漂移重放、权限/License/Secret/版本/并发/审计回滚及旧完整追加回归PASS，后端1928运行/3跳过、开发wheelPASS。公开PATCH/正式信任/Gate/可用包未验。
 
 - 2026-10-02/AI-01-A03-P04-A01 追加服务补原始配置版本/ETag结果，同Key不受后续配置/状态/Secret变化影响，旧UUID入口/历史收据兼容；Win11隔离PG18并发/权限/License/回滚及旧追加回归PASS，后端1927运行/3跳过、开发wheelPASS。公开PATCH/正式信任/Gate/可用包未验。
@@ -1798,7 +1781,6 @@
 - 2026-10-02/WFL-01-A06-P04 Windows两种显式平台组合挂载Workflow启动，在真实ASGI/PG18合成信任下首启/重放/权限/许可/缺信任源失败关闭PASS；默认/login-only仍404。旧P05真实Session/Workflow GET矩阵随路由演进更新并重跑PASS；后端全量1830通过/3跳过、开发wheel PASS，无迁移/Gate判定。
 
 - 2026-10-02/WFL-01-A06-P03 冻结POST workflow:start 可选HTTP在真实ASGI/PG18 Session/CSRF/PM/收据/Audit/重放/错误合同PASS，默认应用仍404且不判Gate。单元6项、后端全量1830通过/3跳过、开发wheel PASS。正式组合/信任/Gate开放。
-
 - 2026-10-02/CR-EXEC-001 用户再次选择 A，持续执行至可用程序包、偏差前置记录后自主实施并同步GitHub；AGENTS、V1.1、CR及执行入口已对齐。无产品API/Schema/依赖变化；正式Gate/安全边界不变。
 
 - 2026-10-02/WFL-01-A06-P02 内部Workflow启动命令以当前PM/Session/CSRF/License、通用持久收据和Audit同事务护栏启动首阶段；重放保首次V1视图。一次性PG18真实授权/冲突/回滚/并发PASS，后端全量1824通过/3跳过，无新Schema/API/依赖。公开HTTP、正式信任/Gate仍开放。
@@ -1897,7 +1879,6 @@
 - 2026-10-01/EVD-01-A04-P03-A08-P01 前端资格客户端先GET强ETag与固定来源，再在Viewer匹配下受控POST；回执非当前状态证明，异常不换Key。定向4项、前端全量1029项/typecheck/build通过；UI/真实浏览器未验。
 
 - 2026-10-01/EVD-01-A04-P03-A07 Windows11全新临时PG18合成显式写组合中，资格POST200/同Key重放200/单Audit、外用户与降权404；登录专用404、只读同路径POST405但方法关闭。原Evidence创建/读/Viewer篡改/撤销/License回归退出0；后端1797项/3跳过及wheel通过，正式目标账户/Gate3未验。
-
 - 2026-10-01/EVD-01-A04-P03-A06 隔离PG18双事务Barrier同Evidence并发，两次完整重跑均一成功/一CONFLICT_VERSION、行v1且Audit/收据单份；临时实例停止清理。访问替身只用于隔离Evidence锁，真实权限链由A05另验。
 
 - 2026-10-01/EVD-01-A04-P03-A05 全新临时PG18.6/pgvector实例上，真实Document来源、资格命令/HTTP及重放、模板/跨项目/撤销版本/License拒绝、Audit回滚/角色撤权通过；3成功Audit/收据，失败候选保持v0。随机loopback测试实例已停止/清理，Temp前缀目录与postgres进程0；正式组合、并发及Gate3仍开放。
@@ -1998,7 +1979,6 @@
 - 2026-10-01/PLT-PKG-01-A09-P44-A01 Server2025 VM从关机启动，Tools running/NAT来宾192.168.27.129，宿主3389/5985/5986/445均不通；宿主VMnet8实际169.254.190.187/16，而VMware配置要求192.168.27.1/24，当前令牌非管理员。VM正常关机恢复运行数0；`CR-ENV-001`仅登记未实施，安装/兼容未验，`release_eligible=false`。
 
 - 2026-10-01/PLT-PKG-01-A09-P43-A10 固定P43/P33/P22及原生矩阵先验后，新增45项Python许可表达式与METADATA逐字匹配，License-File头均能定位到实际嵌入文件；与60项合并成105行无重漏（102嵌入、2仅侧载、1无专属）。真实审计exit0、定向4/4及前项回归5/5；仅技术审阅输入，`release_eligible=false`。
-
 - 2026-10-01/PLT-PKG-01-A09-P43-A09 固定P43/P33/P22及原生矩阵先验后，60项第三方Python许可表达式空值逐项匹配唯一METADATA：57项包内嵌入通知、2项仅独立侧载、1项无专属通知；53项有旧式License字段、40项有分类器。真实审计exit0、定向5/5；60行保持`REVIEW_REQUIRED`，未改候选或法律结论，`release_eligible=false`。
 
 - 2026-10-01/PLT-PKG-01-A09-P43-A08 固定P43/P33/P22谱系及bce-python-sdk 0.9.79原wheel/sdist后，候选已有Caddy侧载的Apache-2.0全文与官方文本SHA-256逐字节相同；bce自身仍无内嵌或独立通知，候选未有bce专属归属映射。只读真实审计exit0、定向3/3；仅形成文本复用审阅候选，不等于法律/最终NOTICE通过，`release_eligible=false`。
@@ -2097,7 +2077,6 @@
 - 2026-10-01/PLT-PKG-01-A09-P07 临时ASCII新目录隔离暂存19,449件，复制前/写入中/落盘后/末次源ZIP Hash与身份核验PASS；单测4/4，正式安装根和固定服务未创建，未执行Migration，`release_eligible=false`。
 
 - 2026-10-01/PLT-PKG-01-A09-P06 只读计划真实ZIP19,449件Hash核验PASS，`C:\PLMTool`路径合法但`install_authorized=false`，单测4/4；未创建安装根、复制、注册服务或Migration，`release_eligible=false`。
-
 - 2026-10-01/PLT-PKG-01-A09-P05 只读盘点确认统一候选不是安装器；已有单角色SCM注册入口但无完整编排，PostgreSQL/正式信任源/NOTICE和目标账户门禁仍缺。下一项仅做只读安装计划，正式安装/升级不得冒进，`release_eligible=false`。
 
 - 2026-10-01/PLT-PKG-01-A09-P04 独立路径前置工具对`C:\PLMTool`返回PASS、中文/UNC/相对/路径穿越等返回拒绝，单测2/2；尚未和正式安装/升级入口接线，不能据此声称安装验收，`release_eligible=false`。
@@ -2198,7 +2177,6 @@
 - 2026-09-30/PLT-MAINT-01-A06-P02-P03-P02-A03 Windows Parser Worker SCM runner 复用既有 Vault/License/SystemActor/准入/OCR 模型组合；协作 STOP 等待当前解析及 heartbeat 静止再释放 DB/标记。发现旧 Step 的 daemon heartbeat/仅锁静止误判风险并在 CR-PLT-004 先记录后修复；定向32、后端1708（3跳过）、wheel PASS。正式 SCM/目标账户/真实长 OCR/Server2025、OS 静止与 Gate3/程序包仍待。
 
 - 2026-09-30/PLT-MAINT-01-A06-P02-P03-P02-A02 Windows Audit Worker SCM runner 复用现有 Vault/License/SystemActor/准入组合；协作 STOP 唤醒轮询并等待工作/heartbeat 静止，随后释放 DB/清理自有标记；长 STOP_PENDING 周期 checkpoint。Windows11 合成活跃工作、心跳延迟/失败启动、标记与角色对账定向20 PASS；后端1704（3跳过）、wheel PASS。正式 SCM/目标账户/长真实导出/Server2025、Parser、Gate3/程序包未验。
-
 - 2026-09-30/PLT-MAINT-01-A06-P02-P03-P02-A01 Windows API SCM runner 用 full platform-write 工厂与 Uvicorn 真实 socket/lifespan 就绪，合成 HTTP/STOP/标记退出 PASS；后端1699（3跳过）、wheel PASS。仅内部 API 链路，正式 SCM/账户/License/长流、双 Worker/Server2025/Gate3/包仍待。
 
 - 2026-09-30/PLT-MAINT-01-A06-P02-P03-P01 三角色固定名 SCM dispatcher/handler/状态机基础设施内部 PASS；显式就绪、协作 STOP、状态故障非正常停止，单元5含原生非 SCM 调用拒绝；后端1695（3跳过）、wheel PASS。未接三业务 runner、未安装服务或核验目标账户/资源静止；Gate3/包待。
@@ -2297,7 +2275,6 @@
 - 2026-09-30/PAR01-A01 按 CR-PAR-001 将生产 Parser 基础合同作为 Phase2 Evidence 依赖前置，未提前关闭 Gate3。固定版本 UUID/Hash/大小/MIME 与九种 MIME 解析策略定向 3、Python3.13 后端全量 1569 项（2 跳过）、隔离 wheel 构建/包含检查 PASS；默认3.14缺依赖与非隔离构建缺 setuptools 的失败已在正确环境重跑。尚无 Worker/真实解析/精确定位证据。
 
 - 2026-09-30/DOC05A06-P03 Windows 11 真实 IAB/HTTP/PG 只读 ParseRecord 面板：匿名401、非成员/跨项目404、2+1游标、固定版本三次合成 PENDING 与刷新、SQL 同 Job/外项目0及随机资源清理 exit0。首轮 Job refs 约束失败、第二轮会话断言错误，修复后完整重跑。无 Worker/解析成功结论；P08-A02 浏览器文件上传仍 INCOMPLETE。
-
 - 2026-09-30/DOC05A06-P02 项目文档详情按需单版本 Parse 状态面板、续页/刷新、切版本/路由迟到阻断与 401/404 清旧；前端全量 1012 项/typecheck/build PASS。实际浏览器/PG 未跑，P08-A02 上传仍 INCOMPLETE。
 
 - 2026-09-30/DOC05A06-P01 固定版本 ParseRecord PROJECT/GLOBAL 只读客户端、最长1024游标与安全状态/时间投影；首轮全量测试通过但测试类型声明失败，修正后前端全量 1006 项/typecheck/build PASS。没有页面或真实浏览器PG/Worker证据，P08-A02 仍 INCOMPLETE。
@@ -2398,7 +2375,6 @@
 - 2026-09-29/PRJ05A08-P04真实Windows11浏览器成员PATCH v0→v1及重读角色/部门通过，独立HTTP匿名/非负责人/CSRF/跨项目/旧版本/同值验证与SQL一次变更一审计通过；fixture最终exit0、随机库/角色/Vault清理，PoC PG恢复原停止。首轮旧Session断言失败修正，会话中断残留测试资源精确清理后重跑；仅合成信任，无程序/Migration/API变更，正式信任/Gate/包待。
 
 - 2026-09-28/PRJ05A08-P03项目成员历史内修改角色/部门，强版本/目标用户/ACTIVE部门显式确认，已知拒绝刷新与未知锁写，迟到回执丢弃；前端490项/typecheck/build通过。无Migration/API/权限/依赖变，真实浏览器PG/正式信任/Gate/包待，下一P04。
-
 - 2026-09-28/PRJ05A08-P02成员PATCH安全业务客户端绑定原成员/User/状态/起止时间、期望角色/部门与强ETag，未知结果不自动重试；前端485项/typecheck/build通过。首轮UUID及类型检查问题修正后全量复验；无Migration/API/权限/依赖变化，页面/真实浏览器PG/正式信任/Gate/包待，下一P03。
 
 - 2026-09-28/PRJ05A08-P01成员PATCH固定前端传输双UUID/强v0 If-Match/私有CSRF/互斥、未知结果不自动重试，前端479项/typecheck/build通过。仅传输合同、无Migration/API/权限/依赖变；业务响应/浏览器PG、正式信任/Gate/包待，下一P02。
@@ -2497,7 +2473,6 @@
 - 2026-09-27/JOB-01-A03任务详情接Windows两显式platform工厂，原License/Auth/Project/Audit Owner，不加测试回退；1150无失败/2跳过、真实PG-ASGI状态版本/结果/安全隔离/读不写/默认login关闭、构造错误和实际缺正式信任拒绝半启动，旧导出下载/原发布/wheel通过。无本轮Migration/依赖/权限变，非正式供给/监听进程/浏览器/全Owner/完整发行证明；下一公开Audit提交。
 
 - 2026-09-27/JOB-01-A02-P02可选项目/admin GET、安全JobView及实际强vN/no-store，默认404/未知进度错误null；1150无失败/2跳过，真实隔离PG-ASGI原链8成功/13拒绝/六业务表无写，状态版本/结果引用/条件请求不绕撤权及原发布/wheel通过。无本轮Migration/依赖，未接Windows运行组合/其他Owner/写If-Match/浏览器/完整包/Gate；下一A03装配。
-
 - 2026-09-27/JOB-01-A02-P01核对冻结强v<version>要求，先CR-JOB-002再0043/ORM/DTO；数据库统一业务变化加版本、心跳稳定、手改/溢出拒绝。1145无失败/2跳过，真实空/有数据up/down/up旧业务保留、领取/续租/发布及读取/提交确认/混排/耗尽安全收尾回归/wheel通过。无生产迁移/公开GET/If-Match/完整发行证明；升级备份停机、离线降级回旧代码并使旧ETag失效，下一完整JobView/GET。
 
 - 2026-09-27/JOB-01-A01按CR-JOB-001新增只读事实/Service/显式Owner原源绑定与Project GET策略，11新unit/1143无失败/2跳过；真实双Scope任务待执行/运行中/成功原结果与角色/actor/项目/停用/来源错误拒绝六业务表无写，原发布回归通过。仅内部Audit Owner，HTTP/完整JobView/ETag/其他Owner/正式包未完成；无Migration/API/依赖，回滚撤新只读接线保旧路径。下一A02合同前置。
@@ -2598,7 +2573,6 @@
 - P03-A03-P03/0042不可变唯一结果，own计划/发布Audit绑定、完整规范manifest重建字节/SHA256、空与非空规则及真实历史down写锁通过；914项无失败，计划/旧文件元数据回归PASS。Job/File/SystemActor合成，内存清单不是正式Worker/物理文件/原子发布证明，下一项own结果Repository。
 
 - P03-A03-P02在真实受理/claim/固定capture/当前权限/Lease下登记或读回原代计划；双Scope/真并发、新代独立file、实际撤权/取消/到期/写后故障和40P01限次整UOW恢复通过；912项无失败。无文件/成功状态，下一项不可变结果Schema，完整交付仍待。
-
 - P03-A03-P01/0041不可变渲染计划源绑定、单Job/token单file、新代次独立文件及真并发/历史down写锁拒绝通过；904项无失败。合成Job/Lease refs不能证明真正Worker，下一项P02实际公共Port/当前权限登记。
 
 - P03-A02-P02完成Document owned caller-UOW元数据，原内容/归属/首次事件重核、并发单次变化及共享锁、caller真实Audit故障全回滚；902项通过。合成Export不冒充真Root/权限/Lease，AVAILABLE不是成功结果，下一项持久尝试/结果Schema。
@@ -2697,7 +2671,6 @@
 - WFL-02-A01-P01 已完成不可变成功相邻迁移/完整 GateItemSnapshot 形状与纯领域测试，WAIVED 独立依据不改写 PASS；构造成功不是 Gate 证明。历史数据库/Owner 同事务事实/START/完成/写 API 未实现，不凭 UUID 认定批准。
 
 - WFL-01-A04-P03 已将只读 GET 接入 Windows 两种显式平台模式并验证真实 Session/隔离 PostgreSQL 授权及缺合成信任源失败关闭。默认/仅登录及 Workflow 写路径保持 404；正式信任源/历史/实际 Gate 尚未完成，不代表生产发行通过。
-
 - WFL-01-A04-P02 已提供可选 WORKFLOW_GET，真实 Session/PostgreSQL 合成 HTTP 验证 PASS。默认与 Windows 显式组合仍未挂载；仅状态只读，不等于 Gate/启动/推进完成，错误项目投影不会返回。
 - WFL-01-A04-P01 内部读服务从一条 SQL 快照产生完整固定 V1 状态投影，缺实例不写库。WORKFLOW_GET 为四角色只读并保持当前 Project/成员/部门事实锁，撤权并发已验证；HTTP/性能/真实 Gate 未验，不将存储状态当客户确认依据。
 - WFL-01-A03-P05 提供内部 PM 受权初始化：使用 WORKFLOW_START 对应管理权限准备 NOT_STARTED 结构，不执行 start 或自动回填。真实 Session/Project/CSRF/角色拒绝、合成 License/并发/审计回滚已验证；无公开 HTTP/CLI，真实发行信任源与完整 Gate 未具备。
