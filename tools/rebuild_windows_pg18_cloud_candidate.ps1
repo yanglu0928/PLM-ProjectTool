@@ -41,11 +41,8 @@ $payload = Join-Path $root "output"
 [IO.Directory]::CreateDirectory($evidence) | Out-Null
 [IO.Directory]::CreateDirectory($payload) | Out-Null
 $pgZip = Join-Path $downloads "postgresql-18.6-1-windows-x64-binaries.zip"
-$pgSourceZip = Join-Path $downloads "pgvector-0.8.6.zip"
 Invoke-CheckedCurl "https://get.enterprisedb.com/postgresql/postgresql-18.6-1-windows-x64-binaries.zip" $pgZip
 Assert-Input $pgZip 343808005 "fbe23da234ee31547bf8a36d29dfd81e82b849df2d2b78d2eecb43d360252f8c"
-Invoke-CheckedCurl "https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.6.zip" $pgSourceZip
-Assert-Input $pgSourceZip 214357 "250f5f488a5e512c8781c338608dfac32ae34f97088970a1b5bb8f5be797caf8"
 
 Expand-Archive -LiteralPath $pgZip -DestinationPath $pgExtract
 $pgRootCandidates = @(Get-ChildItem -LiteralPath $pgExtract -Directory -Recurse -Filter pgsql | Where-Object { Test-Path (Join-Path $_.FullName "bin\pg_config.exe") })
