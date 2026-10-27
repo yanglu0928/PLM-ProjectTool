@@ -58,9 +58,11 @@ class WindowsServicePlanTests(unittest.TestCase):
                               for item in entries],
                              [(role, name) for role, name in SERVICE_NAMES.items()
                               if role != "AI_PROVIDER_WORKER"])
+            expected_python = python.resolve()
+            expected_config = config.resolve()
             for item in entries:
-                self.assertIn('"' + str(python) + '"', item["binary_path"])
-                self.assertIn('"' + str(config) + '"', item["binary_path"])
+                self.assertIn('"' + str(expected_python) + '"', item["binary_path"])
+                self.assertIn('"' + str(expected_config) + '"', item["binary_path"])
                 self.assertIn(" -m plm_assistant.entrypoints.service_windows ",
                               item["binary_path"])
                 self.assertNotIn("password", item["binary_path"].lower())
