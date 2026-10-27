@@ -152,6 +152,7 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
     base_manifest = unzip_verified_runtime(bases[0], runtime)
     python = runtime / "python.exe"
     packages = runtime / "packages"
+    packages.mkdir(exist_ok=True)
     if not python.is_file() or not packages.is_dir():
         raise ValueError("embedded runtime base is incomplete")
 
