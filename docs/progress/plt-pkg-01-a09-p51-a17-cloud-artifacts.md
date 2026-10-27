@@ -8,13 +8,13 @@ A17 原计划依赖本机忽略区中的固定 P45 父 ZIP（SHA-256 `30c9d59852
 
 ## 本轮可交付改进
 
-现有云端 CI 增加短期保存的 GitHub Actions 构件：
-- Windows Server 2025 runner 生成后端 wheel 与来源提交/工作流/摘要清单；
-- Ubuntu runner 生成前端生产 dist 与逐文件 SHA-256/来源提交清单；
-- 两个构件均标记 `release_eligible=false`，保存 14 天；不包括完整运行时、PG18、OCR、客户数据或 Secret。
+GitHub Actions 已生成并保存同一源码提交 `4bc8c7e9d0c33b32e5ac71ad249896ed7af5d4ad` 的短期云端构件：
+- Windows Server 2025 runner：后端全套 3,849 项测试通过；wheel、来源/摘要 manifest 上传成功。Artifact ID `12707969411`，压缩构件 2,619,481 字节，GitHub SHA-256 `bc28c3600fedc99aeda3b3cedafccaed40e1a01181ee2cb31891a02f586cd168`。
+- Ubuntu runner：前端 2,068 项测试、typecheck、生产构建、逐文件 SHA-256 manifest 与上传均成功。Artifact ID `12707834748`，压缩构件 524,180 字节，GitHub SHA-256 `e75bcd59f18054d112b52ac3184987eb929a83917b6582bde399886b95331102`。
+- 两构件保留至 2026-11-10，均标记 `release_eligible=false`。未下载至本机。
 
-这些文件使同一源码提交的应用层构件可审阅和可下载，但不是安装包或完整内部 Pilot。分别运行的前后端 CI job 通过同一 `github.sha` 绑定来源；最终完整候选仍需 A17 固定父包或经新 CR 审查后重建父包，随后执行原定 Edge/HTTPS/PostgreSQL 旅程。
+这些文件使同一源码提交的应用层构件可审阅和可下载，但不是安装包或完整内部 Pilot。完整候选仍需恢复 A17 固定父包，或新建并批准可追溯重建父包的 CR，然后执行原定 Edge/HTTPS/PostgreSQL 旅程。
 
 ## 验收状态
 
-PR 独立云端检查及 workflow artifact 摘要读取：待执行。未声称构建产物可运行或完成 A17。
+PR #50 的 GitHub Actions run `40446503680` 结论 `success`，后端、前端测试/构建/manifest/上传步骤均完成。此证据只证明应用层开发构件被生成并存入 Actions artifacts，不证明构件已安装运行或满足 Pilot。
