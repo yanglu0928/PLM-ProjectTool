@@ -13,3 +13,11 @@
 - 迁移/回滚：工作流只对该 feature 分支和指向 main 的 PR 执行；可通过后续提交移除工作流并恢复原执行路径。分支合并前不影响 main。
 - 验证计划：由提交触发云端 workflow；检查后端测试、前端测试/typecheck/build 和后端 wheel 构建。任何失败按日志修复；不把未执行步骤报告为 PASS。
 - 状态：已记录，待云端工作流执行。
+
+
+## 云端首次运行偏差（2026-10-27，实施前记录）
+
+- 首次 Actions 运行已证明后端依赖可在 GitHub Ubuntu Runner 安装，但后端全测实际结果为 3,874 tests、9 failures、25 errors、75 skipped；其中 25 项导入错误均因测试依赖组未声明 pytest，另有 Windows launcher/path 相关断言在 Ubuntu 上失败。前端在 setup-node 缓存初始化阶段因 pnpm 尚未安装而失败；后端 wheel 尚未执行。
+- 调整：将云端 runner 改为 GitHub 托管的 Windows Server 2025 windows-2025，以匹配 Windows 专属行为的沙箱验收；将 pytest 纳入 test extra；调整前端 pnpm 安装顺序并用后续 PR 运行复验。
+- 兼容性说明：Windows Server 2025 是隔离托管 VM，仍非 Windows 11 实机；通过结果只作为云端模拟证据，不等于 Windows 11/Gate/Pilot/发行 PASS。
+- 风险/回滚：依赖新增仅属于测试 extra，不进入生产依赖；工作流可在 feature 分支通过后续提交回滚。失败测试必须保留失败并修复，不降低测试范围。
