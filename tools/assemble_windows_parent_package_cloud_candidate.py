@@ -170,6 +170,48 @@ def build(args: argparse.Namespace) -> dict:
            for name in pg_hashes):
         raise ValueError("PG18 payload contains unexpected path")
 
+    source_config = Path(__file__).resolve().parent.parent / "apps" / "backend" / "config" / "bootstrap.example.yaml"
+    if not source_config.is_file() or source_config.is_symlink():
+        raise ValueError("non-secret bootstrap source example missing")
+    config_text = source_config.read_text(encoding="utf-8")
+    old_root = 'data_root: "C:/PLMTool/data"'
+    if config_text.count(old_root) != 1:
+        raise ValueError("bootstrap source example default changed unexpectedly")
+    config_text = config_text.replace(old_root, 'data_root: "D:/PLMTool/data"', 1)
+    noncomment_keys = [
+        line.split(":", 1)[0].strip()
+        for line in config_text.splitlines()
+        if line.strip() and not line.lstrip().startswith("#") and ":" in line
+    ]
+    if any(key.casefold() in {"password", "api_key", "token", "private_key",
+                              "license_key", "database_url", "secret"}
+           for key in noncomment_keys):
+        raise ValueError("bootstrap sample contains a secret-bearing key")
+    first_readme = """# PLM Project Tool — Windows package candidate
+
+This is a non-release candidate. It has not been installed, the application API has not been started, and legal, product trust, service account, HTTPS, OCR model, and user acceptance checks remain open.
+
+## Bootstrap example
+
+Copy `config/bootstrap.example.yaml` to a protected deployment configuration location and review every setting before use. The sample uses `D:/PLMTool/data` to avoid placing application data on C:. Confirm that D: exists and has sufficient space and restricted write access; if it does not, change `data_root` to another absolute path on a suitable volume.
+
+The YAML file contains non-secret settings only. Do not put database passwords, API keys, License material, or private keys in it. Database credentials must come from the approved Windows credential store. Do not start the product service until the real packaged product public key, License trust, service account, and ACL have been provisioned and independently checked.
+
+## Package layout
+
+- `runtime/`: embedded Python and backend runtime
+- `frontend/dist/`: built web interface
+- `pgsql/`: PostgreSQL 18.6 and pgvector 0.8.6 binaries
+- `config/`: non-secret example only
+- `provenance/`: component build manifests and inventories
+
+This archive is not an installer or a Pilot release. Its PostgreSQL component was exercised only with a temporary local database on a hosted runner.
+"""
+    package_docs = {
+        "payload/config/bootstrap.example.yaml": config_text.encode("utf-8"),
+        "payload/README-FIRST.md": first_readme.encode("utf-8"),
+    }
+
     output = args.output_dir
     output.mkdir(parents=True, exist_ok=False)
     archive = output / f"NOT-FOR-RELEASE-windows-parent-{run_id}.zip"
@@ -184,6 +226,10 @@ def build(args: argparse.Namespace) -> dict:
                 raise ValueError("frontend target collision")
             hashes[target] = sha_file(path)
             bundle.write(path, target)
+
+        for target, data in sorted(package_docs.items()):
+            hashes[safe_name(target)] = sha_bytes(data)
+            bundle.writestr(target, data)
 
         evidence = {
             "backend-cloud-build-manifest.json": backend_manifest,
@@ -215,6 +261,8 @@ def build(args: argparse.Namespace) -> dict:
                 "postgresql_version": "18.6", "pgvector_version": "0.8.6",
             },
             "payload_file_count": len(hashes),
+            "bootstrap_example_data_root": "D:/PLMTool/data",
+            "bootstrap_is_example_only": True,
             "payload_sha256sums_sha256": sha_bytes(sums),
             "known_gaps": [
                 "not installed or started; no packaged Edge/HTTPS/PostgreSQL smoke",
