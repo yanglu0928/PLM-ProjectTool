@@ -222,7 +222,8 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
                 or not path.resolve().is_relative_to(runtime_root)):
             raise ValueError("runtime candidate contains linked/out-of-root file")
         if path.suffix.lower() in BLOCKED or path.name.lower().startswith(".env"):
-            raise ValueError("runtime candidate contains blocked/private-looking file")
+            raise ValueError("runtime candidate contains blocked/private-looking file: "
+                             + path.relative_to(runtime).as_posix())
         name_in_zip = safe_name("payload/runtime/" + path.relative_to(runtime).as_posix())
         file_hashes[name_in_zip] = digest(path)
     if len(file_hashes) < 18000:
