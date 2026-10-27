@@ -105,3 +105,29 @@ jobs:
           path: apps/frontend/dist/
           if-no-files-found: error
           retention-days: 14
+
+  rebuild-pg18-sidecar:
+    name: Rebuild PG18 and pgvector sidecar from pinned public inputs
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Rebuild and independently hash the non-release sidecar
+        shell: pwsh
+        run: |
+          $workRoot = Join-Path $env:RUNNER_TEMP ("plm-pg18-" + $env:GITHUB_RUN_ID)
+          $outputRoot = Join-Path $env:RUNNER_TEMP ("plm-pg18-output-" + $env:GITHUB_RUN_ID)
+          & .\tools\rebuild_windows_pg18_cloud_candidate.ps1 -WorkRoot $workRoot -OutputRoot $outputRoot
+          if ($LASTEXITCODE -ne 0) { throw "Cloud PG18 rebuild failed" }
+      - name: Upload rebuilt non-release PG18 sidecar
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-pg18-rebuilt-sidecar-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-pg18-output-${{ github.run_id }}/*.zip
+            ${{ runner.temp }}/plm-pg18-output-${{ github.run_id }}/*.json
+          if-no-files-found: error
+          retention-days: 14
