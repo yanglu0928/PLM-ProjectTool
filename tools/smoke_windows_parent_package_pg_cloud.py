@@ -141,16 +141,18 @@ def main() -> int:
             tail = start_output.read_text(encoding="utf-8", errors="replace")[-2000:]
             raise RuntimeError("temporary pg_ctl start failed: " + tail)
         started = True
-        query = run_checked([str(psql), "-h", "127.0.0.1", "-p", str(port),
-                             "-U", "postgres", "-d", "postgres", "-X", "-A", "-t",
-                             "-v", "ON_ERROR_STOP=1", "-c",
-                             "SELECT current_setting('server_version'); CREATE EXTENSION vector; "
-                             "SELECT extversion FROM pg_extension WHERE extname='vector';"], 60)
-        lines = [line.strip() for line in query.stdout.splitlines() if line.strip()]
-        version = lines[-2] if len(lines) >= 2 else ""
-        vector_version = lines[-1] if lines else ""
-        if not version.startswith("18.") or vector_version != "0.8.6":
-            raise ValueError("PostgreSQL/pgvector runtime identity mismatch")
+        psql_args = [str(psql), "-h", "127.0.0.1", "-p", str(port),
+                     "-U", "postgres", "-d", "postgres", "-X", "-A", "-t",
+                     "-q", "-v", "ON_ERROR_STOP=1", "-c"]
+        version = run_checked(psql_args + ["SELECT current_setting('server_version');"],
+                              60).stdout.strip()
+        run_checked(psql_args + ["CREATE EXTENSION vector;"], 60)
+        vector_version = run_checked(
+            psql_args + ["SELECT extversion FROM pg_extension WHERE extname='vector';"],
+            60).stdout.strip()
+        if version != "18.6" or vector_version != "0.8.6":
+            raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
+                             + version + "/" + vector_version)
         result = {
             "status": "PARENT_PG18_TEMP_LIFECYCLE_PASS_LIMITED",
             "source_commit": parent["source_commit"], "workflow_run": parent["workflow_run"],
