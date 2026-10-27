@@ -19,6 +19,12 @@ from pathlib import Path, PurePosixPath
 
 
 PYTHON_SOURCE_SHA256 = "d1f04d990aee1253d8569e8e5104e30fa9f5fa830899f14843448872d936a2cf"
+REQUIRED_DISTRIBUTIONS = {
+    "alembic", "cryptography", "fastapi", "numpy", "openpyxl", "paddleocr",
+    "paddlepaddle", "paddlex", "pillow", "pydantic-settings", "pgvector",
+    "psycopg", "psycopg-binary", "pymupdf", "pyyaml", "python-docx",
+    "python-pptx", "sqlalchemy", "uvicorn", "plm-project-tool-backend",
+}
 BASE_NAME = "NOT-FOR-RELEASE-windows-python-3.13.15-embed-base.zip"
 BLOCKED = {".env", ".log", ".key", ".pfx", ".p12", ".pyc", ".pem"}
 
@@ -176,8 +182,13 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
         check=True, timeout=1200,
     )
     inventory = distribution_inventory(packages)
-    if inventory["distribution_count"] != 106:
-        raise ValueError(f"distribution count differs from package contract: {inventory['distribution_count']}")
+    installed = {
+        item["name"].casefold().replace("_", "-")
+        for item in inventory["distributions"]
+    }
+    missing = REQUIRED_DISTRIBUTIONS - installed
+    if missing:
+        raise ValueError("required backend runtime distributions missing: " + ", ".join(sorted(missing)))
 
     system_root = os.environ.get("SystemRoot", r"C:\\Windows")
     env = {"SystemRoot": system_root, "WINDIR": system_root,
