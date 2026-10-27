@@ -8,6 +8,7 @@ import os
 import shutil
 import socket
 import subprocess
+import time
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -112,6 +113,7 @@ def main() -> int:
     data_dir = root / "pgdata"
     log_path = root / "postgres.log"
     started = False
+    start_attempted = False
     port_sock = socket.socket()
     port_sock.bind(("127.0.0.1", 0))
     port = port_sock.getsockname()[1]
@@ -120,9 +122,24 @@ def main() -> int:
     try:
         init = run_checked([str(initdb), "-D", str(data_dir), "-U", "postgres",
                             "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"], 180)
-        start = run_checked([str(pg_ctl), "-D", str(data_dir), "-l", str(log_path),
-                             "-o", f"-h 127.0.0.1 -p {port} -c listen_addresses=127.0.0.1",
-                             "-w", "start"], 120)
+        start_attempted = True
+        start_output = root / "pgctl-start.txt"
+        with start_output.open("w", encoding="utf-8") as output:
+            try:
+                start = subprocess.run(
+                    [str(pg_ctl), "-D", str(data_dir), "-l", str(log_path),
+                     "-o", f"-h 127.0.0.1 -p {port} -c listen_addresses=127.0.0.1",
+                     "-w", "start"],
+                    stdout=output, stderr=subprocess.STDOUT, text=True,
+                    timeout=180, check=False,
+                )
+            except subprocess.TimeoutExpired:
+                output.flush()
+                tail = start_output.read_text(encoding="utf-8", errors="replace")[-2000:]
+                raise RuntimeError("temporary pg_ctl start timed out: " + tail) from None
+        if start.returncode:
+            tail = start_output.read_text(encoding="utf-8", errors="replace")[-2000:]
+            raise RuntimeError("temporary pg_ctl start failed: " + tail)
         started = True
         query = run_checked([str(psql), "-h", "127.0.0.1", "-p", str(port),
                              "-U", "postgres", "-d", "postgres", "-X", "-A", "-t",
@@ -145,11 +162,26 @@ def main() -> int:
             "parent_payload_file_count": len(expected),
         }
     finally:
-        if started:
-            stop = subprocess.run([str(pg_ctl), "-D", str(data_dir), "-m", "fast", "-w", "stop"],
-                                  capture_output=True, text=True, timeout=60, check=False)
-            if stop.returncode:
-                raise RuntimeError("temporary PostgreSQL did not stop cleanly: " + stop.stderr[-1000:])
+        if start_attempted and data_dir.is_dir():
+            status = None
+            for _ in range(20):
+                status = subprocess.run([str(pg_ctl), "-D", str(data_dir), "status"],
+                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                        text=True, timeout=30, check=False)
+                if status.returncode == 0:
+                    break
+                time.sleep(.5)
+            if status is not None and status.returncode == 0:
+                stop = subprocess.run(
+                    [str(pg_ctl), "-D", str(data_dir), "-m", "fast", "-w", "stop"],
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    text=True, timeout=90, check=False,
+                )
+                if stop.returncode:
+                    raise RuntimeError("temporary PostgreSQL did not stop cleanly: "
+                                       + stop.stdout[-1000:])
+            elif started:
+                raise RuntimeError("temporary PostgreSQL state became uncertain")
         if root.exists():
             if root.parent != runner_temp or root.drive.casefold() == "c:":
                 raise RuntimeError("refusing to clean outside runner temp/non-C drive")
