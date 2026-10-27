@@ -221,9 +221,15 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
         if (path.is_symlink() or not path.is_file()
                 or not path.resolve().is_relative_to(runtime_root)):
             raise ValueError("runtime candidate contains linked/out-of-root file")
-        if path.suffix.lower() in BLOCKED or path.name.lower().startswith(".env"):
+        relative_path = path.relative_to(runtime).as_posix()
+        if path.suffix.lower() == ".pem" and relative_path == "packages/certifi/cacert.pem":
+            pem_bundle = path.read_bytes()
+            if (b"-----BEGIN CERTIFICATE-----" not in pem_bundle
+                    or b"PRIVATE KEY" in pem_bundle):
+                raise ValueError("certifi CA bundle content is not public-certificate-only")
+        elif path.suffix.lower() in BLOCKED or path.name.lower().startswith(".env"):
             raise ValueError("runtime candidate contains blocked/private-looking file: "
-                             + path.relative_to(runtime).as_posix())
+                             + relative_path)
         name_in_zip = safe_name("payload/runtime/" + path.relative_to(runtime).as_posix())
         file_hashes[name_in_zip] = digest(path)
     if len(file_hashes) < 18000:
