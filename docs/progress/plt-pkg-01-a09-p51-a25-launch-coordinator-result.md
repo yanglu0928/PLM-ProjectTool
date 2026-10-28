@@ -1,7 +1,7 @@
 # PLT-PKG-01-A09-P51-A25：Windows启动守门实施记录
 
 - 日期：2026-10-28
-- 状态：IMPLEMENTED_AWAITING_HOSTED_VALIDATION
+- 状态：PASS_LIMITED（正式信任缺失拒绝行为与候选进程链回归通过；无正向生产启动）
 - 前置审查：docs/progress/plt-pkg-01-a09-p51-a25-launch-coordinator-precheck.md
 - 实施：父包中新增 payload/start-trial.ps1；脚本检查候选manifest的类型、非发行/未法务放行状态、formal_startup_ready、公钥资源状态及阻断码。在当前父包明确缺正式产品公钥且formal_startup_ready=false时，脚本在启动任何API/Caddy子进程前以固定错误退出。
 - hosted smoke：清洁解包后运行包内guard，断言exit 1、stdout为空、stderr固定为“Packaged production startup blocked; trust prerequisites are not ready.”；回环端口仍可绑定。Credential内容未读取/输出；API、Caddy和PG均不由guard启动。
@@ -23,3 +23,11 @@
 - Smoke拒绝断言失败时输出有限长度、仅含本脚本固定流程stderr/stdout的诊断，帮助定位，不包括Credential内容或PLM环境变量。
 - API/guard/Web探针阶段增加D盘runner temp根异常清理，确保任何前置探针失败都清理，PG阶段仍使用原finally完成关闭与清理。
 - 上述修复尚未验证；run 40619189190不计通过。
+
+
+## Hosted Windows 复验结果
+
+- Run 40619189190 首轮失败，失败发生在启动guard固定响应断言；未启动Caddy或临时PG。偏差已于实施前置的失败记录中登记，之后修正PowerShell条件续行、manifest完整提取、诊断与异常清理；首轮run不计通过。
+- Run 40620485456，PR #56 head fe77c8ad0bf2fa1c3caa88443847f0167b0efced，7/7 jobs成功。D盘runner从候选包清洁提取20,118个payload并校验完整；内层ZIP 379,028,551 bytes，SHA-256 c1519ca137c85474eede1c116ed4d3ca9782f2cb37e66287e9900b0de6158f82。
+- 父包artifact 12787562203；smoke artifact 12787287314。startup_guard_probe=FAIL_CLOSED_MISSING_FORMAL_PRODUCT_TRUST；startup_entrypoint_probe=FAIL_CLOSED_MISSING_ACCOUNT_DATABASE_CREDENTIAL；Caddy loopback SPA fallback与/api/v1合成代理通过，PG18.6/pgvector0.8.6临时生命周期及清理通过。
+- 未启动真实产品API、未安装至固定产品根、未测试HTTPS或正式License。Pilot/Release仍NOT_READY。
