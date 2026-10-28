@@ -24,3 +24,10 @@
 ## 下一步
 
 将 A17 packaged verification harness 接入 hosted Windows runner，从同一 workflow 提供的父包候选启动实际 Edge/HTTPS/PG 合成业务旅程；继续核验所有依赖和临时写入均限于 D 盘 runner temp。只有完整闭环及清理证据通过后，才关闭 A27；再依据 Pilot 的真实信任缺项推进受控包可用性。
+
+
+## A27 云端触发机制修复
+
+- 经核查，PR #56 的 8-job checks 读取 main 现有 workflow 触发配置，因此未执行 A27 分支中新加的 A17 jobs。此结果仅证明旧 job 集合通过，不作为 A17 验收证据。
+- 按 CR-EXEC-014 先记录偏差、风险、回滚及验证计划；独立 PR #58 仅将 feature/p51-embedded-runtime-cache 加入 push branches。PR run [40641140953](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/40641140953) 完成，7/7 jobs 成功；合并提交 ff5442dc7ed2c6f053c882fea08a05c698001140。
+- 下一提交将作为触发器验证：必须检查新 Actions run 的 head SHA 和实际 job 清单包含 A17 candidate assembly 与 packaged PlanVersion Edge/HTTPS/PG；否则保持阻塞并继续修复触发路径。
