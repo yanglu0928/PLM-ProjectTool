@@ -39,6 +39,7 @@ def target_name(source: str) -> str:
         ("payload/ocr/", "app/ocr/"),
         ("payload/config/", "config/"),
         ("payload/third-party-licenses/", "app/third-party-licenses/"),
+        ("provenance/", "app/package-metadata/provenance/"),
     )
     for prefix, mapped in prefixes:
         if source.startswith(prefix) and len(source) > len(prefix):
