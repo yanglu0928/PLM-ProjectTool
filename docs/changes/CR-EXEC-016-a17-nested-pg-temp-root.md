@@ -16,3 +16,5 @@
 - 云端验收追加（run 40652933457）：后端 3849 项、前端、PG18/pgvector、embedded backend、父候选构建均通过；候选投影前的 8 项单测有 1 项夹具失败。测试把模拟 RUNNER_TEMP 放进系统 C 盘临时目录，触发实现的非 C 盘保护。修正单测改用 hosted `RUNNER_TEMP` 中的唯一目录；该 run 的 A17 full flow 未执行，不计 CR 通过。
 
 - 范围修订：A17 嵌套链不止 `smoke_packaged_pg18_migration.py`，还由 `smoke_packaged_platform_write_https.py` 在 `PLM_TEST_TEMP_ROOT` 指向的 P42 负向 ACL 目录下创建独立 PG 集群。选择复用已经验证的 `PLM_P51_TEMP_ROOT` 作为该 smoke 的优先 temp 根；旧 `PLM_TEST_TEMP_ROOT` 保留为非 A17 fallback。run 40654144099 的 initdb 仍在负向目录收到 Permission denied，证明此前实现未覆盖完整调用链。迁移/业务数据不变，仍只操作此 smoke 创建的临时目录。
+
+- 云端验收追加（run 40656184670）：基础 jobs、3849 后端测试、父包、候选投影与父包 PG smoke 全通过；A17 仍在 `PLMToolTemp/plm-p42-platform-write-<id>/pgdata` 被拒。现确认只替换根变量仍让 PG cluster 放入 P42 专用目录。实施范围进一步细化：将 PG cluster、日志和 dump 改放同一 owned PLM_P51_TEMP_ROOT 下的 sibling `plm-pg18-platform-write-*`，P42 专用目录继续承载其自身受限工作文件；清理分别校验两条路径的归属和前置进程退出。回滚是将 cluster 路径恢复到旧 `run`，测试数据无迁移。
