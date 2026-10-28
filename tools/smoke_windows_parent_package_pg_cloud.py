@@ -16,6 +16,8 @@ import urllib.request
 import zipfile
 from pathlib import Path, PurePosixPath
 
+from stage_windows_parent_candidate_cloud import stage_candidate
+
 
 def sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -217,6 +219,25 @@ def main() -> int:
             or parent.get("archive_sha256") != sha_file(args.archive)):
         raise ValueError("parent artifact summary or archive identity rejected")
 
+    staging_target = runner_temp / ("plm-parent-stage-" + str(parent.get("workflow_run")))
+    outside_target = runner_temp.parent / ("plm-parent-stage-outside-" + str(parent.get("workflow_run")))
+    try:
+        stage_candidate(args.archive, args.verification_summary, outside_target)
+    except ValueError:
+        if outside_target.exists():
+            raise ValueError("out-of-root staging rejection created a path")
+    else:
+        raise ValueError("out-of-root staging target unexpectedly accepted")
+    staging_result = stage_candidate(args.archive, args.verification_summary, staging_target)
+    if (staging_result.get("status") != "HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED"
+            or staging_result.get("payload_file_count") != parent.get("payload_file_count")
+            or staging_result.get("installation_performed") is not False
+            or not (staging_target / "payload" / "runtime" / "python.exe").is_file()):
+        raise ValueError("candidate staging receipt or extracted runtime mismatch")
+    if staging_target.parent != runner_temp or staging_target.drive.casefold() == "c:":
+        raise ValueError("refusing to clean staged candidate outside runner temp")
+    shutil.rmtree(staging_target)
+
     with zipfile.ZipFile(args.archive) as z:
         infos = z.infolist()
         names = [safe_name(i.filename) for i in infos]
@@ -341,6 +362,7 @@ def main() -> int:
             "license_trust_used": False, "runner_drive": root.drive,
             "parent_payload_file_count": len(expected),
             "startup_preflight": startup,
+            "candidate_staging": staging_result,
             "startup_entrypoint_probe": startup_entrypoint_probe,
             "startup_guard_probe": startup_guard_probe,
             "web_service_smoke": web_service_smoke,
