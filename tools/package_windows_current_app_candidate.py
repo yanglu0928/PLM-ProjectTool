@@ -26,6 +26,10 @@ APP_PREFIX = "payload/runtime/packages/plm_assistant/"
 DIST_PREFIX = f"payload/runtime/packages/plm_project_tool_backend-{VERSION}.dist-info/"
 FRONTEND_PREFIX = "payload/frontend/dist/"
 SIDE_CARS = {"manifest.json", "payload-sha256sums.txt", "third-party-inventory.json"}
+PARENT_SIDECARS = {"manifest.json", "payload-sha256sums.txt"}
+PARENT_KIND = "WINDOWS_PARENT_PACKAGE_NON_RELEASE_CANDIDATE"
+EMBEDDED_INVENTORY = "provenance/embedded-backend-third-party-inventory.json"
+EMBEDDED_MANIFEST = "provenance/embedded-backend-manifest.json"
 SCRATCH_EXCLUDE_PATHSPEC = ":(exclude).tmp/**"
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 COMMIT = re.compile(r"[0-9a-f]{40}\Z")
@@ -51,7 +55,7 @@ def _checksums(raw: bytes) -> dict[str, str]:
             raise ValueError("malformed parent checksum line")
         digest, name = line.split("  ", 1)
         name = safe_name(name)
-        if not SHA.fullmatch(digest) or not name.startswith("payload/") or name in result:
+        if not SHA.fullmatch(digest) or not name.startswith(("payload/", "provenance/")) or name in result:
             raise ValueError("invalid parent checksum entry")
         result[name] = digest
     if not result:
@@ -150,7 +154,8 @@ def _pgvector_members(wheel: zipfile.ZipFile) -> dict[str, str]:
 def build_candidate(parent_path: Path, wheel_path: Path, frontend_dist: Path,
                     output_parent: Path, source_commit: str, pgvector_wheel_path: Path,
                     *, expected_parent_sha256: str = PARENT_SHA256,
-                    expected_pgvector_sha256: str = PGVECTOR_WHEEL_SHA256) -> dict[str, object]:
+                    expected_pgvector_sha256: str = PGVECTOR_WHEEL_SHA256,
+                    expected_workflow_run: str | None = None) -> dict[str, object]:
     if (not COMMIT.fullmatch(source_commit) or not SHA.fullmatch(expected_parent_sha256)
             or not SHA.fullmatch(expected_pgvector_sha256)):
         raise ValueError("source commit or input digest malformed")
@@ -166,37 +171,71 @@ def build_candidate(parent_path: Path, wheel_path: Path, frontend_dist: Path,
           zipfile.ZipFile(wheel_path) as wheel,
           zipfile.ZipFile(pgvector_wheel_path) as pgvector_wheel):
         old_entries = zip_members(parent)
-        if set(old_entries) - {name for name in old_entries if name.startswith("payload/")} != SIDE_CARS:
+        root_sidecars = {name for name in old_entries if name in SIDE_CARS}
+        if root_sidecars not in (SIDE_CARS, PARENT_SIDECARS):
             raise ValueError("unexpected parent sidecars")
-        parent_hashes = _checksums(parent.read("payload-sha256sums.txt"))
-        if set(parent_hashes) != set(old_entries) - SIDE_CARS:
+        sums_bytes = parent.read("payload-sha256sums.txt")
+        parent_hashes = _checksums(sums_bytes)
+        if set(parent_hashes) != set(old_entries) - root_sidecars:
             raise ValueError("parent checksums do not match payload")
         old_manifest = json.loads(parent.read("manifest.json"))
-        if (old_manifest.get("version") != VERSION
+        parent_kind = old_manifest.get("kind")
+        if (old_manifest.get("version", VERSION) != VERSION
                 or old_manifest.get("release_eligible") is not False
                 or old_manifest.get("legal_clearance") is not False
-                or old_manifest.get("formal_tls_material_included") is not False
+                or old_manifest.get("formal_tls_material_included", False) is not False
                 or old_manifest.get("payload_file_count") != len(parent_hashes)):
             raise ValueError("parent is not the expected non-release candidate")
+        if parent_kind == PARENT_KIND:
+            if (old_manifest.get("source_commit") != source_commit
+                    or (expected_workflow_run is not None
+                        and str(old_manifest.get("workflow_run")) != str(expected_workflow_run))
+                    or hashlib.sha256(sums_bytes).hexdigest() != old_manifest.get("payload_sha256sums_sha256")):
+                raise ValueError("parent workflow provenance or checksum-list identity mismatch")
+        elif parent_kind != "WINDOWS11_CURRENT_APP_NON_RELEASE_CANDIDATE":
+            raise ValueError("unsupported parent candidate kind")
         replacement = _wheel_members(wheel)
         supplement = _pgvector_members(pgvector_wheel)
         if set(replacement) & (set(frontend) | set(supplement)):
             raise ValueError("replacement collision")
         retained = {name for name in parent_hashes if not name.startswith(
-            (APP_PREFIX, DIST_PREFIX, FRONTEND_PREFIX))}
+            (APP_PREFIX, DIST_PREFIX, FRONTEND_PREFIX,
+             "payload/runtime/packages/pgvector/",
+             "payload/runtime/packages/pgvector-0.5.0.dist-info/"))}
         all_names = retained | set(replacement) | set(frontend) | set(supplement)
         if len(all_names) != len(retained) + len(replacement) + len(frontend) + len(supplement) \
                 or len({name.casefold() for name in all_names}) != len(all_names):
             raise ValueError("output path collision")
-        third_party = json.loads(parent.read("third-party-inventory.json"))
-        if "python_runtime_additions" in third_party:
-            raise ValueError("parent already declares Python runtime additions")
-        third_party["python_runtime_additions"] = [{
-            "name": "pgvector", "version": "0.5.0", "license_expression": "MIT",
-            "license_path": "payload/runtime/packages/pgvector-0.5.0.dist-info/licenses/LICENSE.txt",
-            "wheel_sha256": expected_pgvector_sha256,
-            "legal_review_status": "REVIEW_REQUIRED",
-        }]
+        if "third-party-inventory.json" in old_entries:
+            third_party = json.loads(parent.read("third-party-inventory.json"))
+        elif parent_kind == PARENT_KIND and EMBEDDED_INVENTORY in parent_hashes:
+            inventory_bytes = parent.read(EMBEDDED_INVENTORY)
+            if hashlib.sha256(inventory_bytes).hexdigest() != parent_hashes[EMBEDDED_INVENTORY]:
+                raise ValueError("embedded third-party inventory hash mismatch")
+            third_party = json.loads(inventory_bytes)
+        else:
+            raise ValueError("parent third-party inventory missing")
+        if parent_kind == PARENT_KIND:
+            embedded_manifest_bytes = parent.read(EMBEDDED_MANIFEST)
+            if hashlib.sha256(embedded_manifest_bytes).hexdigest() != parent_hashes.get(EMBEDDED_MANIFEST):
+                raise ValueError("embedded backend manifest hash mismatch")
+            embedded_manifest = json.loads(embedded_manifest_bytes)
+            pgvector_wheels = [digest for name, digest in embedded_manifest.get("wheel_hashes", {}).items()
+                               if name.lower().startswith("pgvector-0.5.0-") and name.lower().endswith(".whl")]
+            if len(pgvector_wheels) != 1 or pgvector_wheels[0] != expected_pgvector_sha256:
+                raise ValueError("embedded pgvector wheel differs from fixed digest")
+        distributions = third_party.setdefault("distributions", [])
+        if not isinstance(distributions, list):
+            raise ValueError("third-party distribution inventory malformed")
+        pgvector = [item for item in distributions if isinstance(item, dict)
+                    and str(item.get("name", "")).casefold().replace("_", "-") == "pgvector"]
+        if pgvector and any(item.get("version") != "0.5.0" for item in pgvector):
+            raise ValueError("parent pgvector inventory version mismatch")
+        if not pgvector:
+            distributions.append({"name": "pgvector", "version": "0.5.0",
+                "license_expression": "MIT", "notice_files": [
+                    "payload/runtime/packages/pgvector-0.5.0.dist-info/licenses/LICENSE.txt"],
+                "review_status": "REVIEW_REQUIRED"})
         third_party_bytes = (json.dumps(third_party, ensure_ascii=False,
                                        sort_keys=True, indent=2) + "\n").encode("utf-8")
         output_dir = output_parent / ("current-app-candidate-" + uuid.uuid4().hex[:12])
@@ -281,6 +320,8 @@ def main() -> int:
     parser.add_argument("--frontend-dist", required=True, type=Path)
     parser.add_argument("--output-parent", required=True, type=Path)
     parser.add_argument("--source-commit", required=True)
+    parser.add_argument("--expected-parent-sha256", default=PARENT_SHA256)
+    parser.add_argument("--expected-workflow-run")
     args = parser.parse_args()
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     # User-owned local scratch data is not a packaging input; all other untracked
@@ -290,7 +331,9 @@ def main() -> int:
     if head != args.source_commit or tracked_dirty or dirty:
         raise ValueError("source commit must be clean HEAD")
     result = build_candidate(args.parent, args.wheel, args.frontend_dist,
-                             args.output_parent, args.source_commit, args.pgvector_wheel)
+                             args.output_parent, args.source_commit, args.pgvector_wheel,
+                             expected_parent_sha256=args.expected_parent_sha256,
+                             expected_workflow_run=args.expected_workflow_run)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
     return 0
 
