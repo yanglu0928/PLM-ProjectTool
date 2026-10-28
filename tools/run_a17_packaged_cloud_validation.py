@@ -99,7 +99,10 @@ def main() -> int:
         raise ValueError("A17 candidate summary archive digest mismatch")
 
     temp_root = root / "PLMToolTemp"
+    pg_temp_root = root / "PLMPostgresTemp"
     temp_root.mkdir(parents=True)
+    pg_temp_root.mkdir(parents=True)
+    os.environ["PLM_PG_TEMP_ROOT"] = str(pg_temp_root)
     os.environ["TEMP"] = str(temp_root)
     os.environ["TMP"] = str(temp_root)
     os.environ["PLM_P51_TEMP_ROOT"] = str(temp_root)
