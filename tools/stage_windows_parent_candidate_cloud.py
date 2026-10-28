@@ -165,16 +165,17 @@ def stage_candidate(archive: Path, summary_path: Path, target: Path) -> dict:
                     ca_bytes = source.read(info)
                     if not validate_public_ca_bundle(ca_bytes):
                         raise ValueError("allowlisted certifi bundle is not public-certificate-only")
-                    if not validate_public_ca_bundle(b"# hosted public CA bundle comment\\n" + ca_bytes):
+                    if not validate_public_ca_bundle(b"# hosted public CA bundle comment\n" + ca_bytes):
                         raise ValueError("ASCII comment line in public CA bundle was rejected")
                     invalid_bundles = (
-                        b"# comment\\n-----BEGIN PRIVATE KEY-----\\nAA==\\n-----END PRIVATE KEY-----\\n",
-                        b"# comment\\nunknown text\\n" + ca_bytes,
-                        b"-----BEGIN CERTIFICATE-----\\nnot-base64!\\n-----END CERTIFICATE-----\\n",
-                        b"-----BEGIN CERTIFICATE-----\\nAA==\\n",
+                        b"# comment\n-----BEGIN PRIVATE KEY-----\nAA==\n-----END PRIVATE KEY-----\n",
+                        b"# comment\nunknown text\n" + ca_bytes,
+                        b"-----BEGIN CERTIFICATE-----\nnot-base64!\n-----END CERTIFICATE-----\n",
+                        b"-----BEGIN CERTIFICATE-----\nAA==\n",
                     )
-                    if any(validate_public_ca_bundle(candidate) for candidate in invalid_bundles):
-                        raise ValueError("invalid public CA bundle content was accepted")
+                    for case_number, candidate in enumerate(invalid_bundles, start=1):
+                        if validate_public_ca_bundle(candidate):
+                            raise ValueError(f"invalid public CA bundle case {case_number} was accepted")
                 destination = staging.joinpath(*PurePosixPath(name).parts)
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 actual = hashlib.sha256()
