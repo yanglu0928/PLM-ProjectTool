@@ -7,3 +7,5 @@
 - 验收：路径选择单测与 hosted Windows A17 bundled initdb/migration/cleanup full flow。
 - 回滚：移除 A17 root 覆写，恢复系统 temp，保留 A17 failed run。
 - 数据：合成 PostgreSQL；不连接外部或现有数据库。
+
+- 2026-10-28 云端 run 40652307366：新增 A17 temp-root 静态边界检查 PASS；后端 3849 项单测有 1 项既有并发测试 ready.wait(3) 偶发超时，其余基线组件 job 成功、打包/A17依赖任务跳过。已登记 CR-EXEC-016；完整重跑待证，不把该 run 记为通过。
