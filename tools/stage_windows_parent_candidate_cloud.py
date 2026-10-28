@@ -1,8 +1,10 @@
 """Safely stage a verified Windows parent candidate under hosted runner temp only."""
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
+import ssl
 import os
 import re
 import shutil
@@ -32,31 +34,56 @@ def sha_file(path: Path) -> str:
 def validate_public_ca_bundle(data: bytes) -> bool:
     if b"PRIVATE KEY" in data:
         return False
-    begin = b"-----BEGIN CERTIFICATE-----"
-    end = b"-----END CERTIFICATE-----"
-    cursor = 0
-    count = 0
-    whitespace = (9, 10, 13, 32)
-    while cursor < len(data):
-        while cursor < len(data) and data[cursor] in whitespace:
-            cursor += 1
-        if cursor == len(data):
-            break
-        if not data.startswith(begin, cursor):
+    try:
+        text = data.decode("ascii", errors="strict")
+    except UnicodeDecodeError:
+        return False
+
+    lines = text.splitlines()
+    begin = "-----BEGIN CERTIFICATE-----"
+    end = "-----END CERTIFICATE-----"
+    in_certificate = False
+    encoded = []
+    certificates = []
+    for line in lines:
+        if not in_certificate:
+            if not line.strip():
+                continue
+            if line.startswith("#"):
+                if any(ord(char) < 32 or ord(char) > 126 for char in line):
+                    return False
+                continue
+            if line != begin:
+                return False
+            in_certificate = True
+            encoded = []
+            continue
+
+        if line == end:
+            if not encoded:
+                return False
+            try:
+                der = base64.b64decode("".join(encoded), validate=True)
+            except (ValueError, base64.binascii.Error):
+                return False
+            if not der or der[0] != 0x30:
+                return False
+            certificates.append(begin + "\n" + "\n".join(encoded) + "\n" + end)
+            in_certificate = False
+            encoded = []
+            continue
+        if not line or any(char not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=" for char in line):
             return False
-        body_start = cursor + len(begin)
-        end_at = data.find(end, body_start)
-        if end_at < 0:
-            return False
-        body = data[body_start:end_at]
-        allowed = all((65 <= byte <= 90) or (97 <= byte <= 122)
-                      or (48 <= byte <= 57) or byte in (43, 47, 61, *whitespace)
-                      for byte in body)
-        if not body or not allowed:
-            return False
-        cursor = end_at + len(end)
-        count += 1
-    return count > 0
+        encoded.append(line)
+
+    if in_certificate or not certificates:
+        return False
+    try:
+        # OpenSSL parses public certificate blocks without network access.
+        ssl.create_default_context().load_verify_locations(cadata="\n".join(certificates))
+    except (OSError, ssl.SSLError, ValueError):
+        return False
+    return True
 
 
 def safe_name(name: str) -> str:
@@ -138,6 +165,16 @@ def stage_candidate(archive: Path, summary_path: Path, target: Path) -> dict:
                     ca_bytes = source.read(info)
                     if not validate_public_ca_bundle(ca_bytes):
                         raise ValueError("allowlisted certifi bundle is not public-certificate-only")
+                    if not validate_public_ca_bundle(b"# hosted public CA bundle comment\\n" + ca_bytes):
+                        raise ValueError("ASCII comment line in public CA bundle was rejected")
+                    invalid_bundles = (
+                        b"# comment\\n-----BEGIN PRIVATE KEY-----\\nAA==\\n-----END PRIVATE KEY-----\\n",
+                        b"# comment\\nunknown text\\n" + ca_bytes,
+                        b"-----BEGIN CERTIFICATE-----\\nnot-base64!\\n-----END CERTIFICATE-----\\n",
+                        b"-----BEGIN CERTIFICATE-----\\nAA==\\n",
+                    )
+                    if any(validate_public_ca_bundle(candidate) for candidate in invalid_bundles):
+                        raise ValueError("invalid public CA bundle content was accepted")
                 destination = staging.joinpath(*PurePosixPath(name).parts)
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 actual = hashlib.sha256()
