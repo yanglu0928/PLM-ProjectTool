@@ -75,6 +75,14 @@ def main() -> int:
                 or manifest.get("workflow_run") != parent.get("workflow_run")
                 or manifest.get("source_commit") != parent.get("source_commit")):
             raise ValueError("parent manifest identity mismatch")
+        startup = manifest.get("startup_preflight")
+        expected_startup = {
+            "formal_startup_ready": False,
+            "packaged_product_public_key_resource_present": False,
+            "blocker_codes": ["FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"],
+        }
+        if startup != expected_startup or parent.get("startup_preflight") != startup:
+            raise ValueError("parent package startup preflight is missing, mismatched or unexpectedly ready")
         sums = z.read("payload-sha256sums.txt")
         if sha(sums) != manifest.get("payload_sha256sums_sha256"):
             raise ValueError("parent payload checksum list identity mismatch")
@@ -162,6 +170,7 @@ def main() -> int:
             "production_installation": False, "product_api_started": False,
             "license_trust_used": False, "runner_drive": root.drive,
             "parent_payload_file_count": len(expected),
+            "startup_preflight": startup,
         }
     finally:
         if start_attempted and data_dir.is_dir():
