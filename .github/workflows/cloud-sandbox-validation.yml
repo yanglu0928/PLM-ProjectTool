@@ -194,3 +194,80 @@ jobs:
             ${{ runner.temp }}/plm-embedded-backend-output-${{ github.run_id }}/*.json
           if-no-files-found: error
           retention-days: 14
+
+  assemble-parent-candidate:
+    name: Assemble same-run Windows parent package candidate
+    needs: [backend, frontend, rebuild-pg18-sidecar, rebuild-embedded-backend]
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download same-run backend wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-backend-wheel-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-parent/backend
+      - name: Download same-run frontend production files
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-parent/frontend
+      - name: Download same-run PostgreSQL runtime
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-pg18-rebuilt-sidecar-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-parent/pg18
+      - name: Download same-run embedded backend runtime
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-embedded-backend-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-parent/embedded
+      - name: Assemble and verify non-release parent candidate
+        shell: pwsh
+        run: |
+          $output = Join-Path $env:RUNNER_TEMP ("plm-parent-output-" + $env:GITHUB_RUN_ID)
+          python .\tools\assemble_windows_parent_package_cloud_candidate.py --backend-dir (Join-Path $env:RUNNER_TEMP "plm-parent/backend") --frontend-dir (Join-Path $env:RUNNER_TEMP "plm-parent/frontend") --pg-dir (Join-Path $env:RUNNER_TEMP "plm-parent/pg18") --embedded-dir (Join-Path $env:RUNNER_TEMP "plm-parent/embedded") --output-dir $output --source-commit $env:GITHUB_SHA --run-id $env:GITHUB_RUN_ID
+          if ($LASTEXITCODE -ne 0) { throw "Cloud parent package assembly failed" }
+      - name: Upload verified non-release parent candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-parent-output-${{ github.run_id }}/*
+          if-no-files-found: error
+          retention-days: 14
+
+  smoke-parent-postgresql:
+    name: Clean extraction and temporary PostgreSQL lifecycle smoke
+    needs: [assemble-parent-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download same-run non-release parent candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-parent-smoke-input
+      - name: Extract on runner temp and smoke PostgreSQL/pgvector
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP ("plm-parent-pg-smoke-" + $env:GITHUB_RUN_ID)
+          $out = Join-Path $env:RUNNER_TEMP ("plm-parent-pg-smoke-summary-" + $env:GITHUB_RUN_ID)
+          $archive = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-parent-smoke-input") -Filter "*.zip" | Select-Object -First 1
+          $summary = Join-Path $env:RUNNER_TEMP "plm-parent-smoke-input/verification-summary.json"
+          if (-not $archive -or -not (Test-Path $summary)) { throw "Parent candidate artifact is incomplete" }
+          python .\tools\smoke_windows_parent_package_pg_cloud.py --archive $archive.FullName --verification-summary $summary --work-root $work --summary-out (Join-Path $out "pg-smoke.json")
+          if ($LASTEXITCODE -ne 0) { throw "Parent package PostgreSQL smoke failed" }
+      - name: Upload bounded PostgreSQL smoke evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-parent-pg-smoke-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-parent-pg-smoke-summary-${{ github.run_id }}/pg-smoke.json
+          if-no-files-found: error
+          retention-days: 14

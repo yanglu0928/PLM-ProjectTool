@@ -191,7 +191,13 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
         raise ValueError("required backend runtime distributions missing: " + ", ".join(sorted(missing)))
 
     system_root = os.environ.get("SystemRoot", r"C:\\Windows")
+    profile = work_root / "profile"
+    model_cache = work_root / "model-cache"
+    profile.mkdir()
+    model_cache.mkdir()
     env = {"SystemRoot": system_root, "WINDIR": system_root,
+           "USERPROFILE": str(profile), "HOME": str(profile),
+           "MODELSCOPE_CACHE": str(model_cache),
            "PATH": str(runtime) + os.pathsep + str(Path(system_root) / "System32")}
     probe = (
         "import sys,ssl,sqlite3,ctypes,plm_assistant,fastapi,sqlalchemy,alembic,"
@@ -205,6 +211,7 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
         raise ValueError("embedded backend clean-path import failed: " + check.stderr[-4000:])
 
     file_hashes: dict[str, str] = {}
+    excluded_paths: list[str] = []
     runtime_root = runtime.resolve()
     for path in sorted(runtime.rglob("*")):
         if path.is_dir():
@@ -215,8 +222,19 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
         if (path.is_symlink() or not path.is_file()
                 or not path.resolve().is_relative_to(runtime_root)):
             raise ValueError("runtime candidate contains linked/out-of-root file")
-        if path.suffix.lower() in BLOCKED or path.name.lower().startswith(".env"):
-            raise ValueError("runtime candidate contains blocked/private-looking file")
+        relative_path = path.relative_to(runtime).as_posix()
+        if (relative_path.startswith("packages/future/backports/test/")
+                and path.suffix.lower() == ".pem"):
+            excluded_paths.append(relative_path)
+            continue
+        if path.suffix.lower() == ".pem" and relative_path == "packages/certifi/cacert.pem":
+            pem_bundle = path.read_bytes()
+            if (b"-----BEGIN CERTIFICATE-----" not in pem_bundle
+                    or b"PRIVATE KEY" in pem_bundle):
+                raise ValueError("certifi CA bundle content is not public-certificate-only")
+        elif path.suffix.lower() in BLOCKED or path.name.lower().startswith(".env"):
+            raise ValueError("runtime candidate contains blocked/private-looking file: "
+                             + relative_path)
         name_in_zip = safe_name("payload/runtime/" + path.relative_to(runtime).as_posix())
         file_hashes[name_in_zip] = digest(path)
     if len(file_hashes) < 18000:
@@ -242,6 +260,7 @@ def build(work_root: Path, output_root: Path, backend_artifact: Path, runtime_ar
         "distribution_count": inventory["distribution_count"],
         "embedded_import_probe": "PASS",
         "payload_file_count": len(file_hashes),
+        "excluded_test_fixtures": excluded_paths,
         "known_gaps": ["third-party legal review remains open",
                        "no PostgreSQL/OCR native runtime/models are integrated",
                        "not an installer and not a complete Pilot package"],
