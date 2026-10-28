@@ -10,3 +10,5 @@
 - 回滚：恢复使用系统 tempfile 根并保留失败证据；不触及用户数据。
 - 验证计划：定向测试验证 A17 root 优先且创建目录为其直接子目录、非法 root 拒绝；hosted A17 full flow 必须完成 initdb、migration、Edge markers、PG state and cleanup。未达 markers 不记 PASS。
 - 安全：只在 hosted runner 的 D 盘 synthetic temp 运行，不使用本机资源、客户资料或 Secret。
+
+- 云端验收追加（run 40652307366，SHA `c306232b9c1f4eeed3456f9646099f68c858e2a1`）：路径边界检查通过；全量后端 3849 项中仅既有并发用例 `test_stop_waits_for_current_probe_before_marker_and_db_release` 在 3 秒 ready 等待处超时，其余下游 A17 jobs 因后端 job 失败而跳过。该结果不归因为本变更，需完整重跑以确认是否为 runner 抖动；当前 CR 未验收。
