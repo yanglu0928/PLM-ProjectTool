@@ -224,18 +224,28 @@ def build_candidate(parent_path: Path, wheel_path: Path, frontend_dist: Path,
                                if name.lower().startswith("pgvector-0.5.0-") and name.lower().endswith(".whl")]
             if len(pgvector_wheels) != 1 or pgvector_wheels[0] != expected_pgvector_sha256:
                 raise ValueError("embedded pgvector wheel differs from fixed digest")
-        distributions = third_party.setdefault("distributions", [])
-        if not isinstance(distributions, list):
-            raise ValueError("third-party distribution inventory malformed")
-        pgvector = [item for item in distributions if isinstance(item, dict)
-                    and str(item.get("name", "")).casefold().replace("_", "-") == "pgvector"]
-        if pgvector and any(item.get("version") != "0.5.0" for item in pgvector):
-            raise ValueError("parent pgvector inventory version mismatch")
-        if not pgvector:
-            distributions.append({"name": "pgvector", "version": "0.5.0",
-                "license_expression": "MIT", "notice_files": [
-                    "payload/runtime/packages/pgvector-0.5.0.dist-info/licenses/LICENSE.txt"],
-                "review_status": "REVIEW_REQUIRED"})
+        if parent_kind == PARENT_KIND:
+            distributions = third_party.setdefault("distributions", [])
+            if not isinstance(distributions, list):
+                raise ValueError("third-party distribution inventory malformed")
+            pgvector = [item for item in distributions if isinstance(item, dict)
+                        and str(item.get("name", "")).casefold().replace("_", "-") == "pgvector"]
+            if pgvector and any(item.get("version") != "0.5.0" for item in pgvector):
+                raise ValueError("parent pgvector inventory version mismatch")
+            if not pgvector:
+                distributions.append({"name": "pgvector", "version": "0.5.0",
+                    "license_expression": "MIT", "notice_files": [
+                        "payload/runtime/packages/pgvector-0.5.0.dist-info/licenses/LICENSE.txt"],
+                    "review_status": "REVIEW_REQUIRED"})
+        else:
+            if "python_runtime_additions" in third_party:
+                raise ValueError("parent already declares Python runtime additions")
+            third_party["python_runtime_additions"] = [{
+                "name": "pgvector", "version": "0.5.0", "license_expression": "MIT",
+                "license_path": "payload/runtime/packages/pgvector-0.5.0.dist-info/licenses/LICENSE.txt",
+                "wheel_sha256": expected_pgvector_sha256,
+                "legal_review_status": "REVIEW_REQUIRED",
+            }]
         third_party_bytes = (json.dumps(third_party, ensure_ascii=False,
                                        sort_keys=True, indent=2) + "\n").encode("utf-8")
         output_dir = output_parent / ("current-app-candidate-" + uuid.uuid4().hex[:12])
