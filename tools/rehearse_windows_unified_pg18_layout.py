@@ -46,7 +46,7 @@ def target_name(source: str) -> str:
             return safe_name(mapped + source[len(prefix):])
     if source in META:
         return "app/package-metadata/" + source
-    raise ValueError("unmapped candidate payload family")
+    raise ValueError(f"unmapped candidate payload family: {source}")
 
 
 def validate_output_root(root: Path) -> Path:
