@@ -74,10 +74,26 @@ def _port() -> int:
 
 
 def _migration_temp_root() -> Path:
+    configured = os.environ.get("PLM_PG_TEMP_ROOT")
+    if configured:
+        runner_temp_value = os.environ.get("RUNNER_TEMP")
+        if not runner_temp_value:
+            raise ValueError("PLM_PG_TEMP_ROOT requires RUNNER_TEMP ownership boundary")
+        runner_temp = Path(runner_temp_value).resolve(strict=True)
+        candidate = Path(configured)
+        if candidate.is_symlink():
+            raise ValueError("PLM_PG_TEMP_ROOT must not be a symlink")
+        selected = candidate.resolve(strict=True)
+        if (not selected.is_dir() or runner_temp.drive.upper() == "C:"
+                or selected.drive.upper() == "C:" or selected.parent.parent != runner_temp
+                or not selected.parent.name.startswith("plm-p51-a27-")
+                or selected.name != "PLMPostgresTemp" or not str(selected).isascii()):
+            raise ValueError("PLM_PG_TEMP_ROOT is outside the owned non-C A17 PostgreSQL temp")
+        return selected
+
     configured = os.environ.get("PLM_P51_TEMP_ROOT")
     if not configured:
         return Path(tempfile.gettempdir()).resolve(strict=True)
-
     runner_temp_value = os.environ.get("RUNNER_TEMP")
     if not runner_temp_value:
         raise ValueError("PLM_P51_TEMP_ROOT requires RUNNER_TEMP ownership boundary")
