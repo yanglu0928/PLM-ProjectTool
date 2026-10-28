@@ -24,7 +24,8 @@ def digest(path: Path) -> str:
 
 class CurrentAppCandidateTests(unittest.TestCase):
     def test_nested_pg_smoke_prefers_owned_a17_root_and_rejects_escape(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
+        runner_temp = Path(os.environ["RUNNER_TEMP"])
+        with tempfile.TemporaryDirectory(dir=runner_temp) as temporary:
             runner = Path(temporary)
             owned = runner / "plm-p51-a27-test" / "PLMToolTemp"
             owned.mkdir(parents=True)
