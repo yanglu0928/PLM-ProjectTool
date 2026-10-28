@@ -582,10 +582,12 @@ a05["prototype_probe"].__globals__["prototype_probe"] = packaged_planversion_pro
 
 
 if __name__ == "__main__":
-    test_temp = Path(os.environ.get("PLM_P51_TEMP_ROOT", r"D:\PLMToolTemp"))
-    if (not test_temp.is_absolute() or test_temp.drive.upper() != "D:"
-            or test_temp.name != "PLMToolTemp" or not str(test_temp).isascii()):
-        raise ValueError("P51 temporary root must be an explicit ASCII D: PLMToolTemp directory")
+    test_temp = Path(os.environ["PLM_P51_TEMP_ROOT"]).resolve()
+    runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
+    if (not test_temp.is_absolute() or test_temp.drive.upper() == "C:"
+            or not str(test_temp).isascii() or runner_temp.drive.upper() == "C:"
+            or runner_temp not in test_temp.parents or test_temp.name != "PLMToolTemp"):
+        raise ValueError("P51 temporary root must be an ASCII non-C RUNNER_TEMP descendant named PLMToolTemp")
     test_temp.mkdir(parents=True, exist_ok=True)
     os.environ["TEMP"] = str(test_temp)
     os.environ["TMP"] = str(test_temp)
