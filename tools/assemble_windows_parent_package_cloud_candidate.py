@@ -227,9 +227,17 @@ The YAML file contains non-secret settings only. Do not put database passwords, 
 
 This archive is not an installer or a Pilot release. Its PostgreSQL component was exercised only with a temporary local database on a hosted runner.
 """
+    launcher_path = Path(__file__).with_name("start_windows_trial_candidate.ps1")
+    if not launcher_path.is_file() or launcher_path.is_symlink():
+        raise ValueError("fail-closed startup guard source missing")
+    launcher_bytes = launcher_path.read_bytes()
+    if any(token in launcher_bytes.lower() for token in
+           (b"-----begin private key-----", b"api_key:", b"password:", b".pfx", b".p12")):
+        raise ValueError("startup guard source contains a secret marker or private-file reference")
     package_docs = {
         "payload/config/bootstrap.example.yaml": config_text.encode("utf-8"),
         "payload/README-FIRST.md": first_readme.encode("utf-8"),
+        "payload/start-trial.ps1": launcher_bytes,
     }
 
     output = args.output_dir

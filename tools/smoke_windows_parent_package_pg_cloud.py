@@ -104,6 +104,29 @@ def probe_packaged_production_entrypoint(root: Path) -> str:
     return "FAIL_CLOSED_MISSING_ACCOUNT_DATABASE_CREDENTIAL"
 
 
+def probe_packaged_startup_guard(root: Path) -> str:
+    script = root / "payload" / "start-trial.ps1"
+    if not script.is_file() or script.is_symlink():
+        raise ValueError("packaged startup guard missing")
+    shell = shutil.which("pwsh")
+    if not shell:
+        raise ValueError("PowerShell 7 unavailable on hosted Windows runner")
+    env = {key: value for key, value in os.environ.items()
+           if not key.upper().startswith("PLM_")}
+    env.pop("PYTHONPATH", None)
+    result = subprocess.run([shell, "-NoLogo", "-NoProfile", "-NonInteractive",
+                             "-File", str(script)], cwd=str(script.parent),
+                            capture_output=True, text=True, errors="replace",
+                            timeout=20, env=env)
+    if (result.returncode != 1 or result.stdout.strip()
+            or result.stderr.strip() !=
+            "Packaged production startup blocked; trust prerequisites are not ready."):
+        raise ValueError("startup guard did not preserve fixed fail-closed response")
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", free_loopback_port()))
+    return "FAIL_CLOSED_MISSING_FORMAL_PRODUCT_TRUST"
+
+
 def smoke_packaged_web(root: Path) -> dict:
     caddy = root / "payload" / "runtime" / "caddy" / "caddy.exe"
     frontend = root / "payload" / "frontend" / "dist"
@@ -250,6 +273,7 @@ def main() -> int:
         raise ValueError("pgvector extension binary missing")
 
     startup_entrypoint_probe = probe_packaged_production_entrypoint(root)
+    startup_guard_probe = probe_packaged_startup_guard(root)
     web_service_smoke = smoke_packaged_web(root)
 
     data_dir = root / "pgdata"
@@ -306,6 +330,7 @@ def main() -> int:
             "parent_payload_file_count": len(expected),
             "startup_preflight": startup,
             "startup_entrypoint_probe": startup_entrypoint_probe,
+            "startup_guard_probe": startup_guard_probe,
             "web_service_smoke": web_service_smoke,
         }
     finally:
