@@ -1,8 +1,4 @@
-# 项目状态
-
-|字段|当前值|
-|---|---|
-|Current Phase|Phase 2：Platform Core|
+|Next WBS|PLT-PKG-01-A09-P51-A25：按 docs/progress/plt-pkg-01-a09-p51-a25-launch-coordinator-precheck.md 实现受限Windows启动协调器；正式启动前置不满足时拒绝并保证无listener/无遗留进程。|n 40617690473 全7 jobs成功，证据见A24结果记录。当前进入A25，编码前审查文件已先行提交。|nt WBS|PLT-PKG-01-A09-P51-A25：实现并验证Windows受限启动协调器的失败关闭行为；先校验正式启动前置，再按API健康状态控制Caddy启动与清理，所有验证仅hosted Windows D盘。|nt Phase|Phase 2：Platform Core|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
