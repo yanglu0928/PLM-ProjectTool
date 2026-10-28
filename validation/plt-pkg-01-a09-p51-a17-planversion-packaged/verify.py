@@ -525,7 +525,7 @@ def packaged_planversion_probe(**context) -> None:
         "PLM_P51_A17_MANAGER": "Synthetic Packaged User",
         "PLM_P51_A17_REVIEWER": "Synthetic Handover Customer",
         "PLM_P51_A17_PASSWORD": "synthetic-packaged-login-password",
-        "PLM_P51_A17_TEMP": r"D:\PLMToolTemp",
+        "PLM_P51_A17_TEMP": str(Path(os.environ["PLM_P51_TEMP_ROOT"]).resolve()),
     })
     edge = subprocess.run(
         ["node", str(ROOT / "validation/plt-pkg-01-a09-p51-a17-planversion-packaged/run-edge-browser.mjs"),
