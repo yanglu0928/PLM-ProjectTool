@@ -5,6 +5,7 @@ on:
     branches:
       - feature/cloud-sandbox-execution
       - feature/cloud-build-artifacts
+      - feature/p51-embedded-runtime-cache
   pull_request:
     branches:
       - main
