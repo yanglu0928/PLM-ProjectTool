@@ -278,6 +278,105 @@ jobs:
           $resolved = (Resolve-Path $temp).Path
           if (-not $resolved.StartsWith($env:RUNNER_TEMP, [StringComparison]::OrdinalIgnoreCase)) { throw "A27 temp escaped RUNNER_TEMP" }
           Remove-Item -LiteralPath $root -Recurse -Force
+  assemble-a17-current-app-candidate:
+    name: Project same-run parent into A17 validation candidate
+    needs: [backend, frontend, assemble-parent-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download same-run parent, backend wheel, and frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a17-parent
+      - uses: actions/download-artifact@v4
+        with:
+          name: plm-backend-wheel-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a17-backend
+      - uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a17-frontend
+      - name: Resolve pinned pgvector wheel and build A17 candidate
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP ("plm-a17-project-" + $env:GITHUB_RUN_ID)
+          New-Item -ItemType Directory -Path $root -Force | Out-Null
+          $env:PIP_CACHE_DIR = Join-Path $root "pip-cache"
+          $vector = Join-Path $root "wheelhouse"
+          New-Item -ItemType Directory -Path $vector -Force | Out-Null
+          python -m pip download --no-deps --only-binary=:all: --dest $vector "pgvector==0.5.0"
+          if ($LASTEXITCODE -ne 0) { throw "Pinned pgvector wheel retrieval failed" }
+          $parentArchive = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-a17-parent") -Filter "*.zip" | Select-Object -First 1
+          $parentSummary = Join-Path $env:RUNNER_TEMP "plm-a17-parent/verification-summary.json"
+          $backendWheel = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-a17-backend") -Filter "*.whl" | Select-Object -First 1
+          $frontend = Join-Path $env:RUNNER_TEMP "plm-a17-frontend"
+          if (-not $parentArchive -or -not (Test-Path $parentSummary) -or -not $backendWheel -or -not (Test-Path (Join-Path $frontend "index.html"))) { throw "Same-run A17 candidate inputs incomplete" }
+          $summary = Get-Content -LiteralPath $parentSummary -Raw | ConvertFrom-Json
+          if ($summary.source_commit -ne $env:GITHUB_SHA -or [string]$summary.workflow_run -ne $env:GITHUB_RUN_ID -or $summary.release_eligible -ne $false -or $summary.legal_clearance -ne $false) { throw "Parent provenance/state mismatch" }
+          $output = Join-Path $root "output"
+          New-Item -ItemType Directory -Path $output | Out-Null
+          python .	oolspackage_windows_current_app_candidate.py --parent $parentArchive.FullName --wheel $backendWheel.FullName --pgvector-wheel (Get-ChildItem $vector -Filter "*.whl" | Select-Object -First 1).FullName --frontend-dist $frontend --output-parent $output --source-commit $env:GITHUB_SHA --expected-parent-sha256 $summary.archive_sha256 --expected-workflow-run $env:GITHUB_RUN_ID
+          if ($LASTEXITCODE -ne 0) { throw "A17 current-app candidate projection failed" }
+          $result = Get-ChildItem $output -Recurse -Filter "verification-summary.json" | Select-Object -First 1
+          if (-not $result) { throw "A17 projection summary missing" }
+          New-Item -ItemType Directory -Path (Join-Path $env:RUNNER_TEMP "plm-a17-candidate-output") -Force | Out-Null
+          Copy-Item -LiteralPath $result.FullName -Destination (Join-Path $env:RUNNER_TEMP "plm-a17-candidate-output/verification-summary.json")
+          Copy-Item -LiteralPath (Join-Path $result.Directory.FullName "NOT-FOR-RELEASE-windows11-current-app.zip") -Destination (Join-Path $env:RUNNER_TEMP "plm-a17-candidate-output/")
+      - name: Upload same-run A17 validation candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-a17-current-app-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a17-candidate-output/*
+          if-no-files-found: error
+          retention-days: 14
+
+  run-a17-packaged-planversion:
+    name: A17 packaged PlanVersion Edge HTTPS PostgreSQL flow
+    needs: [assemble-a17-current-app-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install harness dependencies
+        working-directory: apps/backend
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test]"
+      - name: Download same-run A17 current-app candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-a17-current-app-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a17-run-input
+      - name: Run packaged PlanVersion flow in isolated D-drive temp
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP ("plm-p51-a27-" + $env:GITHUB_RUN_ID)
+          $summary = Join-Path $env:RUNNER_TEMP ("plm-p51-a27-result-" + $env:GITHUB_RUN_ID + ".json")
+          $candidate = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-a17-run-input") -Filter "*.zip" | Select-Object -First 1
+          $candidateSummary = Join-Path $env:RUNNER_TEMP "plm-a17-run-input/verification-summary.json"
+          if (-not $candidate -or -not (Test-Path $candidateSummary)) { throw "A17 candidate artifact incomplete" }
+          python .	oolsun_a17_packaged_cloud_validation.py --candidate $candidate.FullName --verification-summary $candidateSummary --run-root $root --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "Packaged A17 PlanVersion Edge/HTTPS/PG flow failed" }
+          if (-not (Test-Path $summary)) { throw "A17 success summary missing" }
+      - name: Upload bounded A17 business-flow evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-a17-planversion-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-p51-a27-result-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
   smoke-parent-postgresql:
     name: Clean extraction and temporary PostgreSQL lifecycle smoke
     needs: [assemble-parent-candidate]
