@@ -69,6 +69,7 @@ def stage_candidate(archive: Path, summary_path: Path, target: Path) -> dict:
     staging_resolved = staging.resolve(strict=True)
     if staging_resolved.parent != runner_temp:
         raise ValueError("staging temporary path escaped RUNNER_TEMP")
+    committed = False
     try:
         with zipfile.ZipFile(archive) as source:
             infos = source.infolist()
@@ -114,6 +115,7 @@ def stage_candidate(archive: Path, summary_path: Path, target: Path) -> dict:
         if target.exists() or target.is_symlink():
             raise ValueError("staging target appeared during extraction")
         os.replace(staging, target)
+        committed = True
         receipt = {
             "status": "HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED",
             "archive_sha256": archive_hash,
@@ -127,9 +129,10 @@ def stage_candidate(archive: Path, summary_path: Path, target: Path) -> dict:
             json.dumps(receipt, sort_keys=True, indent=2) + "\n", encoding="utf-8")
         return receipt
     except Exception:
-        if staging.exists():
-            resolved = staging.resolve(strict=True)
+        cleanup = target if committed else staging
+        if cleanup.exists():
+            resolved = cleanup.resolve(strict=True)
             if resolved.parent != runner_temp or resolved.drive.casefold() == "c:":
                 raise RuntimeError("refusing to clean outside runner-owned temp")
-            shutil.rmtree(staging)
+            shutil.rmtree(cleanup)
         raise

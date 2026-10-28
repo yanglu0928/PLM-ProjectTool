@@ -220,6 +220,7 @@ def main() -> int:
         raise ValueError("parent artifact summary or archive identity rejected")
 
     staging_target = runner_temp / ("plm-parent-stage-" + str(parent.get("workflow_run")))
+    existing_target = runner_temp / ("plm-parent-stage-existing-" + str(parent.get("workflow_run")))
     outside_target = runner_temp.parent / ("plm-parent-stage-outside-" + str(parent.get("workflow_run")))
     try:
         stage_candidate(args.archive, args.verification_summary, outside_target)
@@ -228,6 +229,20 @@ def main() -> int:
             raise ValueError("out-of-root staging rejection created a path")
     else:
         raise ValueError("out-of-root staging target unexpectedly accepted")
+    existing_target.mkdir()
+    sentinel = existing_target / "preserve.txt"
+    sentinel.write_text("preserve", encoding="ascii")
+    try:
+        stage_candidate(args.archive, args.verification_summary, existing_target)
+    except ValueError:
+        if not sentinel.is_file() or sentinel.read_text(encoding="ascii") != "preserve":
+            raise ValueError("existing staging target was changed")
+    else:
+        raise ValueError("existing staging target unexpectedly accepted")
+    if existing_target.parent != runner_temp or existing_target.drive.casefold() == "c:":
+        raise ValueError("refusing to clean staging test outside runner temp")
+    shutil.rmtree(existing_target)
+
     staging_result = stage_candidate(args.archive, args.verification_summary, staging_target)
     if (staging_result.get("status") != "HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED"
             or staging_result.get("payload_file_count") != parent.get("payload_file_count")
