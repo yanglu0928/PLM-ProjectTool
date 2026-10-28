@@ -14,3 +14,5 @@
 - 云端验收追加（run 40652307366，SHA `c306232b9c1f4eeed3456f9646099f68c858e2a1`）：路径边界检查通过；全量后端 3849 项中仅既有并发用例 `test_stop_waits_for_current_probe_before_marker_and_db_release` 在 3 秒 ready 等待处超时，其余下游 A17 jobs 因后端 job 失败而跳过。该结果不归因为本变更，需完整重跑以确认是否为 runner 抖动；当前 CR 未验收。
 
 - 云端验收追加（run 40652933457）：后端 3849 项、前端、PG18/pgvector、embedded backend、父候选构建均通过；候选投影前的 8 项单测有 1 项夹具失败。测试把模拟 RUNNER_TEMP 放进系统 C 盘临时目录，触发实现的非 C 盘保护。修正单测改用 hosted `RUNNER_TEMP` 中的唯一目录；该 run 的 A17 full flow 未执行，不计 CR 通过。
+
+- 范围修订：A17 嵌套链不止 `smoke_packaged_pg18_migration.py`，还由 `smoke_packaged_platform_write_https.py` 在 `PLM_TEST_TEMP_ROOT` 指向的 P42 负向 ACL 目录下创建独立 PG 集群。选择复用已经验证的 `PLM_P51_TEMP_ROOT` 作为该 smoke 的优先 temp 根；旧 `PLM_TEST_TEMP_ROOT` 保留为非 A17 fallback。run 40654144099 的 initdb 仍在负向目录收到 Permission denied，证明此前实现未覆盖完整调用链。迁移/业务数据不变，仍只操作此 smoke 创建的临时目录。
