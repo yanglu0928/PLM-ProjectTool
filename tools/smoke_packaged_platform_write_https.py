@@ -282,7 +282,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         "Synthetic public trust fixture only; this layout is not the fixed release candidate.\n",
         encoding="ascii")
     run = Path(tempfile.mkdtemp(prefix="plm-p42-platform-write-", dir=temp_root))
-    pg_run = Path(tempfile.mkdtemp(prefix="plm-pg18-platform-write-", dir=temp_root))
+    pg_temp_root = _migration_temp_root()
+    pg_run = Path(tempfile.mkdtemp(prefix="plm-pg18-platform-write-", dir=pg_temp_root))
     pg, runtime, caddy = (target / "runtime/pgsql/bin", target / "runtime/python/python.exe",
                           target / "runtime/caddy/caddy.exe")
     pg_port, api_port, https_port = _port(), _port(), _port()
@@ -705,7 +706,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             cleanup_errors.append("vault-inventory")
         if (run.parent.resolve(strict=True) != temp_root
                 or not run.name.startswith("plm-p42-platform-write-")
-                or pg_run.parent.resolve(strict=True) != temp_root
+                or pg_run.parent.resolve(strict=True) != pg_temp_root
                 or not pg_run.name.startswith("plm-pg18-platform-write-")
                 or target.parent != run.parent or not target.name.startswith("plm-install-rehearsal-")):
             cleanup_errors.append("scope")
