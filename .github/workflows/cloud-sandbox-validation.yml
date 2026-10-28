@@ -271,7 +271,7 @@ jobs:
           if (([IO.Path]::GetPathRoot($root)).TrimEnd('\\') -eq "C:") { throw "A27 requires non-C RUNNER_TEMP" }
           New-Item -ItemType Directory -Path $temp -Force | Out-Null
           $env:PYTHONPYCACHEPREFIX = Join-Path $temp "pycache"
-          python -B -m py_compile validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py
+          python -B -m py_compile validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py tools/run_a17_packaged_cloud_validation.py tools/package_windows_current_app_candidate.py
           if ($LASTEXITCODE -ne 0) { throw "A17 Python harness syntax validation failed" }
           node --check validation/plt-pkg-01-a09-p51-a17-planversion-packaged/run-edge-browser.mjs
           if ($LASTEXITCODE -ne 0) { throw "A17 Edge harness syntax validation failed" }
@@ -301,6 +301,11 @@ jobs:
         with:
           name: plm-frontend-dist-${{ github.sha }}
           path: ${{ runner.temp }}/plm-a17-frontend
+      - name: Run current-app projection unit tests
+        shell: pwsh
+        run: |
+          python -m unittest tools.tests.test_package_windows_current_app_candidate
+          if ($LASTEXITCODE -ne 0) { throw "Current-app projection unit tests failed" }
       - name: Resolve pinned pgvector wheel and build A17 candidate
         shell: pwsh
         run: |
@@ -313,10 +318,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Pinned pgvector wheel retrieval failed" }
           $parentArchive = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-a17-parent") -Filter "*.zip" | Select-Object -First 1
           $parentSummary = Join-Path $env:RUNNER_TEMP "plm-a17-parent/verification-summary.json"
-          $backendWheel = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-a17-backend") -Filter "*.whl" | Select-Object -First 1
+          $backendDir = Join-Path $env:RUNNER_TEMP "plm-a17-backend"
+          $backendWheel = Get-ChildItem $backendDir -Filter "*.whl" | Select-Object -First 1
+          $backendManifest = Get-Content -LiteralPath (Join-Path $backendDir "cloud-build-manifest.json") -Raw | ConvertFrom-Json
           $frontend = Join-Path $env:RUNNER_TEMP "plm-a17-frontend"
+          $frontendManifest = Get-Content -LiteralPath (Join-Path $frontend "cloud-build-manifest.json") -Raw | ConvertFrom-Json
           if (-not $parentArchive -or -not (Test-Path $parentSummary) -or -not $backendWheel -or -not (Test-Path (Join-Path $frontend "index.html"))) { throw "Same-run A17 candidate inputs incomplete" }
           $summary = Get-Content -LiteralPath $parentSummary -Raw | ConvertFrom-Json
+          $backendHash = (Get-FileHash -LiteralPath $backendWheel.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($backendManifest.source_commit -ne $env:GITHUB_SHA -or [string]$backendManifest.workflow_run -ne $env:GITHUB_RUN_ID -or $backendManifest.release_eligible -ne $false -or $backendManifest.sha256 -ne $backendHash) { throw "Backend artifact provenance/hash mismatch" }
+          if ($frontendManifest.source_commit -ne $env:GITHUB_SHA -or [string]$frontendManifest.workflow_run -ne $env:GITHUB_RUN_ID -or $frontendManifest.release_eligible -ne $false) { throw "Frontend artifact provenance mismatch" }
+          Remove-Item -LiteralPath (Join-Path $frontend "cloud-build-manifest.json") -Force
           if ($summary.source_commit -ne $env:GITHUB_SHA -or [string]$summary.workflow_run -ne $env:GITHUB_RUN_ID -or $summary.release_eligible -ne $false -or $summary.legal_clearance -ne $false) { throw "Parent provenance/state mismatch" }
           $output = Join-Path $root "output"
           New-Item -ItemType Directory -Path $output | Out-Null
@@ -348,11 +360,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - name: Install harness dependencies
+      - name: Install harness dependencies on runner temp
         working-directory: apps/backend
+        shell: pwsh
         run: |
+          $installRoot = Join-Path $env:RUNNER_TEMP ("plm-a17-harness-deps-" + $env:GITHUB_RUN_ID)
+          New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+          $env:TEMP = $installRoot
+          $env:TMP = $installRoot
+          $env:PIP_CACHE_DIR = Join-Path $installRoot "pip-cache"
           python -m pip install --upgrade pip
+          if ($LASTEXITCODE -ne 0) { throw "pip bootstrap failed" }
           python -m pip install -e ".[test]"
+          if ($LASTEXITCODE -ne 0) { throw "A17 harness dependency install failed" }
       - name: Download same-run A17 current-app candidate
         uses: actions/download-artifact@v4
         with:
