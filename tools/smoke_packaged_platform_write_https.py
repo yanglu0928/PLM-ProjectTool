@@ -39,7 +39,7 @@ from install_windows_caddy_go_atomic_rehearsal import rehearse
 from preflight_packaged_production_startup_windows import PUBLIC_KEY_RELATIVE
 from smoke_caddy_go_layout_https import verify_layout
 from smoke_caddy_same_origin_https import caddyfile, synthetic_certificate
-from smoke_packaged_pg18_migration import _port, _run
+from smoke_packaged_pg18_migration import _migration_temp_root, _port, _run
 from smoke_windows_pg18_sidecar import _start_pg_ctl
 from plm_assistant.modules.auth.infrastructure.scrypt_password import ScryptPasswordHasher
 from plm_assistant.modules.license.application.license_validation import PRODUCT_CODE
@@ -234,7 +234,10 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         raise ValueError("Windows isolated smoke only")
     if (synthetic_license_document_factory is None) != (licensed_https_probe is None):
         raise ValueError("synthetic licensed HTTPS callbacks must be paired")
-    temp_root = Path(os.environ.get("PLM_TEST_TEMP_ROOT", r"D:\PLMToolTemp"))
+    if os.environ.get("PLM_P51_TEMP_ROOT"):
+        temp_root = _migration_temp_root()
+    else:
+        temp_root = Path(os.environ.get("PLM_TEST_TEMP_ROOT", r"D:\PLMToolTemp"))
     if (not temp_root.is_absolute() or temp_root.drive.upper() != "D:"
             or temp_root.name != "PLMToolTemp" or not str(temp_root).isascii()):
         raise ValueError("packaged platform smoke requires an explicit ASCII D: PLMToolTemp root")
