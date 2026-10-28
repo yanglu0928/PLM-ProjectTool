@@ -10,7 +10,7 @@
 - A20 父包会用 embedded backend archive、frontend、PG18和非敏感 bootstrap 样例组成候选，产物清单/哈希已在 hosted runner通过。
 - A21 发现生产公钥资源 `trust/product_public_key.json` 不在当前产品源分支；应用生产License组合根因此拒绝启动。
 - 当前父包manifest的 `known_gaps` 以自由文本记缺口，没有可由下游安装/审查工具稳定读取的启动前置状态；操作者无法直接从机器可读验收摘要区分“完整性已验”和“生产启动已具备”。
-- embedded runtime内产品公钥预期路径为 `payload/runtime/python/packages/plm_assistant/modules/license/trust/product_public_key.json`（由现有Windows打包预检路径确认）。父包装配器已对embedded archive逐项验证并持有规范payload路径集合，无须解包/执行产品程序。
+- embedded runtime内产品公钥预期路径为 `payload/runtime/packages/plm_assistant/modules/license/trust/product_public_key.json`（由现有Windows打包预检路径确认）。父包装配器已对embedded archive逐项验证并持有规范payload路径集合，无须解包/执行产品程序。
 
 ## 单一问题与拟议实现
 

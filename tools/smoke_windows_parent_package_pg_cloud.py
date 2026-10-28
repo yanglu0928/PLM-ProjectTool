@@ -65,7 +65,7 @@ def free_loopback_port() -> int:
 def probe_packaged_production_entrypoint(root: Path) -> str:
     if database_credential_present():
         return "SKIPPED_EXISTING_CREDENTIAL_UNSCOPED"
-    runtime = root / "payload" / "runtime" / "python"
+    runtime = root / "payload" / "runtime"
     python = runtime / "python.exe"
     if not python.is_file() or python.is_symlink():
         raise ValueError("packaged Python runtime missing for startup probe")

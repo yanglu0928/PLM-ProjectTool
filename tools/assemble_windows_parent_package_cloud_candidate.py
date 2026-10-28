@@ -216,7 +216,7 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
     output.mkdir(parents=True, exist_ok=False)
     archive = output / f"NOT-FOR-RELEASE-windows-parent-{run_id}.zip"
     hashes: dict[str, str] = {}
-    product_key_path = "payload/runtime/python/packages/plm_assistant/modules/license/trust/product_public_key.json"
+    product_key_path = "payload/runtime/packages/plm_assistant/modules/license/trust/product_public_key.json"
     product_key_present = product_key_path in embedded_hashes
     startup_blockers = [] if product_key_present else ["FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"]
     startup_preflight = {

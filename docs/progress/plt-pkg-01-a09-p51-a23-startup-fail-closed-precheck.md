@@ -7,7 +7,7 @@
 
 ## 编码前检查
 
-- 父包运行时位置：`payload/runtime/python/python.exe`；应用包位于 `payload/runtime/python/packages`。
+- 父包运行时位置：`payload/runtime/python.exe`；应用包位于 `payload/runtime/packages`。
 - `serve_windows` 只允许回环绑定，错误时以固定、无敏感信息的消息退出。生产应用组合先从当前Windows Credential Manager读取数据库凭据，再构造生产API；没有Vault目标时应在绑定端口前拒绝。
 - A22父包manifest明确报告产品公钥缺失，`PackagedProductKey` 和License组合根也会fail-closed。A23测试不注入或伪造公钥、凭据、License或数据库。
 - 当前父包runner smoke已清洁解包、哈希验证并在相同runner临时D盘启动独立临时PG。A23复用此测试生命周期，先检查数据库凭据目标不存在，再运行包内生产入口；如Vault意外存在，跳过启动并将结果记为不可验证，避免触及任何不明数据库。
@@ -21,6 +21,10 @@
 3. 清理环境中所有 `PLM_*` 与 `PYTHONPATH`，用包内Python隔离模式启动入口，要求标准输出为空、退出码为1且stderr精确为固定拒绝消息。
 4. 通过重新绑定所选端口确认没有API listener；报告仅说明无凭据/信任时失败关闭，不把它称为正式License验证。
 5. PG smoke、服务探测、配置和数据临时文件完成后清理runner拥有资源。
+
+## 首轮偏差记录
+
+- 首次run `40611975169` 在凭据查询前因helper缺少`sys`导入停止，尚未执行包内进程；修复后run `40613037995` 在包内运行时路径校验拒绝，亦未执行生产入口。依据embedded backend打包器，实际布局为`payload/runtime/python.exe`和`payload/runtime/packages`；同步修正路径后从全新hosted构建重验。失败run不计PASS。
 
 ## 风险、回滚与验收
 
