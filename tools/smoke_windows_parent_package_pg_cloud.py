@@ -11,6 +11,8 @@ import socket
 import sys
 import subprocess
 import time
+import urllib.error
+import urllib.request
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -102,6 +104,66 @@ def probe_packaged_production_entrypoint(root: Path) -> str:
     return "FAIL_CLOSED_MISSING_ACCOUNT_DATABASE_CREDENTIAL"
 
 
+def smoke_packaged_web(root: Path) -> dict:
+    caddy = root / "payload" / "runtime" / "caddy" / "caddy.exe"
+    frontend = root / "payload" / "frontend" / "dist"
+    if not caddy.is_file() or caddy.is_symlink() or not (frontend / "index.html").is_file():
+        raise ValueError("packaged Caddy or frontend index missing")
+    api_port, web_port = free_loopback_port(), free_loopback_port()
+    while api_port == web_port:
+        web_port = free_loopback_port()
+    data = root / "web-smoke"
+    data.mkdir()
+    handler = ("from http.server import BaseHTTPRequestHandler, HTTPServer\n"
+               "class H(BaseHTTPRequestHandler):\n"
+               " def do_GET(self):\n"
+               "  self.send_response(200); self.end_headers(); self.wfile.write(b'api-probe-ok')\n"
+               "HTTPServer(('127.0.0.1'," + str(api_port) + "),H).serve_forever()\n")
+    api = subprocess.Popen([sys.executable, "-I", "-c", handler], cwd=str(data),
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    caddyfile = data / "Caddyfile"
+    caddyfile.write_text(
+        "{\n  admin off\n  auto_https off\n}\n"
+        "http://127.0.0.1:%d {\n"
+        "  @api path /api/v1/*\n"
+        "  handle @api {\n    reverse_proxy 127.0.0.1:%d\n  }\n"
+        "  handle {\n    root * \"%s\"\n    try_files {path} /index.html\n    file_server\n  }\n}\n"
+        % (web_port, api_port, frontend.as_posix()), encoding="utf-8")
+    edge = subprocess.Popen([str(caddy), "run", "--config", str(caddyfile), "--adapter", "caddyfile"],
+                            cwd=str(data), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    base = "http://127.0.0.1:%d" % web_port
+    try:
+        deadline = time.monotonic() + 30
+        last_error = None
+        while time.monotonic() < deadline:
+            if edge.poll() is not None or api.poll() is not None:
+                raise RuntimeError("Caddy/API loopback smoke process exited")
+            try:
+                with urllib.request.urlopen(base + "/__spa_fallback_probe__", timeout=2) as response:
+                    page = response.read()
+                    if response.status != 200 or not page:
+                        raise ValueError("SPA fallback did not serve the frontend")
+                with urllib.request.urlopen(base + "/api/v1/probe", timeout=2) as response:
+                    if response.status != 200 or response.read() != b"api-probe-ok":
+                        raise ValueError("API reverse proxy did not return the loopback probe")
+                return {"status": "LOOPBACK_WEB_STATIC_AND_API_PROXY_PASS_LIMITED",
+                        "caddy_version": "2.11.4", "listener": "127.0.0.1",
+                        "production_api_started": False, "https_tested": False}
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+                last_error = exc
+                time.sleep(.25)
+        raise RuntimeError("loopback web smoke timed out: %s" % last_error)
+    finally:
+        for process in (edge, api):
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=10)
+
+
 def run_checked(args: list[str], timeout: int = 120) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(args, capture_output=True, text=True, timeout=timeout, check=False)
     if result.returncode:
@@ -188,6 +250,7 @@ def main() -> int:
         raise ValueError("pgvector extension binary missing")
 
     startup_entrypoint_probe = probe_packaged_production_entrypoint(root)
+    web_service_smoke = smoke_packaged_web(root)
 
     data_dir = root / "pgdata"
     log_path = root / "postgres.log"
@@ -243,6 +306,7 @@ def main() -> int:
             "parent_payload_file_count": len(expected),
             "startup_preflight": startup,
             "startup_entrypoint_probe": startup_entrypoint_probe,
+            "web_service_smoke": web_service_smoke,
         }
     finally:
         if start_attempted and data_dir.is_dir():
