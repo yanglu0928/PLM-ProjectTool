@@ -282,12 +282,13 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         "Synthetic public trust fixture only; this layout is not the fixed release candidate.\n",
         encoding="ascii")
     run = Path(tempfile.mkdtemp(prefix="plm-p42-platform-write-", dir=temp_root))
+    pg_run = Path(tempfile.mkdtemp(prefix="plm-pg18-platform-write-", dir=temp_root))
     pg, runtime, caddy = (target / "runtime/pgsql/bin", target / "runtime/python/python.exe",
                           target / "runtime/caddy/caddy.exe")
     pg_port, api_port, https_port = _port(), _port(), _port()
     while len({pg_port, api_port, https_port}) != 3:
         pg_port, api_port, https_port = _port(), _port(), _port()
-    data, log = run / "pgdata", run / "postgresql.log"
+    data, log = pg_run / "pgdata", pg_run / "postgresql.log"
     api_process = caddy_process = None
     api_log = run / "packaged-api-startup.log"
     pg_started = False
@@ -324,8 +325,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             nonlocal pg_logical_restore_count
             suffix = uuid.uuid4().hex[:10]
             restored_database = f"{database[:45]}_r_{suffix}"
-            backup = run / f"p51-a11-{suffix}.dump"
-            if backup.exists() or not run.is_dir():
+            backup = pg_run / f"p51-a11-{suffix}.dump"
+            if backup.exists() or not pg_run.is_dir():
                 raise ValueError("owned PostgreSQL backup path is not fresh")
             pg_env = {name: value for name, value in os.environ.items()
                       if not name.upper().startswith("PG")}
@@ -337,7 +338,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                       f"--dbname={database}", "--format=custom", "--no-owner",
                       "--no-acl", f"--file={backup}"], env=pg_env, timeout=180)
                 if (not backup.is_file() or backup.stat().st_size < 64 or
-                        backup.resolve().parent != run.resolve()):
+                        backup.resolve().parent != pg_run.resolve()):
                     raise ValueError("packaged pg_dump did not produce an owned backup")
                 with psycopg.connect(host="127.0.0.1", port=pg_port, user="poc_admin",
                                      dbname="postgres", autocommit=True) as admin:
@@ -704,12 +705,15 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             cleanup_errors.append("vault-inventory")
         if (run.parent.resolve(strict=True) != temp_root
                 or not run.name.startswith("plm-p42-platform-write-")
+                or pg_run.parent.resolve(strict=True) != temp_root
+                or not pg_run.name.startswith("plm-pg18-platform-write-")
                 or target.parent != run.parent or not target.name.startswith("plm-install-rehearsal-")):
             cleanup_errors.append("scope")
         elif pg_stopped and all(process is None or process.poll() is not None
                                   for process in (api_process, caddy_process)):
             try:
                 shutil.rmtree(run)
+                shutil.rmtree(pg_run)
                 shutil.rmtree(target)
             except OSError:
                 cleanup_errors.append("temporary-files")
