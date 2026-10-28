@@ -31,6 +31,8 @@ META = ("manifest.json", "payload-sha256sums.txt", "third-party-inventory.json")
 
 def target_name(source: str) -> str:
     safe_name(source)
+    if source == "payload/README-FIRST.md":
+        return "app/README-FIRST.md"
     prefixes = (
         ("payload/runtime/", "runtime/python/"),
         ("payload/pgsql/", "runtime/pgsql/"),
