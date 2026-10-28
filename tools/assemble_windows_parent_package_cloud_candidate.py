@@ -216,6 +216,15 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
     output.mkdir(parents=True, exist_ok=False)
     archive = output / f"NOT-FOR-RELEASE-windows-parent-{run_id}.zip"
     hashes: dict[str, str] = {}
+    product_key_path = "payload/runtime/python/packages/plm_assistant/modules/license/trust/product_public_key.json"
+    product_key_present = product_key_path in embedded_hashes
+    startup_blockers = [] if product_key_present else ["FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"]
+    startup_preflight = {
+        "formal_startup_ready": False,
+        "packaged_product_public_key_resource_present": product_key_present,
+        "blocker_codes": startup_blockers,
+    }
+
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED,
                          compresslevel=1, allowZip64=True) as bundle:
         add_zip_payload(bundle, embedded_zip, embedded_hashes, "payload/runtime/", hashes)
@@ -263,6 +272,7 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
             "payload_file_count": len(hashes),
             "bootstrap_example_data_root": "D:/PLMTool/data",
             "bootstrap_is_example_only": True,
+            "startup_preflight": startup_preflight,
             "payload_sha256sums_sha256": sha_bytes(sums),
             "known_gaps": [
                 "not installed or started; no packaged Edge/HTTPS/PostgreSQL smoke",
@@ -299,6 +309,7 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
         "backend_distribution_count": embedded_manifest.get("distribution_count"),
         "frontend_file_count": len(frontend_files), "pg18_payload_file_count": len(pg_hashes),
         "installation_performed": False, "database_started": False,
+        "startup_preflight": startup_preflight,
     }
     (output / "verification-summary.json").write_text(
         json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
