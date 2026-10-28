@@ -388,7 +388,7 @@ jobs:
           $candidate = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-a17-run-input") -Filter "*.zip" | Select-Object -First 1
           $candidateSummary = Join-Path $env:RUNNER_TEMP "plm-a17-run-input/verification-summary.json"
           if (-not $candidate -or -not (Test-Path $candidateSummary)) { throw "A17 candidate artifact incomplete" }
-          python ./toolsun_a17_packaged_cloud_validation.py --candidate $candidate.FullName --verification-summary $candidateSummary --run-root $root --summary-out $summary
+          python ./tools/run_a17_packaged_cloud_validation.py --candidate $candidate.FullName --verification-summary $candidateSummary --run-root $root --summary-out $summary
           if ($LASTEXITCODE -ne 0) { throw "Packaged A17 PlanVersion Edge/HTTPS/PG flow failed" }
           if (-not (Test-Path $summary)) { throw "A17 success summary missing" }
       - name: Upload bounded A17 business-flow evidence
