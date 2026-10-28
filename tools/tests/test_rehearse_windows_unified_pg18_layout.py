@@ -18,6 +18,7 @@ class UnifiedPg18LayoutTests(unittest.TestCase):
         self.assertEqual(target_name("payload/runtime/python.exe"), "runtime/python/python.exe")
         self.assertEqual(target_name("payload/frontend/dist/index.html"), "app/frontend/dist/index.html")
         self.assertEqual(target_name("payload/README-FIRST.md"), "app/README-FIRST.md")
+        self.assertEqual(target_name("payload/start-trial.ps1"), "app/start-trial.ps1")
         self.assertEqual(target_name("provenance/embedded-backend-manifest.json"),
                          "app/package-metadata/provenance/embedded-backend-manifest.json")
         with self.assertRaisesRegex(ValueError, "unmapped"):
