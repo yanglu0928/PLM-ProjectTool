@@ -12,8 +12,12 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 if (!/^https:\/\/localhost:\d{2,5}$/.test(origin ?? "") || !uuid.test(project ?? "")
   || manager !== "Synthetic Packaged User" || reviewer !== "Synthetic Handover Customer"
   || password !== "synthetic-packaged-login-password"
-  || resolve(tempRoot ?? "") !== resolve("D:\\PLMToolTemp")) {
-  throw new Error("Owned P51-A17 synthetic identities and D-drive temp root required");
+  || !tempRoot || resolve(tempRoot).toLowerCase().includes("\\\\")
+  || resolve(tempRoot).toLowerCase().startsWith("c:\\\\")
+  || resolve(process.env.RUNNER_TEMP ?? "") === resolve(tempRoot)
+  || !resolve(tempRoot).toLowerCase().startsWith(resolve(process.env.RUNNER_TEMP ?? "").toLowerCase() + sep.toLowerCase())
+  || !resolve(process.env.RUNNER_TEMP ?? "").startsWith("d:\\\\")) {
+  throw new Error("Owned P51-A17 synthetic identities and non-C RUNNER_TEMP child required");
 }
 
 const profile = await mkdtemp(join(tempRoot, "plm-p51-a17-edge-"));
