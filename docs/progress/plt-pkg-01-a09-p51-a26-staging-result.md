@@ -12,3 +12,10 @@
 
 - Run 40623688321：基础CI、同提交组件和父包组装/readback成功；D盘staging在候选文件名安全检查时拒绝，错误仅报告存在被禁止扩展名。未生成staging目标；stage工具异常分支清理临时目录。A25/A24/PG后续烟测未执行，run不计通过。
 - 下一轮诊断只输出被拦截扩展名，不打印完整归档路径或文件内容；据实际已固定组件清单判断是否应排除该类型，不能放松对密钥、凭据和日志的禁止。
+
+
+## A26 被拒扩展名定位
+
+- run 40624928787在安全文件名检查报告禁止扩展名 .pem。编码前复核既有嵌入式backend构建器：仓库明确只纳入精确路径 packages/certifi/cacert.pem，并核验至少包含证书块且不含 PRIVATE KEY；其他 PEM 和 .key/.pfx/.p12仍列入阻止列表。
+- 下一步仅允许 staged archive 内确切路径 payload/runtime/packages/certifi/cacert.pem，并要求内容由一个或多个完整BEGIN/END CERTIFICATE PEM块组成、仅含Base64与空白、不含PRIVATE KEY标记；其余.pem一律拒绝。仍先以父包SHA-256清单校验该文件内容，不向包写入任何密钥。
+- 此调整实施前记录；尚未通过hosted重验。
