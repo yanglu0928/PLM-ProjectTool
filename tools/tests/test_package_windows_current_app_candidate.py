@@ -27,8 +27,17 @@ class CurrentAppCandidateTests(unittest.TestCase):
         runner_temp = Path(os.environ["RUNNER_TEMP"])
         with tempfile.TemporaryDirectory(dir=runner_temp) as temporary:
             runner = Path(temporary)
-            owned = runner / "plm-p51-a27-test" / "PLMToolTemp"
+            run_root = runner / "plm-p51-a27-test"
+            owned = run_root / "PLMToolTemp"
+            pg_owned = run_root / "PLMPostgresTemp"
             owned.mkdir(parents=True)
+            pg_owned.mkdir()
+            with patch.dict(os.environ, {
+                "RUNNER_TEMP": str(runner),
+                "PLM_P51_TEMP_ROOT": str(owned),
+                "PLM_PG_TEMP_ROOT": str(pg_owned),
+            }, clear=True):
+                self.assertEqual(_migration_temp_root(), pg_owned.resolve())
             with patch.dict(os.environ, {
                 "RUNNER_TEMP": str(runner),
                 "PLM_P51_TEMP_ROOT": str(owned),
