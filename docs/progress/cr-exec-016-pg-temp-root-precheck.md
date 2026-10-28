@@ -13,3 +13,5 @@
 - 2026-10-28 hosted run 40652933457：后端 3849/3849、前端、PG18/pgvector、embedded backend 与 parent candidate 构建通过。新增路径单测 fixture 使用默认 C 盘系统 temp，正确被边界规则拒绝；已记录为测试夹具错误，修改夹具使用 RUNNER_TEMP 的独立子目录后重跑。A17 full flow 因投影检查失败未运行。
 
 - 2026-10-28 hosted run 40654144099：后端3849项、前端、运行时组装、父包和A17候选投影、父包PG smoke全部通过；A17真实链仍在 `smoke_packaged_platform_write_https.py` 的 PG initdb 失败。路径显示 temp_root 被 P42 负向 ACL 夹具设为 `plm-p42-platform-write-*`。已将 CR-EXEC-016 扩展至该嵌套 smoke：A17 优先用 PLM_P51_TEMP_ROOT，非 A17 保留 PLM_TEST_TEMP_ROOT fallback。不能记 PASS。
+
+- 2026-10-28 hosted run 40656184670：CR 临时根选择单测、父包 PG smoke均通过，但 Platform Write nested smoke 仍把 PG `pgdata` 写在 P42 `plm-p42-platform-write-*` 目录并收到拒绝。扩展方案：独立创建 sibling PostgreSQL 临时目录，不与 P42 专用权限工作目录共用；重新执行 A17。
