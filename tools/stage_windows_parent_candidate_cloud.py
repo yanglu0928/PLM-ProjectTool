@@ -38,7 +38,7 @@ def safe_name(name: str) -> str:
                     *(f"lpt{i}" for i in range(1, 10))} for part in path.parts)):
         raise ValueError("unsafe candidate path")
     if Path(name).suffix.casefold() in BLOCKED_SUFFIXES:
-        raise ValueError("candidate contains private or runtime file")
+        raise ValueError("candidate contains prohibited suffix: " + Path(name).suffix.casefold())
     return name
 
 
