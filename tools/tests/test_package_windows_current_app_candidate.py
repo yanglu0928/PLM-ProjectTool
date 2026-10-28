@@ -70,7 +70,8 @@ class CurrentAppCandidateTests(unittest.TestCase):
                 f"{value}  {name}\n" for name, value in sorted(hashes.items())))
             archive.writestr("third-party-inventory.json", "{\"review\":true}\n")
             archive.writestr("manifest.json", json.dumps({
-                "version": "0.1.0.dev0", "payload_file_count": len(payload),
+                "version": "0.1.0.dev0", "kind": "WINDOWS11_CURRENT_APP_NON_RELEASE_CANDIDATE",
+                "payload_file_count": len(payload),
                 "release_eligible": False, "legal_clearance": False,
                 "formal_tls_material_included": False,
             }))

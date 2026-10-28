@@ -2,15 +2,21 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import json
 import os
 import shutil
 import socket
+import sys
 import subprocess
 import time
+import urllib.error
+import urllib.request
 import zipfile
 from pathlib import Path, PurePosixPath
+
+from stage_windows_parent_candidate_cloud import stage_candidate
 
 
 def sha(data: bytes) -> str:
@@ -31,6 +37,158 @@ def safe_name(name: str) -> str:
             or any(part in ("", ".", "..") for part in parts)):
         raise ValueError("unsafe parent package path")
     return name
+
+
+DATABASE_CREDENTIAL_TARGET = "PLMProjectTool/Database"
+
+
+def database_credential_present() -> bool:
+    if sys.platform != "win32":
+        raise ValueError("Windows credential preflight required")
+    library = ctypes.WinDLL("Advapi32", use_last_error=True)
+    library.CredReadW.argtypes = [ctypes.c_wchar_p, ctypes.c_ulong, ctypes.c_ulong,
+                                 ctypes.POINTER(ctypes.c_void_p)]
+    library.CredReadW.restype = ctypes.c_int
+    library.CredFree.argtypes = [ctypes.c_void_p]
+    pointer = ctypes.c_void_p()
+    found = library.CredReadW(DATABASE_CREDENTIAL_TARGET, 1, 0, ctypes.byref(pointer))
+    if found:
+        library.CredFree(pointer)
+        return True
+    if ctypes.get_last_error() != 1168:
+        raise ValueError("database credential existence check unavailable")
+    return False
+
+
+def free_loopback_port() -> int:
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        return listener.getsockname()[1]
+
+
+def probe_packaged_production_entrypoint(root: Path) -> str:
+    if database_credential_present():
+        return "SKIPPED_EXISTING_CREDENTIAL_UNSCOPED"
+    runtime = root / "payload" / "runtime"
+    python = runtime / "python.exe"
+    if not python.is_file() or python.is_symlink():
+        raise ValueError("packaged Python runtime missing for startup probe")
+    probe = root / "startup-preflight"
+    probe.mkdir()
+    data = probe / "data"
+    data.mkdir()
+    if not str(probe).isascii():
+        raise ValueError("startup probe root must be ASCII")
+    port = free_loopback_port()
+    config = probe / "bootstrap.yaml"
+    config.write_text(
+        f'bind_host: "127.0.0.1"\nbind_port: {port}\n'
+        f'data_root: "{data.as_posix()}"\nlog_level: "ERROR"\n'
+        'trusted_origins: ["https://localhost"]\n', encoding="ascii")
+    env = {key: value for key, value in os.environ.items()
+           if not key.upper().startswith("PLM_")}
+    env.pop("PYTHONPATH", None)
+    windir = os.environ.get("WINDIR")
+    if not windir:
+        raise ValueError("Windows system directory unavailable")
+    env["PATH"] = os.pathsep.join(
+        (str(runtime), str(Path(windir) / "System32"), windir))
+    launch = subprocess.run(
+        [str(python), "-I", "-B", "-m",
+         "plm_assistant.entrypoints.serve_windows", str(config), "--platform-write"],
+        capture_output=True, text=True, errors="replace", timeout=30, env=env)
+    if (launch.returncode != 1 or launch.stdout.strip()
+            or launch.stderr.strip() !=
+            "Production server unavailable; configuration or credential rejected."):
+        raise ValueError("packaged production entrypoint did not fail closed")
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", port))
+    return "FAIL_CLOSED_MISSING_ACCOUNT_DATABASE_CREDENTIAL"
+
+
+def probe_packaged_startup_guard(root: Path) -> str:
+    script = root / "payload" / "start-trial.ps1"
+    if not script.is_file() or script.is_symlink():
+        raise ValueError("packaged startup guard missing")
+    shell = shutil.which("pwsh")
+    if not shell:
+        raise ValueError("PowerShell 7 unavailable on hosted Windows runner")
+    env = {key: value for key, value in os.environ.items()
+           if not key.upper().startswith("PLM_")}
+    env.pop("PYTHONPATH", None)
+    result = subprocess.run([shell, "-NoLogo", "-NoProfile", "-NonInteractive",
+                             "-File", str(script)], cwd=str(script.parent),
+                            capture_output=True, text=True, errors="replace",
+                            timeout=20, env=env)
+    if (result.returncode != 1 or result.stdout.strip()
+            or result.stderr.strip() !=
+            "Packaged production startup blocked; trust prerequisites are not ready."):
+        diagnostic = (f"exit={result.returncode}; stdout={result.stdout[-500:]!r}; "
+                      f"stderr={result.stderr[-1200:]!r}")
+        raise ValueError("startup guard did not preserve fixed fail-closed response: " + diagnostic)
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", free_loopback_port()))
+    return "FAIL_CLOSED_MISSING_FORMAL_PRODUCT_TRUST"
+
+
+def smoke_packaged_web(root: Path) -> dict:
+    caddy = root / "payload" / "runtime" / "caddy" / "caddy.exe"
+    frontend = root / "payload" / "frontend" / "dist"
+    if not caddy.is_file() or caddy.is_symlink() or not (frontend / "index.html").is_file():
+        raise ValueError("packaged Caddy or frontend index missing")
+    api_port, web_port = free_loopback_port(), free_loopback_port()
+    while api_port == web_port:
+        web_port = free_loopback_port()
+    data = root / "web-smoke"
+    data.mkdir()
+    handler = ("from http.server import BaseHTTPRequestHandler, HTTPServer\n"
+               "class H(BaseHTTPRequestHandler):\n"
+               " def do_GET(self):\n"
+               "  self.send_response(200); self.end_headers(); self.wfile.write(b'api-probe-ok')\n"
+               "HTTPServer(('127.0.0.1'," + str(api_port) + "),H).serve_forever()\n")
+    api = subprocess.Popen([sys.executable, "-I", "-c", handler], cwd=str(data),
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    caddyfile = data / "Caddyfile"
+    caddyfile.write_text(
+        "{\n  admin off\n  auto_https off\n}\n"
+        "http://127.0.0.1:%d {\n"
+        "  @api path /api/v1/*\n"
+        "  handle @api {\n    reverse_proxy 127.0.0.1:%d\n  }\n"
+        "  handle {\n    root * \"%s\"\n    try_files {path} /index.html\n    file_server\n  }\n}\n"
+        % (web_port, api_port, frontend.as_posix()), encoding="utf-8")
+    edge = subprocess.Popen([str(caddy), "run", "--config", str(caddyfile), "--adapter", "caddyfile"],
+                            cwd=str(data), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    base = "http://127.0.0.1:%d" % web_port
+    try:
+        deadline = time.monotonic() + 30
+        last_error = None
+        while time.monotonic() < deadline:
+            if edge.poll() is not None or api.poll() is not None:
+                raise RuntimeError("Caddy/API loopback smoke process exited")
+            try:
+                with urllib.request.urlopen(base + "/__spa_fallback_probe__", timeout=2) as response:
+                    page = response.read()
+                    if response.status != 200 or not page:
+                        raise ValueError("SPA fallback did not serve the frontend")
+                with urllib.request.urlopen(base + "/api/v1/probe", timeout=2) as response:
+                    if response.status != 200 or response.read() != b"api-probe-ok":
+                        raise ValueError("API reverse proxy did not return the loopback probe")
+                return {"status": "LOOPBACK_WEB_STATIC_AND_API_PROXY_PASS_LIMITED",
+                        "caddy_version": "2.11.4", "listener": "127.0.0.1",
+                        "production_api_started": False, "https_tested": False}
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+                last_error = exc
+                time.sleep(.25)
+        raise RuntimeError("loopback web smoke timed out: %s" % last_error)
+    finally:
+        for process in (edge, api):
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=10)
 
 
 def run_checked(args: list[str], timeout: int = 120) -> subprocess.CompletedProcess[str]:
@@ -61,6 +219,40 @@ def main() -> int:
             or parent.get("archive_sha256") != sha_file(args.archive)):
         raise ValueError("parent artifact summary or archive identity rejected")
 
+    staging_target = runner_temp / ("plm-parent-stage-" + str(parent.get("workflow_run")))
+    existing_target = runner_temp / ("plm-parent-stage-existing-" + str(parent.get("workflow_run")))
+    outside_target = runner_temp.parent / ("plm-parent-stage-outside-" + str(parent.get("workflow_run")))
+    try:
+        stage_candidate(args.archive, args.verification_summary, outside_target)
+    except ValueError:
+        if outside_target.exists():
+            raise ValueError("out-of-root staging rejection created a path")
+    else:
+        raise ValueError("out-of-root staging target unexpectedly accepted")
+    existing_target.mkdir()
+    sentinel = existing_target / "preserve.txt"
+    sentinel.write_text("preserve", encoding="ascii")
+    try:
+        stage_candidate(args.archive, args.verification_summary, existing_target)
+    except ValueError:
+        if not sentinel.is_file() or sentinel.read_text(encoding="ascii") != "preserve":
+            raise ValueError("existing staging target was changed")
+    else:
+        raise ValueError("existing staging target unexpectedly accepted")
+    if existing_target.parent != runner_temp or existing_target.drive.casefold() == "c:":
+        raise ValueError("refusing to clean staging test outside runner temp")
+    shutil.rmtree(existing_target)
+
+    staging_result = stage_candidate(args.archive, args.verification_summary, staging_target)
+    if (staging_result.get("status") != "HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED"
+            or staging_result.get("payload_file_count") != parent.get("payload_file_count")
+            or staging_result.get("installation_performed") is not False
+            or not (staging_target / "payload" / "runtime" / "python.exe").is_file()):
+        raise ValueError("candidate staging receipt or extracted runtime mismatch")
+    if staging_target.parent != runner_temp or staging_target.drive.casefold() == "c:":
+        raise ValueError("refusing to clean staged candidate outside runner temp")
+    shutil.rmtree(staging_target)
+
     with zipfile.ZipFile(args.archive) as z:
         infos = z.infolist()
         names = [safe_name(i.filename) for i in infos]
@@ -75,6 +267,14 @@ def main() -> int:
                 or manifest.get("workflow_run") != parent.get("workflow_run")
                 or manifest.get("source_commit") != parent.get("source_commit")):
             raise ValueError("parent manifest identity mismatch")
+        startup = manifest.get("startup_preflight")
+        expected_startup = {
+            "formal_startup_ready": False,
+            "packaged_product_public_key_resource_present": False,
+            "blocker_codes": ["FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"],
+        }
+        if startup != expected_startup or parent.get("startup_preflight") != startup:
+            raise ValueError("parent package startup preflight is missing, mismatched or unexpectedly ready")
         sums = z.read("payload-sha256sums.txt")
         if sha(sums) != manifest.get("payload_sha256sums_sha256"):
             raise ValueError("parent payload checksum list identity mismatch")
@@ -90,6 +290,9 @@ def main() -> int:
         if set(names) != set(expected) | {"manifest.json", "payload-sha256sums.txt"}:
             raise ValueError("parent archive inventory differs from checksum list")
         root.mkdir()
+        # Mirror a real package extraction: the launcher consumes the archive-level manifest.
+        (root / "manifest.json").write_bytes(z.read("manifest.json"))
+        (root / "payload-sha256sums.txt").write_bytes(sums)
         for name, digest in expected.items():
             info = z.getinfo(name)
             target = root.joinpath(*PurePosixPath(name).parts)
@@ -109,6 +312,17 @@ def main() -> int:
         raise ValueError("PostgreSQL executables missing from parent package")
     if not (pg / "lib" / "vector.dll").is_file():
         raise ValueError("pgvector extension binary missing")
+
+    try:
+        startup_entrypoint_probe = probe_packaged_production_entrypoint(root)
+        startup_guard_probe = probe_packaged_startup_guard(root)
+        web_service_smoke = smoke_packaged_web(root)
+    except Exception:
+        if root.exists():
+            if root.parent != runner_temp or root.drive.casefold() == "c:":
+                raise RuntimeError("refusing to clean smoke root outside runner D-drive temp")
+            shutil.rmtree(root)
+        raise
 
     data_dir = root / "pgdata"
     log_path = root / "postgres.log"
@@ -162,6 +376,11 @@ def main() -> int:
             "production_installation": False, "product_api_started": False,
             "license_trust_used": False, "runner_drive": root.drive,
             "parent_payload_file_count": len(expected),
+            "startup_preflight": startup,
+            "candidate_staging": staging_result,
+            "startup_entrypoint_probe": startup_entrypoint_probe,
+            "startup_guard_probe": startup_guard_probe,
+            "web_service_smoke": web_service_smoke,
         }
     finally:
         if start_attempted and data_dir.is_dir():

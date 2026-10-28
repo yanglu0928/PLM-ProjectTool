@@ -99,7 +99,7 @@ def add_zip_payload(bundle: zipfile.ZipFile, src_zip: Path, checksums: dict[str,
 def build(args: argparse.Namespace) -> dict:
     commit = args.source_commit
     run_id = args.run_id
-    for root in (args.backend_dir, args.frontend_dir, args.pg_dir, args.embedded_dir):
+    for root in (args.backend_dir, args.frontend_dir, args.pg_dir, args.embedded_dir, args.caddy_dir):
         if not root.is_dir() or root.is_symlink():
             raise ValueError("all component artifact roots must be existing real directories")
 
@@ -170,6 +170,26 @@ def build(args: argparse.Namespace) -> dict:
            for name in pg_hashes):
         raise ValueError("PG18 payload contains unexpected path")
 
+    caddy_zip = one_file(args.caddy_dir, "caddy_2.11.4_windows_amd64.zip")
+    caddy_audit = read_json(one_file(args.caddy_dir, "caddy-audit.json"))
+    if (caddy_audit.get("status") != "PINNED_OFFICIAL_INPUT_PASS_NOT_RELEASE_READY"
+            or caddy_audit.get("release_eligible") is not False
+            or caddy_audit.get("version") != "2.11.4"
+            or caddy_audit.get("platform") != "Windows AMD64"):
+        raise ValueError("Caddy input audit is missing or release state changed")
+    if caddy_zip.stat().st_size != 17559418 or sha_file(caddy_zip) != "1708333f79e274c7697285afe6d592ab39314e0b131e9ec6bea08ad27df62ebf":
+        raise ValueError("Caddy official ZIP size/hash mismatch")
+    with zipfile.ZipFile(caddy_zip) as z:
+        if set(z.namelist()) != {"caddy.exe", "LICENSE", "README.md"}:
+            raise ValueError("Caddy ZIP inventory mismatch")
+        caddy_payload = {
+            "payload/runtime/caddy/caddy.exe": z.read("caddy.exe"),
+            "payload/third-party-licenses/caddy/LICENSE": z.read("LICENSE"),
+            "payload/third-party-licenses/caddy/README.md": z.read("README.md"),
+        }
+    if sha_bytes(caddy_payload["payload/runtime/caddy/caddy.exe"]) != "5cb9ab71e5756ce72840b8234177a2f40c8b4ab47a806b8e841e2b784e9df62b":
+        raise ValueError("Caddy executable hash mismatch")
+
     source_config = Path(__file__).resolve().parent.parent / "apps" / "backend" / "config" / "bootstrap.example.yaml"
     if not source_config.is_file() or source_config.is_symlink():
         raise ValueError("non-secret bootstrap source example missing")
@@ -207,15 +227,32 @@ The YAML file contains non-secret settings only. Do not put database passwords, 
 
 This archive is not an installer or a Pilot release. Its PostgreSQL component was exercised only with a temporary local database on a hosted runner.
 """
+    launcher_path = Path(__file__).with_name("start_windows_trial_candidate.ps1")
+    if not launcher_path.is_file() or launcher_path.is_symlink():
+        raise ValueError("fail-closed startup guard source missing")
+    launcher_bytes = launcher_path.read_bytes()
+    if any(token in launcher_bytes.lower() for token in
+           (b"-----begin private key-----", b"api_key:", b"password:", b".pfx", b".p12")):
+        raise ValueError("startup guard source contains a secret marker or private-file reference")
     package_docs = {
         "payload/config/bootstrap.example.yaml": config_text.encode("utf-8"),
         "payload/README-FIRST.md": first_readme.encode("utf-8"),
+        "payload/start-trial.ps1": launcher_bytes,
     }
 
     output = args.output_dir
     output.mkdir(parents=True, exist_ok=False)
     archive = output / f"NOT-FOR-RELEASE-windows-parent-{run_id}.zip"
     hashes: dict[str, str] = {}
+    product_key_path = "payload/runtime/packages/plm_assistant/modules/license/trust/product_public_key.json"
+    product_key_present = product_key_path in embedded_hashes
+    startup_blockers = [] if product_key_present else ["FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"]
+    startup_preflight = {
+        "formal_startup_ready": False,
+        "packaged_product_public_key_resource_present": product_key_present,
+        "blocker_codes": startup_blockers,
+    }
+
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED,
                          compresslevel=1, allowZip64=True) as bundle:
         add_zip_payload(bundle, embedded_zip, embedded_hashes, "payload/runtime/", hashes)
@@ -230,6 +267,9 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
         for target, data in sorted(package_docs.items()):
             hashes[safe_name(target)] = sha_bytes(data)
             bundle.writestr(target, data)
+        for target, data in sorted(caddy_payload.items()):
+            hashes[safe_name(target)] = sha_bytes(data)
+            bundle.writestr(target, data)
 
         evidence = {
             "backend-cloud-build-manifest.json": backend_manifest,
@@ -238,6 +278,7 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
             "embedded-backend-third-party-inventory.json": embedded_inventory,
             "pg18-manifest.json": pg_manifest,
             "pg18-third-party-inventory.json": pg_inventory,
+            "caddy-input-audit.json": caddy_audit,
         }
         for name, value in evidence.items():
             target = "provenance/" + name
@@ -258,11 +299,14 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
                 "embedded_backend_archive_sha256": sha_file(embedded_zip),
                 "frontend_file_count": len(frontend_files),
                 "pg18_archive_sha256": sha_file(pg_zip),
+                "caddy_executable_sha256": sha_bytes(caddy_payload["payload/runtime/caddy/caddy.exe"]),
+                "caddy_version": "2.11.4",
                 "postgresql_version": "18.6", "pgvector_version": "0.8.6",
             },
             "payload_file_count": len(hashes),
             "bootstrap_example_data_root": "D:/PLMTool/data",
             "bootstrap_is_example_only": True,
+            "startup_preflight": startup_preflight,
             "payload_sha256sums_sha256": sha_bytes(sums),
             "known_gaps": [
                 "not installed or started; no packaged Edge/HTTPS/PostgreSQL smoke",
@@ -299,6 +343,7 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
         "backend_distribution_count": embedded_manifest.get("distribution_count"),
         "frontend_file_count": len(frontend_files), "pg18_payload_file_count": len(pg_hashes),
         "installation_performed": False, "database_started": False,
+        "startup_preflight": startup_preflight,
     }
     (output / "verification-summary.json").write_text(
         json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
@@ -311,6 +356,7 @@ def main() -> int:
     parser.add_argument("--frontend-dir", type=Path, required=True)
     parser.add_argument("--pg-dir", type=Path, required=True)
     parser.add_argument("--embedded-dir", type=Path, required=True)
+    parser.add_argument("--caddy-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--run-id", required=True)
