@@ -5,6 +5,7 @@ on:
     branches:
       - feature/cloud-sandbox-execution
       - feature/cloud-build-artifacts
+      - feature/p51-embedded-runtime-cache
   pull_request:
     branches:
       - main
@@ -332,7 +333,7 @@ jobs:
           if ($summary.source_commit -ne $env:GITHUB_SHA -or [string]$summary.workflow_run -ne $env:GITHUB_RUN_ID -or $summary.release_eligible -ne $false -or $summary.legal_clearance -ne $false) { throw "Parent provenance/state mismatch" }
           $output = Join-Path $root "output"
           New-Item -ItemType Directory -Path $output | Out-Null
-          python ./toolspackage_windows_current_app_candidate.py --parent $parentArchive.FullName --wheel $backendWheel.FullName --pgvector-wheel (Get-ChildItem $vector -Filter "*.whl" | Select-Object -First 1).FullName --frontend-dist $frontend --output-parent $output --source-commit $env:GITHUB_SHA --expected-parent-sha256 $summary.archive_sha256 --expected-workflow-run $env:GITHUB_RUN_ID
+          python ./tools/package_windows_current_app_candidate.py --parent $parentArchive.FullName --wheel $backendWheel.FullName --pgvector-wheel (Get-ChildItem $vector -Filter "*.whl" | Select-Object -First 1).FullName --frontend-dist $frontend --output-parent $output --source-commit $env:GITHUB_SHA --expected-parent-sha256 $summary.archive_sha256 --expected-workflow-run $env:GITHUB_RUN_ID
           if ($LASTEXITCODE -ne 0) { throw "A17 current-app candidate projection failed" }
           $result = Get-ChildItem $output -Recurse -Filter "verification-summary.json" | Select-Object -First 1
           if (-not $result) { throw "A17 projection summary missing" }
@@ -373,6 +374,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "pip bootstrap failed" }
           python -m pip install -e ".[test]"
           if ($LASTEXITCODE -ne 0) { throw "A17 harness dependency install failed" }
+          Remove-Item -LiteralPath $installRoot -Recurse -Force
       - name: Download same-run A17 current-app candidate
         uses: actions/download-artifact@v4
         with:
