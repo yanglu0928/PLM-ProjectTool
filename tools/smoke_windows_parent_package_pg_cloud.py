@@ -121,7 +121,9 @@ def probe_packaged_startup_guard(root: Path) -> str:
     if (result.returncode != 1 or result.stdout.strip()
             or result.stderr.strip() !=
             "Packaged production startup blocked; trust prerequisites are not ready."):
-        raise ValueError("startup guard did not preserve fixed fail-closed response")
+        diagnostic = (f"exit={result.returncode}; stdout={result.stdout[-500:]!r}; "
+                      f"stderr={result.stderr[-1200:]!r}")
+        raise ValueError("startup guard did not preserve fixed fail-closed response: " + diagnostic)
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", free_loopback_port()))
     return "FAIL_CLOSED_MISSING_FORMAL_PRODUCT_TRUST"
@@ -252,6 +254,9 @@ def main() -> int:
         if set(names) != set(expected) | {"manifest.json", "payload-sha256sums.txt"}:
             raise ValueError("parent archive inventory differs from checksum list")
         root.mkdir()
+        # Mirror a real package extraction: the launcher consumes the archive-level manifest.
+        (root / "manifest.json").write_bytes(z.read("manifest.json"))
+        (root / "payload-sha256sums.txt").write_bytes(sums)
         for name, digest in expected.items():
             info = z.getinfo(name)
             target = root.joinpath(*PurePosixPath(name).parts)
@@ -272,9 +277,16 @@ def main() -> int:
     if not (pg / "lib" / "vector.dll").is_file():
         raise ValueError("pgvector extension binary missing")
 
-    startup_entrypoint_probe = probe_packaged_production_entrypoint(root)
-    startup_guard_probe = probe_packaged_startup_guard(root)
-    web_service_smoke = smoke_packaged_web(root)
+    try:
+        startup_entrypoint_probe = probe_packaged_production_entrypoint(root)
+        startup_guard_probe = probe_packaged_startup_guard(root)
+        web_service_smoke = smoke_packaged_web(root)
+    except Exception:
+        if root.exists():
+            if root.parent != runner_temp or root.drive.casefold() == "c:":
+                raise RuntimeError("refusing to clean smoke root outside runner D-drive temp")
+            shutil.rmtree(root)
+        raise
 
     data_dir = root / "pgdata"
     log_path = root / "postgres.log"
