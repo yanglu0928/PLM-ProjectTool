@@ -14,6 +14,7 @@ from pathlib import Path, PurePosixPath
 
 META = {"manifest.json", "payload-sha256sums.txt"}
 BLOCKED_SUFFIXES = {".key", ".pfx", ".p12", ".pem", ".env", ".log"}
+PUBLIC_CA_BUNDLE = "payload/runtime/packages/certifi/cacert.pem"
 
 
 def sha_bytes(data: bytes) -> str:
@@ -28,6 +29,36 @@ def sha_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def validate_public_ca_bundle(data: bytes) -> bool:
+    if b"PRIVATE KEY" in data:
+        return False
+    begin = b"-----BEGIN CERTIFICATE-----"
+    end = b"-----END CERTIFICATE-----"
+    cursor = 0
+    count = 0
+    whitespace = (9, 10, 13, 32)
+    while cursor < len(data):
+        while cursor < len(data) and data[cursor] in whitespace:
+            cursor += 1
+        if cursor == len(data):
+            break
+        if not data.startswith(begin, cursor):
+            return False
+        body_start = cursor + len(begin)
+        end_at = data.find(end, body_start)
+        if end_at < 0:
+            return False
+        body = data[body_start:end_at]
+        allowed = all((65 <= byte <= 90) or (97 <= byte <= 122)
+                      or (48 <= byte <= 57) or byte in (43, 47, 61, *whitespace)
+                      for byte in body)
+        if not body or not allowed:
+            return False
+        cursor = end_at + len(end)
+        count += 1
+    return count > 0
+
+
 def safe_name(name: str) -> str:
     path = PurePosixPath(name)
     if (not name or name.startswith(("/", "\\")) or "\\" in name or ":" in name
@@ -37,8 +68,9 @@ def safe_name(name: str) -> str:
                    {"con", "prn", "aux", "nul", *(f"com{i}" for i in range(1, 10)),
                     *(f"lpt{i}" for i in range(1, 10))} for part in path.parts)):
         raise ValueError("unsafe candidate path")
-    if Path(name).suffix.casefold() in BLOCKED_SUFFIXES:
-        raise ValueError("candidate contains prohibited suffix: " + Path(name).suffix.casefold())
+    suffix = Path(name).suffix.casefold()
+    if suffix in BLOCKED_SUFFIXES and not (suffix == ".pem" and name == PUBLIC_CA_BUNDLE):
+        raise ValueError("candidate contains prohibited suffix: " + suffix)
     return name
 
 
@@ -100,6 +132,12 @@ def stage_candidate(archive: Path, summary_path: Path, target: Path) -> dict:
                 raise ValueError("candidate inventory differs from its manifest")
             for name, digest in expected.items():
                 info = source.getinfo(name)
+                if Path(name).suffix.casefold() == ".pem":
+                    if name != PUBLIC_CA_BUNDLE:
+                        raise ValueError("candidate contains non-allowlisted PEM file")
+                    ca_bytes = source.read(info)
+                    if not validate_public_ca_bundle(ca_bytes):
+                        raise ValueError("allowlisted certifi bundle is not public-certificate-only")
                 destination = staging.joinpath(*PurePosixPath(name).parts)
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 actual = hashlib.sha256()
