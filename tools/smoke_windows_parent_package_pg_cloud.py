@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import json
 import os
@@ -31,6 +32,73 @@ def safe_name(name: str) -> str:
             or any(part in ("", ".", "..") for part in parts)):
         raise ValueError("unsafe parent package path")
     return name
+
+
+DATABASE_CREDENTIAL_TARGET = "PLMProjectTool/Database"
+
+
+def database_credential_present() -> bool:
+    if sys.platform != "win32":
+        raise ValueError("Windows credential preflight required")
+    library = ctypes.WinDLL("Advapi32", use_last_error=True)
+    library.CredReadW.argtypes = [ctypes.c_wchar_p, ctypes.c_ulong, ctypes.c_ulong,
+                                 ctypes.POINTER(ctypes.c_void_p)]
+    library.CredReadW.restype = ctypes.c_int
+    library.CredFree.argtypes = [ctypes.c_void_p]
+    pointer = ctypes.c_void_p()
+    found = library.CredReadW(DATABASE_CREDENTIAL_TARGET, 1, 0, ctypes.byref(pointer))
+    if found:
+        library.CredFree(pointer)
+        return True
+    if ctypes.get_last_error() != 1168:
+        raise ValueError("database credential existence check unavailable")
+    return False
+
+
+def free_loopback_port() -> int:
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        return listener.getsockname()[1]
+
+
+def probe_packaged_production_entrypoint(root: Path) -> str:
+    if database_credential_present():
+        return "SKIPPED_EXISTING_CREDENTIAL_UNSCOPED"
+    runtime = root / "payload" / "runtime" / "python"
+    python = runtime / "python.exe"
+    if not python.is_file() or python.is_symlink():
+        raise ValueError("packaged Python runtime missing for startup probe")
+    probe = root / "startup-preflight"
+    probe.mkdir()
+    data = probe / "data"
+    data.mkdir()
+    if not str(probe).isascii():
+        raise ValueError("startup probe root must be ASCII")
+    port = free_loopback_port()
+    config = probe / "bootstrap.yaml"
+    config.write_text(
+        f'bind_host: "127.0.0.1"\nbind_port: {port}\n'
+        f'data_root: "{data.as_posix()}"\nlog_level: "ERROR"\n'
+        'trusted_origins: ["https://localhost"]\n', encoding="ascii")
+    env = {key: value for key, value in os.environ.items()
+           if not key.upper().startswith("PLM_")}
+    env.pop("PYTHONPATH", None)
+    windir = os.environ.get("WINDIR")
+    if not windir:
+        raise ValueError("Windows system directory unavailable")
+    env["PATH"] = os.pathsep.join(
+        (str(runtime), str(Path(windir) / "System32"), windir))
+    launch = subprocess.run(
+        [str(python), "-I", "-B", "-m",
+         "plm_assistant.entrypoints.serve_windows", str(config), "--platform-write"],
+        capture_output=True, text=True, errors="replace", timeout=30, env=env)
+    if (launch.returncode != 1 or launch.stdout.strip()
+            or launch.stderr.strip() !=
+            "Production server unavailable; configuration or credential rejected."):
+        raise ValueError("packaged production entrypoint did not fail closed")
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", port))
+    return "FAIL_CLOSED_MISSING_ACCOUNT_DATABASE_CREDENTIAL"
 
 
 def run_checked(args: list[str], timeout: int = 120) -> subprocess.CompletedProcess[str]:
@@ -118,6 +186,8 @@ def main() -> int:
     if not (pg / "lib" / "vector.dll").is_file():
         raise ValueError("pgvector extension binary missing")
 
+    startup_entrypoint_probe = probe_packaged_production_entrypoint(root)
+
     data_dir = root / "pgdata"
     log_path = root / "postgres.log"
     started = False
@@ -171,6 +241,7 @@ def main() -> int:
             "license_trust_used": False, "runner_drive": root.drive,
             "parent_payload_file_count": len(expected),
             "startup_preflight": startup,
+            "startup_entrypoint_probe": startup_entrypoint_probe,
         }
     finally:
         if start_attempted and data_dir.is_dir():
