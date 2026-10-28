@@ -251,6 +251,33 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  a17-harness-cloud-path-check:
+    name: Verify A17 harness syntax and runner-temp boundary
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Validate D-drive runner temp and compile harness
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP ("plm-p51-a27-" + $env:GITHUB_RUN_ID)
+          $temp = Join-Path $root "PLMToolTemp"
+          if (([IO.Path]::GetPathRoot($root)).TrimEnd('\\') -eq "C:") { throw "A27 requires non-C RUNNER_TEMP" }
+          New-Item -ItemType Directory -Path $temp -Force | Out-Null
+          $env:PYTHONPYCACHEPREFIX = Join-Path $temp "pycache"
+          python -B -m py_compile validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py
+          if ($LASTEXITCODE -ne 0) { throw "A17 Python harness syntax validation failed" }
+          node --check validation/plt-pkg-01-a09-p51-a17-planversion-packaged/run-edge-browser.mjs
+          if ($LASTEXITCODE -ne 0) { throw "A17 Edge harness syntax validation failed" }
+          $resolved = (Resolve-Path $temp).Path
+          if (-not $resolved.StartsWith($env:RUNNER_TEMP, [StringComparison]::OrdinalIgnoreCase)) { throw "A27 temp escaped RUNNER_TEMP" }
+          Remove-Item -LiteralPath $root -Recurse -Force
   smoke-parent-postgresql:
     name: Clean extraction and temporary PostgreSQL lifecycle smoke
     needs: [assemble-parent-candidate]
