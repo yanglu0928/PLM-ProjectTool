@@ -15,3 +15,5 @@
 ## 后续云端发现
 
 - run 40646773586 已验证 provenance 路径通过映射，但下一条被精确映射器拒绝的路径为 payload/README-FIRST.md。该随包操作说明需在只读 rehearsal layout 保留为 app/README-FIRST.md；本项仅增加该单文件精确映射与回归测试，不开放通配 payload 根目录映射。
+
+- 下一 hosted run 40648441329 已越过 provenance 与 README 路径，诊断出候选启动脚本 payload/start-trial.ps1。仅映射为 app/start-trial.ps1，并添加单文件测试；其他 payload 根文件继续拒绝。
