@@ -332,7 +332,7 @@ jobs:
           if ($summary.source_commit -ne $env:GITHUB_SHA -or [string]$summary.workflow_run -ne $env:GITHUB_RUN_ID -or $summary.release_eligible -ne $false -or $summary.legal_clearance -ne $false) { throw "Parent provenance/state mismatch" }
           $output = Join-Path $root "output"
           New-Item -ItemType Directory -Path $output | Out-Null
-          python .	oolspackage_windows_current_app_candidate.py --parent $parentArchive.FullName --wheel $backendWheel.FullName --pgvector-wheel (Get-ChildItem $vector -Filter "*.whl" | Select-Object -First 1).FullName --frontend-dist $frontend --output-parent $output --source-commit $env:GITHUB_SHA --expected-parent-sha256 $summary.archive_sha256 --expected-workflow-run $env:GITHUB_RUN_ID
+          python ./toolspackage_windows_current_app_candidate.py --parent $parentArchive.FullName --wheel $backendWheel.FullName --pgvector-wheel (Get-ChildItem $vector -Filter "*.whl" | Select-Object -First 1).FullName --frontend-dist $frontend --output-parent $output --source-commit $env:GITHUB_SHA --expected-parent-sha256 $summary.archive_sha256 --expected-workflow-run $env:GITHUB_RUN_ID
           if ($LASTEXITCODE -ne 0) { throw "A17 current-app candidate projection failed" }
           $result = Get-ChildItem $output -Recurse -Filter "verification-summary.json" | Select-Object -First 1
           if (-not $result) { throw "A17 projection summary missing" }
@@ -386,7 +386,7 @@ jobs:
           $candidate = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-a17-run-input") -Filter "*.zip" | Select-Object -First 1
           $candidateSummary = Join-Path $env:RUNNER_TEMP "plm-a17-run-input/verification-summary.json"
           if (-not $candidate -or -not (Test-Path $candidateSummary)) { throw "A17 candidate artifact incomplete" }
-          python .	oolsun_a17_packaged_cloud_validation.py --candidate $candidate.FullName --verification-summary $candidateSummary --run-root $root --summary-out $summary
+          python ./toolsun_a17_packaged_cloud_validation.py --candidate $candidate.FullName --verification-summary $candidateSummary --run-root $root --summary-out $summary
           if ($LASTEXITCODE -ne 0) { throw "Packaged A17 PlanVersion Edge/HTTPS/PG flow failed" }
           if (-not (Test-Path $summary)) { throw "A17 success summary missing" }
       - name: Upload bounded A17 business-flow evidence
