@@ -24,7 +24,7 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
                               actor: uuid.UUID, requirement: uuid.UUID,
                               requirement_version: uuid.UUID,
                               document_version: uuid.UUID,
-                              evidence: uuid.UUID) -> None:
+                              evidence: uuid.UUID) -> tuple[bytes, bytes]:
     """Create a synthetic Approved Section through real SOL/Review Owners."""
     import hashlib
 
@@ -315,6 +315,7 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
         ).fetchone()
     assert member == ("CUSTOMER_MEMBER", "ACTIVE"), member
     print("P51_A17_SYNTHETIC_SECTION_OWNER_REVIEW_PASS", flush=True)
+    return token, csrf
 
 
 def skip_unrelated_survey_followups(_state, **_context) -> None:
@@ -500,7 +501,7 @@ def packaged_planversion_probe(**context) -> None:
             ).fetchone()
         assert evidence_row is not None, "packaged synthetic Evidence source missing"
         try:
-            _approved_section_fixture(
+            manager_token, manager_csrf = _approved_section_fixture(
                 context, project=project, actor=actor,
                 requirement=requirement, requirement_version=requirement_version,
                 document_version=document_version, evidence=evidence_row[0],
@@ -508,8 +509,9 @@ def packaged_planversion_probe(**context) -> None:
         except Exception:
             runtime.dispose()
             raise
-        token = bytes.fromhex(context["client"].cookies["plm_session"])
-        csrf = bytes.fromhex(context["login"].json()["data"]["csrf_token"])
+        # The enclosing Handover probe keeps an unrelated observer client; use
+        # the matched Manager Session created through production Login HTTP.
+        token, csrf = manager_token, manager_csrf
         try:
             outline_fixture = plan_edge["owner"].full
             # The source fixture historically targets a database named
