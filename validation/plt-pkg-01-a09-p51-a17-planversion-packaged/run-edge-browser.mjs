@@ -117,11 +117,10 @@ try {
   if (await evaluate("document.querySelectorAll('input[type=checkbox]').length") < 2) throw new Error("Approved Requirement is not available");
   await evaluate("(()=>{const e=document.querySelectorAll('input[type=checkbox]')[1];e.checked=true;e.dispatchEvent(new Event('change',{bubbles:true}))})()");
   await click("预览完整草稿"); await waitFor("document.body?.innerText?.includes('创建前预览')", "draft preview");
-  await click("确认创建草稿版本"); await waitFor("document.body?.innerText?.includes('草稿版本已创建：')", "PlanVersion create receipt");
-  await waitFor('document.body?.innerText?.includes("草稿版本已创建：") && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(location.pathname.split("/").at(-1) ?? "")', "PlanVersion fixed-readback detail route");
+  await click("确认创建草稿版本");
+  await waitFor('document.body?.innerText?.includes("计划固定版本快照") && document.body?.innerText?.includes("WBS 固定快照（2）") && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(location.pathname.split("/").at(-1) ?? "")', "PlanVersion fixed-readback detail route");
   const version = await evaluate("location.pathname.split('/').at(-1)");
   if (!uuid.test(version)) throw new Error("Created PlanVersion identity missing");
-  await click("查看固定版本"); await waitFor("document.body?.innerText?.includes('计划固定版本快照')", "fixed read");
   if (!responses.some(x => x.status === 201 && x.url.includes(`/plans/${plan}/versions`)) || !responses.some(x => x.status === 200 && x.url.includes(`/plans/${plan}/versions/${version}`))) throw new Error("PlanVersion Create/GET HTTP evidence missing");
   await click("核查此固定版本"); await waitFor("document.querySelector('button')?.textContent.includes('执行Validate')", "Validate page"); await click("执行Validate");
   await waitFor("document.body?.innerText?.includes('验证通过')||document.body?.innerText?.includes('发现阻断问题')", "validation result");

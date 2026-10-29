@@ -21,6 +21,17 @@ describe("PlanVersionReadClient", () => {
     expect(detail.calendar_ref).toBe("WORKING_DAYS"); expect(detail.wbs_items).toEqual([]);
     expect(fetcher.mock.calls[1]?.[0]).toBe(`/api/v1/projects/${project}/plans/${plan}/versions/${version}`);
   });
+  it("calls the platform fetch function with globalThis as its receiver", async () => {
+    const detail = { ...row, calendar_ref: "WORKING_DAYS", approved_solution_refs: [], wbs_items: [],
+      dependencies: [], milestones: [], exclusions: [] };
+    const fetcher = vi.fn(function (this: unknown) {
+      expect(this).toBe(globalThis);
+      return Promise.resolve(response(detail));
+    });
+    const client = new PlanVersionReadClient(fetcher as typeof fetch);
+    await expect(client.detail(project, plan, version)).resolves.toMatchObject({ plan_version_id: version });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
   it("fails closed on unexpected fixed snapshot fields or invalid path identity", async () => {
     const client = new PlanVersionReadClient(vi.fn().mockResolvedValue(response({ ...row, calendar_ref: null,
       approved_solution_refs: [], wbs_items: [], dependencies: [], milestones: [], exclusions: [], unexpected: true })) as typeof fetch);
