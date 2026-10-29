@@ -308,7 +308,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
               "--auth=trust", "--encoding=UTF8", "--locale=C"],
               env=pg_process_env, timeout=120)
         _start_pg_ctl([str(pg / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
-                       "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log)
+                       "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log,
+                       env=pg_process_env)
         pg_started = True
 
         def restart_postgres() -> None:
@@ -318,7 +319,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                  env=pg_process_env, timeout=60)
             # Keep cleanup ownership set even if the subsequent start fails.
             _start_pg_ctl([str(pg / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
-                           "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log)
+                           "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log,
+                           env=pg_process_env)
             with psycopg.connect(host="127.0.0.1", port=pg_port, user="poc_admin",
                                  dbname="postgres", autocommit=True,
                                  connect_timeout=5) as check:
