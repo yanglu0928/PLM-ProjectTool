@@ -401,7 +401,11 @@ def _approved_section_v2(**context) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID, uu
         old = SqlAlchemySectionVersionReadRepository().get(
             tx, project_id=project, section_id=section, version_id=old_version)
         assert old is not None and old.version_state == "APPROVED"
-        assert old.spec_binding_state == "FIXED_REFS"
+        assert old.spec_binding_state in ("FIXED_REFS", "NONE_REQUIRED")
+        if old.spec_binding_state == "NONE_REQUIRED":
+            assert old.spec_not_required_reason
+        else:
+            assert old.spec_not_required_reason is None
     payload = {
         "title": "Qualified solution section for Outline proof",
         "content_document_version_ref": str(old.content_document_version_ref),
