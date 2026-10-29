@@ -234,10 +234,10 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         raise ValueError("Windows isolated smoke only")
     if (synthetic_license_document_factory is None) != (licensed_https_probe is None):
         raise ValueError("synthetic licensed HTTPS callbacks must be paired")
-    if os.environ.get("PLM_P51_TEMP_ROOT"):
-        temp_root = _migration_temp_root()
-    else:
-        temp_root = Path(os.environ.get("PLM_TEST_TEMP_ROOT", r"D:\PLMToolTemp"))
+    temp_root = Path(
+        os.environ.get("PLM_P51_TEMP_ROOT")
+        or os.environ.get("PLM_TEST_TEMP_ROOT", r"D:\PLMToolTemp")
+    )
     if (not temp_root.is_absolute() or temp_root.drive.upper() != "D:"
             or temp_root.name != "PLMToolTemp" or not str(temp_root).isascii()):
         raise ValueError("packaged platform smoke requires an explicit ASCII D: PLMToolTemp root")
