@@ -186,7 +186,7 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
 
     with fixture_db() as db:
         source = db.execute(
-            "SELECT f.storage_locator FROM plm.doc_document_versions v "
+            "SELECT f.storage_locator,f.sha256,f.size_bytes FROM plm.doc_document_versions v "
             "JOIN plm.doc_file_objects f ON f.file_object_id=v.file_object_id "
             "WHERE v.document_version_id=%s AND v.project_id=%s",
             (document_version, project),
@@ -194,8 +194,9 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
     assert source is not None, "synthetic fixed Document source missing"
     locator = source[0]
     content = b"Synthetic Prototype fixed document; not customer information.\n"
-    assert hashlib.sha256(content).digest() is not None
-    source_path = Path(fixture_db.data_root) / "private-documents" / locator
+    if hashlib.sha256(content).digest() != source[1] or len(content) != source[2]:
+        raise AssertionError("synthetic fixed Document bytes differ from metadata")
+    source_path = Path(fixture_db.data_root) / locator
     source_path.parent.mkdir(parents=True, exist_ok=True)
     source_path.write_bytes(content)
     draft = SectionVersionDraftInput(
