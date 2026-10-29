@@ -1,7 +1,7 @@
 # CR-EXEC-020：使 A17 Section Review 提交夹具符合 HTTP 合同
 
 - 日期：2026-10-29
-- 状态：已记录，待实施与托管验收
+- 状态：已实施，待托管验收
 - 来源与证据：hosted run 40813762335 中，A17 已通过父包/候选构建、PostgreSQL 生命周期、Caddy HTTPS、Workflow GET/START/replay/CSRF/conflict/Audit、ASCII 控制台输出及 SectionVersion Document 固定来源证明。随后合成 Section Review 提交返回 `VALIDATION_FAILED`。核对 `apps/backend/src/plm_assistant/modules/solution/api/section_submit_review.py` 确认 API 接受的字段值必须为 `reviewer_ids` 列表、`policy_ref=SOLUTION_SECTION_ALL_V1`、`due_at=null`、`submission_note=null`；A17 夹具发送了非空 `submission_note` 字符串。
 - 问题：验证夹具请求违反当前已实现 HTTP 合同，无法继续执行 Section Review / PlanVersion 浏览器链。
 - 方案比较：A. 把合成请求的 `submission_note` 改为合同要求的 null；B. 放宽 HTTP/API 校验接受自由备注。选择 A，仅修夹具请求，不扩大产品合同或未经基线批准的请求字段语义。
