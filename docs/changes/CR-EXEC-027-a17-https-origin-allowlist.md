@@ -1,7 +1,7 @@
 # CR-EXEC-027：A17 Edge harness 适配受限 HTTPS Origin
 
 - 日期：2026-10-29
-- 状态：已实施，待托管验收
+- 状态：origin allowlist 已与实际 localhost HTTPS 匹配；本轮继续失败的独立盘符大小写问题另见 CR-EXEC-028
 - 来源与证据：GitHub hosted Windows 2025 run 40827041759 的基础测试/构建、候选包组装、PG lifecycle 和前置业务链通过。日志确认 CR-EXEC-024 Section fixture、CR-EXEC-026 coverage restore、Outline Review API 均越过。随后 run-edge-browser.mjs 在启动 Edge 前抛出 “Owned P51-A17 synthetic identities and non-C RUNNER_TEMP child required”。该 guard 将传入 origin 硬编码为 https://localhost:<port>，但本 Harness 被 A17 复用在已有 packaged HTTPS flow 下，origin 来自上游 context；当前汇总错误没有单独指出具体谓词值。
 - 问题：浏览器 harness 的 HTTPS origin guard 沿用了独立 localhost smoke 形状，未与 packaged runner 的受控 HTTPS origin 参数保持一致。临时目录、合成账号值按 A17 调用端显式设定，runner-temp 静态检查也已通过。
 - 方案比较：A. 去掉 origin 校验；B. 仅允许 packaged HTTPS fixture 明确使用的 loopback 或固定测试域名主机（localhost / plm.example.test），要求 scheme=https、无路径/凭据/查询，并拒绝其他主机及 HTTP。选择 B，保留严格主机边界并兼容 packaged origin。
