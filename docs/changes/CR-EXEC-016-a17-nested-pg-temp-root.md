@@ -39,3 +39,8 @@
 - 云端验收追加（run 40799723167，commit `502e5cb2a2ccf1df3e7e9e3e4245df04d15b5def`）：修复投影夹具后 9/10 jobs 通过，A17 再次在 initdb 创建 `RUNNER_TEMP/plm-pg18-platform-write-<id>/pgdata` 时 Permission denied；目录根已直接使用 RUNNER_TEMP，说明单纯改变路径深度未解决问题。父包独立 PG smoke 在干净进程环境通过。
 
 - CR-EXEC-016 实施调整：A17 wrapper 为边界验证和安装/布局 smoke 将 `TEMP/TMP` 指向 PLMToolTemp，该目录可能经历负向权限验证；嵌套 PostgreSQL 命令此前继承这组临时路径。现在 initdb、pg_ctl、pg_dump/pg_restore 使用移除 PLM 环境覆盖后的专用子进程环境，并把 `TEMP/TMP` 指向本 smoke 自己的随机 `pg_run`。PG data/log/dump 仍限定于本 smoke 子目录，停库且确认进程退出后清理。回滚为去掉 PG 专用环境、恢复继承调用方 TEMP/TMP；不改产品运行时或 ACL。通过 hosted Windows A17 full flow 验证实际权限和清理。
+
+
+- 云端验收追加（run 40801427817，commit `d9985c8e36625a22dc5212144221a06da1295b66`）：9/10 jobs通过，A17 仍在 initdb 创建 `RUNNER_TEMP/plm-pg18-platform-write-<id>/pgdata` 时 Permission denied；PostgreSQL 子进程已使用 `pg_run` 专用 TEMP/TMP，故临时变量继承假设未获支持。父包 PG smoke、A17投影和其他全量组件通过；业务marker未产生。
+
+- CR-EXEC-016 进一步收敛：让 smoke 自身先校验 `pgdata` 不存在，再在唯一 `pg_run` 内创建并验证空目录，交由 initdb 在该空目录初始化（PostgreSQL initdb 接受现存空目标目录）。不改变父级临时根、产品数据或权限策略。若 hosted 验证失败，保留错误输出并退回前版实现继续定位；空目录仍只在 PostgreSQL 进程确认停止后清理。

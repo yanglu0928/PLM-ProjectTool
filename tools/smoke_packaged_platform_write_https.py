@@ -304,6 +304,11 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     outcome: dict | None = None
     provider = WindowsSecretKeyProvider()
     try:
+        if data.exists() or data.is_symlink():
+            raise ValueError("owned PostgreSQL data path must be new")
+        data.mkdir()
+        if data.is_symlink() or not data.is_dir() or any(data.iterdir()):
+            raise ValueError("owned PostgreSQL data path must be a fresh empty directory")
         _run([str(pg / "initdb.exe"), f"--pgdata={data}", "--username=poc_admin",
               "--auth=trust", "--encoding=UTF8", "--locale=C"],
               env=pg_process_env, timeout=120)

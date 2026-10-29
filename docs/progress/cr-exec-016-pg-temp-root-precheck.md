@@ -30,3 +30,6 @@
 
 
 - 2026-10-29 hosted run 40799723167：9/10 jobs通过；A17 initdb 在直接 RUNNER_TEMP 创建的随机 PostgreSQL 工作目录下仍 Permission denied，证明只改 temp root 不够。新增 CR-EXEC-016 子进程隔离：PG 子进程只使用其自身 pg_run 作为 TEMP/TMP，避免继承 P42/布局 smoke 临时变量；下一轮重验。
+
+
+- 2026-10-29 hosted run 40801427817：9/10 jobs通过；A17 initdb 在直接 RUNNER_TEMP 的唯一随机目录下仍无法创建 pgdata，即使其TEMP/TMP已隔离到同一 pg_run；证据否定“只改进程临时变量即可解决”。下一次将由 smoke 先创建并验证空 pgdata，再交 initdb 初始化；CR-EXEC-016和状态记录已更新。
