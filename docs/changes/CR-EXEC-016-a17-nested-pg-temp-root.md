@@ -20,3 +20,5 @@
 - 云端验收追加（run 40656184670）：基础 jobs、3849 后端测试、父包、候选投影与父包 PG smoke 全通过；A17 仍在 `PLMToolTemp/plm-p42-platform-write-<id>/pgdata` 被拒。现确认只替换根变量仍让 PG cluster 放入 P42 专用目录。实施范围进一步细化：将 PG cluster、日志和 dump 改放同一 owned PLM_P51_TEMP_ROOT 下的 sibling `plm-pg18-platform-write-*`，P42 专用目录继续承载其自身受限工作文件；清理分别校验两条路径的归属和前置进程退出。回滚是将 cluster 路径恢复到旧 `run`，测试数据无迁移。
 
 - 云端验收追加（run 40659216063）：基础全量链、父包 PostgreSQL smoke 成功；A17 仍显示 `PLMToolTemp/plm-pg18-platform-write-*/pgdata` 被拒，表明 P42 负向 ACL 作用于整个 `PLMToolTemp` 子树，简单 sibling 不足。最终隔离方案：runner wrapper 在独立 owned run-root 下创建 `PLMPostgresTemp`，与 `PLMToolTemp` 同级；通过 `PLM_PG_TEMP_ROOT` 限定给内层 PG smoke，校验其直接位于 `RUNNER_TEMP/plm-p51-a27-<run>/PLMPostgresTemp`、D 盘、ASCII、非 symlink。A17 结束时移除整个已验证 run-root；单体 smoke 对自己创建的数据目录仍按停库后清理。回滚恢复先前 PG 根来源。
+
+- 云端验收追加（run 40662516205）：完整基线和 parent PG smoke 通过，A17 在 `smoke_packaged_platform_write_https.py` 入口目录校验失败。根因是上次将该 smoke 的 general temp_root 选择改为 `_migration_temp_root()`；现在该 helper 优先返回 PLMPostgresTemp，但入口仍要求 PLMToolTemp。修复为 general artifacts 显式优先读取稳定的 PLM_P51_TEMP_ROOT（PLMToolTemp），独立 PostgreSQL cluster 继续使用 PLM_PG_TEMP_ROOT（PLMPostgresTemp）。数据/安装逻辑不变，回滚恢复原 selector；A17 需全量重验。
