@@ -51,7 +51,7 @@ async function waitFor(expression, label) {
     catch (error) { if (!String(error).includes("Execution context was destroyed")) throw error; }
     await pause(100);
   }
-  throw new Error(`Timed out ${label}: ${JSON.stringify(await evaluate("({url:location.href,text:document.body?.innerText?.slice(-1800)})"))}; API=${JSON.stringify(responses.slice(-12).map(({method,path,status})=>({method,path,status})))}; failures=${JSON.stringify(failures.slice(-12))}`);
+  throw new Error(`Timed out ${label}: ${JSON.stringify(await evaluate("({url:location.href,text:document.body?.innerText?.slice(-1800)})"))}; API=${JSON.stringify(responses.slice(-12).map(({method,path,status})=>({method,path,status})))}; failures=${JSON.stringify(failures.slice(-12))}; fetch=${JSON.stringify(await evaluate("window.__plmA17Fetch ?? []"))}`);
 }
 async function click(label) {
   if (!await evaluate(`(()=>{const e=[...document.querySelectorAll('button,a')].find(x=>x.textContent.trim()===${JSON.stringify(label)});if(!e||e.disabled)return false;e.click();return true})()`)) throw new Error(`Missing action: ${label}`);
@@ -102,6 +102,7 @@ try {
   });
   await send("Runtime.enable"); await send("Page.enable"); await send("Network.enable");
   await login(manager);
+  await evaluate("(()=>{const original=window.fetch.bind(window);window.__plmA17Fetch=[];window.fetch=(input,init={})=>{const raw=typeof input===\"string\"?input:input.url;const url=new URL(raw,location.href);const path=url.pathname;if(!path.includes(\"/plans/\")||!path.includes(\"/versions/\"))return original(input,init);const item={method:init.method??\"GET\",path:path.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g,\":id\")};window.__plmA17Fetch.push({...item,phase:\"called\"});return original(input,init).then(response=>{window.__plmA17Fetch.push({...item,phase:\"response\",status:response.status});return response;},error=>{window.__plmA17Fetch.push({...item,phase:\"rejected\",error:String(error).slice(0,160)});throw error;});}})()");
   await route(`/projects/${project}/plans/new`);
   await waitFor("document.querySelector('#plan-name')", "plan create page");
   await fill("#plan-name", "P51-A17 Packaged Synthetic Plan"); await click("创建计划");
