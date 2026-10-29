@@ -23,7 +23,7 @@ if (!packagedOriginAllowed || !uuid.test(project ?? "")
   || resolve(tempRoot).toLowerCase().startsWith("c:\\")
   || resolve(process.env.RUNNER_TEMP ?? "") === resolve(tempRoot)
   || !resolve(tempRoot).toLowerCase().startsWith(resolve(process.env.RUNNER_TEMP ?? "").toLowerCase() + sep.toLowerCase())
-  || !resolve(process.env.RUNNER_TEMP ?? "").startsWith("d:\\")) {
+  || !resolve(process.env.RUNNER_TEMP ?? "").toLowerCase().startsWith("d:\\")) {
   throw new Error("Owned P51-A17 synthetic identities and non-C RUNNER_TEMP child required");
 }
 
