@@ -284,6 +284,10 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     run = Path(tempfile.mkdtemp(prefix="plm-p42-platform-write-", dir=temp_root))
     pg_temp_root = _migration_temp_root()
     pg_run = Path(tempfile.mkdtemp(prefix="plm-pg18-platform-write-", dir=pg_temp_root))
+    pg_process_env = {name: value for name, value in os.environ.items()
+                      if not name.upper().startswith("PLM_")}
+    pg_process_env["TEMP"] = str(pg_run)
+    pg_process_env["TMP"] = str(pg_run)
     pg, runtime, caddy = (target / "runtime/pgsql/bin", target / "runtime/python/python.exe",
                           target / "runtime/caddy/caddy.exe")
     pg_port, api_port, https_port = _port(), _port(), _port()
@@ -301,7 +305,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     provider = WindowsSecretKeyProvider()
     try:
         _run([str(pg / "initdb.exe"), f"--pgdata={data}", "--username=poc_admin",
-              "--auth=trust", "--encoding=UTF8", "--locale=C"], timeout=120)
+              "--auth=trust", "--encoding=UTF8", "--locale=C"],
+              env=pg_process_env, timeout=120)
         _start_pg_ctl([str(pg / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
                        "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log)
         pg_started = True
@@ -310,7 +315,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             """Restart only this smoke's isolated cluster using the same data and port."""
             nonlocal pg_restart_count
             _run([str(pg / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop"],
-                 timeout=60)
+                 env=pg_process_env, timeout=60)
             # Keep cleanup ownership set even if the subsequent start fails.
             _start_pg_ctl([str(pg / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
                            "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log)
@@ -329,8 +334,10 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             backup = pg_run / f"p51-a11-{suffix}.dump"
             if backup.exists() or not pg_run.is_dir():
                 raise ValueError("owned PostgreSQL backup path is not fresh")
-            pg_env = {name: value for name, value in os.environ.items()
+            pg_env = {name: value for name, value in pg_process_env.items()
                       if not name.upper().startswith("PG")}
+            pg_env["TEMP"] = str(pg_run)
+            pg_env["TMP"] = str(pg_run)
             pg_env["PGPASSWORD"] = password
             target_created = False
             try:
@@ -346,8 +353,10 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                     admin.execute(sql.SQL("CREATE DATABASE {} OWNER {}").format(
                         sql.Identifier(restored_database), sql.Identifier(role)))
                 target_created = True
-                restore_env = {name: value for name, value in os.environ.items()
+                restore_env = {name: value for name, value in pg_process_env.items()
                                if not name.upper().startswith("PG")}
+                restore_env["TEMP"] = str(pg_run)
+                restore_env["TMP"] = str(pg_run)
                 restore_env["PGPASSWORD"] = ""
                 _run([str(pg / "pg_restore.exe"), "--host=127.0.0.1",
                       f"--port={pg_port}", "--username=poc_admin",
@@ -679,7 +688,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         pg_stopped = not pg_started
         if pg_started:
             try:
-                _run([str(pg / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop"], timeout=60)
+                _run([str(pg / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop"],
+                     env=pg_process_env, timeout=60)
                 pg_stopped = True
             except (OSError, RuntimeError, subprocess.TimeoutExpired):
                 cleanup_errors.append("postgres")

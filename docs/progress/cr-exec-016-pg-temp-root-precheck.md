@@ -27,3 +27,6 @@
 
 
 - 2026-10-29 hosted run 40798104759：9/10 jobs 通过；A17 实际进入 initdb，仍因 PostgreSQL root 下多层目录 ACL Permission denied 未能创建 pgdata；父包同 runner 的独立 PG18 smoke 通过。已按 CR-EXEC-016 改为直接 RUNNER_TEMP root、smoke 独占随机 PG 子目录并自行清理，禁止 wrapper 删除 RUNNER_TEMP；完整 hosted A17 重验待证，WBS 未通过。
+
+
+- 2026-10-29 hosted run 40799723167：9/10 jobs通过；A17 initdb 在直接 RUNNER_TEMP 创建的随机 PostgreSQL 工作目录下仍 Permission denied，证明只改 temp root 不够。新增 CR-EXEC-016 子进程隔离：PG 子进程只使用其自身 pg_run 作为 TEMP/TMP，避免继承 P42/布局 smoke 临时变量；下一轮重验。

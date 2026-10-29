@@ -34,3 +34,8 @@
 - CR-EXEC-016 实施调整（依据 run 40798104759）：再增加 RUNNER_TEMP 中间目录仍触发嵌套 ACL 拒绝，而同轮父包 PG smoke 直接在 RUNNER_TEMP 建立唯一临时目录并完成 initdb/迁移/停库/清理。最小调整为 `PLM_PG_TEMP_ROOT` 必须解析为本轮 hosted `RUNNER_TEMP` 本身，由既有 smoke 用随机、固定前缀的直接子目录承载 PG cluster，并在进程确认停止后删除该子目录；A27 wrapper 只删除自己拥有的独立 run-root，明确不删除 RUNNER_TEMP。所有数据仍为 synthetic，runner 结束提供最终隔离回收。验证包含路径边界单测、完整 A17 包内 Edge/HTTPS/PG marker、临时数据库停止和目录清理。
 
 - 风险与回滚：RUNNER_TEMP 是较宽的临时工作区，因此 smoke 必须只创建并清理自身随机命名的 `plm-pg18-platform-write-*` 子目录，wrapper 禁止递归删除 RUNNER_TEMP；如 A17 仍失败，保留 hosted run 日志并回滚到 CR-EXEC-016 前一版路径选择，继续诊断，不放宽正式产品 ACL。
+
+
+- 云端验收追加（run 40799723167，commit `502e5cb2a2ccf1df3e7e9e3e4245df04d15b5def`）：修复投影夹具后 9/10 jobs 通过，A17 再次在 initdb 创建 `RUNNER_TEMP/plm-pg18-platform-write-<id>/pgdata` 时 Permission denied；目录根已直接使用 RUNNER_TEMP，说明单纯改变路径深度未解决问题。父包独立 PG smoke 在干净进程环境通过。
+
+- CR-EXEC-016 实施调整：A17 wrapper 为边界验证和安装/布局 smoke 将 `TEMP/TMP` 指向 PLMToolTemp，该目录可能经历负向权限验证；嵌套 PostgreSQL 命令此前继承这组临时路径。现在 initdb、pg_ctl、pg_dump/pg_restore 使用移除 PLM 环境覆盖后的专用子进程环境，并把 `TEMP/TMP` 指向本 smoke 自己的随机 `pg_run`。PG data/log/dump 仍限定于本 smoke 子目录，停库且确认进程退出后清理。回滚为去掉 PG 专用环境、恢复继承调用方 TEMP/TMP；不改产品运行时或 ACL。通过 hosted Windows A17 full flow 验证实际权限和清理。
