@@ -29,9 +29,8 @@ class CurrentAppCandidateTests(unittest.TestCase):
             runner = Path(temporary)
             run_root = runner / "plm-p51-a27-test"
             owned = run_root / "PLMToolTemp"
-            pg_owned = runner / "plm-p51-a27-pg-123"
+            pg_owned = runner
             owned.mkdir(parents=True)
-            pg_owned.mkdir()
             with patch.dict(os.environ, {
                 "RUNNER_TEMP": str(runner),
                 "GITHUB_RUN_ID": "123",
@@ -47,7 +46,7 @@ class CurrentAppCandidateTests(unittest.TestCase):
                 "PLM_P51_TEMP_ROOT": str(owned),
                 "PLM_PG_TEMP_ROOT": str(outside_run),
             }, clear=True):
-                with self.assertRaisesRegex(ValueError, "outside this run"):
+                with self.assertRaisesRegex(ValueError, "must equal this run's non-C RUNNER_TEMP"):
                     _migration_temp_root()
             with patch.dict(os.environ, {
                 "RUNNER_TEMP": str(runner),

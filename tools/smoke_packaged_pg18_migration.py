@@ -78,18 +78,17 @@ def _migration_temp_root() -> Path:
     if configured:
         runner_temp_value = os.environ.get("RUNNER_TEMP")
         run_id = os.environ.get("GITHUB_RUN_ID")
-        if not runner_temp_value or not run_id:
-            raise ValueError("PLM_PG_TEMP_ROOT requires RUNNER_TEMP and GITHUB_RUN_ID ownership boundary")
+        if not runner_temp_value or not run_id or not run_id.isascii() or not run_id.isdigit():
+            raise ValueError("PLM_PG_TEMP_ROOT requires RUNNER_TEMP and numeric GITHUB_RUN_ID ownership boundary")
         runner_temp = Path(runner_temp_value).resolve(strict=True)
         candidate = Path(configured)
         if candidate.is_symlink():
             raise ValueError("PLM_PG_TEMP_ROOT must not be a symlink")
         selected = candidate.resolve(strict=True)
-        expected = runner_temp / ("plm-p51-a27-pg-" + run_id)
         if (not selected.is_dir() or runner_temp.drive.upper() == "C:"
-                or selected.drive.upper() == "C:" or selected != expected
+                or selected.drive.upper() == "C:" or selected != runner_temp
                 or not str(selected).isascii()):
-            raise ValueError("PLM_PG_TEMP_ROOT is outside this run's non-C RUNNER_TEMP")
+            raise ValueError("PLM_PG_TEMP_ROOT must equal this run's non-C RUNNER_TEMP")
         return selected
 
     configured = os.environ.get("PLM_P51_TEMP_ROOT")

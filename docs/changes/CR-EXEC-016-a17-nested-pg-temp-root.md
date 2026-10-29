@@ -27,3 +27,10 @@
 
 
 - 云端验收追加（run 40796767823，commit `c49407e28c1b5a3ddd08ed2b10e0015c6e9ff69f`）：基础边界、后端、前端、Python、PG18、embedded backend、父包组装和父包 PostgreSQL 生命周期 smoke 成功。A17 候选投影的 8 项测试中有 1 项负向路径夹具错误：模拟 `outside` 目录未先创建，Windows `Path.resolve(strict=True)` 先抛 FileNotFoundError，导致完整 A17 跳过。已定位为测试夹具问题，修复为创建越界模拟目录后验证拒绝；A17 full flow 尚未运行，本轮不计通过。
+
+
+- 云端验收追加（run 40798104759，commit `78f406632329aa5bef0717b6d5aee73bebefccf9`）：10 个 hosted jobs 中 9 个通过，含 3849 后端全量回归、前端、运行时/父包组装、A17 投影、父包 clean extraction 与独立 PG18/pgvector 生命周期；A17 packaged flow 实际启动但 initdb 在 `RUNNER_TEMP/plm-p51-a27-pg-<run>/plm-pg18-platform-write-<id>/pgdata` 返回 Permission denied。失败发生在 P42 后续业务检查之前，未产生 Edge/PG PASS marker，不能关闭 A27。
+
+- CR-EXEC-016 实施调整（依据 run 40798104759）：再增加 RUNNER_TEMP 中间目录仍触发嵌套 ACL 拒绝，而同轮父包 PG smoke 直接在 RUNNER_TEMP 建立唯一临时目录并完成 initdb/迁移/停库/清理。最小调整为 `PLM_PG_TEMP_ROOT` 必须解析为本轮 hosted `RUNNER_TEMP` 本身，由既有 smoke 用随机、固定前缀的直接子目录承载 PG cluster，并在进程确认停止后删除该子目录；A27 wrapper 只删除自己拥有的独立 run-root，明确不删除 RUNNER_TEMP。所有数据仍为 synthetic，runner 结束提供最终隔离回收。验证包含路径边界单测、完整 A17 包内 Edge/HTTPS/PG marker、临时数据库停止和目录清理。
+
+- 风险与回滚：RUNNER_TEMP 是较宽的临时工作区，因此 smoke 必须只创建并清理自身随机命名的 `plm-pg18-platform-write-*` 子目录，wrapper 禁止递归删除 RUNNER_TEMP；如 A17 仍失败，保留 hosted run 日志并回滚到 CR-EXEC-016 前一版路径选择，继续诊断，不放宽正式产品 ACL。

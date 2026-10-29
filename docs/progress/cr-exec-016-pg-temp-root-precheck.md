@@ -24,3 +24,6 @@
 
 
 - 2026-10-29 hosted run 40796767823：基础 7 个任务通过，含父包 PG18/pgvector 临时生命周期；A17 8 项投影单测因越界路径夹具未创建而 1 项错误，full flow skipped。已登记并在 CR-EXEC-016 修复夹具后重跑；不得记为 A17 通过。
+
+
+- 2026-10-29 hosted run 40798104759：9/10 jobs 通过；A17 实际进入 initdb，仍因 PostgreSQL root 下多层目录 ACL Permission denied 未能创建 pgdata；父包同 runner 的独立 PG18 smoke 通过。已按 CR-EXEC-016 改为直接 RUNNER_TEMP root、smoke 独占随机 PG 子目录并自行清理，禁止 wrapper 删除 RUNNER_TEMP；完整 hosted A17 重验待证，WBS 未通过。
