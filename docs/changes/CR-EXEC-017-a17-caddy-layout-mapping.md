@@ -11,4 +11,4 @@
 - 验证计划：托管 Windows 作业运行映射/候选投影检查和完整 A17 package HTTPS flow；要求看到 PlanVersion Edge、PostgreSQL state、进程停止及临时目录清理 markers，且固定候选包 Hash 未改变。未达到这些条件不关闭 A27。
 - 执行边界：只用 GitHub hosted runner；不在用户本机或 C 盘执行项目代码。候选数据为合成数据，不外发客户材料或 Secret。
 
-- 托管复验追加（run 40810209866）：新映射使 packaged A17 越过此前 Caddy missing-path 失败，并到达 Workflow GET/START/replay/CSRF/conflict/Audit PASS；整个 WBS 尚未完成，随后独立日志输出编码问题由 CR-EXEC-018 追踪。
+- 托管复验追加（run 40810209866）：新映射使 packaged A17 越过此前 Caddy missing-path 失败，并到达 Workflow GET/START/replay/CSRF/conflict/Audit PASS，且 Caddy 已从目标路径成功启动并提供 HTTPS；整个 WBS 尚未完成，随后独立日志输出编码问题由 CR-EXEC-018 追踪。
