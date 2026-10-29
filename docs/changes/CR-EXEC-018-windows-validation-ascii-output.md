@@ -1,7 +1,7 @@
 # CR-EXEC-018：使 Windows hosted 验证证据输出兼容 ASCII 控制台
 
 - 日期：2026-10-29
-- 状态：已记录，待实施与托管验收
+- 状态：已实施，待托管验收
 - 来源与证据：hosted Windows 2025 run 40810209866 已确认 CR-EXEC-017 的 Caddy 路径映射可继续执行，A17 报告 `Packaged Workflow external HTTPS GET/START/replay/CSRF/conflict/Audit PASS`。随后 `validation/sur-07-a08-survey-version-packaged/verify.py` 在 `json.dumps(..., ensure_ascii=False)` 的打印处抛出 `UnicodeEncodeError`：runner stdout 使用 CP1252，无法编码中文字符，导致上层 A17 提前中断。业务探针已执行但完整 A17 尚未通过。
 - 问题：托管 Windows 默认控制台编码不能表示含中文的验证 JSON，验证证据打印异常遮断后续集成步骤。
 - 方案比较：A. 将该验证证据 JSON 改为 ASCII 转义（`ensure_ascii=True`），保持内容可由 JSON 解码还原；B. 改整个作业环境的 Python/stdout 编码。选择 A，局部调整输出，不影响业务请求、断言或全局环境。
