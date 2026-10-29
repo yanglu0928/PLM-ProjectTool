@@ -521,13 +521,28 @@ def packaged_planversion_probe(**context) -> None:
                 "host": "127.0.0.1", "port": port, "user": "poc_admin",
                 "dbname": fixture_db.database,
             }
-            outline_fixture._outline_full(**(context | {
+            outline_context = context | {
                 "port": fixture_db.pg_port,
                 "runtime": runtime, "manager": actor, "token": token,
                 "csrf": csrf, "license_guard": licenses.guard,
                 "audit": audit, "documents": documents,
                 "downloads": downloads, "parse_results": parse_results,
-            }))
+            }
+            outline_fixture._outline_full(**outline_context)
+            # Validation leaves the new Outline in DRAFT after exercising its
+            # positive/negative facts. PlanVersion needs a genuinely approved
+            # source, so use the existing Owner's real Review API fixture.
+            owner_fixture = plan_edge["owner"]
+            original_connection = owner_fixture._connection
+            owner_fixture._connection = lambda port: {
+                "host": "127.0.0.1", "port": port, "user": "poc_admin",
+                "dbname": fixture_db.database,
+            }
+            try:
+                owner_fixture._approve_current_outline(
+                    outline_context, Path(fixture_db.data_root))
+            finally:
+                owner_fixture._connection = original_connection
         finally:
             runtime.dispose()
     with fixture_db() as db:
