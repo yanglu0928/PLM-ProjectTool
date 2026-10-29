@@ -77,18 +77,19 @@ def _migration_temp_root() -> Path:
     configured = os.environ.get("PLM_PG_TEMP_ROOT")
     if configured:
         runner_temp_value = os.environ.get("RUNNER_TEMP")
-        if not runner_temp_value:
-            raise ValueError("PLM_PG_TEMP_ROOT requires RUNNER_TEMP ownership boundary")
+        run_id = os.environ.get("GITHUB_RUN_ID")
+        if not runner_temp_value or not run_id:
+            raise ValueError("PLM_PG_TEMP_ROOT requires RUNNER_TEMP and GITHUB_RUN_ID ownership boundary")
         runner_temp = Path(runner_temp_value).resolve(strict=True)
         candidate = Path(configured)
         if candidate.is_symlink():
             raise ValueError("PLM_PG_TEMP_ROOT must not be a symlink")
         selected = candidate.resolve(strict=True)
+        expected = runner_temp / ("plm-p51-a27-pg-" + run_id)
         if (not selected.is_dir() or runner_temp.drive.upper() == "C:"
-                or selected.drive.upper() == "C:" or selected.parent.parent != runner_temp
-                or not selected.parent.name.startswith("plm-p51-a27-")
-                or selected.name != "PLMPostgresTemp" or not str(selected).isascii()):
-            raise ValueError("PLM_PG_TEMP_ROOT is outside the owned non-C A17 PostgreSQL temp")
+                or selected.drive.upper() == "C:" or selected != expected
+                or not str(selected).isascii()):
+            raise ValueError("PLM_PG_TEMP_ROOT is outside this run's non-C RUNNER_TEMP")
         return selected
 
     configured = os.environ.get("PLM_P51_TEMP_ROOT")
