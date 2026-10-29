@@ -17,3 +17,5 @@
 - 2026-10-28 hosted run 40656184670：CR 临时根选择单测、父包 PG smoke均通过，但 Platform Write nested smoke 仍把 PG `pgdata` 写在 P42 `plm-p42-platform-write-*` 目录并收到拒绝。扩展方案：独立创建 sibling PostgreSQL 临时目录，不与 P42 专用权限工作目录共用；重新执行 A17。
 
 - 2026-10-28 hosted run 40659216063：候选投影与父包 PG smoke PASS，A17 initdb 在 PLMToolTemp 子树中继续 Permission denied。已将 CR-EXEC-016 最终路径调整为 A17 owned root 内 PLMPostgresTemp sibling，和 P42 受限 PLMToolTemp 分离。A17 仍未通过。
+
+- 2026-10-29 hosted run 40662516205：全量 backend、frontend、运行时/父包组装、候选投影与 parent PG smoke 通过；A17 在 Platform Write smoke temp-root 前置断言失败。已登记：general temp 与 PostgreSQL temp 变量误混，修正后重跑 A17。
