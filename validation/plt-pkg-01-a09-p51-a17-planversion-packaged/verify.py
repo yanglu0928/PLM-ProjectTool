@@ -539,6 +539,7 @@ def packaged_planversion_probe(**context) -> None:
                 "dbname": fixture_db.database,
             }
             try:
+                owner_fixture._restore_coverage_edge(outline_context)
                 owner_fixture._approve_current_outline(
                     outline_context, Path(fixture_db.data_root))
             finally:
