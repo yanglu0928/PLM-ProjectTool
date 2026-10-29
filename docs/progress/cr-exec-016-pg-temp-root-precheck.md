@@ -36,3 +36,6 @@
 
 
 - 2026-10-29 hosted run 40802934467：9/10 jobs通过；Python预建空pgdata后，Windows initdb改报File exists，确认该方案不兼容并已撤销。新方案在随机owned pg_run上对hosted当前账户授予继承权限，initdb目标保持不存在；授权失败则fail-closed，待完整云端验证。
+
+
+- 2026-10-29 hosted run 40804340056：9/10 jobs通过；A17已越过initdb/PG启动/migration/API readiness，Caddy validate启动时CreateProcess FileNotFoundError。PG ACL调整已将阻塞推进到下一阶段；检查Caddy文件/受限PATH/SystemRoot，加入Caddy runtime目录后进行完整A17重验，Edge/PlanVersion与最终清理尚未通过。

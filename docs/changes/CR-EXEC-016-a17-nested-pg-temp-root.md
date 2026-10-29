@@ -48,3 +48,7 @@
 - 云端验收追加（run 40802934467，commit `cd7954cc20036c5bc285d785eaab6ee9ec68cf9e`）：9/10 jobs通过。预建空目录后 initdb 从 Permission denied 转为 `File exists`，证明 Windows 版 initdb 要求目标路径尚不存在；预建方案撤销。PG直接目录和子进程TEMP/TMP均已隔离，A17其余链未执行通过marker。
 
 - CR-EXEC-016 实施调整：保持 data 目标不存在，由 Python 对本轮唯一随机 `pg_run` 解析 hosted 当前账户并用 `icacls` 在该目录显式授予仅继承至其内容的完全控制，再运行 initdb。授予前校验目录真实存在且不是 symlink，账户名经过字符白名单，不使用 shell，icacls失败时停止并保留诊断。权限范围只有 synthetic smoke 临时目录，PG完成后仍按进程退出/目录归属检查清理；不修改系统目录或产品数据ACL。验证计划为完整 hosted A17，以及权限授予、Edge/PG markers 和清理结果。
+
+- 云端验收追加（run 40804340056，commit `a3e72ed0204b03cc84d20eafea2268504a5191d3`）：9/10 jobs通过，A17通过 initdb/PG启动、bundled migration 与 packaged API readiness，进入 Caddy validate；Windows CreateProcess 抛 FileNotFoundError。PG 权限阻断不再复现，空 data 目录验证保持未预建状态；A17 的 Edge/PlanVersion业务 markers尚未产生。
+
+- CR-EXEC-016验证结论：在仅 owned 随机 `pg_run` 为 hosted 当前账户授予继承ACL后，PostgreSQL 初始化、启动、migration及产品API readiness到达。临时ACL方案部分验证成功，仍需整个 smoke 清理证据。新增次级修正：将 Caddy 自身目录纳入受限 smoke PATH，显式确保 SystemRoot/WINDIR，且在CreateProcess前验证 Caddy可执行文件存在；不改产品发行配置。Hosted full flow重试须到 Edge 和 PG state markers、临时数据库停止及目录删除才可关闭 CR。

@@ -548,8 +548,10 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             f'selected_mac: "{selected_mac}"\n', encoding="ascii")
         env = {name: value for name, value in os.environ.items() if not name.upper().startswith("PLM_")}
         env.pop("PYTHONPATH", None)
-        env["PATH"] = os.pathsep.join((str(target / "runtime/python"), str(pg),
+        env["PATH"] = os.pathsep.join((str(caddy.parent), str(target / "runtime/python"), str(pg),
                                        str(Path(os.environ["WINDIR"]) / "System32"), os.environ["WINDIR"]))
+        env.setdefault("SystemRoot", os.environ["WINDIR"])
+        env.setdefault("WINDIR", os.environ["WINDIR"])
         api_command = [str(runtime), "-I", "-B", "-m",
                        "plm_assistant.entrypoints.serve_windows",
                        str(bootstrap), "--platform-write"]
@@ -599,6 +601,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             api_restart_count += 1
         caddy_config.write_text(caddyfile(target / "app/frontend/dist", cert, key,
                                           api_port, https_port), encoding="ascii")
+        if not caddy.is_file():
+            raise ValueError("packaged Caddy executable missing from verified layout")
         checked = subprocess.run([str(caddy), "validate", "--config", str(caddy_config)],
                                  capture_output=True, text=True, errors="replace", env=env,
                                  timeout=20, check=False)
