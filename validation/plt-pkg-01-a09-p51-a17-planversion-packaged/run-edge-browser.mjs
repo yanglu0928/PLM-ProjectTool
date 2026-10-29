@@ -9,7 +9,14 @@ const reviewer = process.env.PLM_P51_A17_REVIEWER;
 const password = process.env.PLM_P51_A17_PASSWORD;
 const tempRoot = process.env.PLM_P51_A17_TEMP;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-if (!/^https:\/\/localhost:\d{2,5}$/.test(origin ?? "") || !uuid.test(project ?? "")
+let packagedOriginAllowed = false;
+try {
+  const parsedOrigin = new URL(origin ?? "");
+  packagedOriginAllowed = parsedOrigin.protocol === "https:"
+    && ["localhost", "plm.example.test"].includes(parsedOrigin.hostname)
+    && parsedOrigin.origin === origin;
+} catch { /* Reject malformed origins. */ }
+if (!packagedOriginAllowed || !uuid.test(project ?? "")
   || manager !== "Synthetic Packaged User" || reviewer !== "Synthetic Handover Customer"
   || password !== "synthetic-packaged-login-password"
   || !tempRoot || resolve(tempRoot).toLowerCase().includes("\\\\")
