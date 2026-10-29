@@ -1,7 +1,7 @@
 # CR-EXEC-025：A17 PlanVersion 来源补齐显式 Outline Review
 
 - 日期：2026-10-29
-- 状态：已实施，待托管验收
+- 状态：已实施；Review API 正确拒绝（等待 CR-EXEC-026 恢复 coverage 后验收）
 - 来源与证据：GitHub hosted Windows 2025 run 40823849539 的全量后端测试、前端构建、PG18/pgvector、嵌入运行时、Windows 候选/父包组装及 PG lifecycle 均通过；A17 已输出 SOL_03_A06_P03_A05_P03_A05_P02_FULL_SOURCE_PG_PASS。随后 validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py 在 _outline_full 后检查 plm.sol_outlines.current_approved_version_ref，失败并报告 synthetic Approved Outline source fixture unavailable。日志显示 _outline_full 只创建/Validate Outline 并验证覆盖正反例，不执行 Review；下游 PlanVersion fixture 要求一个真正已批准 Outline。
 - 问题：A17 将“Outline 验证通过”误当作已有“Approved Outline 来源”。当前一次性合成库中无已批准 Outline，因此正确的来源证明拒绝继续。
 - 方案比较：A. 删除/放宽 approved-pointer 断言或直接写数据库状态；B. 复用既有验证 Owner 的 Review API helper，在当前 disposable PG 中为刚创建且验证通过的 Outline 建立合成 Review，通过实际提交/决策路由走完批准，再核对 current_approved_version_ref 指向同一个版本。选择 B，不跳过业务状态机、不直接改批准指针。
