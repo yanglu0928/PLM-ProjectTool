@@ -358,6 +358,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: apps/backend/pyproject.toml
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
@@ -369,7 +371,6 @@ jobs:
           New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
           $env:TEMP = $installRoot
           $env:TMP = $installRoot
-          $env:PIP_CACHE_DIR = Join-Path $installRoot "pip-cache"
           python -m pip install --upgrade pip
           if ($LASTEXITCODE -ne 0) { throw "pip bootstrap failed" }
           python -m pip install -e ".[test]"

@@ -39,3 +39,6 @@
 
 
 - 2026-10-29 hosted run 40804340056：9/10 jobs通过；A17已越过initdb/PG启动/migration/API readiness，Caddy validate启动时CreateProcess FileNotFoundError。PG ACL调整已将阻塞推进到下一阶段；检查Caddy文件/受限PATH/SystemRoot，加入Caddy runtime目录后进行完整A17重验，Edge/PlanVersion与最终清理尚未通过。
+
+
+- 2026-10-29 hosted run 40805826034：其他9个jobs通过，A17长时间停在browser harness pip依赖安装；平台未暴露运行中step日志，无法确认网络/runner原因。已让A17 setup-python复用backend job相同的pyproject pip cache key，移除随临时安装目录一同删除的pip缓存覆写，继续hosted重验。

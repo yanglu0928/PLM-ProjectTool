@@ -52,3 +52,6 @@
 - 云端验收追加（run 40804340056，commit `a3e72ed0204b03cc84d20eafea2268504a5191d3`）：9/10 jobs通过，A17通过 initdb/PG启动、bundled migration 与 packaged API readiness，进入 Caddy validate；Windows CreateProcess 抛 FileNotFoundError。PG 权限阻断不再复现，空 data 目录验证保持未预建状态；A17 的 Edge/PlanVersion业务 markers尚未产生。
 
 - CR-EXEC-016验证结论：在仅 owned 随机 `pg_run` 为 hosted 当前账户授予继承ACL后，PostgreSQL 初始化、启动、migration及产品API readiness到达。临时ACL方案部分验证成功，仍需整个 smoke 清理证据。新增次级修正：将 Caddy 自身目录纳入受限 smoke PATH，显式确保 SystemRoot/WINDIR，且在CreateProcess前验证 Caddy可执行文件存在；不改产品发行配置。Hosted full flow重试须到 Edge 和 PG state markers、临时数据库停止及目录删除才可关闭 CR。
+
+
+- Hosted运行优化记录（run 40805826034）：除A17外9个jobs已成功；A17作业长时间停在 `python -m pip install -e ".[test]"`，GitHub当前未提供运行中job日志供根因确认。原workflow将 `PIP_CACHE_DIR` 放在安装临时目录中，并在成功后删除，A17 setup-python也未启用pip cache。调整为与backend job相同地启用基于 `apps/backend/pyproject.toml` 的setup-python pip cache，移除临时安装根下的一次性PIP_CACHE_DIR；TEMP/TMP仍在D盘RUNNER_TEMP。缓存命中加速后续验证，依赖未改变。
