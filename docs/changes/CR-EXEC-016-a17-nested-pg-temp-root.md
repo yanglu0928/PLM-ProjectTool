@@ -44,3 +44,7 @@
 - 云端验收追加（run 40801427817，commit `d9985c8e36625a22dc5212144221a06da1295b66`）：9/10 jobs通过，A17 仍在 initdb 创建 `RUNNER_TEMP/plm-pg18-platform-write-<id>/pgdata` 时 Permission denied；PostgreSQL 子进程已使用 `pg_run` 专用 TEMP/TMP，故临时变量继承假设未获支持。父包 PG smoke、A17投影和其他全量组件通过；业务marker未产生。
 
 - CR-EXEC-016 进一步收敛：让 smoke 自身先校验 `pgdata` 不存在，再在唯一 `pg_run` 内创建并验证空目录，交由 initdb 在该空目录初始化（PostgreSQL initdb 接受现存空目标目录）。不改变父级临时根、产品数据或权限策略。若 hosted 验证失败，保留错误输出并退回前版实现继续定位；空目录仍只在 PostgreSQL 进程确认停止后清理。
+
+- 云端验收追加（run 40802934467，commit `cd7954cc20036c5bc285d785eaab6ee9ec68cf9e`）：9/10 jobs通过。预建空目录后 initdb 从 Permission denied 转为 `File exists`，证明 Windows 版 initdb 要求目标路径尚不存在；预建方案撤销。PG直接目录和子进程TEMP/TMP均已隔离，A17其余链未执行通过marker。
+
+- CR-EXEC-016 实施调整：保持 data 目标不存在，由 Python 对本轮唯一随机 `pg_run` 解析 hosted 当前账户并用 `icacls` 在该目录显式授予仅继承至其内容的完全控制，再运行 initdb。授予前校验目录真实存在且不是 symlink，账户名经过字符白名单，不使用 shell，icacls失败时停止并保留诊断。权限范围只有 synthetic smoke 临时目录，PG完成后仍按进程退出/目录归属检查清理；不修改系统目录或产品数据ACL。验证计划为完整 hosted A17，以及权限授予、Edge/PG markers 和清理结果。

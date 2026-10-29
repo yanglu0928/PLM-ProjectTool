@@ -227,6 +227,24 @@ def _diagnose_packaged_factory(runtime: Path, bootstrap: Path,
     return label[0] if re.fullmatch(r"(?:FACTORY_OK|[\w]+Error@[\w.]+:\d+)", label[0]) else "NO_FACTORY_RESULT"
 
 
+def _grant_owned_postgres_temp_access(path: Path) -> None:
+    resolved = path.resolve(strict=True)
+    if path.is_symlink() or not resolved.is_dir():
+        raise ValueError("owned PostgreSQL temp root must be a real directory")
+    identity = subprocess.run(["whoami"], capture_output=True, text=True,
+                              errors="replace", timeout=10, check=False)
+    account = identity.stdout.strip()
+    if (identity.returncode != 0 or not re.fullmatch(r"[A-Za-z0-9_.\\-]+", account)):
+        raise RuntimeError("hosted runner identity could not be safely resolved")
+    grant = subprocess.run(
+        ["icacls", str(resolved), "/grant", f"{account}:(OI)(CI)F"],
+        capture_output=True, text=True, errors="replace", timeout=20, check=False,
+    )
+    if grant.returncode != 0:
+        raise RuntimeError("owned PostgreSQL temp ACL grant failed: "
+                           + (grant.stdout + grant.stderr)[-1200:])
+
+
 def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Path, *,
           layout_verifier=None, layout_rehearser=None,
           synthetic_license_document_factory=None, licensed_https_probe=None) -> dict:
@@ -306,9 +324,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     try:
         if data.exists() or data.is_symlink():
             raise ValueError("owned PostgreSQL data path must be new")
-        data.mkdir()
-        if data.is_symlink() or not data.is_dir() or any(data.iterdir()):
-            raise ValueError("owned PostgreSQL data path must be a fresh empty directory")
+        _grant_owned_postgres_temp_access(pg_run)
         _run([str(pg / "initdb.exe"), f"--pgdata={data}", "--username=poc_admin",
               "--auth=trust", "--encoding=UTF8", "--locale=C"],
               env=pg_process_env, timeout=120)

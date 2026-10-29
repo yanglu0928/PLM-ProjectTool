@@ -33,3 +33,6 @@
 
 
 - 2026-10-29 hosted run 40801427817：9/10 jobs通过；A17 initdb 在直接 RUNNER_TEMP 的唯一随机目录下仍无法创建 pgdata，即使其TEMP/TMP已隔离到同一 pg_run；证据否定“只改进程临时变量即可解决”。下一次将由 smoke 先创建并验证空 pgdata，再交 initdb 初始化；CR-EXEC-016和状态记录已更新。
+
+
+- 2026-10-29 hosted run 40802934467：9/10 jobs通过；Python预建空pgdata后，Windows initdb改报File exists，确认该方案不兼容并已撤销。新方案在随机owned pg_run上对hosted当前账户授予继承权限，initdb目标保持不存在；授权失败则fail-closed，待完整云端验证。
