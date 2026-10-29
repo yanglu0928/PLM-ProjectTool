@@ -271,7 +271,7 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
             "idempotency-key": "a17-section-submit-0001"}, json={
                 "reviewer_ids": [str(reviewer[0])],
                 "policy_ref": "SOLUTION_SECTION_ALL_V1",
-                "due_at": None, "submission_note": "Synthetic package fixture",
+                "due_at": None, "submission_note": None,
             })
         assert submitted.status_code == 201, submitted.text
         review_id = uuid.UUID(submitted.json()["data"]["review_id"])
