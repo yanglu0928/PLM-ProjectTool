@@ -1,7 +1,7 @@
 # CR-EXEC-026：A17 Outline Review 前恢复合成 Requirement 覆盖 TraceLink
 
 - 日期：2026-10-29
-- 状态：已实施，待托管验收
+- 状态：已实施；覆盖恢复与 Outline Review API 通过至 A17 后续浏览器 origin preflight
 - 来源与证据：GitHub hosted Windows 2025 run 40825554371 的基础构建/测试、候选包、PG lifecycle 与 Section/Requirement/Outline validation 均通过。CR-EXEC-025 追加 Outline Review API 提交时返回 BUSINESS_REVIEW_NOT_ELIGIBLE。SOL-03-A06 _outline_full 为覆盖负例，故意撤销 Requirement→Approved Section 的 IMPLEMENTS TraceLink 并确认 coverage=FAIL；之后 PlanVersion Owner 需要一个 coverage 完整的 Outline 才允许送审。
 - 问题：Review 被业务 Gate 正确拒绝，因为 A17 没有在负向验证结束后恢复其 disposable synthetic coverage source。
 - 方案比较：A. 放宽 Outline readiness 或直接改状态/TraceLink 表；B. 复用 plan-02 Owner 的 _restore_coverage_edge helper，通过 TraceLink Owner Service 在当前一次性 PG 中恢复正确 requirement/version 到 approved section/version 的 IMPLEMENTS link，再用现有 Review API 提交/审批。选择 B，维持真实 Gate/授权/审计和来源证明。
