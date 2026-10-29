@@ -1,7 +1,7 @@
 # CR-EXEC-019：修复 A17 合成 Document 固定来源夹具
 
 - 日期：2026-10-29
-- 状态：固定来源修正确认有效，整体 A17 待后续复验
+- 状态：固定来源修正确认有效，A17 已越过 Section Review 后续至上游角色 fixture
 - 来源与证据：hosted run 40811860032 的基础作业、父包组装/投影及父包 PostgreSQL 生命周期均通过；A17 已通过包内 HTTPS、Workflow GET/START/重放/CSRF/冲突/Audit 和 Windows 控制台输出，随后在创建合成 Solution SectionVersion 时返回 `SOURCE_UNAVAILABLE`。验证栈定位到 `SectionDocumentContentProofAdapter` 的固定文件证明。审查 P51-A05 合成 Document 夹具发现 `storage_locator=projects/<project>/prototype-input.txt` 不符合 `LocalFileStorage` 的受控 locator 格式（要求 `projects/<project>/objects/<bucket>/<file-object-uuid>`）；A17 又把文件写在 `data_root/private-documents/<locator>`，而 adapter 从 `data_root/<locator>` 读取。该问题阻断 A17 业务链，不能归因为产品服务或记作通过。
 - 方案比较：A. 将 synthetic FileObject locator 改为存储 adapter 的规范对象路径，并将 synthetic 字节写入隔离数据根下 locator 指定的确切位置，验证存储内容 Hash/大小与 DB 元数据一致；B. 放宽生产存储 locator 校验以接受测试路径。选择 A，不改变生产安全边界。
 - 基线差异：只修正 P51/A17 hosted 验证夹具中的合成存储路径与字节准备；不改产品存储实现、数据库 Schema、API、安装目录或用户数据。

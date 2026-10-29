@@ -301,6 +301,19 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
         ).fetchone()
     assert approved == ("APPROVED", version.solution_section_version_id,
                         "APPROVED", "APPROVED"), approved
+    # The following inherited Requirement Review probe requires a CUSTOMER_MEMBER.
+    # Prepare that role only after this synthetic Section Review has completed.
+    with fixture_db() as db, db.transaction():
+        db.execute(
+            "UPDATE plm.prj_project_members SET project_role='CUSTOMER_MEMBER' "
+            "WHERE project_id=%s AND user_id=%s AND state='ACTIVE'",
+            (project, reviewer[0]),
+        )
+        member = db.execute(
+            "SELECT project_role,state FROM plm.prj_project_members "
+            "WHERE project_id=%s AND user_id=%s", (project, reviewer[0]),
+        ).fetchone()
+    assert member == ("CUSTOMER_MEMBER", "ACTIVE"), member
     print("P51_A17_SYNTHETIC_SECTION_OWNER_REVIEW_PASS", flush=True)
 
 
