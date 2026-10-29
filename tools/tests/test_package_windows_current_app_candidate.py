@@ -29,15 +29,24 @@ class CurrentAppCandidateTests(unittest.TestCase):
             runner = Path(temporary)
             run_root = runner / "plm-p51-a27-test"
             owned = run_root / "PLMToolTemp"
-            pg_owned = run_root / "PLMPostgresTemp"
+            pg_owned = runner / "plm-p51-a27-pg-123"
             owned.mkdir(parents=True)
             pg_owned.mkdir()
             with patch.dict(os.environ, {
                 "RUNNER_TEMP": str(runner),
+                "GITHUB_RUN_ID": "123",
                 "PLM_P51_TEMP_ROOT": str(owned),
                 "PLM_PG_TEMP_ROOT": str(pg_owned),
             }, clear=True):
                 self.assertEqual(_migration_temp_root(), pg_owned.resolve())
+            with patch.dict(os.environ, {
+                "RUNNER_TEMP": str(runner),
+                "GITHUB_RUN_ID": "123",
+                "PLM_P51_TEMP_ROOT": str(owned),
+                "PLM_PG_TEMP_ROOT": str(runner / "outside"),
+            }, clear=True):
+                with self.assertRaisesRegex(ValueError, "outside this run"):
+                    _migration_temp_root()
             with patch.dict(os.environ, {
                 "RUNNER_TEMP": str(runner),
                 "PLM_P51_TEMP_ROOT": str(owned),
