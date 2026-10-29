@@ -1,7 +1,7 @@
 # CR-EXEC-028：Windows RUNNER_TEMP 盘符检查改为大小写不敏感
 
 - 日期：2026-10-29
-- 状态：已实施，待托管验收
+- 状态：D-drive guard 已通过 hosted run 40831017596；随后 PlanVersion Create succeeded，UI timing 问题另见 CR-EXEC-029
 - 来源与证据：GitHub hosted Windows 2025 run 40829027692 的基础构建、测试、候选包、PG lifecycle、Section/Requirement/Outline Review 前置链均通过，随后仍在 A17 Edge 泛化 guard 失败。CR-EXEC-027 allowlist 与上游 smoke 源码确认的实际 origin https://localhost:<port> 一致。逐项检查 Node guard 后，最后条件比较 RUNNER_TEMP 是否以小写盘符 d: 开头；GitHub Windows runner 的实际路径示例为 D:/a/_temp，JavaScript startsWith 区分大小写，因此有效 D 盘路径被拒绝。
 - 问题：安全路径校验把 Windows 盘符大小写当作路径身份的一部分，产生误拒绝。
 - 方案比较：A. 移除 D 盘限制；B. 仅对盘符大小写不敏感，继续要求 RUNNER_TEMP 位于 D 盘、Edge profile 临时目录是 RUNNER_TEMP 的严格子目录。选择 B。
