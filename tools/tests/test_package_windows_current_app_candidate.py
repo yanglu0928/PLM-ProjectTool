@@ -39,11 +39,13 @@ class CurrentAppCandidateTests(unittest.TestCase):
                 "PLM_PG_TEMP_ROOT": str(pg_owned),
             }, clear=True):
                 self.assertEqual(_migration_temp_root(), pg_owned.resolve())
+            outside_run = runner / "outside-run"
+            outside_run.mkdir()
             with patch.dict(os.environ, {
                 "RUNNER_TEMP": str(runner),
                 "GITHUB_RUN_ID": "123",
                 "PLM_P51_TEMP_ROOT": str(owned),
-                "PLM_PG_TEMP_ROOT": str(runner / "outside"),
+                "PLM_PG_TEMP_ROOT": str(outside_run),
             }, clear=True):
                 with self.assertRaisesRegex(ValueError, "outside this run"):
                     _migration_temp_root()

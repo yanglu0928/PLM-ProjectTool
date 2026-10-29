@@ -21,3 +21,6 @@
 - 2026-10-29 hosted run 40662516205：全量 backend、frontend、运行时/父包组装、候选投影与 parent PG smoke 通过；A17 在 Platform Write smoke temp-root 前置断言失败。已登记：general temp 与 PostgreSQL temp 变量误混，修正后重跑 A17。
 
 - 2026-10-29 hosted run 40794073885：全量回归、候选、父包 PG smoke 和 A17投影通过；A17 initdb 在 owned run-root 内的新 PG temp 子树仍被拒。已登记再次修正：PostgreSQL root 移至 RUNNER_TEMP 下与 A27 run-root 同级且按 GITHUB_RUN_ID 精确绑定的子目录；完整重跑待证。
+
+
+- 2026-10-29 hosted run 40796767823：基础 7 个任务通过，含父包 PG18/pgvector 临时生命周期；A17 8 项投影单测因越界路径夹具未创建而 1 项错误，full flow skipped。已登记并在 CR-EXEC-016 修复夹具后重跑；不得记为 A17 通过。

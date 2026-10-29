@@ -24,3 +24,6 @@
 - 云端验收追加（run 40662516205）：完整基线和 parent PG smoke 通过，A17 在 `smoke_packaged_platform_write_https.py` 入口目录校验失败。根因是上次将该 smoke 的 general temp_root 选择改为 `_migration_temp_root()`；现在该 helper 优先返回 PLMPostgresTemp，但入口仍要求 PLMToolTemp。修复为 general artifacts 显式优先读取稳定的 PLM_P51_TEMP_ROOT（PLMToolTemp），独立 PostgreSQL cluster 继续使用 PLM_PG_TEMP_ROOT（PLMPostgresTemp）。数据/安装逻辑不变，回滚恢复原 selector；A17 需全量重验。
 
 - 云端验收追加（run 40794073885）：A17 入口变量已正确区分，但 initdb 在 owned run-root 下 `PLMPostgresTemp/plm-pg18-platform-write-*/pgdata` 仍 Permission denied；父包 PostgreSQL smoke 在 runner temp 验收通过。CR 实施路径再调整为 `RUNNER_TEMP/plm-p51-a27-pg-<GITHUB_RUN_ID>` 直系子目录，以 run id 绑定、非 C 盘/ASCII/非 symlink校验；平台 smoke 临时材料继续位于 owned run-root 的 PLMToolTemp。A17 wrapper 成功收口时先确认 PG root 是本 run 直系子目录并清理，再移除 run-root；失败日志保留本次临时证据供 runner 生命周期回收。合成数据，不连接已有/外部数据库。
+
+
+- 云端验收追加（run 40796767823，commit `c49407e28c1b5a3ddd08ed2b10e0015c6e9ff69f`）：基础边界、后端、前端、Python、PG18、embedded backend、父包组装和父包 PostgreSQL 生命周期 smoke 成功。A17 候选投影的 8 项测试中有 1 项负向路径夹具错误：模拟 `outside` 目录未先创建，Windows `Path.resolve(strict=True)` 先抛 FileNotFoundError，导致完整 A17 跳过。已定位为测试夹具问题，修复为创建越界模拟目录后验证拒绝；A17 full flow 尚未运行，本轮不计通过。
