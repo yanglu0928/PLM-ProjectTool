@@ -1,7 +1,7 @@
 # CR-EXEC-024：SOL-03-A06 nested fixture 兼容显式 NONE_REQUIRED Section
 
 - 日期：2026-10-29
-- 状态：已实施，待托管验收
+- 状态：实施并在 hosted run 40823849539 通过目标检查点；完整 A27 仍进行中
 - 来源与证据：GitHub hosted Windows 2025 run 40821508561 attempt 2 的全量后端测试、前端构建、PG18/pgvector、嵌入运行时、候选/父包组装与 PostgreSQL lifecycle 均通过。A17 已越过 Document、Section Review 和 nested RequirementVersion 授权，并输出 `P51_A17_SYNTHETIC_SECTION_OWNER_REVIEW_PASS`、`OUTLINE_QUALIFIED_REQUIREMENT_V2_PASS`。随后 `validation/sol-03-a06-p03-a05-p03-a05-p02-full-source-pg/verify.py:_approved_section_v2` 从当前项目选取 Approved Section 后，仅因 `old.spec_binding_state == "FIXED_REFS"` 断言失败而中止。
 - 问题：SOL-03-A06 的既有验证夹具假设唯一 Approved Section 必须使用 `FIXED_REFS`。当前 A17 合成 Section 是普通标准功能，按现有 Section 合同可明确使用 `NONE_REQUIRED` 并提供不需要专用规格的理由；这是明确的合法状态。该断言把夹具历史形状误当成产品不变量。
 - 方案比较：A. 在 A17 中额外伪造一个带固定规格引用的 Approved Section，以满足旧夹具；B. 修正 nested 验证夹具，仅接受合同允许且内部一致的 `FIXED_REFS` / `NONE_REQUIRED` 两类明确绑定状态，并对 `NONE_REQUIRED` 保持非空理由校验。选择 B，避免造与标准功能场景无关的规格数据，不改变产品权限或合同。
