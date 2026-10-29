@@ -106,7 +106,7 @@ def after_approval(state: dict, **context) -> None:
     assert result["original_etag"] == '"v0"'
     state["version"] = version
     print(json.dumps({key: value for key, value in result.items() if key != "request_body"},
-                     ensure_ascii=False, sort_keys=True), flush=True)
+                     ensure_ascii=True, sort_keys=True), flush=True)
     with context["connect_db"]() as db:
         row = db.execute(
             "SELECT version_state,version_no,created_by FROM plm.srv_survey_versions "
