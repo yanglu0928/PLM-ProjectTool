@@ -14,6 +14,28 @@ from pathlib import Path, PurePosixPath
 
 BLOCKED = {".env", ".log", ".key", ".pfx", ".p12", ".pyc"}
 COMPONENT_META = {"manifest.json", "third-party-inventory.json", "payload-sha256sums.txt"}
+DATABASE_CREDENTIAL_TARGET = "PLMProjectTool/Database"
+
+
+def make_startup_preflight(*, product_key_present: bool) -> dict[str, object]:
+    blockers = [] if product_key_present else ["FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"]
+    blockers.extend([
+        "FORMAL_LICENSE_TRUST_NOT_VERIFIED",
+        "DATABASE_CREDENTIAL_REFERENCE_NOT_VERIFIED",
+        "SERVICE_IDENTITY_ACL_NOT_VERIFIED",
+        "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED",
+    ])
+    return {
+        "formal_startup_ready": False,
+        "packaged_product_public_key_resource_present": product_key_present,
+        "formal_license_trust_verified": False,
+        "database_credential_target_reference": DATABASE_CREDENTIAL_TARGET,
+        "database_credential_reference_verified": False,
+        "service_identity_acl_verified": False,
+        "tls_certificate_configured": False,
+        "tls_private_key_configured": False,
+        "blocker_codes": blockers,
+    }
 
 
 def sha_bytes(data: bytes) -> str:
@@ -246,12 +268,7 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
     hashes: dict[str, str] = {}
     product_key_path = "payload/runtime/packages/plm_assistant/modules/license/trust/product_public_key.json"
     product_key_present = product_key_path in embedded_hashes
-    startup_blockers = [] if product_key_present else ["FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"]
-    startup_preflight = {
-        "formal_startup_ready": False,
-        "packaged_product_public_key_resource_present": product_key_present,
-        "blocker_codes": startup_blockers,
-    }
+    startup_preflight = make_startup_preflight(product_key_present=product_key_present)
 
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED,
                          compresslevel=1, allowZip64=True) as bundle:

@@ -12,6 +12,12 @@ try {
         $manifest.legal_clearance -ne $false -or
         $manifest.startup_preflight.formal_startup_ready -ne $true -or
         $manifest.startup_preflight.packaged_product_public_key_resource_present -ne $true -or
+        $manifest.startup_preflight.formal_license_trust_verified -ne $true -or
+        $manifest.startup_preflight.database_credential_target_reference -ne "PLMProjectTool/Database" -or
+        $manifest.startup_preflight.database_credential_reference_verified -ne $true -or
+        $manifest.startup_preflight.service_identity_acl_verified -ne $true -or
+        $manifest.startup_preflight.tls_certificate_configured -ne $true -or
+        $manifest.startup_preflight.tls_private_key_configured -ne $true -or
         @($manifest.startup_preflight.blocker_codes).Count -ne 0
     ) {
         [Console]::Error.WriteLine("Packaged production startup blocked; trust prerequisites are not ready.")

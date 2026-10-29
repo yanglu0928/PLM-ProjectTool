@@ -238,6 +238,8 @@ jobs:
           }
           python .\tools\audit_caddy_windows_offline_input.py --input-root $caddyDir --output (Join-Path $caddyDir "caddy-audit.json")
           if ($LASTEXITCODE -ne 0) { throw "Pinned Caddy input audit failed" }
+      - name: Verify startup prerequisite manifest contract
+        run: python -m unittest discover -s tools/tests -p "test_windows_parent_startup_preflight.py"
       - name: Assemble and verify non-release parent candidate
         shell: pwsh
         run: |
