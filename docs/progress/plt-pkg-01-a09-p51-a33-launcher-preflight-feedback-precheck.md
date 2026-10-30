@@ -24,3 +24,9 @@
 - Run 41000446225 的全量构建、后端/前端、运行时与父包组装成功；parent smoke job 123886741768 在probe_packaged_startup_guard调用实际payload/start-trial.ps1时，PowerShell 5.1进程超过20秒并触发subprocess.TimeoutExpired。stdout/stderr/退出码未取得。
 - 此次失败由测试超时证据触发，不能认定是单纯CI抖动，也不能视为产品安全或诊断通过。A17为独立并行job且已成功。
 - 先记录，再仅调整launcher的诊断子进程启动/有界读取与测试超时/超时证据输出；保持子进程只运行已hash校验的只读诊断，launcher最终失败关闭，异常仍不泄露环境内容。后续用D盘hosted runner重新验证实际诊断及缺失/损坏输入。
+
+
+## 第三轮 hosted 偏差：launcher 仍回退固定文案（2026-10-30）
+
+- Run 41002269359 在托管 Windows Server 2025、D:\\a\\_temp 上完成后端/前端、运行时、父包组装与 A17 job；parent smoke job 123891914452 在launcher调用后失败，异常为“did not forward a JSON preflight report”。新15秒子进程界限阻止了此前20秒无界等待，但本次无JSON输出；现有Harness未打印子进程退出码及输出字节分类，尚不能确定launcher内部哪条校验触发固定回退。
+- 不将超时改善误判为A33通过。先记录，再仅增强Harness报告的非敏感执行分类（退出码、stdout/stderr字节数及是否命中固定拒绝文案），不输出原始环境或路径；据新hosted证据调整launcher的进程启动/输出处理，保持固定fail-closed及15秒上限。
