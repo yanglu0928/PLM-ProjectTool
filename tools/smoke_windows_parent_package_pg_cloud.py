@@ -289,27 +289,27 @@ def probe_packaged_startup_diagnostic(root: Path) -> dict:
     matrix_root = root / "startup-diagnostic-matrix"
     matrix_root.mkdir()
     try:
-        if result.returncode != 2 or result.stderr.strip():
+        if actual_result.returncode != 2 or actual_result.stderr.strip():
             try:
-                diagnostic_stdout = json.loads(result.stdout)
+                diagnostic_stdout = json.loads(actual_result.stdout)
                 stdout_shape = "json:" + str(diagnostic_stdout.get("status", "no-status"))
             except (json.JSONDecodeError, AttributeError):
                 stdout_shape = "non-json"
-            stderr_shape = ("empty" if not result.stderr.strip()
-                            else "fixed-rejection" if result.stderr.strip() ==
+            stderr_shape = ("empty" if not actual_result.stderr.strip()
+                            else "fixed-rejection" if actual_result.stderr.strip() ==
                             "Startup preflight diagnostic rejected; manifest invalid."
                             else "unexpected-nonempty")
             raise ValueError(
                 "actual startup diagnostic contract mismatch: "
-                f"exit={result.returncode}; stdout_bytes={len(result.stdout.encode('utf-8'))}; "
+                f"exit={actual_result.returncode}; stdout_bytes={len(actual_result.stdout.encode('utf-8'))}; "
                 f"stdout_shape={stdout_shape}; stderr_shape={stderr_shape}"
             )
         try:
-            report = json.loads(result.stdout)
+            report = json.loads(actual_result.stdout)
         except json.JSONDecodeError:
             raise ValueError(
                 "actual startup diagnostic output is not JSON: "
-                f"exit={result.returncode}; stdout_bytes={len(result.stdout.encode('utf-8'))}"
+                f"exit={actual_result.returncode}; stdout_bytes={len(actual_result.stdout.encode('utf-8'))}"
             ) from None
         expected_codes = {
             "FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED",
@@ -323,7 +323,7 @@ def probe_packaged_startup_diagnostic(root: Path) -> dict:
                 or report.get("legal_clearance") is not False
                 or set(report.get("blocker_codes", [])) != expected_codes
                 or len(report.get("messages", [])) != len(expected_codes)
-                or any("sensitive-path-marker" in x or "PLM-" in x for x in result.stdout)):
+                or any("sensitive-path-marker" in x or "PLM-" in x for x in actual_result.stdout)):
             raise ValueError("startup diagnostic report is incomplete or exposes forbidden details")
 
         for name, manifest_text in cases.items():
