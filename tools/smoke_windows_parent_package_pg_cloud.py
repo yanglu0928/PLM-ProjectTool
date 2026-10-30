@@ -42,6 +42,26 @@ def safe_name(name: str) -> str:
 DATABASE_CREDENTIAL_TARGET = "PLMProjectTool/Database"
 
 
+def run_packaged_launcher(shell: str, script: Path, cwd: Path,
+                          env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(script)],
+            cwd=str(cwd), capture_output=True, text=True, errors="replace",
+            timeout=30, env=env)
+    except subprocess.TimeoutExpired as exc:
+        stdout = exc.stdout or b""
+        stderr = exc.stderr or b""
+        if isinstance(stdout, str):
+            stdout = stdout.encode("utf-8", errors="replace")
+        if isinstance(stderr, str):
+            stderr = stderr.encode("utf-8", errors="replace")
+        raise ValueError(
+            "packaged startup launcher timed out after 30 seconds; "
+            f"stdout_bytes={len(stdout)}; stderr_bytes={len(stderr)}"
+        ) from None
+
+
 def database_credential_present() -> bool:
     if sys.platform != "win32":
         raise ValueError("Windows credential preflight required")
@@ -128,10 +148,7 @@ def probe_packaged_startup_guard(root: Path) -> dict:
     before_manifest = manifest_path.read_bytes()
     before_sums = checksums_path.read_bytes()
     before_diagnostic = sha_file(diagnostic_path)
-    result = subprocess.run([shell, "-NoLogo", "-NoProfile", "-NonInteractive",
-                             "-File", str(script)], cwd=str(root),
-                            capture_output=True, text=True, errors="replace",
-                            timeout=20, env=env)
+    result = run_packaged_launcher(shell, script, root, env)
     try:
         report = json.loads(result.stdout)
     except json.JSONDecodeError:
@@ -172,11 +189,8 @@ def probe_packaged_startup_guard(root: Path) -> dict:
                 (case_payload / "check-startup.ps1").unlink()
             else:
                 (case_root / "manifest.json").write_text("{", encoding="ascii")
-            attempt = subprocess.run(
-                [shell, "-NoLogo", "-NoProfile", "-NonInteractive",
-                 "-File", str(case_payload / "start-trial.ps1")],
-                cwd=str(case_root), capture_output=True, text=True, errors="replace",
-                timeout=20, env=env)
+            attempt = run_packaged_launcher(
+                shell, case_payload / "start-trial.ps1", case_root, env)
             if (attempt.returncode != 1 or attempt.stdout.strip()
                     or attempt.stderr.strip() !=
                     "Packaged production startup blocked; trust prerequisites are not ready."):
