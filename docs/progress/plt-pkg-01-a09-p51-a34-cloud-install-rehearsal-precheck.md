@@ -2,14 +2,14 @@
 
 - 日期：2026-10-30
 - 前置：A31父包诊断、A32应用投影、A33启动失败诊断均已在hosted Windows runner完成PASS_LIMITED；A16已有较早候选的隔离安装/升级演练记录，必须先审计可复用性。
-- 当前问题：当前完整父包候选已可构建、清洁解包并通过PG/A17流程，但尚未对当前候选执行安装/升级器路径演练；A16使用的候选版本不同，不能推定此父包布局兼容。
-- 单一目标：在GitHub hosted Windows runner的D盘RUNNER_TEMP内，对A33当前父包执行受限离线落地/替换演练，验证目标路径 containment、现有目录保护、组件Hash和失败后清理/恢复边界。
-- 前置审计：先读取A16/A26实现和对应Skill，确认是否已有可复用演练器；不重复造轮子。若现有脚本不接受当前parent-package artifact，在编码前记录最小差异与兼容/回滚计划。
+- 当前问题：当前完整父包候选已可构建、清洁解包、D盘受限staging并通过PG/A17流程，但尚未证实既有隔离安装/升级演练可消费当前parent-package布局；A16候选版本不同，不能推定兼容。
+- 单一目标：在GitHub hosted Windows runner的D盘RUNNER_TEMP内，复用或补齐A16隔离安装/升级演练，使当前parent-package候选在一次性应用根目录完成可回滚的版本替换，并验证data/config/license等用户状态标记保留。
+- 前置审计：先读取A16实现/验收记录及Release Skill，确认安装器输入布局、根目录边界、替换/失败恢复语义；staging helper A33已复用，不重复实现。若A16没有可复用演练器，在编码前记录最小方案、回滚和验证计划。
 - 范围：仅hosted Windows Server 2025自有临时根；只消费同run非发行parent candidate artifact。正向生产启动、真实License信任、服务安装和系统目录写入不在范围。试运行最终仍应由A33守门拒绝，且不启动服务/API/listener。
-- 验收：所有写入路径均在D:\\a\\_temp本轮子目录；对ZIP、manifest、payload总数/Hash独立验证；模拟已有目标保护和受控失败清理；无C盘项目/候选运行，既有目标marker不变，临时目录清理；完整hosted job通过。
+- 验收：只触及D:\\a\\_temp本轮拥有的应用/备份根；验证升级前后data/config/license/plugins marker保持一致、替换失败不自动启动服务并可显式恢复旧app/runtime、临时备份/进程/目录清理；完整hosted流程通过。
 - 回滚：移除本轮生成的临时演练目录/辅助脚本，不修改已有安装；如果目标路径逃逸、已有目标变化或清理失败则停止并记录，不继续任何安装。
 - 风险与限制：Server 2025 hosted runner只能证明当前Windows Server 2025临时路径行为，不能推定Windows 11设备兼容；Debian 13仍按用户指令跳过。没有正式公钥/License信任材料时，任何安装后启动仍应失败关闭。Pilot与Formal Release均保持NOT_READY。
-- 编码前结论：需先完成A16/A26演练器可复用性只读审计；审计通过前不改产品/打包器代码。当前任务仅针对受控云端临时目录，不需要用户本机执行。
+- 编码前结论：A33已覆盖父包D盘staging；A34只在A16审计确认存在当前父包兼容缺口后实施安装/升级演练适配。真实License trust不满足时launcher仍应失败关闭；不运行用户本机代码。
 
 
 ## 前置范围收敛（2026-10-30）
