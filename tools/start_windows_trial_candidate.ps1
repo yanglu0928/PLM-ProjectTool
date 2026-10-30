@@ -42,18 +42,22 @@ function Write-StartupFailure($manifest) {
         $stdoutTask = $diagnosticProcess.StandardOutput.ReadToEndAsync()
         $stderrTask = $diagnosticProcess.StandardError.ReadToEndAsync()
         if (-not $diagnosticProcess.WaitForExit(15000)) {
-            try { $diagnosticProcess.Kill() } catch {}
+            try {
+                $diagnosticProcess.Kill()
+                $null = $diagnosticProcess.WaitForExit(5000)
+            } catch {}
             throw "diagnostic process exceeded its 15 second limit"
         }
         $diagnosticProcess.WaitForExit()
         $diagnosticText = $stdoutTask.GetAwaiter().GetResult()
         $diagnosticError = $stderrTask.GetAwaiter().GetResult()
+        $diagnosticLines = @($diagnosticText -split "\r?\n" | Where-Object { $_.Length -gt 0 })
         if ($diagnosticProcess.ExitCode -ne 2 -or
             $diagnosticError.Length -ne 0 -or
-            $diagnosticText -notmatch "^(?s).+\r?\n?$") {
+            $diagnosticLines.Count -ne 1) {
             throw "diagnostic command contract rejected"
         }
-        $diagnosticText = $diagnosticText.TrimEnd([char]13, [char]10)
+        $diagnosticText = $diagnosticLines[0]
         $report = $diagnosticText | ConvertFrom-Json
         if ($report.status -cne "BLOCKED" -or
             -not (Test-StrictJsonBoolean $report.release_eligible $false) -or
