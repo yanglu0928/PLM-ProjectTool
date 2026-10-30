@@ -26,3 +26,6 @@
 
 - A34 只在 hosted Windows Server 2025 执行，无法代表 Windows 11。此前置检查新增一次使用现有 Windows 11 目标机、但将全部任务输入和临时数据留在 D: 的验证切片；这是验收环境补充，不改变冻结产品基线或 Release 判定。
 - Windows 11 本地重跑 A34 四项合成定向测试均通过（Python 3.13、TEMP/TMP/RUNNER_TEMP=`D:\\A35Temp`，4/4，0.364s），证明当前工具单测可在目标OS执行。尚未运行真实父包替换；大Artifact传输失败，实施小块云端交接后再继续。该限制不算包验收通过。
+- 后续实施：`transfer_parent_candidate_chunks.py` 和 hosted handoff job 已加入，GitHub run `41026213054` 全12 jobs success，A35 job `123968232347` success；16/16 Artifact ZIP SHA与API摘要一致。A35本地测试5/5、A34本地测试4/4通过。
+- 最终验收：Windows 11 本机 D 盘用旧 A31 run `40995913354` 父包与同一 hosted run 的新父包执行完整 A34 替换/显式恢复；两份均20,119载荷项，旧/新完整 ZIP SHA分别 `f4d417998ba18bb340fb3d39d83a5c356ac73109a894c1f214852f6b72ed4d49` / `94700239dc2218466087fd4beec90f9d34cd4a6c96ceed1049033df58342e2f2`。4/4标记保留、隔离/手动恢复通过，launcher仍BLOCKED/exit=1且无service/API/listener。详见 `plt-pkg-01-a09-p51-a35-windows11-package-rehearsal-result.md`。
+- 首次真实演练因未把当前候选来源 run `41026213054` 注入 `GITHUB_RUN_ID` 而失败并残留两个D盘 staging 根；复跑时补入该只用于来源绑定的 run ID 后通过。残留 owner staging 逐路径核验位于 `D:\\A35Temp` 后清理。无产品服务、正式安装或 C 盘操作。
