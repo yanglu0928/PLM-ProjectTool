@@ -25,3 +25,14 @@
 - Run 40991376866 在进入 A31 父包 smoke 前，后端 3,849 项单测中的 `unit.test_rag_retrieval_query_crypto.RAGRetrievalQueryCryptoTests.test_identity_fingerprint_retention_and_ciphertext_tampering_fail` 的 `encrypted_payload` 子用例失败；日志显示预期的 `RetrievalQueryCryptoError` 未抛出。A31 smoke 因依赖作业失败而未执行。
 - 初步检查现有测试发现其将密文末字节固定替换成 `b"x"`；加密密文随机生成，若末字节原本已为 `x`，测试没有真正改变密文（概率约 1/256）。这是与 A31 代码无关的潜在随机性，不作已确认根因，先重跑失败作业收集证据。
 - 该失败作业重跑只验证是否偶发，不单独作为 A31 验收；完整 hosted workflow 仍须成功到达实际解包包根目录的 A31 smoke。若重跑仍失败，另开并记录单一测试修复 WBS 后处理。
+
+
+## A31 hosted 验收结果与后续组合问题（2026-10-30）
+
+- GitHub Actions PR run 40992356658 的 Clean extraction and temporary PostgreSQL lifecycle smoke（job 123860726604）成功。hosted Windows Server 2025 runner 使用 D:\ 下的 RUNNER_TEMP；父包 20,119 个文件，归档 SHA-256 10eca56d28e3c3a137298bc9b0a1c9811e33654e513bfc2e174e22108157acc6。
+- 从真实清洁解包父包根目录执行 README 命令 powershell -NoProfile -File .\payload\check-startup.ps1：exit=2、stderr为空；报告 BLOCKED、release_eligible/legal_clearance=false、阻断代码与固定manifest相符；监听探测未发现服务。源manifest未被改写。
+- 四类伪造/不完整manifest均以固定拒绝文本、空stdout及exit=2拒绝；A29七类manifest篡改矩阵也通过。PG18.6/pgvector0.8.6临时生命周期通过并清理。A31专项结果为PASS_LIMITED；父包候选不是正式发行/实机安装。
+- 同run的后续 A17 packaged PlanVersion job（123861061645）失败：tools/rehearse_windows_unified_pg18_layout.py 对当前应用投影拒绝父包新加的 payload/check-startup.ps1 未知文件族。日志为 ValueError: unmapped candidate payload family；这是父包诊断工具与A17应用投影集成缺口，不推翻本A31独立作业验收，也不允许把组合工作流报告为全绿。
+- 后端全量回归本次3,849项通过；此前 run 40991376866 的加密篡改单测失败未复现。固定替换末字节的潜在随机性尚未改动或证明为该失败根因。
+- A32编码前检查已另行记录；下一项仅修当前应用投影对确切父包级诊断工具的允许排除，同时继续对所有未知payload族失败关闭。
+
