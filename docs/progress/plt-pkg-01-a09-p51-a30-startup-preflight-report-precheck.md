@@ -23,3 +23,5 @@
 - 先记录偏差后调整：增加无原始正文/环境路径/秘密输出的分类证据（仅退出码、stdout是否为合法BLOCKED JSON、stderr是否匹配固定拒绝、字节长度），再由hosted Windows复验；若查明产品输出合同不符，只做最小修复，维持任何情况下不启动服务的约束。
 
 - 后续run 40986507196增加安全分类后，诊断进程退出1、stdout为空、stderr为非空非固定拒绝；PowerShell脚本静态复核发现TLS证书与私钥共用manifest阻断码时，消息hashtable重复定义同一键。该错误由本次诊断实现引入，未触发服务/监听，隔离目录通过smoke异常清理；不计PASS。修正为单一TLS配置提示后重新hosted验证。
+
+- 第三轮run 40987631545的诊断程序成功输出JSON，但 smoke 的完整字段断言失败，发生在PG initdb之前。核查发现测试期望仍将TLS证书与私钥拆成两码，而A28冻结manifest用单一TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED表示两项；产品结果保持BLOCKED且未启动任何服务。先记录偏差，再同步测试期望到现有manifest契约，不扩大业务/安全范围；本轮不计PASS。
