@@ -18,3 +18,10 @@
 ## 编码前结论
 
 当前输入、模块、信任边界及验收约束已核实；A28可在现有真实缺信任状态下完成可审计的 fail-closed 守门，不依赖用户本机或外部数据。开始编码前，先保持当前分支HEAD和远端状态一致，并沿用既有合成父包/临时资源工作流。
+
+## 首轮云端验收偏差（2026-10-29）
+
+- Hosted run 40847373608 中新增启动前置字段的定向 unittest、父包同源构建、A17 harness守门通过；D盘PG smoke在 exact startup_preflight assertion 处失败。
+- 实际父包生成字段与预期一致；旧 smoke validator仍只接受A25三字段（formal_startup_ready、公钥存在、仅公钥阻断），不认识A28新增License trust、数据库Credential target引用、服务身份ACL、TLS cert/key字段。失败发生在启动guard调用前；未启动API/Caddy/PG，不能作为A28验收。
+- 偏差仅在兼容性断言范围；按预先记录方案，将 smoke expected startup metadata更新为新完整schema，并继续检查当前所有阻断字段为false、manifest/verification summary完全一致、固定拒绝及无listener。不得放宽拒绝条件，不修改产品业务/API。
+- 首轮run不计通过；本记录先行登记，随后仅在hosted runner复验。
