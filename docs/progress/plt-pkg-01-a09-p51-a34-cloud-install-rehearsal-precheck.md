@@ -14,5 +14,5 @@
 
 ## 前置范围收敛（2026-10-30）
 
-- A33 same-run smoke summary已报告candidate_staging PASS_LIMITED；只读检查确认 [0m `tools/stage_windows_parent_candidate_cloud.py` 已实现D盘RUNNER_TEMP直接子目录/非C盘限制、归档与逐文件Hash检查、现有目标拒绝、无发行状态和清理；`tools/smoke_windows_parent_package_pg_cloud.py` 已执行越界路径/既有目标负例，并实际解包当前20,119文件父包。因此原定“增加隔离落地/解包演练”已被A33同run覆盖，不重复开发或重复计验收。
+- A33 same-run smoke summary已报告candidate_staging PASS_LIMITED；只读检查确认 `tools/stage_windows_parent_candidate_cloud.py` 已实现D盘RUNNER_TEMP直接子目录/非C盘限制、归档与逐文件Hash检查、现有目标拒绝、无发行状态和清理；`tools/smoke_windows_parent_package_pg_cloud.py` 已执行越界路径/既有目标负例，并实际解包当前20,119文件父包。因此原定“增加隔离落地/解包演练”已被A33同run覆盖，不重复开发或重复计验收。
 - A34范围收敛为：只读审计A16安装/升级演练实现对当前parent-package布局的兼容缺口，随后如确有缺口，再为当前非发行父包增加D盘RUNNER_TEMP下可回滚的应用版本替换演练；保留data/config/license等既有标记、禁止C盘/系统目录、失败不自动启动服务。编码前先完成A16工具与证据审计，当前尚未编码。
