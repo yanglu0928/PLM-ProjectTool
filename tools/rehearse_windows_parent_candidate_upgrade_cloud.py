@@ -185,7 +185,7 @@ def _run_launcher(root: Path, blockers: set[str]) -> dict[str, object]:
         if not key.upper().startswith("PLM_")
     }
     environment.pop("PYTHONPATH", None)
-    environment["PLM_STARTUP_DIAGNOSTIC_TRACE"] = "A34"
+    environment["PLM_STARTUP_DIAGNOSTIC_TRACE"] = "A33"
     result = subprocess.run(
         [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy",
          "Bypass", "-File", str(script)],
@@ -199,14 +199,27 @@ def _run_launcher(root: Path, blockers: set[str]) -> dict[str, object]:
             "A34 upgraded launcher did not emit a JSON diagnostic; stdout="
             + repr(result.stdout) + "; stderr=" + repr(result.stderr)
         ) from None
-    if (result.returncode != 1 or report.get("status") != "BLOCKED"
+    valid = not (result.returncode != 1 or report.get("status") != "BLOCKED"
             or result.stderr.strip() !=
             "Packaged startup blocked; see BLOCKED diagnostics above."
             or report.get("release_eligible") is not False
             or report.get("legal_clearance") is not False
             or set(report.get("blocker_codes", [])) != blockers
-            or "sensitive-path-marker" in result.stdout):
-        raise ValueError("A34 upgraded launcher did not retain the A33 fail-closed contract")
+            or "sensitive-path-marker" in result.stdout)
+    if not valid:
+        raise ValueError(
+            "A34 upgraded launcher did not retain the A33 fail-closed contract: "
+            + json.dumps({
+                "exit_code": result.returncode,
+                "report_status": report.get("status"),
+                "release_eligible": report.get("release_eligible"),
+                "legal_clearance": report.get("legal_clearance"),
+                "actual_blocker_codes": sorted(report.get("blocker_codes", [])),
+                "expected_blocker_codes": sorted(blockers),
+                "stderr": result.stderr.strip(),
+                "stdout_bytes": len(result.stdout.encode("utf-8")),
+            }, sort_keys=True)
+        )
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", 0))
     return {"status": "BLOCKED", "exit_code": result.returncode,
