@@ -268,8 +268,27 @@ def probe_packaged_startup_diagnostic(root: Path) -> dict:
             timeout=20, env={key: value for key, value in os.environ.items()
                              if not key.upper().startswith("PLM_")})
         if result.returncode != 2 or result.stderr.strip():
-            raise ValueError("actual startup diagnostic did not return its blocked report")
-        report = json.loads(result.stdout)
+            try:
+                diagnostic_stdout = json.loads(result.stdout)
+                stdout_shape = "json:" + str(diagnostic_stdout.get("status", "no-status"))
+            except (json.JSONDecodeError, AttributeError):
+                stdout_shape = "non-json"
+            stderr_shape = ("empty" if not result.stderr.strip()
+                            else "fixed-rejection" if result.stderr.strip() ==
+                            "Startup preflight diagnostic rejected; manifest invalid."
+                            else "unexpected-nonempty")
+            raise ValueError(
+                "actual startup diagnostic contract mismatch: "
+                f"exit={result.returncode}; stdout_bytes={len(result.stdout.encode('utf-8'))}; "
+                f"stdout_shape={stdout_shape}; stderr_shape={stderr_shape}"
+            )
+        try:
+            report = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            raise ValueError(
+                "actual startup diagnostic output is not JSON: "
+                f"exit={result.returncode}; stdout_bytes={len(result.stdout.encode('utf-8'))}"
+            ) from None
         expected_codes = {
             "FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED",
             "FORMAL_LICENSE_TRUST_NOT_VERIFIED",
