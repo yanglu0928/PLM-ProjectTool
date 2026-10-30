@@ -6,6 +6,7 @@ on:
       - feature/cloud-sandbox-execution
       - feature/cloud-build-artifacts
       - feature/p51-embedded-runtime-cache
+      - feature/p51-a33-launcher-checksum-recovery
   pull_request:
     branches:
       - main

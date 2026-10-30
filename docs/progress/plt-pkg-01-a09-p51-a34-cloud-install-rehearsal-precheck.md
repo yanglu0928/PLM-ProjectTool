@@ -43,3 +43,4 @@
 - 变化仅为验收工具适配：从 A16 的固定 Current App 输入改为同仓库 A31→当前父包输入，且把执行位置固定在 hosted D 盘。冻结产品基线、交付范围和正式安装语义不变，不需新增产品 CR；差异、Artifact来源和验证结果保留在本记录及 A34 结果。
 - 编码计划：新增父包专用、限定 `RUNNER_TEMP` 的可回滚演练工具及定向单测；在 `cloud-sandbox-validation.yml` 新增 hosted Windows job，下载 A31 已验证候选及同 run 当前候选并执行升级/失败恢复/launcher 拒启验收；workflow 仅加 `actions:read`。编码/文档改动在 D 盘项目 checkout 中完成，所有项目代码和测试只由 GitHub hosted runner 运行，不使用本机 C 盘 Temp。
 - 该验收只证明 Server 2025 hosted runner 的受控目录替换与失败恢复行为，不能据此关闭 Windows 11 设备安装/升级、Gate、Pilot 或正式 Release。
+- 首次提交 `5f77a338` 后，Actions run `41010962741` 以 `push` 事件结束失败且 API 返回0个jobs；检查发现本分支不在 workflow push 分支白名单中。该run不包含A34代码执行或验收。已记录原因，增加当前获准 A34 feature 分支触发项后重跑；不扩大工作流权限以外的范围。
