@@ -18,3 +18,13 @@
 - 首个A32集成run 40994136687的A31父包smoke及A17业务链均成功，后端3,849项回归通过。
 - 代码复核发现新增的两条tools单测未在该workflow中执行：A17 harness job只执行语法编译，A17业务job验证了实际源包投影，但不覆盖“其他未知父包路径仍拒绝”负例。
 - 在更新CI执行步骤前先记录此差异：把本项定向unittest纳入hosted Windows backend测试依赖已装好的作业步骤，然后同源重跑完整workflow；这属于验收执行接线，不改变产品行为/任务边界。此前run不能记“定向单测通过”。
+
+
+## Final hosted acceptance (2026-10-30)
+
+- Final same-source run 40995913354 completed SUCCESS on commit 2e20a1f5f907ae88e5f194d1c2196fe1657bc2e5; all 10 workflow jobs succeeded.
+- New projection unit suite executed on hosted Windows Server 2025: 5/5 tests passed, including exact exclusion of payload/check-startup.ps1 and continued rejection of any other unmapped file. Backend regression: 3,849/3,849 passed.
+- A31 clean-extraction parent PG smoke job 123871658387 succeeded: D:\ RUNNER_TEMP; 20,119 payload files; parent ZIP SHA-256 349e893aee3884c7814cf6c2801382f4ba39bf019ca9ba934244edbca97fcb9d; documented diagnostic command returned BLOCKED/exit 2 with redacted stdout, and four diagnostic tamper cases were rejected; PG18.6/pgvector0.8.6 temp lifecycle/cleanup passed.
+- A17 packaged PlanVersion job 123871991799 succeeded: Edge/HTTPS/temporary PostgreSQL, 29 API operations; PlanVersion IN_REVIEW, WBS/requirement/validation counts 2/2/1, Review/Round IN_REVIEW, zero decisions, synthetic identity; 20,113 current-app payload items. This confirms the one known parent-level script is omitted from app projection without weakening unknown-family rejection.
+- No API/Schema/Migration change. Candidate remains non-release; no Windows 11 device, formal License trust, actual user/service credential, production installation, Gate, Pilot, or formal Release was validated. A33 next improves blocked-launch feedback only.
+
