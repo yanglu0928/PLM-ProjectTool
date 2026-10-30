@@ -12,3 +12,9 @@
 ## 编码前结论
 
 当前限制是调用方式尚未被按文档在实际清洁解包根复验；不依赖真实信任或客户数据，属于Pilot交付链可独立完成的Windows包可用性检查。先写入本检查再实施。
+
+## 首轮 hosted 偏差（2026-10-30）
+
+- Run 40990172925 父包smoke在PowerShell 5.1实际命令后进入诊断矩阵，但Python smoke Harness 的断言仍引用删除前的旧变量result，触发UnboundLocalError；发生于PG initdb之前。
+- 真实父包的README相对路径命令已成功返回预期exit 2/报告合同检查点，失败属于本轮验收脚本移除副本时漏改变量引用；未启动产品服务，异常清理本run的D盘解包根。
+- 记录该Harness偏差后，将实际命令的assertions统一使用actual_result，再由hosted runner重跑；本轮不计PASS。
