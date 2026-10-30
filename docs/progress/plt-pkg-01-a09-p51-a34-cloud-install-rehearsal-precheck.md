@@ -45,4 +45,6 @@
 - 最终验证路径：保留既有 `cloud-sandbox-validation.yml` 触发定义，在其中新增依赖现有父包构建/解包验收的 A34 hosted job；下载固定 A31 run `40995913354` artifact及本次 PR run 同 run 当前父包候选；只授予该 job `contents:read`、`actions:read`。所有项目代码和测试仅在 hosted Windows D 盘 `RUNNER_TEMP` 执行。
 - 实施同步：A34演练器/单测首次提交 `5f77a338`，恢复CI触发并记录无jobs失败为 `513ac296`，独立workflow尝试为 `6df9e7c6`，改回既有PR workflow且run-id加引号为 `e44560ab`。截至记录时 PR workflow run `41011476607` 仍在执行，但其 head 为 `6df9e7c6`，早于 A34 job 回归，因此只作背景回归，不计为 A34 验收；需以当前 head 的PR run检查 A34 job。
 - 轻量定向验收：在本机 D 盘项目隔离临时目录以 Windows Python 执行 `test_rehearse_windows_parent_candidate_upgrade_cloud.py`，3 passed（0.139s）；TEMP/TMP/RUNNER_TEMP均指向D盘，测试后空目录已清理。此结果仅覆盖路径边界、校验清单和显式恢复单元行为，不覆盖真实候选包升级/launcher/服务环境。
+- 原始 stdout/stderr 复查确认失败根因是本机 PowerShell 执行策略在运行隔离、已逐文件 Hash 验证的合成 launcher 前拒绝加载脚本（stdout为空；stderr为 `running scripts is disabled on this system`），并非launcher诊断编码问题。A34 hosted受控runner本次验收需从“仅本次子进程”显式采用 `-ExecutionPolicy Bypass` 运行已验证的候选launcher；该参数不改变系统/用户策略、不写系统目录，仅用于确认候选仍按A33输出BLOCKED并退出1。相关安全边界写入工具说明及测试；若子进程策略参数被runner忽略，验收仍失败关闭。该偏差先行记录后实施。
+- 修正后在D盘 `D:\A34Temp` 以Python 3.13执行合成端到端及边界单测，4 passed（0.291s）；TEMP/TMP/RUNNER_TEMP均指向D盘且测试后目录清理。此为工具级定向验收，不替代含真实父包Artifact的hosted A34任务。
 - 该验收只证明 Server 2025 hosted runner 的受控目录替换与失败恢复行为，不能据此关闭 Windows 11 设备安装/升级、Gate、Pilot 或正式 Release。

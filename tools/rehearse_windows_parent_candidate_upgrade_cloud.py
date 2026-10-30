@@ -180,14 +180,18 @@ def _run_launcher(root: Path, blockers: set[str]) -> dict[str, object]:
     environment.pop("PYTHONPATH", None)
     environment["PLM_STARTUP_DIAGNOSTIC_TRACE"] = "A34"
     result = subprocess.run(
-        [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(script)],
+        [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy",
+         "Bypass", "-File", str(script)],
         cwd=root, capture_output=True, text=True, errors="replace",
         timeout=30, env=environment,
     )
     try:
         report = json.loads(result.stdout)
     except json.JSONDecodeError:
-        raise ValueError("A34 upgraded launcher did not emit a JSON diagnostic") from None
+        raise ValueError(
+            "A34 upgraded launcher did not emit a JSON diagnostic; stdout="
+            + repr(result.stdout) + "; stderr=" + repr(result.stderr)
+        ) from None
     if (result.returncode != 1 or report.get("status") != "BLOCKED"
             or result.stderr.strip() !=
             "Packaged startup blocked; see BLOCKED diagnostics above."
