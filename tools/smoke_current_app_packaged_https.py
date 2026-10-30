@@ -20,6 +20,15 @@ from rehearse_windows_unified_pg18_layout import validate_output_root
 from smoke_packaged_platform_write_https import smoke as original_smoke
 from verify_windows_unified_extract import verify as verify_stage
 
+PARENT_ONLY_PAYLOAD_PATHS = frozenset({"payload/check-startup.ps1"})
+
+
+def _app_projection_hashes(hashes: dict[str, str]) -> dict[str, str]:
+    """Keep verified app files; omit only the parent-level startup diagnostic."""
+    return {name: digest for name, digest in hashes.items()
+            if name not in PARENT_ONLY_PAYLOAD_PATHS}
+
+
 
 KIND = "WINDOWS11_CURRENT_APP_NON_RELEASE_CANDIDATE"
 
@@ -74,8 +83,10 @@ def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[st
         if separator != "  " or name in hashes:
             raise ValueError("current stage hash manifest rejected")
         hashes[name] = sha
-    mapping, mapping_sha = exact_mapping([*hashes, *META])
-    if (len(mapping) != count + len(META) or
+    app_hashes = _app_projection_hashes(hashes)
+    projected_count = len(app_hashes)
+    mapping, mapping_sha = exact_mapping([*app_hashes, *META])
+    if (len(mapping) != projected_count + len(META) or
             mapping.get("payload/runtime/packages/plm_assistant/modules/evidence/api/lookup_eligibility_operation.py") !=
             "runtime/python/packages/plm_assistant/modules/evidence/api/lookup_eligibility_operation.py" or
             mapping.get("payload/runtime/packages/plm_assistant/migrations/versions/20261024_0185_outline_review_state_guard.py") !=
@@ -85,7 +96,7 @@ def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[st
             mapping.get("payload/runtime/packages/plm_assistant/modules/workflow/api/start_workflow.py") !=
             "runtime/python/packages/plm_assistant/modules/workflow/api/start_workflow.py"):
         raise ValueError("current app layout mapping differs")
-    return hashes, mapping, mapping_sha, count
+    return hashes, mapping, mapping_sha, projected_count
 
 
 def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
@@ -133,9 +144,12 @@ def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
                 f"(missing={len(set(hashes) - actual)}, extra={len(actual - set(hashes))}, "
                 f"links={len(links)})"
             )
-        mapping, mapping_sha = exact_mapping([*hashes, *META])
-        if len(mapping) != count + len(META):
+        app_hashes = _app_projection_hashes(hashes)
+        projected_count = len(app_hashes)
+        mapping, mapping_sha = exact_mapping([*app_hashes, *META])
+        if len(mapping) != projected_count + len(META):
             raise ValueError("current app layout mapping count differs")
+        count = projected_count
     else:
         hashes, mapping, mapping_sha, count = _inputs(candidate, stage, expected_sha256)
 

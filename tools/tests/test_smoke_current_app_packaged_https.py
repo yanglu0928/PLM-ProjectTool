@@ -11,6 +11,7 @@ from smoke_current_app_packaged_https import (  # noqa: E402
     _inputs,
     _prior_archive_attestation,
     _target_rehearsal,
+    _app_projection_hashes,
 )
 
 
@@ -51,6 +52,26 @@ class CurrentAppHttpsBoundaryTests(unittest.TestCase):
                              (9, candidate.stat().st_mtime_ns))
             with self.assertRaisesRegex(ValueError, "attestation mismatch"):
                 _prior_archive_attestation(candidate, "b" * 64, summary)
+
+
+    def test_parent_startup_diagnostic_is_excluded_from_app_projection_only(self) -> None:
+        parent_hashes = {
+            "payload/check-startup.ps1": "a" * 64,
+            "payload/runtime/python.exe": "b" * 64,
+        }
+        projected = _app_projection_hashes(parent_hashes)
+        self.assertEqual(projected, {"payload/runtime/python.exe": "b" * 64})
+        self.assertEqual(len(parent_hashes), 2)
+        self.assertEqual(len(projected), 1)
+        self.assertIn("payload/check-startup.ps1", parent_hashes)
+
+    def test_other_unmapped_parent_assets_remain_for_strict_rejection(self) -> None:
+        parent_hashes = {
+            "payload/check-startup.ps1": "a" * 64,
+            "payload/future/unknown.bin": "b" * 64,
+        }
+        projected = _app_projection_hashes(parent_hashes)
+        self.assertEqual(set(projected), {"payload/future/unknown.bin"})
 
     def test_wrong_candidate_digest_rejected_before_layout(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
