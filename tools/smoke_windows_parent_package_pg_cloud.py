@@ -271,7 +271,19 @@ def main() -> int:
         expected_startup = {
             "formal_startup_ready": False,
             "packaged_product_public_key_resource_present": False,
-            "blocker_codes": ["FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"],
+            "formal_license_trust_verified": False,
+            "database_credential_target_reference": "PLMProjectTool/Database",
+            "database_credential_reference_verified": False,
+            "service_identity_acl_verified": False,
+            "tls_certificate_configured": False,
+            "tls_private_key_configured": False,
+            "blocker_codes": [
+                "FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED",
+                "FORMAL_LICENSE_TRUST_NOT_VERIFIED",
+                "DATABASE_CREDENTIAL_REFERENCE_NOT_VERIFIED",
+                "SERVICE_IDENTITY_ACL_NOT_VERIFIED",
+                "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED",
+            ],
         }
         if startup != expected_startup or parent.get("startup_preflight") != startup:
             raise ValueError("parent package startup preflight is missing, mismatched or unexpectedly ready")
