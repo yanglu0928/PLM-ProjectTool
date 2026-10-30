@@ -148,18 +148,26 @@ def probe_packaged_startup_guard(root: Path) -> dict:
     before_manifest = manifest_path.read_bytes()
     before_sums = checksums_path.read_bytes()
     before_diagnostic = sha_file(diagnostic_path)
-    result = run_packaged_launcher(shell, script, root, env)
+    trace_env = dict(env)
+    trace_env["PLM_STARTUP_DIAGNOSTIC_TRACE"] = "A33"
+    result = run_packaged_launcher(shell, script, root, trace_env)
     try:
         report = json.loads(result.stdout)
     except json.JSONDecodeError:
+        stderr_lines = result.stderr.splitlines()
+        trace_lines = [line for line in stderr_lines
+                       if line.startswith("A33_DIAGNOSTIC_STAGE:")]
+        safe_trace = trace_lines[-1] if trace_lines else "A33_DIAGNOSTIC_STAGE:NOT_REPORTED"
+        fixed_refusal = any(
+            line == "Packaged production startup blocked; trust prerequisites are not ready."
+            for line in stderr_lines)
         raise ValueError(
             "packaged startup launcher output classification: "
             f"exit={result.returncode}; "
             f"stdout_bytes={len(result.stdout.encode('utf-8'))}; "
             f"stderr_bytes={len(result.stderr.encode('utf-8'))}; "
             f"stdout_empty={not bool(result.stdout.strip())}; "
-            "fixed_refusal="
-            f"{result.stderr.strip() == 'Packaged production startup blocked; trust prerequisites are not ready.'}"
+            f"fixed_refusal={fixed_refusal}; {safe_trace}"
         ) from None
     expected_codes = {
         "FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED",
