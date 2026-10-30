@@ -47,4 +47,5 @@
 - 轻量定向验收：在本机 D 盘项目隔离临时目录以 Windows Python 执行 `test_rehearse_windows_parent_candidate_upgrade_cloud.py`，3 passed（0.139s）；TEMP/TMP/RUNNER_TEMP均指向D盘，测试后空目录已清理。此结果仅覆盖路径边界、校验清单和显式恢复单元行为，不覆盖真实候选包升级/launcher/服务环境。
 - 原始 stdout/stderr 复查确认失败根因是本机 PowerShell 执行策略在运行隔离、已逐文件 Hash 验证的合成 launcher 前拒绝加载脚本（stdout为空；stderr为 `running scripts is disabled on this system`），并非launcher诊断编码问题。A34 hosted受控runner本次验收需从“仅本次子进程”显式采用 `-ExecutionPolicy Bypass` 运行已验证的候选launcher；该参数不改变系统/用户策略、不写系统目录，仅用于确认候选仍按A33输出BLOCKED并退出1。相关安全边界写入工具说明及测试；若子进程策略参数被runner忽略，验收仍失败关闭。该偏差先行记录后实施。
 - 修正后在D盘 `D:\A34Temp` 以Python 3.13执行合成端到端及边界单测，4 passed（0.291s）；TEMP/TMP/RUNNER_TEMP均指向D盘且测试后目录清理。此为工具级定向验收，不替代含真实父包Artifact的hosted A34任务。
+- 通过GitHub Actions `workflow_dispatch` API进行只读/无运行变更的解析探测时，GitHub拒绝创建run（HTTP 422）：`runner` context在job级 `env`表达式不可用（A34 job的TEMP/TMP定义）。因此尚无最新提交hosted run，之前基于PR/commit查询为空属客观工作流阻断。实施前决策：移除job级引用，把TEMP/TMP只在实际运行Python的两个step级 `env` 中绑定 `${{ runner.temp }}`；保持RUNNER_TEMP唯一边界与D盘要求，再由GitHub显式dispatch重新创建完整PR run。该控制面解析错误不算项目代码/包验证失败，也不消耗客户数据。
 - 该验收只证明 Server 2025 hosted runner 的受控目录替换与失败恢复行为，不能据此关闭 Windows 11 设备安装/升级、Gate、Pilot 或正式 Release。

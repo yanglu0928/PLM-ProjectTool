@@ -445,15 +445,15 @@ jobs:
     permissions:
       contents: read
       actions: read
-    env:
-      TEMP: ${{ runner.temp }}
-      TMP: ${{ runner.temp }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
       - name: Run A34 focused ownership and inventory tests
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
         run: python -B -m unittest discover -s tools/tests -p "test_rehearse_windows_parent_candidate_upgrade_cloud.py"
       - name: Download A31 verified non-release parent candidate
         uses: actions/download-artifact@v4
@@ -470,6 +470,9 @@ jobs:
           path: ${{ runner.temp }}/plm-a34-current-candidate
       - name: Rehearse package replacement and explicit manual recovery on D-drive temp
         shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
         run: |
           $oldDir = Join-Path $env:RUNNER_TEMP "plm-a34-old-candidate"
           $newDir = Join-Path $env:RUNNER_TEMP "plm-a34-current-candidate"
