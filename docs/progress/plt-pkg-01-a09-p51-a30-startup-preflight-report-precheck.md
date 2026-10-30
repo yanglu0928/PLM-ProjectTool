@@ -21,3 +21,5 @@
 - 同一job中A29的7类启动manifest篡改守门已先行通过；未启动产品API/Caddy/PG，亦未读取Credential Manager秘密blob/License私钥。异常路径由smoke finally清理本轮D盘RUNNER_TEMP拥有的解包目录。
 - 当前Harness只记录了通用错误，没有保存安全分类（进程退出码/输出形态）；因此不能把失败归因于产品输出格式还是PowerShell执行差异。本项不计PASS。
 - 先记录偏差后调整：增加无原始正文/环境路径/秘密输出的分类证据（仅退出码、stdout是否为合法BLOCKED JSON、stderr是否匹配固定拒绝、字节长度），再由hosted Windows复验；若查明产品输出合同不符，只做最小修复，维持任何情况下不启动服务的约束。
+
+- 后续run 40986507196增加安全分类后，诊断进程退出1、stdout为空、stderr为非空非固定拒绝；PowerShell脚本静态复核发现TLS证书与私钥共用manifest阻断码时，消息hashtable重复定义同一键。该错误由本次诊断实现引入，未触发服务/监听，隔离目录通过smoke异常清理；不计PASS。修正为单一TLS配置提示后重新hosted验证。
