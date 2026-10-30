@@ -30,3 +30,9 @@
 
 - Run 41002269359 在托管 Windows Server 2025、D:\\a\\_temp 上完成后端/前端、运行时、父包组装与 A17 job；parent smoke job 123891914452 在launcher调用后失败，异常为“did not forward a JSON preflight report”。新15秒子进程界限阻止了此前20秒无界等待，但本次无JSON输出；现有Harness未打印子进程退出码及输出字节分类，尚不能确定launcher内部哪条校验触发固定回退。
 - 不将超时改善误判为A33通过。先记录，再仅增强Harness报告的非敏感执行分类（退出码、stdout/stderr字节数及是否命中固定拒绝文案），不输出原始环境或路径；据新hosted证据调整launcher的进程启动/输出处理，保持固定fail-closed及15秒上限。
+
+
+## 第四轮 hosted 偏差：launcher 固定回退分类（2026-10-30）
+
+- Run 41003355111 / parent smoke job 123895263737 在 D:\\a\\_temp 清洁解包 Windows Server 2025 runner 上仍未转发报告；Harness分类为 exit=1、stdout=0字节、stderr=72字节、命中固定拒绝文案。launcher已在15秒内结束，证明未复现先前20秒超时，但其内部catch隐藏了子进程/报告校验的具体阶段。
+- 结果仍不能计A33通过。先记录，再仅加受限、静态的诊断失败阶段标识用于云端Harness定位；不记录异常正文、环境变量、路径或凭据值，默认用户输出仍是固定拒绝文案，15秒子进程上限和拒绝启动行为不变。
