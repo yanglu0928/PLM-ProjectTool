@@ -131,6 +131,92 @@ def probe_packaged_startup_guard(root: Path) -> str:
     return "FAIL_CLOSED_MISSING_FORMAL_PRODUCT_TRUST"
 
 
+def probe_packaged_startup_guard_tamper_matrix(root: Path) -> dict:
+    import copy
+
+    source_manifest_path = root / "manifest.json"
+    source_bytes = source_manifest_path.read_bytes()
+    source = json.loads(source_bytes.decode("utf-8-sig"))
+    script_source = root / "payload" / "start-trial.ps1"
+    if not script_source.is_file() or script_source.is_symlink():
+        raise ValueError("packaged startup guard missing for tamper matrix")
+
+    ready = copy.deepcopy(source)
+    ready["release_eligible"] = True
+    ready["legal_clearance"] = True
+    ready["startup_preflight"].update({
+        "formal_startup_ready": True,
+        "packaged_product_public_key_resource_present": True,
+        "formal_license_trust_verified": True,
+        "database_credential_reference_verified": True,
+        "service_identity_acl_verified": True,
+        "tls_certificate_configured": True,
+        "tls_private_key_configured": True,
+        "blocker_codes": [],
+    })
+    wrong_target = copy.deepcopy(ready)
+    wrong_target["startup_preflight"]["database_credential_target_reference"] = "../outside"
+    string_booleans = copy.deepcopy(ready)
+    for key in (
+        "formal_startup_ready", "packaged_product_public_key_resource_present",
+        "formal_license_trust_verified", "database_credential_reference_verified",
+        "service_identity_acl_verified", "tls_certificate_configured",
+        "tls_private_key_configured",
+    ):
+        string_booleans["startup_preflight"][key] = "true"
+    blocker_as_string = copy.deepcopy(ready)
+    blocker_as_string["startup_preflight"]["blocker_codes"] = "[]"
+    missing_blockers = copy.deepcopy(ready)
+    del missing_blockers["startup_preflight"]["blocker_codes"]
+    invalid_startup = copy.deepcopy(ready)
+    invalid_startup["startup_preflight"] = "ready"
+    cases = {
+        "all-ready-tamper": json.dumps(ready),
+        "wrong-credential-target": json.dumps(wrong_target),
+        "string-booleans": json.dumps(string_booleans),
+        "blocker-codes-string": json.dumps(blocker_as_string),
+        "missing-blocker-codes": json.dumps(missing_blockers),
+        "startup-object-string": json.dumps(invalid_startup),
+        "malformed-json": "{",
+    }
+
+    shell = shutil.which("pwsh")
+    if not shell:
+        raise ValueError("PowerShell 7 unavailable on hosted Windows runner")
+    matrix_root = root / "startup-manifest-tamper-matrix"
+    matrix_root.mkdir()
+    try:
+        for name, manifest_text in cases.items():
+            case_root = matrix_root / name
+            payload = case_root / "payload"
+            payload.mkdir(parents=True)
+            shutil.copyfile(script_source, payload / "start-trial.ps1")
+            (case_root / "manifest.json").write_text(manifest_text, encoding="utf-8")
+            with socket.socket() as probe:
+                probe.bind(("127.0.0.1", 0))
+                port = probe.getsockname()[1]
+            result = subprocess.run(
+                [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File",
+                 str(payload / "start-trial.ps1")],
+                cwd=str(payload), capture_output=True, text=True, errors="replace",
+                timeout=20, env={key: value for key, value in os.environ.items()
+                                 if not key.upper().startswith("PLM_")})
+            if (result.returncode != 1 or result.stdout.strip()
+                    or result.stderr.strip() !=
+                    "Packaged production startup blocked; trust prerequisites are not ready."):
+                raise ValueError("tampered startup manifest was not fixed-fail-closed: " + name)
+            with socket.socket() as listener:
+                listener.bind(("127.0.0.1", port))
+        if source_manifest_path.read_bytes() != source_bytes:
+            raise ValueError("tamper matrix changed source candidate manifest")
+        return {"status": "STARTUP_MANIFEST_TAMPER_FAIL_CLOSED_PASS",
+                "cases": len(cases), "stdout_empty": True, "listener_started": False}
+    finally:
+        if matrix_root.parent != root or matrix_root.is_symlink():
+            raise RuntimeError("refusing to clean startup tamper workspace outside smoke root")
+        shutil.rmtree(matrix_root)
+
+
 def smoke_packaged_web(root: Path) -> dict:
     caddy = root / "payload" / "runtime" / "caddy" / "caddy.exe"
     frontend = root / "payload" / "frontend" / "dist"
@@ -328,6 +414,7 @@ def main() -> int:
     try:
         startup_entrypoint_probe = probe_packaged_production_entrypoint(root)
         startup_guard_probe = probe_packaged_startup_guard(root)
+        startup_manifest_tamper_matrix = probe_packaged_startup_guard_tamper_matrix(root)
         web_service_smoke = smoke_packaged_web(root)
     except Exception:
         if root.exists():
@@ -392,6 +479,7 @@ def main() -> int:
             "candidate_staging": staging_result,
             "startup_entrypoint_probe": startup_entrypoint_probe,
             "startup_guard_probe": startup_guard_probe,
+            "startup_manifest_tamper_matrix": startup_manifest_tamper_matrix,
             "web_service_smoke": web_service_smoke,
         }
     finally:
