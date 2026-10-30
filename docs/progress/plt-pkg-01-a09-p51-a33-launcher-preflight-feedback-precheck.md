@@ -36,3 +36,10 @@
 
 - Run 41003355111 / parent smoke job 123895263737 在 D:\\a\\_temp 清洁解包 Windows Server 2025 runner 上仍未转发报告；Harness分类为 exit=1、stdout=0字节、stderr=72字节、命中固定拒绝文案。launcher已在15秒内结束，证明未复现先前20秒超时，但其内部catch隐藏了子进程/报告校验的具体阶段。
 - 结果仍不能计A33通过。先记录，再仅加受限、静态的诊断失败阶段标识用于云端Harness定位；不记录异常正文、环境变量、路径或凭据值，默认用户输出仍是固定拒绝文案，15秒子进程上限和拒绝启动行为不变。
+
+
+## 第五轮 hosted 偏差：诊断校验清单路径正则误转义（2026-10-30）
+
+- Run 41004441473 / parent smoke job 123899012018 的白名单阶段码显示launcher失败发生在 `VALIDATE_INPUT`，stdout为空、stderr为固定拒绝+阶段码，exit=1；没有超时或泄露。
+- 逐项检查代码发现两个checksum行正则用了双反斜杠 `\\\\.`，在PowerShell正则字符串中会尝试匹配反斜杠而非转义文件名点号，故未匹配 `payload/check-startup.ps1` 路径，触发预期fail-closed回退。
+- 此偏差在A33子进程实现引入；先记录，再只将两处regex修回单反斜杠 `\\.`。保留父清单整体SHA和文件SHA双重校验、不改变manifest/安全判断，再跑Windows hosted完整复验。
