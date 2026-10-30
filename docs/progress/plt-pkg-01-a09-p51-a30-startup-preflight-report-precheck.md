@@ -13,3 +13,11 @@
 ## 编码前结论
 
 该诊断可复用A28显式非秘密metadata与A29严格失败关闭边界，解决操作可读性问题且不需要任何真实密钥或客户数据。检查已完成，下一步在本分支实现并由hosted runner验证。
+
+
+## 首轮 hosted 验收偏差（2026-10-30）
+
+- Run 40985349086 的父包构建成功；clean extraction job在实际候选诊断报告断言处失败，错误为诊断进程没有满足预期的BLOCKED报告合同。发生在PG18临时数据库启动之前。
+- 同一job中A29的7类启动manifest篡改守门已先行通过；未启动产品API/Caddy/PG，亦未读取Credential Manager秘密blob/License私钥。异常路径由smoke finally清理本轮D盘RUNNER_TEMP拥有的解包目录。
+- 当前Harness只记录了通用错误，没有保存安全分类（进程退出码/输出形态）；因此不能把失败归因于产品输出格式还是PowerShell执行差异。本项不计PASS。
+- 先记录偏差后调整：增加无原始正文/环境路径/秘密输出的分类证据（仅退出码、stdout是否为合法BLOCKED JSON、stderr是否匹配固定拒绝、字节长度），再由hosted Windows复验；若查明产品输出合同不符，只做最小修复，维持任何情况下不启动服务的约束。
