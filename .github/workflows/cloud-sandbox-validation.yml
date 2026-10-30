@@ -436,3 +436,259 @@ jobs:
           path: ${{ runner.temp }}/plm-parent-pg-smoke-summary-${{ github.run_id }}/pg-smoke.json
           if-no-files-found: error
           retention-days: 14
+
+  a34-parent-upgrade-rehearsal:
+    name: A34 parent-package offline replacement and manual restore rehearsal
+    needs: [assemble-parent-candidate, smoke-parent-postgresql]
+    runs-on: windows-2025
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run A34 focused ownership and inventory tests
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: python -B -m unittest discover -s tools/tests -p "test_rehearse_windows_parent_candidate_upgrade_cloud.py"
+      - name: Download A31 verified non-release parent candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-2e20a1f5f907ae88e5f194d1c2196fe1657bc2e5
+          repository: ${{ github.repository }}
+          run-id: "40995913354"
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/plm-a34-old-candidate
+      - name: Download current same-run parent candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a34-current-candidate
+      - name: Rehearse package replacement and explicit manual recovery on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $oldDir = Join-Path $env:RUNNER_TEMP "plm-a34-old-candidate"
+          $newDir = Join-Path $env:RUNNER_TEMP "plm-a34-current-candidate"
+          $oldArchive = Get-ChildItem $oldDir -Filter "*.zip" | Select-Object -First 1
+          $currentArchive = Get-ChildItem $newDir -Filter "*.zip" | Select-Object -First 1
+          $oldSummary = Join-Path $oldDir "verification-summary.json"
+          $currentSummary = Join-Path $newDir "verification-summary.json"
+          if (-not $oldArchive -or -not $currentArchive -or -not (Test-Path $oldSummary) -or -not (Test-Path $currentSummary)) { throw "A34 candidate artifact is incomplete" }
+          $workRoot = Join-Path $env:RUNNER_TEMP ("plm-a34-run-" + $env:GITHUB_RUN_ID + "-" + [guid]::NewGuid().ToString("N"))
+          $summary = Join-Path $env:RUNNER_TEMP ("plm-a34-result-" + $env:GITHUB_RUN_ID + ".json")
+          python .\tools\rehearse_windows_parent_candidate_upgrade_cloud.py --old-archive $oldArchive.FullName --old-summary $oldSummary --current-archive $currentArchive.FullName --current-summary $currentSummary --work-root $workRoot | Tee-Object -FilePath $summary
+          if ($LASTEXITCODE -ne 0) { throw "A34 hosted parent-package upgrade rehearsal failed" }
+          if (-not (Test-Path $summary)) { throw "A34 bounded result summary missing" }
+      - name: Upload bounded A34 rehearsal evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a34-upgrade-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a34-result-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  a35-parent-artifact-handoff:
+    name: A35 bounded parent candidate handoff for Windows 11 verification
+    needs: [assemble-parent-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run bounded handoff tests on runner temp
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: python -B -m unittest discover -s tools/tests -p "test_transfer_parent_candidate_chunks.py" -v
+      - name: Download verified A31 parent candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-2e20a1f5f907ae88e5f194d1c2196fe1657bc2e5
+          repository: ${{ github.repository }}
+          run-id: "40995913354"
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/plm-a35-old-candidate
+      - name: Download current same-run parent candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a35-current-candidate
+      - name: Split candidates into digest-bound transfer chunks
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          RUNNER_TEMP: ${{ runner.temp }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $oldDir = Join-Path $env:RUNNER_TEMP "plm-a35-old-candidate"
+          $currentDir = Join-Path $env:RUNNER_TEMP "plm-a35-current-candidate"
+          python .\tools\transfer_parent_candidate_chunks.py split --input-dir $oldDir --output-dir (Join-Path $env:RUNNER_TEMP "plm-a35-old-chunks") --prefix old
+          if ($LASTEXITCODE -ne 0) { throw "A35 old candidate chunking failed" }
+          python .\tools\transfer_parent_candidate_chunks.py split --input-dir $currentDir --output-dir (Join-Path $env:RUNNER_TEMP "plm-a35-current-chunks") --prefix current
+          if ($LASTEXITCODE -ne 0) { throw "A35 current candidate chunking failed" }
+          $oldManifest = Get-Content (Join-Path $env:RUNNER_TEMP "plm-a35-old-chunks/chunk-manifest.json") -Raw | ConvertFrom-Json
+          $currentManifest = Get-Content (Join-Path $env:RUNNER_TEMP "plm-a35-current-chunks/chunk-manifest.json") -Raw | ConvertFrom-Json
+          if ($oldManifest.chunks.Count -ne 8 -or $currentManifest.chunks.Count -ne 8) { throw "A35 expected eight bounded chunks per candidate" }
+          if ($oldManifest.source_archive_sha256 -ne "f4d417998ba18bb340fb3d39d83a5c356ac73109a894c1f214852f6b72ed4d49") { throw "A35 A31 candidate ZIP digest changed" }
+          $oldSummary = Get-Content (Join-Path $env:RUNNER_TEMP "plm-a35-old-chunks/verification-summary.json") -Raw | ConvertFrom-Json
+          $currentSummary = Get-Content (Join-Path $env:RUNNER_TEMP "plm-a35-current-chunks/verification-summary.json") -Raw | ConvertFrom-Json
+          if ($oldSummary.source_commit -ne "2e20a1f5f907ae88e5f194d1c2196fe1657bc2e5" -or $oldSummary.workflow_run -ne "40995913354") { throw "A35 A31 provenance changed" }
+          if ($currentSummary.source_commit -ne $env:GITHUB_SHA -or $currentSummary.workflow_run -ne $env:GITHUB_RUN_ID) { throw "A35 current-run provenance mismatch" }
+      - name: Upload A35 old candidate part 00
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-00-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-00.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-01-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-01.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-02-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-02.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-03-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-03.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-04-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-04.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-05-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-05.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 06
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-06-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-06.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 07
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-07-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-07.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 00
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-00-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-00.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-01-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-01.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-02-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-02.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-03-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-03.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-04-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-04.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-05-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-05.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 06
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-06-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-06.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 07
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-07-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-07.bin
+          retention-days: 14
