@@ -43,4 +43,5 @@
 - 变化仅为验收工具适配：从 A16 的固定 Current App 输入改为同仓库 A31→当前父包输入，且把执行位置固定在 hosted D 盘。冻结产品基线、交付范围和正式安装语义不变，不需新增产品 CR；差异、Artifact来源和验证结果保留在本记录及 A34 结果。
 - 首轮执行偏差：commit `5f77a338` 的集成 workflow push run `41010962741` 因分支未列入 push 白名单失败且没有 jobs；加入分支后的 `513ac296` run `41011131006` 仍在启动阶段失败且返回 0 个 jobs；独立 workflow push run `41011469456` 也未执行 jobs。以上均未运行项目代码。PR workflow run `41011476607` 已对提交 `6df9e7c6` 排队。检查发现 artifact `run-id` 参数曾以未加引号数字 YAML 标量写入，并且独立 workflow 文件尚未进入默认分支；将删除独立 workflow、对既有 PR workflow 增加 A34 job、将跨运行 `run-id` 作为字符串传入，并使用当前 PR run 同 run 父包作为新版候选。上述无 jobs runs 均不算验收。
 - 最终验证路径：保留既有 `cloud-sandbox-validation.yml` 触发定义，在其中新增依赖现有父包构建/解包验收的 A34 hosted job；下载固定 A31 run `40995913354` artifact及本次 PR run 同 run 当前父包候选；只授予该 job `contents:read`、`actions:read`。所有项目代码和测试仅在 hosted Windows D 盘 `RUNNER_TEMP` 执行。
+- 实施同步：A34演练器/单测首次提交 `5f77a338`，恢复CI触发并记录无jobs失败为 `513ac296`，独立workflow尝试为 `6df9e7c6`，改回既有PR workflow且run-id加引号为 `e44560ab`。截至记录时 PR workflow run `41011476607` 仍在执行，但其 head 为 `6df9e7c6`，早于 A34 job 回归，因此只作背景回归，不计为 A34 验收；需以当前 head 的PR run检查 A34 job。
 - 该验收只证明 Server 2025 hosted runner 的受控目录替换与失败恢复行为，不能据此关闭 Windows 11 设备安装/升级、Gate、Pilot 或正式 Release。
