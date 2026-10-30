@@ -25,12 +25,12 @@
 |---|---|
 | 当前 Phase | Phase 2：Platform Core / `CR-EXEC-002` Windows 11 Pilot 关键路径 |
 | 当前 WBS | `PLT-PKG-01-A09-P51-A34` |
-| 输入基线 | A33 成功证据 run `41008231772`；当前父包 artifact `12955978718`；A31 父包 artifact `12951373170`（run `40995913354`）；A16 演练源码及结果；`CR-EXEC-002`。两份父包均为带明确非发行状态的同仓库 Actions artifact。 |
+| 输入基线 | A33 成功证据 run `41008231772`；A33 父包 artifact `12955978718`；A31 父包 artifact `12951373170`（run `40995913354`）；A16 演练源码及结果；`CR-EXEC-002`。两份父包均为带明确非发行状态的同仓库 Actions artifact。 |
 | 前置任务 | A31/A32/A33 hosted Windows 验收通过；A16 实现与证据已审计；A33 staging helper 已覆盖归档解包及Hash校验。 |
 | 涉及模块 | 仅 hosted 包装验收工具、独立验证 runner、GitHub Actions cloud workflow 与进度文档；不改产品运行时代码、服务安装器、API、数据库、License 或客户数据。 |
-| 涉及实体 | 已完成 A31 候选包、同 run 当前候选包、各自已验证 staging inventory、一次性安装根和四类合成持久标记。 |
+| 涉及实体 | 已完成 A31 与 A33 候选包、各自已验证 staging inventory、一次性安装根和四类合成持久标记。 |
 | 涉及 API | 无产品 API；安装后只调用 A33 launcher 的 fail-closed 路径，预期输出 BLOCKED、退出码 1、无 listener/service/API。 |
-| 涉及权限 | workflow `GITHUB_TOKEN` 增加只读 `actions:read`，仅用于下载同仓库已完成 A31 父包 artifact；工作区限定本次 hosted runner 的 ASCII D 盘 `RUNNER_TEMP`。 |
+| 涉及权限 | 独立验收 workflow 的 `GITHUB_TOKEN` 使用只读 `actions:read`，仅用于下载同仓库已完成 A31/A33 父包 artifact；工作区限定本次 hosted runner 的 ASCII D 盘 `RUNNER_TEMP`。 |
 | 验收标准 | 以 A31 旧候选初始化临时安装根，再用当前父包替换 `payload` 与根 manifest/checksum；data/config/license/plugins 合成标记 Hash 不变；失败注入期间新版保持活动，只有显式 restore 才恢复旧候选并隔离失败版；新版启动命令仍产生 A33 预期的六项 BLOCKED、安全JSON、exit=1且无服务/API/listener；来源候选/清单未变、staging/安装/备份目录清理完成。 |
 | 风险 | Actions artifact retention 到期会阻断 A31 输入；依靠既有单仓库、非发行候选和同仓库只读 token，不访问用户设备、正式安装根、客户数据库或 C 盘。Hosted Windows Server 2025 证据不等同 Windows 11 实机验收。 |
 | 回滚/恢复 | 产品安装与系统状态不触碰。失败场景只在随机新建的 runner temp 根注入；明确演示手动 restore，不做自动回滚；外层 finally 仅清理本轮 owner-token 根，任何路径校验或清理失败均使 run 失败。 |
@@ -41,6 +41,6 @@
 - `validation/plt-pkg-01-a09-p51-a16-upgrade-launch-integration/verify.py` 固定 Windows 11、本机 `D:\PLMToolTemp`、两份 Current App ZIP/stage、SHA 与旧配置映射。因此不能直接用于当前父包 artifact 或 hosted `RUNNER_TEMP`。
 - 当前父包的 A33 `stage_candidate()` 已验证 manifest、逐文件 SHA、路径与非发行态，并在实际归档中完成清洁解包。升级演练应消费这项验证后的两个独立 staging；避免重复实现 ZIP 解包或降低校验强度。
 - 变化仅为验收工具适配：从 A16 的固定 Current App 输入改为同仓库 A31→当前父包输入，且把执行位置固定在 hosted D 盘。冻结产品基线、交付范围和正式安装语义不变，不需新增产品 CR；差异、Artifact来源和验证结果保留在本记录及 A34 结果。
-- 编码计划：新增父包专用、限定 `RUNNER_TEMP` 的可回滚演练工具及定向单测；在 `cloud-sandbox-validation.yml` 新增 hosted Windows job，下载 A31 已验证候选及同 run 当前候选并执行升级/失败恢复/launcher 拒启验收；workflow 仅加 `actions:read`。编码/文档改动在 D 盘项目 checkout 中完成，所有项目代码和测试只由 GitHub hosted runner 运行，不使用本机 C 盘 Temp。
+- 首轮执行偏差：commit `5f77a338` 的集成 workflow push run `41010962741` 因分支未列入 push 白名单失败且没有 jobs；加入分支后的 `513ac296` run `41011131006` 仍在启动阶段失败且返回 0 个 jobs。两者均未运行项目代码。为隔离该触发问题并减少资源，将改用独立轻量 workflow，固定读取已成功验收的 A31 run `40995913354` 与 A33 run `41008231772` artifact；A33候选代码对应本轮基线，较当前工作分支后续提交仅有文档变化。改动仍先记录后实施，不把无 jobs 的run计为验证。
+- 更新后的编码/验证计划：新增父包专用、限定 `RUNNER_TEMP` 的可回滚演练工具及定向单测；独立 hosted Windows workflow 仅运行定向测试并下载两份固定候选artifact，完成升级/失败恢复/launcher拒启验收；workflow 只授予只读 `actions:read` 与 `contents:read`。所有项目代码和测试由 GitHub hosted runner 运行，不使用本机 C 盘 Temp。
 - 该验收只证明 Server 2025 hosted runner 的受控目录替换与失败恢复行为，不能据此关闭 Windows 11 设备安装/升级、Gate、Pilot 或正式 Release。
-- 首次提交 `5f77a338` 后，Actions run `41010962741` 以 `push` 事件结束失败且 API 返回0个jobs；检查发现本分支不在 workflow push 分支白名单中。该run不包含A34代码执行或验收。已记录原因，增加当前获准 A34 feature 分支触发项后重跑；不扩大工作流权限以外的范围。

@@ -6,7 +6,6 @@ on:
       - feature/cloud-sandbox-execution
       - feature/cloud-build-artifacts
       - feature/p51-embedded-runtime-cache
-      - feature/p51-a33-launcher-checksum-recovery
   pull_request:
     branches:
       - main
@@ -435,59 +434,5 @@ jobs:
         with:
           name: plm-parent-pg-smoke-${{ github.sha }}
           path: ${{ runner.temp }}/plm-parent-pg-smoke-summary-${{ github.run_id }}/pg-smoke.json
-          if-no-files-found: error
-          retention-days: 14
-
-  a34-parent-upgrade-rehearsal:
-    name: A34 parent-package offline replacement and manual restore rehearsal
-    needs: [assemble-parent-candidate, smoke-parent-postgresql]
-    runs-on: windows-2025
-    timeout-minutes: 60
-    permissions:
-      contents: read
-      actions: read
-    env:
-      TEMP: ${{ runner.temp }}
-      TMP: ${{ runner.temp }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-      - name: Run A34 focused ownership and inventory tests
-        run: python -B -m unittest discover -s tools/tests -p "test_rehearse_windows_parent_candidate_upgrade_cloud.py"
-      - name: Download A31 verified non-release parent candidate
-        uses: actions/download-artifact@v4
-        with:
-          name: plm-windows-parent-candidate-2e20a1f5f907ae88e5f194d1c2196fe1657bc2e5
-          repository: ${{ github.repository }}
-          run-id: 40995913354
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/plm-a34-old-candidate
-      - name: Download current same-run parent candidate
-        uses: actions/download-artifact@v4
-        with:
-          name: plm-windows-parent-candidate-${{ github.sha }}
-          path: ${{ runner.temp }}/plm-a34-current-candidate
-      - name: Rehearse package replacement and explicit manual recovery on D-drive temp
-        shell: pwsh
-        run: |
-          $oldDir = Join-Path $env:RUNNER_TEMP "plm-a34-old-candidate"
-          $newDir = Join-Path $env:RUNNER_TEMP "plm-a34-current-candidate"
-          $oldArchive = Get-ChildItem $oldDir -Filter "*.zip" | Select-Object -First 1
-          $currentArchive = Get-ChildItem $newDir -Filter "*.zip" | Select-Object -First 1
-          $oldSummary = Join-Path $oldDir "verification-summary.json"
-          $currentSummary = Join-Path $newDir "verification-summary.json"
-          if (-not $oldArchive -or -not $currentArchive -or -not (Test-Path $oldSummary) -or -not (Test-Path $currentSummary)) { throw "A34 candidate artifact is incomplete" }
-          $workRoot = Join-Path $env:RUNNER_TEMP ("plm-a34-run-" + $env:GITHUB_RUN_ID + "-" + [guid]::NewGuid().ToString("N"))
-          $summary = Join-Path $env:RUNNER_TEMP ("plm-a34-result-" + $env:GITHUB_RUN_ID + ".json")
-          python .\tools\rehearse_windows_parent_candidate_upgrade_cloud.py --old-archive $oldArchive.FullName --old-summary $oldSummary --current-archive $currentArchive.FullName --current-summary $currentSummary --work-root $workRoot | Tee-Object -FilePath $summary
-          if ($LASTEXITCODE -ne 0) { throw "A34 hosted parent-package upgrade rehearsal failed" }
-          if (-not (Test-Path $summary)) { throw "A34 bounded result summary missing" }
-      - name: Upload bounded A34 rehearsal evidence
-        uses: actions/upload-artifact@v4
-        with:
-          name: plm-p51-a34-upgrade-evidence-${{ github.sha }}
-          path: ${{ runner.temp }}/plm-a34-result-${{ github.run_id }}.json
           if-no-files-found: error
           retention-days: 14

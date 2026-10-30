@@ -16,6 +16,7 @@ from stage_windows_parent_candidate_cloud import stage_candidate
 
 
 OLD_ARTIFACT_RUN = "40995913354"
+CURRENT_ARTIFACT_RUN = "41008231772"
 PERSISTENT_DIRS = ("data", "config", "license", "plugins")
 PACKAGE_METADATA = ("manifest.json", "payload-sha256sums.txt")
 
@@ -214,7 +215,8 @@ def _cleanup(path: Path | None, temp: Path, prefix: str) -> None:
 
 def run(old_archive: Path, old_summary: Path, current_archive: Path,
         current_summary: Path, work_root: Path,
-        *, old_run_id: str = OLD_ARTIFACT_RUN) -> dict[str, object]:
+        *, old_run_id: str = OLD_ARTIFACT_RUN,
+        current_run_id: str = CURRENT_ARTIFACT_RUN) -> dict[str, object]:
     if os.name != "nt":
         raise ValueError("A34 is a hosted Windows-only rehearsal")
     temp = _runner_temp()
@@ -240,8 +242,8 @@ def run(old_archive: Path, old_summary: Path, current_archive: Path,
         old_meta, current_meta = _metadata(paths["old_stage"]), _metadata(paths["new_stage"])
         if str(old_meta.get("workflow_run")) != old_run_id:
             raise ValueError("A34 prior candidate run identity differs")
-        if str(current_meta.get("workflow_run")) != os.environ.get("GITHUB_RUN_ID"):
-            raise ValueError("A34 current candidate is not from this workflow run")
+        if str(current_meta.get("workflow_run")) != current_run_id:
+            raise ValueError("A34 current candidate run identity differs")
         old_hashes = _read_checksums(paths["old_stage"])
         current_hashes = _read_checksums(paths["new_stage"])
         _install_initial(paths["old_stage"], work_root, old_hashes)
