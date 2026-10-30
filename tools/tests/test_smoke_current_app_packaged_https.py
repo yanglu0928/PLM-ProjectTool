@@ -7,6 +7,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from plan_windows_unified_caddy_install import META, exact_mapping  # noqa: E402
 from smoke_current_app_packaged_https import (  # noqa: E402
     _inputs,
     _prior_archive_attestation,
@@ -72,6 +73,8 @@ class CurrentAppHttpsBoundaryTests(unittest.TestCase):
         }
         projected = _app_projection_hashes(parent_hashes)
         self.assertEqual(set(projected), {"payload/future/unknown.bin"})
+        with self.assertRaisesRegex(ValueError, "unmapped candidate payload family"):
+            exact_mapping([*projected, *META])
 
     def test_wrong_candidate_digest_rejected_before_layout(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
