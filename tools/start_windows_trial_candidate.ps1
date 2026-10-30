@@ -4,6 +4,7 @@ function Test-StrictJsonBoolean($value, [bool]$expected) {
 }
 function Write-StartupFailure($manifest) {
     $message = "Packaged production startup blocked; trust prerequisites are not ready."
+    $diagnosticProcess = $null
     try {
         if ($null -eq $manifest) { throw "manifest unavailable" }
         $packageRoot = Split-Path -Parent $PSScriptRoot
@@ -26,12 +27,33 @@ function Write-StartupFailure($manifest) {
         if ($actualDigest -cne $expectedDigest) { throw "diagnostic script checksum mismatch" }
 
         $shell = Get-Command powershell.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1
-        $diagnosticLines = @(& $shell.Source -NoLogo -NoProfile -NonInteractive -File $diagnosticPath 2>$null)
-        $diagnosticExit = $LASTEXITCODE
-        if ($diagnosticExit -ne 2 -or $diagnosticLines.Count -ne 1) {
+        $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $startInfo.FileName = $shell.Source
+        $quotedDiagnosticPath = '"' + $diagnosticPath.Replace('"', '\"') + '"'
+        $startInfo.Arguments = "-NoLogo -NoProfile -NonInteractive -File $quotedDiagnosticPath"
+        $startInfo.UseShellExecute = $false
+        $startInfo.CreateNoWindow = $true
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        $diagnosticProcess = New-Object System.Diagnostics.Process
+        $diagnosticProcess.StartInfo = $startInfo
+        if (-not $diagnosticProcess.Start()) { throw "diagnostic process did not start" }
+
+        $stdoutTask = $diagnosticProcess.StandardOutput.ReadToEndAsync()
+        $stderrTask = $diagnosticProcess.StandardError.ReadToEndAsync()
+        if (-not $diagnosticProcess.WaitForExit(15000)) {
+            try { $diagnosticProcess.Kill() } catch {}
+            throw "diagnostic process exceeded its 15 second limit"
+        }
+        $diagnosticProcess.WaitForExit()
+        $diagnosticText = $stdoutTask.GetAwaiter().GetResult()
+        $diagnosticError = $stderrTask.GetAwaiter().GetResult()
+        if ($diagnosticProcess.ExitCode -ne 2 -or
+            $diagnosticError.Length -ne 0 -or
+            $diagnosticText -notmatch "^(?s).+\r?\n?$") {
             throw "diagnostic command contract rejected"
         }
-        $diagnosticText = [string]$diagnosticLines[0]
+        $diagnosticText = $diagnosticText.TrimEnd([char]13, [char]10)
         $report = $diagnosticText | ConvertFrom-Json
         if ($report.status -cne "BLOCKED" -or
             -not (Test-StrictJsonBoolean $report.release_eligible $false) -or
@@ -58,6 +80,9 @@ function Write-StartupFailure($manifest) {
     }
     catch {
         $message = "Packaged production startup blocked; trust prerequisites are not ready."
+    }
+    finally {
+        if ($null -ne $diagnosticProcess) { $diagnosticProcess.Dispose() }
     }
     [Console]::Error.WriteLine($message)
 }
