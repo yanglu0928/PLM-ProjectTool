@@ -4,6 +4,7 @@ function Test-StrictJsonBoolean($value, [bool]$expected) {
 }
 function Write-StartupFailure($manifest) {
     $message = "Packaged production startup blocked; trust prerequisites are not ready."
+    $failureStage = "VALIDATE_INPUT"
     $diagnosticProcess = $null
     try {
         if ($null -eq $manifest) { throw "manifest unavailable" }
@@ -26,6 +27,7 @@ function Write-StartupFailure($manifest) {
         $actualDigest = (Get-FileHash -LiteralPath $diagnosticPath -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($actualDigest -cne $expectedDigest) { throw "diagnostic script checksum mismatch" }
 
+        $failureStage = "RESOLVE_PROCESS"
         $shell = Get-Command powershell.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1
         $startInfo = New-Object System.Diagnostics.ProcessStartInfo
         $startInfo.FileName = $shell.Source
@@ -37,10 +39,12 @@ function Write-StartupFailure($manifest) {
         $startInfo.RedirectStandardError = $true
         $diagnosticProcess = New-Object System.Diagnostics.Process
         $diagnosticProcess.StartInfo = $startInfo
+        $failureStage = "START_PROCESS"
         if (-not $diagnosticProcess.Start()) { throw "diagnostic process did not start" }
 
         $stdoutTask = $diagnosticProcess.StandardOutput.ReadToEndAsync()
         $stderrTask = $diagnosticProcess.StandardError.ReadToEndAsync()
+        $failureStage = "WAIT_PROCESS"
         if (-not $diagnosticProcess.WaitForExit(15000)) {
             try {
                 $diagnosticProcess.Kill()
@@ -49,16 +53,20 @@ function Write-StartupFailure($manifest) {
             throw "diagnostic process exceeded its 15 second limit"
         }
         $diagnosticProcess.WaitForExit()
+        $failureStage = "READ_PROCESS_OUTPUT"
         $diagnosticText = $stdoutTask.GetAwaiter().GetResult()
         $diagnosticError = $stderrTask.GetAwaiter().GetResult()
         $diagnosticLines = @($diagnosticText -split "\r?\n" | Where-Object { $_.Length -gt 0 })
+        $failureStage = "CHECK_PROCESS_CONTRACT"
         if ($diagnosticProcess.ExitCode -ne 2 -or
             $diagnosticError.Length -ne 0 -or
             $diagnosticLines.Count -ne 1) {
             throw "diagnostic command contract rejected"
         }
         $diagnosticText = $diagnosticLines[0]
+        $failureStage = "PARSE_REPORT"
         $report = $diagnosticText | ConvertFrom-Json
+        $failureStage = "VALIDATE_REPORT"
         if ($report.status -cne "BLOCKED" -or
             -not (Test-StrictJsonBoolean $report.release_eligible $false) -or
             -not (Test-StrictJsonBoolean $report.legal_clearance $false) -or
@@ -83,6 +91,9 @@ function Write-StartupFailure($manifest) {
         $message = "Packaged production startup blocked; see BLOCKED diagnostics above."
     }
     catch {
+        if ([Environment]::GetEnvironmentVariable("PLM_STARTUP_DIAGNOSTIC_TRACE") -ceq "A33") {
+            [Console]::Error.WriteLine("A33_DIAGNOSTIC_STAGE:" + $failureStage)
+        }
         $message = "Packaged production startup blocked; trust prerequisites are not ready."
     }
     finally {
