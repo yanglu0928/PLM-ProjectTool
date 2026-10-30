@@ -1,4 +1,5 @@
 # Changelog
+- 2026-10-30 P51-A39：只读核查A35真实父包确认根目录无安装/升级入口，只有manifest、hash清单；payload仅含说明、诊断和fail-closed launcher。A34/A35隔离恢复不等于安装或重启。新增CR-PKG-012，在持续授权下推进离线分阶段安装入口，不越过正式信任/服务/TLS/DB门禁；本轮未解包、安装或重启。见A39结果及CR-PKG-012。
 - 2026-10-30 P51-A38：新增只读 Pilot 就绪诊断器，合并非发行父包 manifest 的固定阻断字段与A37登记完整度。即使所有标志为真且登记完整，也恒定返回pilot_ready=false/launch_authorized=false/release_eligible=false/legal_clearance=false。Windows 11 Python 3.13合计12/12测试通过；用A35父包SHA 94700239...e2f2内存读取manifest与空模板完成只读集成。无服务/DB/凭据访问或C盘运行，Pilot/Gate/Release不变。详见 `docs/progress/plt-pkg-01-a09-p51-a38-readiness-report-result.md`。
 - 2026-10-30 P51-A37：新增 Windows Pilot 非秘密输入登记器、空白JSON模板及操作约定。只接受固定格式的公钥SHA指纹、License/证据引用、固定DB Credential Manager目标、Windows服务身份引用和TLS元数据；未知字段/无效值拒绝且不回显。完整登记也只标记需独立验证。Windows 11 Python 3.13合成测试6/6通过，未读密钥或接入启动放行。PASS_LIMITED，Pilot/Gate/Release不变。见 `docs/progress/plt-pkg-01-a09-p51-a37-input-register-result.md`。
 - 2026-10-30 P51-A36：盘点 Windows 11 Pilot 正式信任前置自动化。固定公钥/License、限定数据库凭据、服务身份/ACL、真实TLS链尚缺实际输入；现有工具只提供缺项守门或材料到位后的部分检查。无前置被虚假关闭，Pilot/Gate/Release仍NOT_READY。Windows 11本机启动前置单测2/2通过；另一模块导入依赖未装，不写C盘安装。详见 `docs/progress/plt-pkg-01-a09-p51-a36-windows11-trust-prerequisite-audit-result.md`。
