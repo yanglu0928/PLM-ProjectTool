@@ -234,7 +234,7 @@ def probe_packaged_startup_diagnostic(root: Path) -> dict:
         probe.bind(("127.0.0.1", 0))
         actual_port = probe.getsockname()[1]
     actual_result = subprocess.run(
-        [shell, "-NoProfile", "-File", r".\\payload\\check-startup.ps1"],
+        [shell, "-NoProfile", "-File", r".\payload\check-startup.ps1"],
         cwd=str(root), capture_output=True, text=True, errors="replace",
         timeout=20, env={key: value for key, value in os.environ.items()
                          if not key.upper().startswith("PLM_")})
