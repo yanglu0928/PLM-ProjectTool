@@ -226,9 +226,42 @@ def probe_packaged_startup_diagnostic(root: Path) -> dict:
     source_script = root / "payload" / "check-startup.ps1"
     if not source_script.is_file() or source_script.is_symlink():
         raise ValueError("packaged read-only startup diagnostic missing")
-    shell = shutil.which("pwsh")
+    shell = shutil.which("powershell")
     if not shell:
-        raise ValueError("PowerShell 7 unavailable on hosted Windows runner")
+        raise ValueError("Windows PowerShell unavailable on hosted Windows runner")
+
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        actual_port = probe.getsockname()[1]
+    actual_result = subprocess.run(
+        [shell, "-NoProfile", "-File", r".\\payload\\check-startup.ps1"],
+        cwd=str(root), capture_output=True, text=True, errors="replace",
+        timeout=20, env={key: value for key, value in os.environ.items()
+                         if not key.upper().startswith("PLM_")})
+    if actual_result.returncode != 2 or actual_result.stderr.strip():
+        raise ValueError(
+            "documented package-root diagnostic command contract mismatch: "
+            f"exit={actual_result.returncode}; stdout_bytes="
+            f"{len(actual_result.stdout.encode('utf-8'))}; "
+            f"stderr_empty={not bool(actual_result.stderr.strip())}"
+        )
+    try:
+        actual_report = json.loads(actual_result.stdout)
+    except json.JSONDecodeError:
+        raise ValueError(
+            "documented package-root diagnostic output is not JSON: "
+            f"exit={actual_result.returncode}; stdout_bytes="
+            f"{len(actual_result.stdout.encode('utf-8'))}"
+        ) from None
+    if (actual_report.get("status") != "BLOCKED"
+            or actual_report.get("release_eligible") is not False
+            or actual_report.get("legal_clearance") is not False
+            or actual_report.get("blocker_codes") != source["startup_preflight"]["blocker_codes"]
+            and set(actual_report.get("blocker_codes", [])) !=
+            set(source["startup_preflight"]["blocker_codes"]) | {"NON_RELEASE_CANDIDATE"}):
+        raise ValueError("documented package-root diagnostic report differs from source manifest")
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", actual_port))
 
     ready = copy.deepcopy(source)
     ready["release_eligible"] = True
@@ -256,17 +289,6 @@ def probe_packaged_startup_diagnostic(root: Path) -> dict:
     matrix_root = root / "startup-diagnostic-matrix"
     matrix_root.mkdir()
     try:
-        case_root = matrix_root / "actual-candidate"
-        payload = case_root / "payload"
-        payload.mkdir(parents=True)
-        shutil.copyfile(source_script, payload / "check-startup.ps1")
-        (case_root / "manifest.json").write_bytes(source_bytes)
-        result = subprocess.run(
-            [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File",
-             str(payload / "check-startup.ps1")],
-            cwd=str(payload), capture_output=True, text=True, errors="replace",
-            timeout=20, env={key: value for key, value in os.environ.items()
-                             if not key.upper().startswith("PLM_")})
         if result.returncode != 2 or result.stderr.strip():
             try:
                 diagnostic_stdout = json.loads(result.stdout)
