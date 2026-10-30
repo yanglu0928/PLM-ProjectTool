@@ -77,6 +77,7 @@ class ParentCandidateUpgradeCloudTests(unittest.TestCase):
             "exit 1\n"
         ).encode("ascii")
         payload["payload/start-trial.ps1"] = launcher
+        payload["provenance/a34-synthetic-evidence.json"] = b'{"kind":"synthetic"}\n'
         hashes = {path: hashlib.sha256(data).hexdigest()
                   for path, data in payload.items()}
         checksum_bytes = "".join(
@@ -163,6 +164,7 @@ class ParentCandidateUpgradeCloudTests(unittest.TestCase):
         self.assertTrue(result["explicit_manual_restore_passed"])
         self.assertTrue(result["new_candidate_remained_active_until_manual_restore"])
         self.assertTrue(result["failed_candidate_quarantined"])
+        self.assertTrue(result["provenance_preserved_in_quarantine"])
         self.assertEqual(result["launcher_after_upgrade"]["status"], "BLOCKED")
         self.assertFalse(work_root.exists())
 

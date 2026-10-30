@@ -18,6 +18,7 @@ from stage_windows_parent_candidate_cloud import stage_candidate
 OLD_ARTIFACT_RUN = "40995913354"
 PERSISTENT_DIRS = ("data", "config", "license", "plugins")
 PACKAGE_METADATA = ("manifest.json", "payload-sha256sums.txt")
+PACKAGE_CONTENTS = ("payload", "provenance", *PACKAGE_METADATA)
 
 
 def _sha_file(path: Path) -> str:
@@ -58,7 +59,8 @@ def _read_checksums(stage: Path) -> dict[str, str]:
         digest, separator, name = line.partition("  ")
         pure = PurePosixPath(name)
         if (separator != "  " or len(digest) != 64 or name in result
-                or not name.startswith("payload/") or "\\" in name or ":" in name
+                or not name.startswith(("payload/", "provenance/"))
+                or "\\" in name or ":" in name
                 or pure.is_absolute() or any(part in ("", ".", "..") for part in pure.parts)):
             raise ValueError("A34 candidate checksum inventory rejected")
         int(digest, 16)
@@ -67,8 +69,10 @@ def _read_checksums(stage: Path) -> dict[str, str]:
         raise ValueError("A34 candidate payload is empty")
     actual = {
         path.relative_to(stage).as_posix()
-        for path in (stage / "payload").rglob("*")
-        if path.is_file() and not path.is_symlink()
+        for path in stage.rglob("*")
+        if (path.is_file() and not path.is_symlink()
+            and path.relative_to(stage).as_posix() not in
+            (*PACKAGE_METADATA, "candidate-staging-receipt.json"))
     }
     if actual != set(result):
         raise ValueError("A34 staged payload inventory differs from its checksums")
@@ -89,6 +93,8 @@ def _metadata(stage: Path) -> dict[str, object]:
 
 def _link_candidate(stage: Path, destination: Path, hashes: dict[str, str]) -> None:
     destination.mkdir(exist_ok=True)
+    for name in ("payload", "provenance"):
+        (destination / name).mkdir(exist_ok=True)
     for name in sorted(hashes):
         source = stage.joinpath(*PurePosixPath(name).parts)
         target = destination.joinpath(*PurePosixPath(name).parts)
@@ -126,7 +132,8 @@ def _marker_hashes(root: Path) -> dict[str, str]:
 def _verify_candidate(stage: Path, root: Path, hashes: dict[str, str]) -> None:
     actual = {
         path.relative_to(root).as_posix()
-        for path in (root / "payload").rglob("*")
+        for name in ("payload", "provenance")
+        for path in (root / name).rglob("*")
         if path.is_file()
     }
     if actual != set(hashes):
@@ -144,12 +151,12 @@ def _verify_candidate(stage: Path, root: Path, hashes: dict[str, str]) -> None:
 def _activate(stage: Path, target: Path, backup: Path,
               hashes: dict[str, str]) -> None:
     backup.mkdir()
-    for name in ("payload", *PACKAGE_METADATA):
+    for name in PACKAGE_CONTENTS:
         os.replace(target / name, backup / name)
     replacement = backup.parent / ("plm-a34-next-" + backup.name.rsplit("-", 1)[-1])
     try:
         _link_candidate(stage, replacement, hashes)
-        for name in ("payload", *PACKAGE_METADATA):
+        for name in PACKAGE_CONTENTS:
             os.replace(replacement / name, target / name)
     finally:
         if replacement.exists():
@@ -158,11 +165,11 @@ def _activate(stage: Path, target: Path, backup: Path,
 
 def _manual_restore(target: Path, backup: Path, failed: Path) -> None:
     failed.mkdir()
-    for name in ("payload", *PACKAGE_METADATA):
+    for name in PACKAGE_CONTENTS:
         if not (target / name).exists() or not (backup / name).exists():
             raise ValueError("A34 manual restore payload is incomplete")
         os.replace(target / name, failed / name)
-    for name in ("payload", *PACKAGE_METADATA):
+    for name in PACKAGE_CONTENTS:
         os.replace(backup / name, target / name)
 
 
@@ -299,7 +306,10 @@ def run(old_archive: Path, old_summary: Path, current_archive: Path,
             "new_candidate_remained_active_until_manual_restore": True,
             "explicit_manual_restore_passed": True,
             "failed_candidate_quarantined": all((failed / name).exists()
-                                                 for name in ("payload", *PACKAGE_METADATA)),
+                                                 for name in PACKAGE_CONTENTS),
+            "provenance_preserved_in_quarantine": any(
+                (failed / "provenance").rglob("*")
+            ),
             "launcher_after_upgrade": launcher,
             "services_started": False,
             "release_eligible": False,
