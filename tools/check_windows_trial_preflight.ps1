@@ -24,6 +24,7 @@ try {
         $manifest.kind -ne "WINDOWS_PARENT_PACKAGE_NON_RELEASE_CANDIDATE" -or
         -not (Test-StrictJsonBoolean $manifest.release_eligible $false) -or
         -not (Test-StrictJsonBoolean $manifest.legal_clearance $false) -or
+        $startup.formal_startup_ready -isnot [bool] -or
         $startup.database_credential_target_reference -isnot [string] -or
         $startup.database_credential_target_reference -ne "PLMProjectTool/Database" -or
         $startup.blocker_codes -isnot [System.Array]
