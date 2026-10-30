@@ -58,3 +58,10 @@
 
 - 检查远端提交图发现 PR #60 在 2026-10-30 05:09:30 UTC 以 merge commit b659f8376e2954945632c05eccc90a85d974725a 进入 main；本自动化没有调用合并操作。合并的分支头 610e7af 尚缺下面的 `$checksumsDigest` 计算语句，阶段细分编辑导致的安全回退实现因此出现在 main。A33 验收仍失败关闭，未产生服务启动或数据写入；不得把合并解释为验收通过。
 - 原 feature 分支在合并后又有两次提交（文档记录与哈希语句恢复），但与 main 已分叉，不能强推覆盖。为保持只在正确功能分支开发，从最新 main HEAD b659f837 创建 `feature/p51-a33-launcher-checksum-recovery`。先在该分支登记本记录，再仅补回 `$checksumsDigest` 哈希赋值；保留清单/单文件双重校验、15秒界限和默认拒绝文案。完成后开新PR/托管复验，不直接改写 main。回滚仅恢复为固定拒绝文案入口，不移除启动守门。
+
+
+## 第七轮 hosted 偏差：修复漏项后清单哈希步骤回退（2026-10-30）
+
+- PR #61 / run 41007180355 / parent smoke job 123907131560：托管 Windows Server 2025、D:\\a\\_temp 清洁解包；后端、前端、PG18/pgvector、Python、embedded runtime、父候选装配/读回及A17候选投影均成功。实际 launcher 仍 exit=1、stdout=0、固定拒绝stderr，阶段码 HASH_CHECKSUM_FILE；未到诊断子进程，无启动/监听/敏感输出。
+- 新阶段码确认 `$checksumsDigest` 哈希计算语句已执行到达，但该操作或结果取值触发了launcher catch。不能据此推断具体异常，也不把完整流水线的其他通过结果当作A33通过。
+- 先记录，再在代码中将哈希调用与结果规范化拆分为两个静态阶段，或使用等价的受控 .NET SHA-256 流读取；不输出异常正文、文件内容或路径，不改变哈希算法、清单/单文件核验和启动拒绝。复验仍走hosted D盘 runner。
