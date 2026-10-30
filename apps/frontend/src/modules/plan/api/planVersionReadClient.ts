@@ -84,8 +84,8 @@ export class PlanVersionReadClient {
   private async get(path: string): Promise<unknown> {
     const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(path, { method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error",
-        headers: { Accept: "application/json" }, signal: controller.signal });
+      const response = await Reflect.apply(this.fetcher, globalThis, [path, { method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json" }, signal: controller.signal }]) as Response;
       if (controller.signal.aborted || response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json"
         || response.headers.get("cache-control") !== "no-store") fail();
       const payload: unknown = await response.json();

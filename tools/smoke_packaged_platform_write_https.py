@@ -39,7 +39,7 @@ from install_windows_caddy_go_atomic_rehearsal import rehearse
 from preflight_packaged_production_startup_windows import PUBLIC_KEY_RELATIVE
 from smoke_caddy_go_layout_https import verify_layout
 from smoke_caddy_same_origin_https import caddyfile, synthetic_certificate
-from smoke_packaged_pg18_migration import _port, _run
+from smoke_packaged_pg18_migration import _migration_temp_root, _port, _run
 from smoke_windows_pg18_sidecar import _start_pg_ctl
 from plm_assistant.modules.auth.infrastructure.scrypt_password import ScryptPasswordHasher
 from plm_assistant.modules.license.application.license_validation import PRODUCT_CODE
@@ -227,6 +227,24 @@ def _diagnose_packaged_factory(runtime: Path, bootstrap: Path,
     return label[0] if re.fullmatch(r"(?:FACTORY_OK|[\w]+Error@[\w.]+:\d+)", label[0]) else "NO_FACTORY_RESULT"
 
 
+def _grant_owned_postgres_temp_access(path: Path) -> None:
+    resolved = path.resolve(strict=True)
+    if path.is_symlink() or not resolved.is_dir():
+        raise ValueError("owned PostgreSQL temp root must be a real directory")
+    identity = subprocess.run(["whoami"], capture_output=True, text=True,
+                              errors="replace", timeout=10, check=False)
+    account = identity.stdout.strip()
+    if (identity.returncode != 0 or not re.fullmatch(r"[A-Za-z0-9_.\\-]+", account)):
+        raise RuntimeError("hosted runner identity could not be safely resolved")
+    grant = subprocess.run(
+        ["icacls", str(resolved), "/grant", f"{account}:(OI)(CI)F"],
+        capture_output=True, text=True, errors="replace", timeout=20, check=False,
+    )
+    if grant.returncode != 0:
+        raise RuntimeError("owned PostgreSQL temp ACL grant failed: "
+                           + (grant.stdout + grant.stderr)[-1200:])
+
+
 def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Path, *,
           layout_verifier=None, layout_rehearser=None,
           synthetic_license_document_factory=None, licensed_https_probe=None) -> dict:
@@ -234,7 +252,10 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         raise ValueError("Windows isolated smoke only")
     if (synthetic_license_document_factory is None) != (licensed_https_probe is None):
         raise ValueError("synthetic licensed HTTPS callbacks must be paired")
-    temp_root = Path(os.environ.get("PLM_TEST_TEMP_ROOT", r"D:\PLMToolTemp"))
+    temp_root = Path(
+        os.environ.get("PLM_P51_TEMP_ROOT")
+        or os.environ.get("PLM_TEST_TEMP_ROOT", r"D:\PLMToolTemp")
+    )
     if (not temp_root.is_absolute() or temp_root.drive.upper() != "D:"
             or temp_root.name != "PLMToolTemp" or not str(temp_root).isascii()):
         raise ValueError("packaged platform smoke requires an explicit ASCII D: PLMToolTemp root")
@@ -279,12 +300,18 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         "Synthetic public trust fixture only; this layout is not the fixed release candidate.\n",
         encoding="ascii")
     run = Path(tempfile.mkdtemp(prefix="plm-p42-platform-write-", dir=temp_root))
+    pg_temp_root = _migration_temp_root()
+    pg_run = Path(tempfile.mkdtemp(prefix="plm-pg18-platform-write-", dir=pg_temp_root))
+    pg_process_env = {name: value for name, value in os.environ.items()
+                      if not name.upper().startswith("PLM_")}
+    pg_process_env["TEMP"] = str(pg_run)
+    pg_process_env["TMP"] = str(pg_run)
     pg, runtime, caddy = (target / "runtime/pgsql/bin", target / "runtime/python/python.exe",
                           target / "runtime/caddy/caddy.exe")
     pg_port, api_port, https_port = _port(), _port(), _port()
     while len({pg_port, api_port, https_port}) != 3:
         pg_port, api_port, https_port = _port(), _port(), _port()
-    data, log = run / "pgdata", run / "postgresql.log"
+    data, log = pg_run / "pgdata", pg_run / "postgresql.log"
     api_process = caddy_process = None
     api_log = run / "packaged-api-startup.log"
     pg_started = False
@@ -295,20 +322,26 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     outcome: dict | None = None
     provider = WindowsSecretKeyProvider()
     try:
+        if data.exists() or data.is_symlink():
+            raise ValueError("owned PostgreSQL data path must be new")
+        _grant_owned_postgres_temp_access(pg_run)
         _run([str(pg / "initdb.exe"), f"--pgdata={data}", "--username=poc_admin",
-              "--auth=trust", "--encoding=UTF8", "--locale=C"], timeout=120)
+              "--auth=trust", "--encoding=UTF8", "--locale=C"],
+              env=pg_process_env, timeout=120)
         _start_pg_ctl([str(pg / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
-                       "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log)
+                       "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log,
+                       env=pg_process_env)
         pg_started = True
 
         def restart_postgres() -> None:
             """Restart only this smoke's isolated cluster using the same data and port."""
             nonlocal pg_restart_count
             _run([str(pg / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop"],
-                 timeout=60)
+                 env=pg_process_env, timeout=60)
             # Keep cleanup ownership set even if the subsequent start fails.
             _start_pg_ctl([str(pg / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
-                           "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log)
+                           "-o", f"-h 127.0.0.1 -p {pg_port}", "-w", "start"], log,
+                           env=pg_process_env)
             with psycopg.connect(host="127.0.0.1", port=pg_port, user="poc_admin",
                                  dbname="postgres", autocommit=True,
                                  connect_timeout=5) as check:
@@ -321,11 +354,13 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             nonlocal pg_logical_restore_count
             suffix = uuid.uuid4().hex[:10]
             restored_database = f"{database[:45]}_r_{suffix}"
-            backup = run / f"p51-a11-{suffix}.dump"
-            if backup.exists() or not run.is_dir():
+            backup = pg_run / f"p51-a11-{suffix}.dump"
+            if backup.exists() or not pg_run.is_dir():
                 raise ValueError("owned PostgreSQL backup path is not fresh")
-            pg_env = {name: value for name, value in os.environ.items()
+            pg_env = {name: value for name, value in pg_process_env.items()
                       if not name.upper().startswith("PG")}
+            pg_env["TEMP"] = str(pg_run)
+            pg_env["TMP"] = str(pg_run)
             pg_env["PGPASSWORD"] = password
             target_created = False
             try:
@@ -334,15 +369,17 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                       f"--dbname={database}", "--format=custom", "--no-owner",
                       "--no-acl", f"--file={backup}"], env=pg_env, timeout=180)
                 if (not backup.is_file() or backup.stat().st_size < 64 or
-                        backup.resolve().parent != run.resolve()):
+                        backup.resolve().parent != pg_run.resolve()):
                     raise ValueError("packaged pg_dump did not produce an owned backup")
                 with psycopg.connect(host="127.0.0.1", port=pg_port, user="poc_admin",
                                      dbname="postgres", autocommit=True) as admin:
                     admin.execute(sql.SQL("CREATE DATABASE {} OWNER {}").format(
                         sql.Identifier(restored_database), sql.Identifier(role)))
                 target_created = True
-                restore_env = {name: value for name, value in os.environ.items()
+                restore_env = {name: value for name, value in pg_process_env.items()
                                if not name.upper().startswith("PG")}
+                restore_env["TEMP"] = str(pg_run)
+                restore_env["TMP"] = str(pg_run)
                 restore_env["PGPASSWORD"] = ""
                 _run([str(pg / "pg_restore.exe"), "--host=127.0.0.1",
                       f"--port={pg_port}", "--username=poc_admin",
@@ -511,8 +548,10 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             f'selected_mac: "{selected_mac}"\n', encoding="ascii")
         env = {name: value for name, value in os.environ.items() if not name.upper().startswith("PLM_")}
         env.pop("PYTHONPATH", None)
-        env["PATH"] = os.pathsep.join((str(target / "runtime/python"), str(pg),
+        env["PATH"] = os.pathsep.join((str(caddy.parent), str(target / "runtime/python"), str(pg),
                                        str(Path(os.environ["WINDIR"]) / "System32"), os.environ["WINDIR"]))
+        env.setdefault("SystemRoot", os.environ["WINDIR"])
+        env.setdefault("WINDIR", os.environ["WINDIR"])
         api_command = [str(runtime), "-I", "-B", "-m",
                        "plm_assistant.entrypoints.serve_windows",
                        str(bootstrap), "--platform-write"]
@@ -562,6 +601,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             api_restart_count += 1
         caddy_config.write_text(caddyfile(target / "app/frontend/dist", cert, key,
                                           api_port, https_port), encoding="ascii")
+        if not caddy.is_file():
+            raise ValueError("packaged Caddy executable missing from verified layout")
         checked = subprocess.run([str(caddy), "validate", "--config", str(caddy_config)],
                                  capture_output=True, text=True, errors="replace", env=env,
                                  timeout=20, check=False)
@@ -674,7 +715,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
         pg_stopped = not pg_started
         if pg_started:
             try:
-                _run([str(pg / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop"], timeout=60)
+                _run([str(pg / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop"],
+                     env=pg_process_env, timeout=60)
                 pg_stopped = True
             except (OSError, RuntimeError, subprocess.TimeoutExpired):
                 cleanup_errors.append("postgres")
@@ -701,12 +743,15 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             cleanup_errors.append("vault-inventory")
         if (run.parent.resolve(strict=True) != temp_root
                 or not run.name.startswith("plm-p42-platform-write-")
+                or pg_run.parent.resolve(strict=True) != pg_temp_root
+                or not pg_run.name.startswith("plm-pg18-platform-write-")
                 or target.parent != run.parent or not target.name.startswith("plm-install-rehearsal-")):
             cleanup_errors.append("scope")
         elif pg_stopped and all(process is None or process.poll() is not None
                                   for process in (api_process, caddy_process)):
             try:
                 shutil.rmtree(run)
+                shutil.rmtree(pg_run)
                 shutil.rmtree(target)
             except OSError:
                 cleanup_errors.append("temporary-files")

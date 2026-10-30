@@ -24,7 +24,7 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
                               actor: uuid.UUID, requirement: uuid.UUID,
                               requirement_version: uuid.UUID,
                               document_version: uuid.UUID,
-                              evidence: uuid.UUID) -> None:
+                              evidence: uuid.UUID) -> tuple[bytes, bytes]:
     """Create a synthetic Approved Section through real SOL/Review Owners."""
     import hashlib
 
@@ -186,7 +186,7 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
 
     with fixture_db() as db:
         source = db.execute(
-            "SELECT f.storage_locator FROM plm.doc_document_versions v "
+            "SELECT f.storage_locator,f.sha256,f.size_bytes FROM plm.doc_document_versions v "
             "JOIN plm.doc_file_objects f ON f.file_object_id=v.file_object_id "
             "WHERE v.document_version_id=%s AND v.project_id=%s",
             (document_version, project),
@@ -194,8 +194,9 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
     assert source is not None, "synthetic fixed Document source missing"
     locator = source[0]
     content = b"Synthetic Prototype fixed document; not customer information.\n"
-    assert hashlib.sha256(content).digest() is not None
-    source_path = Path(fixture_db.data_root) / "private-documents" / locator
+    if hashlib.sha256(content).digest() != source[1] or len(content) != source[2]:
+        raise AssertionError("synthetic fixed Document bytes differ from metadata")
+    source_path = Path(fixture_db.data_root) / locator
     source_path.parent.mkdir(parents=True, exist_ok=True)
     source_path.write_bytes(content)
     draft = SectionVersionDraftInput(
@@ -270,7 +271,7 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
             "idempotency-key": "a17-section-submit-0001"}, json={
                 "reviewer_ids": [str(reviewer[0])],
                 "policy_ref": "SOLUTION_SECTION_ALL_V1",
-                "due_at": None, "submission_note": "Synthetic package fixture",
+                "due_at": None, "submission_note": None,
             })
         assert submitted.status_code == 201, submitted.text
         review_id = uuid.UUID(submitted.json()["data"]["review_id"])
@@ -300,7 +301,21 @@ def _approved_section_fixture(context: dict, *, project: uuid.UUID,
         ).fetchone()
     assert approved == ("APPROVED", version.solution_section_version_id,
                         "APPROVED", "APPROVED"), approved
+    # The following inherited Requirement Review probe requires a CUSTOMER_MEMBER.
+    # Prepare that role only after this synthetic Section Review has completed.
+    with fixture_db() as db, db.transaction():
+        db.execute(
+            "UPDATE plm.prj_project_members SET project_role='CUSTOMER_MEMBER' "
+            "WHERE project_id=%s AND user_id=%s AND state='ACTIVE'",
+            (project, reviewer[0]),
+        )
+        member = db.execute(
+            "SELECT project_role,state FROM plm.prj_project_members "
+            "WHERE project_id=%s AND user_id=%s", (project, reviewer[0]),
+        ).fetchone()
+    assert member == ("CUSTOMER_MEMBER", "ACTIVE"), member
     print("P51_A17_SYNTHETIC_SECTION_OWNER_REVIEW_PASS", flush=True)
+    return token, csrf
 
 
 def skip_unrelated_survey_followups(_state, **_context) -> None:
@@ -486,7 +501,7 @@ def packaged_planversion_probe(**context) -> None:
             ).fetchone()
         assert evidence_row is not None, "packaged synthetic Evidence source missing"
         try:
-            _approved_section_fixture(
+            manager_token, manager_csrf = _approved_section_fixture(
                 context, project=project, actor=actor,
                 requirement=requirement, requirement_version=requirement_version,
                 document_version=document_version, evidence=evidence_row[0],
@@ -494,8 +509,9 @@ def packaged_planversion_probe(**context) -> None:
         except Exception:
             runtime.dispose()
             raise
-        token = bytes.fromhex(context["client"].cookies["plm_session"])
-        csrf = bytes.fromhex(context["login"].json()["data"]["csrf_token"])
+        # The enclosing Handover probe keeps an unrelated observer client; use
+        # the matched Manager Session created through production Login HTTP.
+        token, csrf = manager_token, manager_csrf
         try:
             outline_fixture = plan_edge["owner"].full
             # The source fixture historically targets a database named
@@ -505,13 +521,29 @@ def packaged_planversion_probe(**context) -> None:
                 "host": "127.0.0.1", "port": port, "user": "poc_admin",
                 "dbname": fixture_db.database,
             }
-            outline_fixture._outline_full(**(context | {
+            outline_context = context | {
                 "port": fixture_db.pg_port,
                 "runtime": runtime, "manager": actor, "token": token,
                 "csrf": csrf, "license_guard": licenses.guard,
                 "audit": audit, "documents": documents,
                 "downloads": downloads, "parse_results": parse_results,
-            }))
+            }
+            outline_fixture._outline_full(**outline_context)
+            # Validation leaves the new Outline in DRAFT after exercising its
+            # positive/negative facts. PlanVersion needs a genuinely approved
+            # source, so use the existing Owner's real Review API fixture.
+            owner_fixture = plan_edge["owner"]
+            original_connection = owner_fixture._connection
+            owner_fixture._connection = lambda port: {
+                "host": "127.0.0.1", "port": port, "user": "poc_admin",
+                "dbname": fixture_db.database,
+            }
+            try:
+                owner_fixture._restore_coverage_edge(outline_context)
+                owner_fixture._approve_current_outline(
+                    outline_context, Path(fixture_db.data_root))
+            finally:
+                owner_fixture._connection = original_connection
         finally:
             runtime.dispose()
     with fixture_db() as db:

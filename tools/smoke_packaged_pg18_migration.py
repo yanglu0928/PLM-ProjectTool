@@ -73,13 +73,51 @@ def _port() -> int:
         return int(probe.getsockname()[1])
 
 
+def _migration_temp_root() -> Path:
+    configured = os.environ.get("PLM_PG_TEMP_ROOT")
+    if configured:
+        runner_temp_value = os.environ.get("RUNNER_TEMP")
+        run_id = os.environ.get("GITHUB_RUN_ID")
+        if not runner_temp_value or not run_id or not run_id.isascii() or not run_id.isdigit():
+            raise ValueError("PLM_PG_TEMP_ROOT requires RUNNER_TEMP and numeric GITHUB_RUN_ID ownership boundary")
+        runner_temp = Path(runner_temp_value).resolve(strict=True)
+        candidate = Path(configured)
+        if candidate.is_symlink():
+            raise ValueError("PLM_PG_TEMP_ROOT must not be a symlink")
+        selected = candidate.resolve(strict=True)
+        if (not selected.is_dir() or runner_temp.drive.upper() == "C:"
+                or selected.drive.upper() == "C:" or selected != runner_temp
+                or not str(selected).isascii()):
+            raise ValueError("PLM_PG_TEMP_ROOT must equal this run's non-C RUNNER_TEMP")
+        return selected
+
+    configured = os.environ.get("PLM_P51_TEMP_ROOT")
+    if not configured:
+        return Path(tempfile.gettempdir()).resolve(strict=True)
+    runner_temp_value = os.environ.get("RUNNER_TEMP")
+    if not runner_temp_value:
+        raise ValueError("PLM_P51_TEMP_ROOT requires RUNNER_TEMP ownership boundary")
+    runner_temp = Path(runner_temp_value).resolve(strict=True)
+    candidate = Path(configured)
+    if candidate.is_symlink():
+        raise ValueError("PLM_P51_TEMP_ROOT must not be a symlink")
+    selected = candidate.resolve(strict=True)
+    if (not selected.is_dir() or runner_temp.drive.upper() == "C:"
+            or selected.drive.upper() == "C:" or selected.parent.parent != runner_temp
+            or not selected.parent.name.startswith("plm-p51-a27-")
+            or selected.name != "PLMToolTemp" or not str(selected).isascii()):
+        raise ValueError("PLM_P51_TEMP_ROOT is outside the owned non-C A17 runner temp")
+    return selected
+
+
 def smoke(root: Path, candidate: Path) -> dict:
     count = verify_layout(root, candidate)
     root = root.resolve(strict=True)
     pg = root / "runtime/pgsql/bin"
     python = root / "runtime/python/python.exe"
     port = _port()
-    run = Path(tempfile.mkdtemp(prefix="plm-package-migration-", dir=tempfile.gettempdir()))
+    temp_root = _migration_temp_root()
+    run = Path(tempfile.mkdtemp(prefix="plm-package-migration-", dir=temp_root))
     data = run / "data"
     log = run / "postgresql.log"
     env = {key: value for key, value in os.environ.items() if not key.upper().startswith("PLM_")}
@@ -125,7 +163,8 @@ def smoke(root: Path, candidate: Path) -> dict:
                                 capture_output=True, timeout=15, check=False)
         if status.returncode == 0:
             raise RuntimeError(f"synthetic PostgreSQL remains running; data preserved at {run}")
-        if run.resolve().parent == Path(tempfile.gettempdir()).resolve() and run.name.startswith("plm-package-migration-"):
+        if (run.resolve().parent == temp_root and run.name.startswith("plm-package-migration-")
+                and run.resolve(strict=True).is_dir()):
             shutil.rmtree(run)
 
 

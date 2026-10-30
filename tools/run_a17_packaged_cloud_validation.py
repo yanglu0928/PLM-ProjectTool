@@ -98,8 +98,13 @@ def main() -> int:
     if archive_sha != candidate_summary.get("archive_sha256"):
         raise ValueError("A17 candidate summary archive digest mismatch")
 
+    run_id = os.environ.get("GITHUB_RUN_ID", "")
+    if not run_id.isascii() or not run_id.isdigit():
+        raise ValueError("A17 requires a numeric hosted GITHUB_RUN_ID")
     temp_root = root / "PLMToolTemp"
+    pg_temp_root = runner_temp
     temp_root.mkdir(parents=True)
+    os.environ["PLM_PG_TEMP_ROOT"] = str(pg_temp_root)
     os.environ["TEMP"] = str(temp_root)
     os.environ["TMP"] = str(temp_root)
     os.environ["PLM_P51_TEMP_ROOT"] = str(temp_root)
@@ -127,8 +132,11 @@ def main() -> int:
         raise RuntimeError("A17 packaged flow did not pass: " + output[-12000:])
 
     owned_root = root.resolve(strict=True)
-    if owned_root.parent != runner_temp:
-        raise ValueError("A17 cleanup root escaped RUNNER_TEMP")
+    pg_owned_root = pg_temp_root.resolve(strict=True)
+    if (owned_root.parent != runner_temp or pg_owned_root != runner_temp
+            or pg_temp_root.is_symlink() or not str(pg_owned_root).isascii()):
+        raise ValueError("A17 cleanup roots escaped this RUNNER_TEMP run")
+    # The smoke owns and removes its uniquely named PG child; never delete RUNNER_TEMP.
     shutil.rmtree(owned_root)
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)
     result = {

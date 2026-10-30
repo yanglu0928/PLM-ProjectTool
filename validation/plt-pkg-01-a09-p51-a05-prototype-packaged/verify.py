@@ -42,7 +42,7 @@ def seed_current_requirement(context: dict, project: uuid.UUID) -> tuple[uuid.UU
             "storage_locator,original_name_metadata,created_by,file_state,sha256,size_bytes,"
             "detected_mime,available_at) VALUES (%s,'PROJECT',%s,'PERSISTENT',%s,"
             "'prototype-input.txt',%s,'AVAILABLE',%s,%s,'text/plain',statement_timestamp())",
-            (file_object, project, f"projects/{project.hex}/prototype-input.txt", actor,
+            (file_object, project, f"projects/{project.hex}/objects/{file_object.hex[:2]}/{file_object.hex}", actor,
              content_sha, len(content)),
         )
         db.execute(
@@ -110,6 +110,10 @@ def seed_current_requirement(context: dict, project: uuid.UUID) -> tuple[uuid.UU
             "UPDATE plm.req_requirements SET current_approved_version_ref=%s "
             "WHERE requirement_id=%s", (version, requirement),
         )
+    locator = f"projects/{project.hex}/objects/{file_object.hex[:2]}/{file_object.hex}"
+    source_path = Path(context["fixture_db"].data_root) / locator
+    source_path.parent.mkdir(parents=True, exist_ok=True)
+    source_path.write_bytes(content)
     return requirement, version, document, document_version
 
 

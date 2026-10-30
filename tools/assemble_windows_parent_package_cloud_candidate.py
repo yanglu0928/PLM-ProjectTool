@@ -14,6 +14,28 @@ from pathlib import Path, PurePosixPath
 
 BLOCKED = {".env", ".log", ".key", ".pfx", ".p12", ".pyc"}
 COMPONENT_META = {"manifest.json", "third-party-inventory.json", "payload-sha256sums.txt"}
+DATABASE_CREDENTIAL_TARGET = "PLMProjectTool/Database"
+
+
+def make_startup_preflight(*, product_key_present: bool) -> dict[str, object]:
+    blockers = [] if product_key_present else ["FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"]
+    blockers.extend([
+        "FORMAL_LICENSE_TRUST_NOT_VERIFIED",
+        "DATABASE_CREDENTIAL_REFERENCE_NOT_VERIFIED",
+        "SERVICE_IDENTITY_ACL_NOT_VERIFIED",
+        "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED",
+    ])
+    return {
+        "formal_startup_ready": False,
+        "packaged_product_public_key_resource_present": product_key_present,
+        "formal_license_trust_verified": False,
+        "database_credential_target_reference": DATABASE_CREDENTIAL_TARGET,
+        "database_credential_reference_verified": False,
+        "service_identity_acl_verified": False,
+        "tls_certificate_configured": False,
+        "tls_private_key_configured": False,
+        "blocker_codes": blockers,
+    }
 
 
 def sha_bytes(data: bytes) -> str:
@@ -226,6 +248,10 @@ The YAML file contains non-secret settings only. Do not put database passwords, 
 - `provenance/`: component build manifests and inventories
 
 This archive is not an installer or a Pilot release. Its PostgreSQL component was exercised only with a temporary local database on a hosted runner.
+
+## Read-only startup preflight
+
+Run `powershell -NoProfile -File .\\payload\\check-startup.ps1` from the extracted package folder. The command reads only the package manifest and prints a short, non-secret list of missing startup prerequisites. This non-release candidate will report `BLOCKED` and exit with code 2. It does not read credentials, start a service, or make the package release-ready. If you run `powershell -NoProfile -File .\\payload\\start-trial.ps1`, the launcher repeats that verified BLOCKED report and still exits with code 1 before starting any service.
 """
     launcher_path = Path(__file__).with_name("start_windows_trial_candidate.ps1")
     if not launcher_path.is_file() or launcher_path.is_symlink():
@@ -234,10 +260,18 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
     if any(token in launcher_bytes.lower() for token in
            (b"-----begin private key-----", b"api_key:", b"password:", b".pfx", b".p12")):
         raise ValueError("startup guard source contains a secret marker or private-file reference")
+    diagnostic_path = Path(__file__).with_name("check_windows_trial_preflight.ps1")
+    if not diagnostic_path.is_file() or diagnostic_path.is_symlink():
+        raise ValueError("read-only startup diagnostic source missing")
+    diagnostic_bytes = diagnostic_path.read_bytes()
+    if any(token in diagnostic_bytes.lower() for token in
+           (b"-----begin private key-----", b"api_key:", b"password:", b".pfx", b".p12")):
+        raise ValueError("startup diagnostic source contains a secret marker or private-file reference")
     package_docs = {
         "payload/config/bootstrap.example.yaml": config_text.encode("utf-8"),
         "payload/README-FIRST.md": first_readme.encode("utf-8"),
         "payload/start-trial.ps1": launcher_bytes,
+        "payload/check-startup.ps1": diagnostic_bytes,
     }
 
     output = args.output_dir
@@ -246,12 +280,7 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
     hashes: dict[str, str] = {}
     product_key_path = "payload/runtime/packages/plm_assistant/modules/license/trust/product_public_key.json"
     product_key_present = product_key_path in embedded_hashes
-    startup_blockers = [] if product_key_present else ["FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"]
-    startup_preflight = {
-        "formal_startup_ready": False,
-        "packaged_product_public_key_resource_present": product_key_present,
-        "blocker_codes": startup_blockers,
-    }
+    startup_preflight = make_startup_preflight(product_key_present=product_key_present)
 
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED,
                          compresslevel=1, allowZip64=True) as bundle:

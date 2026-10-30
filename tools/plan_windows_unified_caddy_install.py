@@ -29,7 +29,8 @@ APPLICATION_SERVICES = (
 
 def target_name(source: str) -> str:
     safe_name(source)
-    for prefix, target in (("payload/web/", "runtime/caddy/"),
+    for prefix, target in (("payload/runtime/caddy/", "runtime/caddy/"),
+                           ("payload/web/", "runtime/caddy/"),
                            ("payload/third-party-sources/", "app/third-party-sources/")):
         if source.startswith(prefix) and len(source) > len(prefix):
             return safe_name(target + source[len(prefix):])

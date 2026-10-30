@@ -9,14 +9,21 @@ const reviewer = process.env.PLM_P51_A17_REVIEWER;
 const password = process.env.PLM_P51_A17_PASSWORD;
 const tempRoot = process.env.PLM_P51_A17_TEMP;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-if (!/^https:\/\/localhost:\d{2,5}$/.test(origin ?? "") || !uuid.test(project ?? "")
+let packagedOriginAllowed = false;
+try {
+  const parsedOrigin = new URL(origin ?? "");
+  packagedOriginAllowed = parsedOrigin.protocol === "https:"
+    && ["localhost", "plm.example.test"].includes(parsedOrigin.hostname)
+    && parsedOrigin.origin === origin;
+} catch { /* Reject malformed origins. */ }
+if (!packagedOriginAllowed || !uuid.test(project ?? "")
   || manager !== "Synthetic Packaged User" || reviewer !== "Synthetic Handover Customer"
   || password !== "synthetic-packaged-login-password"
   || !tempRoot || resolve(tempRoot).toLowerCase().includes("\\\\")
   || resolve(tempRoot).toLowerCase().startsWith("c:\\")
   || resolve(process.env.RUNNER_TEMP ?? "") === resolve(tempRoot)
   || !resolve(tempRoot).toLowerCase().startsWith(resolve(process.env.RUNNER_TEMP ?? "").toLowerCase() + sep.toLowerCase())
-  || !resolve(process.env.RUNNER_TEMP ?? "").startsWith("d:\\")) {
+  || !resolve(process.env.RUNNER_TEMP ?? "").toLowerCase().startsWith("d:\\")) {
   throw new Error("Owned P51-A17 synthetic identities and non-C RUNNER_TEMP child required");
 }
 
@@ -28,7 +35,7 @@ const edge = spawn("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedg
     "--ignore-certificate-errors", "about:blank"], { stdio: "ignore", windowsHide: true });
 const pause = ms => new Promise(done => setTimeout(done, ms));
 let socket, serial = 0;
-const pending = new Map(), responses = [], errors = [];
+const pending = new Map(), requests = new Map(), responses = [], failures = [], errors = [];
 function send(method, params = {}) {
   const id = ++serial; socket.send(JSON.stringify({ id, method, params }));
   return new Promise((resolveCall, rejectCall) => pending.set(id, { resolve: resolveCall, reject: rejectCall }));
@@ -44,7 +51,7 @@ async function waitFor(expression, label) {
     catch (error) { if (!String(error).includes("Execution context was destroyed")) throw error; }
     await pause(100);
   }
-  throw new Error(`Timed out ${label}: ${JSON.stringify(await evaluate("({url:location.href,text:document.body?.innerText?.slice(-1800)})"))}; API=${JSON.stringify(responses.slice(-12))}`);
+  throw new Error(`Timed out ${label}: ${JSON.stringify(await evaluate("({url:location.href,text:document.body?.innerText?.slice(-1800)})"))}; API=${JSON.stringify(responses.slice(-12).map(({method,path,status})=>({method,path,status})))}; failures=${JSON.stringify(failures.slice(-12))}`);
 }
 async function click(label) {
   if (!await evaluate(`(()=>{const e=[...document.querySelectorAll('button,a')].find(x=>x.textContent.trim()===${JSON.stringify(label)});if(!e||e.disabled)return false;e.click();return true})()`)) throw new Error(`Missing action: ${label}`);
@@ -76,7 +83,20 @@ try {
   socket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
     if (event.method === "Runtime.exceptionThrown") errors.push(event.params.exceptionDetails?.text ?? "browser exception");
-    if (event.method === "Network.responseReceived" && event.params.response.url.includes("/api/")) responses.push({ url: event.params.response.url, status: event.params.response.status });
+    if (event.method === "Network.requestWillBeSent" && event.params.request.url.includes("/api/")) {
+      const parsed = new URL(event.params.request.url);
+      const safePath = parsed.pathname.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, ":id");
+      requests.set(event.params.requestId, { method: event.params.request.method, path: safePath, url: event.params.request.url });
+    }
+    if (event.method === "Network.responseReceived" && requests.has(event.params.requestId)) {
+      const request = requests.get(event.params.requestId);
+      responses.push({ ...request, status: event.params.response.status });
+    }
+    if (event.method === "Network.loadingFailed" && requests.has(event.params.requestId)) {
+      const request = requests.get(event.params.requestId);
+      failures.push({ method: request.method, path: request.path, error: event.params.errorText,
+        blockedReason: event.params.blockedReason ?? null, canceled: event.params.canceled ?? false });
+    }
     if (!event.id || !pending.has(event.id)) return;
     const task = pending.get(event.id); pending.delete(event.id); event.error ? task.reject(new Error(event.error.message)) : task.resolve(event.result);
   });
@@ -96,10 +116,10 @@ try {
   if (await evaluate("document.querySelectorAll('input[type=checkbox]').length") < 2) throw new Error("Approved Requirement is not available");
   await evaluate("(()=>{const e=document.querySelectorAll('input[type=checkbox]')[1];e.checked=true;e.dispatchEvent(new Event('change',{bubbles:true}))})()");
   await click("预览完整草稿"); await waitFor("document.body?.innerText?.includes('创建前预览')", "draft preview");
-  await click("确认创建草稿版本"); await waitFor("document.body?.innerText?.includes('草稿版本已创建：')", "PlanVersion create receipt");
+  await click("确认创建草稿版本");
+  await waitFor('document.body?.innerText?.includes("计划固定版本快照") && document.body?.innerText?.includes("WBS 固定快照（2）") && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(location.pathname.split("/").at(-1) ?? "")', "PlanVersion fixed-readback detail route");
   const version = await evaluate("location.pathname.split('/').at(-1)");
   if (!uuid.test(version)) throw new Error("Created PlanVersion identity missing");
-  await click("查看固定版本"); await waitFor("document.body?.innerText?.includes('计划固定版本快照')", "fixed read");
   if (!responses.some(x => x.status === 201 && x.url.includes(`/plans/${plan}/versions`)) || !responses.some(x => x.status === 200 && x.url.includes(`/plans/${plan}/versions/${version}`))) throw new Error("PlanVersion Create/GET HTTP evidence missing");
   await click("核查此固定版本"); await waitFor("document.querySelector('button')?.textContent.includes('执行Validate')", "Validate page"); await click("执行Validate");
   await waitFor("document.body?.innerText?.includes('验证通过')||document.body?.innerText?.includes('发现阻断问题')", "validation result");

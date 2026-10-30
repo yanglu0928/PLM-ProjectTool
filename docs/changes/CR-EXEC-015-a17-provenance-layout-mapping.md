@@ -10,3 +10,10 @@
 - 回滚：撤销 provenance 映射与对应测试；保留失败 run 与变更记录。
 - 验证计划：先增加精确 provenance 正向映射及路径/目标碰撞测试，再运行 Windows hosted A17 全流程；确认 provenance 文件全部映射、hash 对照、业务流程日志与临时目录清理证据。未达到 Edge/HTTPS/PG 的既定 markers 不关闭 A27。
 - 安全：只在 hosted Windows runner 使用合成资料，不运行用户本机代码、不外发 Secret/客户数据。
+
+
+## 后续云端发现
+
+- run 40646773586 已验证 provenance 路径通过映射，但下一条被精确映射器拒绝的路径为 payload/README-FIRST.md。该随包操作说明需在只读 rehearsal layout 保留为 app/README-FIRST.md；本项仅增加该单文件精确映射与回归测试，不开放通配 payload 根目录映射。
+
+- 下一 hosted run 40648441329 已越过 provenance 与 README 路径，诊断出候选启动脚本 payload/start-trial.ps1。仅映射为 app/start-trial.ps1，并添加单文件测试；其他 payload 根文件继续拒绝。

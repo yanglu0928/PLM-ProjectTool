@@ -2,7 +2,7 @@
 
 - 日期：2026-10-28
 - WBS：`PLT-PKG-01-A09-P51-A27`
-- 状态：`IN_PROGRESS`（临时路径适配通过；完整包内 PlanVersion Edge 闭环尚未执行）
+- 状态：PASS_LIMITED（hosted Windows Server 2025 非发行候选包内 PlanVersion Edge/HTTPS/PG 合成闭环通过；不代表 Windows 11 实机、正式信任、Pilot或Release通过）
 - 编码前检查：`docs/progress/plt-pkg-01-a09-p51-a27-planversion-cloud-precheck.md`
 - 关联：`CR-EXEC-002/003/005`、`CR-PLAN-011/012`
 
@@ -31,3 +31,14 @@
 - 经核查，PR #56 的 8-job checks 读取 main 现有 workflow 触发配置，因此未执行 A27 分支中新加的 A17 jobs。此结果仅证明旧 job 集合通过，不作为 A17 验收证据。
 - 按 CR-EXEC-014 先记录偏差、风险、回滚及验证计划；独立 PR #58 仅将 feature/p51-embedded-runtime-cache 加入 push branches。PR run [40641140953](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/40641140953) 完成，7/7 jobs 成功；合并提交 ff5442dc7ed2c6f053c882fea08a05c698001140。
 - 下一提交将作为触发器验证：必须检查新 Actions run 的 head SHA 和实际 job 清单包含 A17 candidate assembly 与 packaged PlanVersion Edge/HTTPS/PG；否则保持阻塞并继续修复触发路径。
+
+## A17 完整包内闭环最终结果（2026-10-29）
+
+- 最终 hosted Windows workflow [40841364426](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/40841364426) 10/10 jobs 成功；HEAD 为 137ce4e7af2e5a7aaad4b8e367c2d5274eea5842，候选验证 source_commit 同为该提交。
+- 前端 199 个测试文件/2069 个用例通过，typecheck及production build通过；后端完整测试/wheel、Python 3.13.15嵌入运行时、PG18/pgvector sidecar及父包均在同一workflow构建。
+- D盘 runner temp 清洁解包、20112个payload摘要校验、临时PG18/pgvector smoke、候选摘要前后核对及run-owned目录回收通过。候选 SHA-256：f8cf8a6f745eb5b86878c327c753f9ead0f031291c4ca279a1bf4347bd11d2e6；manifest仍 release_eligible=false、legal_clearance=false。
+- A17 packaged Edge/HTTPS API完成 Create/Get/Validate/SubmitReview/Review只读，共29次API调用；PlanVersion PostgreSQL状态IN_REVIEW，WBS/需求引用/验证结果=(2,2,1)，Review/Round=IN_REVIEW/IN_REVIEW，Decision=0。
+- 独立人工评审/客户决策未发生；synthetic_identities=true。Edge/API/PG及OWNED_RUN_ROOT已清理。验证范围为 GitHub hosted Windows Server 2025，不是 Windows 11设备测试。
+- 候选包artifact [12882808867](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/40841364426)（约373 MB）；业务证据artifact [12882764662](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/40841364426)（753 bytes），保留至2026-11-12。均为非发行工件。
+- CR-EXEC-029 路由时序修正、CR-EXEC-030 fetch请求诊断及清理、CR-EXEC-031 原生fetch接收者修正均保留历史记录。
+- A27结论仅 PASS_LIMITED。Pilot、Gate 3、正式Release继续NOT_READY，正式产品公钥/License信任、服务账户凭据/TLS、离线安装升级、Win11本机实际验收等仍未满足。

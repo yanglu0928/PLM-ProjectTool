@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -14,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from package_windows_current_app_candidate import (  # noqa: E402
     SCRATCH_EXCLUDE_PATHSPEC, _untracked_outside_user_scratch, build_candidate,
 )
+from smoke_packaged_pg18_migration import _migration_temp_root  # noqa: E402
 
 
 def digest(path: Path) -> str:
@@ -21,6 +23,50 @@ def digest(path: Path) -> str:
 
 
 class CurrentAppCandidateTests(unittest.TestCase):
+    def test_nested_pg_smoke_prefers_owned_a17_root_and_rejects_escape(self) -> None:
+        runner_temp = Path(os.environ["RUNNER_TEMP"])
+        with tempfile.TemporaryDirectory(dir=runner_temp) as temporary:
+            runner = Path(temporary)
+            run_root = runner / "plm-p51-a27-test"
+            owned = run_root / "PLMToolTemp"
+            pg_owned = runner
+            owned.mkdir(parents=True)
+            with patch.dict(os.environ, {
+                "RUNNER_TEMP": str(runner),
+                "GITHUB_RUN_ID": "123",
+                "PLM_P51_TEMP_ROOT": str(owned),
+                "PLM_PG_TEMP_ROOT": str(pg_owned),
+            }, clear=True):
+                self.assertEqual(_migration_temp_root(), pg_owned.resolve())
+            outside_run = runner / "outside-run"
+            outside_run.mkdir()
+            with patch.dict(os.environ, {
+                "RUNNER_TEMP": str(runner),
+                "GITHUB_RUN_ID": "123",
+                "PLM_P51_TEMP_ROOT": str(owned),
+                "PLM_PG_TEMP_ROOT": str(outside_run),
+            }, clear=True):
+                with self.assertRaisesRegex(ValueError, "must equal this run's non-C RUNNER_TEMP"):
+                    _migration_temp_root()
+            with patch.dict(os.environ, {
+                "RUNNER_TEMP": str(runner),
+                "PLM_P51_TEMP_ROOT": str(owned),
+            }, clear=True):
+                self.assertEqual(_migration_temp_root(), owned.resolve())
+
+            escaped = runner / "outside"
+            escaped.mkdir()
+            with patch.dict(os.environ, {
+                "RUNNER_TEMP": str(runner),
+                "PLM_P51_TEMP_ROOT": str(escaped),
+            }, clear=True):
+                with self.assertRaisesRegex(ValueError, "outside the owned"):
+                    _migration_temp_root()
+
+    def test_nested_pg_smoke_uses_system_temp_without_a17_root(self) -> None:
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(_migration_temp_root(), Path(tempfile.gettempdir()).resolve())
+
     def test_cleanliness_check_excludes_only_user_tmp_tree(self) -> None:
         with patch("package_windows_current_app_candidate.subprocess.check_output",
                    return_value="") as check:

@@ -54,11 +54,12 @@ def _free_loopback_port() -> int:
         return int(probe.getsockname()[1])
 
 
-def _start_pg_ctl(arguments: list[str], log: Path) -> None:
+def _start_pg_ctl(arguments: list[str], log: Path, *,
+                  env: dict[str, str] | None = None) -> None:
     # On Windows postgres children can inherit pg_ctl's captured pipe, leaving
     # subprocess.communicate waiting for EOF even after pg_ctl itself exits.
     result = subprocess.run(arguments, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL, timeout=60, check=False)
+                            stderr=subprocess.DEVNULL, timeout=60, check=False, env=env)
     if result.returncode:
         detail = log.read_text(encoding="utf-8", errors="replace")[-1000:] if log.is_file() else ""
         raise RuntimeError(f"isolated pg_ctl start failed, exit={result.returncode}: {detail}")
