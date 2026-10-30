@@ -152,7 +152,15 @@ def probe_packaged_startup_guard(root: Path) -> dict:
     try:
         report = json.loads(result.stdout)
     except json.JSONDecodeError:
-        raise ValueError("packaged startup launcher did not forward a JSON preflight report") from None
+        raise ValueError(
+            "packaged startup launcher output classification: "
+            f"exit={result.returncode}; "
+            f"stdout_bytes={len(result.stdout.encode('utf-8'))}; "
+            f"stderr_bytes={len(result.stderr.encode('utf-8'))}; "
+            f"stdout_empty={not bool(result.stdout.strip())}; "
+            "fixed_refusal="
+            f"{result.stderr.strip() == 'Packaged production startup blocked; trust prerequisites are not ready.'}"
+        ) from None
     expected_codes = {
         "FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED",
         "FORMAL_LICENSE_TRUST_NOT_VERIFIED",
