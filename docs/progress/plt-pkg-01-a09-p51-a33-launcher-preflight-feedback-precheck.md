@@ -17,3 +17,10 @@
 - Run 40997732541 的基础回归/候选父包/A17均成功；parent smoke job 123877495127 在新launcher验证调用前，触发 NameError: digest_path is not defined。
 - 失败点是A33 smoke Harness新增的源诊断脚本hash复核误用了其他模块中的函数名；当前Harness已有本地sha_file(path)辅助函数。尚未对 launcher 行为作出验收结论，不能计A33 PASS。
 - 按本条先记录，后续仅将两个测试断言改用本文件既有sha_file，不改变产品launcher、不放宽hash检查；hosted完整重跑后再判定。
+
+
+## 第二轮 hosted 偏差：PowerShell launcher 调用超时（2026-10-30）
+
+- Run 41000446225 的全量构建、后端/前端、运行时与父包组装成功；parent smoke job 123886741768 在probe_packaged_startup_guard调用实际payload/start-trial.ps1时，PowerShell 5.1进程超过20秒并触发subprocess.TimeoutExpired。stdout/stderr/退出码未取得。
+- 此次失败由测试超时证据触发，不能认定是单纯CI抖动，也不能视为产品安全或诊断通过。A17为独立并行job且已成功。
+- 先记录，再仅调整launcher的诊断子进程启动/有界读取与测试超时/超时证据输出；保持子进程只运行已hash校验的只读诊断，launcher最终失败关闭，异常仍不泄露环境内容。后续用D盘hosted runner重新验证实际诊断及缺失/损坏输入。
