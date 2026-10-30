@@ -10,3 +10,10 @@
 - 回滚：恢复原start_windows_trial_candidate.ps1固定失败文案即可；无API/Schema/Migration/数据变化。
 - 执行环境：仅GitHub hosted Windows Runner及D盘RUNNER_TEMP；不在用户本机/C盘运行项目代码。
 - 编码前结论：此任务不需要任何真实信任材料或客户数据，可在现有不满足启动条件的候选上完成受限诊断可用性验收；正式信任和正向启动继续保持未验证，当前可实施。
+
+
+## 首轮 hosted 偏差（2026-10-30）
+
+- Run 40997732541 的基础回归/候选父包/A17均成功；parent smoke job 123877495127 在新launcher验证调用前，触发 NameError: digest_path is not defined。
+- 失败点是A33 smoke Harness新增的源诊断脚本hash复核误用了其他模块中的函数名；当前Harness已有本地sha_file(path)辅助函数。尚未对 launcher 行为作出验收结论，不能计A33 PASS。
+- 按本条先记录，后续仅将两个测试断言改用本文件既有sha_file，不改变产品launcher、不放宽hash检查；hosted完整重跑后再判定。
