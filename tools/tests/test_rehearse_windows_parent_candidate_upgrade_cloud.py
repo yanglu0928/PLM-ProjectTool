@@ -73,7 +73,7 @@ class ParentCandidateUpgradeCloudTests(unittest.TestCase):
         }
         launcher = (
             "[Console]::Out.WriteLine('" + json.dumps(report, separators=(",", ":")) + "')\n"
-            "[Console]::Error.WriteLine('Packaged startup blocked; see BLOCKED diagnostics above.')\n"
+            "[Console]::Error.WriteLine('Packaged production startup blocked; see BLOCKED diagnostics above.')\n"
             "exit 1\n"
         ).encode("ascii")
         payload["payload/start-trial.ps1"] = launcher

@@ -202,7 +202,7 @@ def _run_launcher(root: Path, blockers: set[str]) -> dict[str, object]:
     marker_found = "sensitive-path-marker" in result.stdout
     valid = not (result.returncode != 1 or report.get("status") != "BLOCKED"
             or result.stderr.strip() !=
-            "Packaged startup blocked; see BLOCKED diagnostics above."
+            "Packaged production startup blocked; see BLOCKED diagnostics above."
             or report.get("release_eligible") is not False
             or report.get("legal_clearance") is not False
             or set(report.get("blocker_codes", [])) != blockers

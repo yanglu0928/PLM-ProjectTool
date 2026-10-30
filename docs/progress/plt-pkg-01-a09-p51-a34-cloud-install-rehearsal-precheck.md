@@ -52,4 +52,5 @@
 - 偏差修正后，D盘 `D:\A34Temp` 合成整链及边界单测再次4 passed（0.372s），fixture含 `provenance/` 文件并检查失败版隔离后仍保留；临时目录清空并移除。真实父包云端验收需以新提交重新运行，run `41013299622` 最终不得改记为A34通过（其A34 job为failure，其他依赖jobs通过）。
 - run `41014770412` 的完整依赖链再次通过，A34四项focused tests通过，旧/当前真实候选下载及Artifact SHA均成功；本轮实际完成了初装、整包替换、失败注入、显式恢复、provenance隔离与持久标记校验，并在末尾启动当前包launcher时因A33 BLOCKED输出契约比较失败退出。临时演练finally清理成功，未启动服务/API或触及系统目录；该轮不能作为A34通过。先增强仅含返回码/非敏感diagnostic字段的失败分类，再针对真实runner launcher输出核对并修复兼容条件；不调整产品launcher或放宽安全阻断。
 - run `41016315171` 完成同一整包替换/恢复过程；最新的非敏感失败分类确认A33报告状态、退出码、正式/法律标志、六项blocker code与stderr全都精确匹配。仍有一个隐藏拒绝条件需锁定：stdout中是否出现保密路径探针字串。所有被检字段均为合成候选的固定枚举或布尔值；现需把该条件也记录为布尔诊断值，避免读取/输出完整launcher stdout。失败处于最终launcher输出检查且finally清理成功，不代表验收通过。
+- run `41017762822` 的非敏感诊断确认探针未出现（false），状态、退出码、安全标志及blocker集合完全匹配；唯一差异是A34 expected stderr漏掉A33既有固定文本中的 `production`（A33实际为 `Packaged production startup blocked; see BLOCKED diagnostics above.`）。这属于A34断言与A33已验证输出不一致，不是产品启动放行或安全失败。实施前记录后按A33真实固定输出修正A34断言及合成fixture，并重跑focused测试与hosted验收。
 - 该验收只证明 Server 2025 hosted runner 的受控目录替换与失败恢复行为，不能据此关闭 Windows 11 设备安装/升级、Gate、Pilot 或正式 Release。
