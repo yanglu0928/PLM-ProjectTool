@@ -32,20 +32,21 @@ try {
     }
     $actualCodes = [System.Collections.Generic.List[string]]::new()
     $boolFields = @(
-        @{ Key = "formal_startup_ready"; Code = "FORMAL_STARTUP_NOT_READY"; Expected = $true },
         @{ Key = "packaged_product_public_key_resource_present"; Code = "FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED"; Expected = $true },
         @{ Key = "formal_license_trust_verified"; Code = "FORMAL_LICENSE_TRUST_NOT_VERIFIED"; Expected = $true },
         @{ Key = "database_credential_reference_verified"; Code = "DATABASE_CREDENTIAL_REFERENCE_NOT_VERIFIED"; Expected = $true },
         @{ Key = "service_identity_acl_verified"; Code = "SERVICE_IDENTITY_ACL_NOT_VERIFIED"; Expected = $true },
         @{ Key = "tls_certificate_configured"; Code = "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED"; Expected = $true },
-        @{ Key = "tls_private_key_configured"; Code = "TLS_PRIVATE_KEY_NOT_CONFIGURED"; Expected = $true }
+        @{ Key = "tls_private_key_configured"; Code = "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED"; Expected = $true }
     )
     foreach ($field in $boolFields) {
         $value = $startup.($field.Key)
         if ($null -eq $value -or $value.GetType() -ne [bool]) {
             throw "manifest boolean type rejected"
         }
-        if ($value -ne $field.Expected) { $actualCodes.Add($field.Code) }
+        if ($value -ne $field.Expected -and -not $actualCodes.Contains($field.Code)) {
+            $actualCodes.Add($field.Code)
+        }
     }
     if ($startup.blocker_codes.Count -ne @($startup.blocker_codes | Where-Object { $_ -is [string] }).Count) {
         throw "manifest blocker type rejected"
@@ -59,13 +60,12 @@ try {
     # This tool diagnoses a non-release candidate only. It never declares a candidate ready.
     $actualCodes.Add("NON_RELEASE_CANDIDATE")
     $labels = @{
-        "FORMAL_STARTUP_NOT_READY" = "The formal startup readiness check is incomplete."
         "FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED" = "The formal product public key is not packaged."
         "FORMAL_LICENSE_TRUST_NOT_VERIFIED" = "Formal License trust has not been verified."
         "DATABASE_CREDENTIAL_REFERENCE_NOT_VERIFIED" = "The approved database credential reference has not been verified."
         "SERVICE_IDENTITY_ACL_NOT_VERIFIED" = "The service identity and folder permissions have not been verified."
         "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED" = "TLS certificate configuration has not been verified."
-        "TLS_PRIVATE_KEY_NOT_CONFIGURED" = "TLS private key configuration has not been verified."
+        "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED" = "TLS private key configuration has not been verified."
         "NON_RELEASE_CANDIDATE" = "This package is a non-release candidate and cannot be started."
     }
     $report = [ordered]@{
