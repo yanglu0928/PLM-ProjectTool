@@ -16,6 +16,7 @@ function Write-StartupFailure($manifest) {
             throw "diagnostic package input unavailable"
         }
         $failureStage = "HASH_CHECKSUM_FILE"
+        $checksumsDigest = (Get-FileHash -LiteralPath $checksumsPath -Algorithm SHA256).Hash.ToLowerInvariant()
         $failureStage = "CHECK_MANIFEST_HASH"
         if ($manifest.payload_sha256sums_sha256 -isnot [string] -or
             $manifest.payload_sha256sums_sha256 -cnotmatch "^[0-9a-f]{64}$" -or
