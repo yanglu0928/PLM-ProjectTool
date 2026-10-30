@@ -127,7 +127,7 @@ def probe_packaged_startup_guard(root: Path) -> dict:
 
     before_manifest = manifest_path.read_bytes()
     before_sums = checksums_path.read_bytes()
-    before_diagnostic = digest_path(diagnostic_path)
+    before_diagnostic = sha_file(diagnostic_path)
     result = subprocess.run([shell, "-NoLogo", "-NoProfile", "-NonInteractive",
                              "-File", str(script)], cwd=str(root),
                             capture_output=True, text=True, errors="replace",
@@ -185,7 +185,7 @@ def probe_packaged_startup_guard(root: Path) -> dict:
                 listener.bind(("127.0.0.1", free_loopback_port()))
         if (manifest_path.read_bytes() != before_manifest
                 or checksums_path.read_bytes() != before_sums
-                or digest_path(diagnostic_path) != before_diagnostic):
+                or sha_file(diagnostic_path) != before_diagnostic):
             raise ValueError("startup launcher changed parent candidate inputs")
         return {"status": "STARTUP_LAUNCHER_DIAGNOSTIC_PASS_LIMITED",
                 "blocker_codes": len(expected_codes), "fallback_cases": 2,
