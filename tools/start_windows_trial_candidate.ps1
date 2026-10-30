@@ -4,7 +4,7 @@ function Test-StrictJsonBoolean($value, [bool]$expected) {
 }
 function Write-StartupFailure($manifest) {
     $message = "Packaged production startup blocked; trust prerequisites are not ready."
-    $failureStage = "VALIDATE_INPUT"
+    $failureStage = "CHECK_INPUT_PATHS"
     $diagnosticProcess = $null
     try {
         if ($null -eq $manifest) { throw "manifest unavailable" }
@@ -15,15 +15,19 @@ function Write-StartupFailure($manifest) {
             -not (Test-Path -LiteralPath $diagnosticPath -PathType Leaf)) {
             throw "diagnostic package input unavailable"
         }
-        $checksumsDigest = (Get-FileHash -LiteralPath $checksumsPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $failureStage = "HASH_CHECKSUM_FILE"
+        $failureStage = "CHECK_MANIFEST_HASH"
         if ($manifest.payload_sha256sums_sha256 -isnot [string] -or
             $manifest.payload_sha256sums_sha256 -cnotmatch "^[0-9a-f]{64}$" -or
             $checksumsDigest -cne $manifest.payload_sha256sums_sha256) {
             throw "diagnostic checksum inventory rejected"
         }
+        $failureStage = "READ_CHECKSUMS"
         $entries = @(Get-Content -LiteralPath $checksumsPath -Encoding ASCII | Where-Object { $_ -cmatch "^[0-9a-f]{64}  payload/check-startup\.ps1$" })
+        $failureStage = "MATCH_CHECKSUM_ENTRY"
         if ($entries.Count -ne 1) { throw "diagnostic checksum entry rejected" }
         $expectedDigest = [regex]::Match($entries[0], "^([0-9a-f]{64})  payload/check-startup\.ps1$").Groups[1].Value
+        $failureStage = "HASH_DIAGNOSTIC"
         $actualDigest = (Get-FileHash -LiteralPath $diagnosticPath -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($actualDigest -cne $expectedDigest) { throw "diagnostic script checksum mismatch" }
 
