@@ -65,3 +65,12 @@
 - PR #61 / run 41007180355 / parent smoke job 123907131560：托管 Windows Server 2025、D:\\a\\_temp 清洁解包；后端、前端、PG18/pgvector、Python、embedded runtime、父候选装配/读回及A17候选投影均成功。实际 launcher 仍 exit=1、stdout=0、固定拒绝stderr，阶段码 HASH_CHECKSUM_FILE；未到诊断子进程，无启动/监听/敏感输出。
 - 新阶段码确认 `$checksumsDigest` 哈希计算语句已执行到达，但该操作或结果取值触发了launcher catch。不能据此推断具体异常，也不把完整流水线的其他通过结果当作A33通过。
 - 先记录，再在代码中将哈希调用与结果规范化拆分为两个静态阶段，或使用等价的受控 .NET SHA-256 流读取；不输出异常正文、文件内容或路径，不改变哈希算法、清单/单文件核验和启动拒绝。复验仍走hosted D盘 runner。
+
+
+## Final hosted acceptance (2026-10-30)
+
+- PR #61 / GitHub Actions run 41008231772 completed with all 10 jobs successful on hosted Windows Server 2025. PR head: 71fbd5b24db60abad3c00af27f4824929dfbf60d; workflow ran the PR merge ref 612bf987d423501161533a8430066cd565a89ada. Project candidate and service/database temp paths were on D: RUNNER_TEMP; no project code was executed on the user's machine.
+- Parent package smoke job 123910523879: clean extraction, 20,119 payload files, archive SHA-256 104b8559ccf018846774f6c527dc6f9c7141e1623669a2a9c8b191b824655cf6; PG18.6/pgvector0.8.6 temporary lifecycle passed. Launcher reports six expected BLOCKED codes as one valid JSON line, exits 1, then emits the fixed refusal; no listener, service or product API started. Missing-diagnostic and corrupt-manifest fallback cases both passed; manifest was unchanged. A29 seven-case startup tamper matrix and A30 four-case diagnostic tamper matrix remained passing.
+- Same-run A17 job 123910809501 succeeded: 29 packaged PlanVersion Edge/HTTPS/PostgreSQL API operations, state IN_REVIEW, WBS/requirement/validation=(2,2,1), Review/Round IN_REVIEW, decisions=0, synthetic identities=true. Candidate remains release_eligible=false and legal_clearance=false.
+- Hash calculation now uses a bounded .NET SHA-256 stream helper in Windows PowerShell 5.1 for both checksum inventory and diagnostic script; digest format and equality rules are unchanged. The omission introduced during stage instrumentation and subsequent HASH_CHECKSUM_FILE failure remain recorded above as historical deviations.
+- A33 is PASS_LIMITED for blocked-launch feedback in the hosted non-release candidate. This does not validate positive production launch, Windows 11 hardware, real License trust, service account/ACL/TLS, installation/upgrade, Gate, Pilot or formal Release.
