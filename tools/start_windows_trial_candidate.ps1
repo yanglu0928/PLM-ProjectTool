@@ -2,6 +2,65 @@ $ErrorActionPreference = "Stop"
 function Test-StrictJsonBoolean($value, [bool]$expected) {
     return ($null -ne $value -and $value.GetType() -eq [bool] -and $value -eq $expected)
 }
+function Write-StartupFailure($manifest) {
+    $message = "Packaged production startup blocked; trust prerequisites are not ready."
+    try {
+        if ($null -eq $manifest) { throw "manifest unavailable" }
+        $packageRoot = Split-Path -Parent $PSScriptRoot
+        $checksumsPath = Join-Path $packageRoot "payload-sha256sums.txt"
+        $diagnosticPath = Join-Path $PSScriptRoot "check-startup.ps1"
+        if (-not (Test-Path -LiteralPath $checksumsPath -PathType Leaf) -or
+            -not (Test-Path -LiteralPath $diagnosticPath -PathType Leaf)) {
+            throw "diagnostic package input unavailable"
+        }
+        $checksumsDigest = (Get-FileHash -LiteralPath $checksumsPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($manifest.payload_sha256sums_sha256 -isnot [string] -or
+            $manifest.payload_sha256sums_sha256 -cnotmatch "^[0-9a-f]{64}$" -or
+            $checksumsDigest -cne $manifest.payload_sha256sums_sha256) {
+            throw "diagnostic checksum inventory rejected"
+        }
+        $entries = @(Get-Content -LiteralPath $checksumsPath -Encoding ASCII | Where-Object { $_ -cmatch "^[0-9a-f]{64}  payload/check-startup\.ps1$" })
+        if ($entries.Count -ne 1) { throw "diagnostic checksum entry rejected" }
+        $expectedDigest = [regex]::Match($entries[0], "^([0-9a-f]{64})  payload/check-startup\.ps1$").Groups[1].Value
+        $actualDigest = (Get-FileHash -LiteralPath $diagnosticPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actualDigest -cne $expectedDigest) { throw "diagnostic script checksum mismatch" }
+
+        $shell = Get-Command powershell.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1
+        $diagnosticLines = @(& $shell.Source -NoLogo -NoProfile -NonInteractive -File $diagnosticPath 2>$null)
+        $diagnosticExit = $LASTEXITCODE
+        if ($diagnosticExit -ne 2 -or $diagnosticLines.Count -ne 1) {
+            throw "diagnostic command contract rejected"
+        }
+        $diagnosticText = [string]$diagnosticLines[0]
+        $report = $diagnosticText | ConvertFrom-Json
+        if ($report.status -cne "BLOCKED" -or
+            -not (Test-StrictJsonBoolean $report.release_eligible $false) -or
+            -not (Test-StrictJsonBoolean $report.legal_clearance $false) -or
+            $report.blocker_codes -isnot [System.Array] -or
+            $report.messages -isnot [System.Array] -or
+            $report.blocker_codes.Count -lt 1 -or
+            $report.messages.Count -ne $report.blocker_codes.Count -or
+            $diagnosticText -match "(?i)([A-Z]:\\|\\Users\\|PLM_[A-Z0-9_]+)") {
+            throw "diagnostic report contract rejected"
+        }
+        foreach ($code in $report.blocker_codes) {
+            if ($code -isnot [string] -or $code -cnotmatch "^[A-Z][A-Z0-9_]+$") {
+                throw "diagnostic blocker code rejected"
+            }
+        }
+        foreach ($messageText in $report.messages) {
+            if ($messageText -isnot [string] -or $messageText.Length -gt 200) {
+                throw "diagnostic message rejected"
+            }
+        }
+        [Console]::Out.WriteLine($diagnosticText)
+        $message = "Packaged production startup blocked; see BLOCKED diagnostics above."
+    }
+    catch {
+        $message = "Packaged production startup blocked; trust prerequisites are not ready."
+    }
+    [Console]::Error.WriteLine($message)
+}
 try {
     $payloadRoot = Split-Path -Parent $PSScriptRoot
     $manifestPath = Join-Path $payloadRoot "manifest.json"
@@ -26,15 +85,15 @@ try {
         $startup.blocker_codes -isnot [System.Array] -or
         $startup.blocker_codes.Count -ne 0
     ) {
-        [Console]::Error.WriteLine("Packaged production startup blocked; trust prerequisites are not ready.")
+        Write-StartupFailure $manifest
         exit 1
     }
     # A positive startup path is intentionally unavailable in this candidate:
     # formal trust material, controlled service identity, and TLS deployment are not approved.
-    [Console]::Error.WriteLine("Packaged production startup blocked; trust prerequisites are not ready.")
+    Write-StartupFailure $manifest
     exit 1
 }
 catch {
-    [Console]::Error.WriteLine("Packaged production startup blocked; trust prerequisites are not ready.")
+    Write-StartupFailure $null
     exit 1
 }

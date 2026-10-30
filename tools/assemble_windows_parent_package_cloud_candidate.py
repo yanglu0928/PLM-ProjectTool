@@ -251,7 +251,7 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
 
 ## Read-only startup preflight
 
-Run `powershell -NoProfile -File .\\payload\\check-startup.ps1` from the extracted package folder. The command reads only the package manifest and prints a short, non-secret list of missing startup prerequisites. This non-release candidate will report `BLOCKED` and exit with code 2. It does not read credentials, start a service, or make the package release-ready.
+Run `powershell -NoProfile -File .\\payload\\check-startup.ps1` from the extracted package folder. The command reads only the package manifest and prints a short, non-secret list of missing startup prerequisites. This non-release candidate will report `BLOCKED` and exit with code 2. It does not read credentials, start a service, or make the package release-ready. If you run `powershell -NoProfile -File .\\payload\\start-trial.ps1`, the launcher repeats that verified BLOCKED report and still exits with code 1 before starting any service.
 """
     launcher_path = Path(__file__).with_name("start_windows_trial_candidate.ps1")
     if not launcher_path.is_file() or launcher_path.is_symlink():

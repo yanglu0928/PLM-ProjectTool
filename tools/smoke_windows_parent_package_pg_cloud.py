@@ -106,29 +106,94 @@ def probe_packaged_production_entrypoint(root: Path) -> str:
     return "FAIL_CLOSED_MISSING_ACCOUNT_DATABASE_CREDENTIAL"
 
 
-def probe_packaged_startup_guard(root: Path) -> str:
-    script = root / "payload" / "start-trial.ps1"
-    if not script.is_file() or script.is_symlink():
-        raise ValueError("packaged startup guard missing")
-    shell = shutil.which("pwsh")
+def probe_packaged_startup_guard(root: Path) -> dict:
+    import shutil as shutil_module
+
+    payload = root / "payload"
+    script = payload / "start-trial.ps1"
+    manifest_path = root / "manifest.json"
+    checksums_path = root / "payload-sha256sums.txt"
+    diagnostic_path = payload / "check-startup.ps1"
+    if (not script.is_file() or script.is_symlink()
+            or not manifest_path.is_file() or not checksums_path.is_file()
+            or not diagnostic_path.is_file() or diagnostic_path.is_symlink()):
+        raise ValueError("packaged startup guard or diagnostic input missing")
+    shell = shutil.which("powershell")
     if not shell:
-        raise ValueError("PowerShell 7 unavailable on hosted Windows runner")
+        raise ValueError("Windows PowerShell 5.1 unavailable on hosted Windows runner")
     env = {key: value for key, value in os.environ.items()
            if not key.upper().startswith("PLM_")}
     env.pop("PYTHONPATH", None)
+
+    before_manifest = manifest_path.read_bytes()
+    before_sums = checksums_path.read_bytes()
+    before_diagnostic = digest_path(diagnostic_path)
     result = subprocess.run([shell, "-NoLogo", "-NoProfile", "-NonInteractive",
-                             "-File", str(script)], cwd=str(script.parent),
+                             "-File", str(script)], cwd=str(root),
                             capture_output=True, text=True, errors="replace",
                             timeout=20, env=env)
-    if (result.returncode != 1 or result.stdout.strip()
+    try:
+        report = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        raise ValueError("packaged startup launcher did not forward a JSON preflight report") from None
+    expected_codes = {
+        "FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED",
+        "FORMAL_LICENSE_TRUST_NOT_VERIFIED",
+        "DATABASE_CREDENTIAL_REFERENCE_NOT_VERIFIED",
+        "SERVICE_IDENTITY_ACL_NOT_VERIFIED",
+        "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED",
+        "NON_RELEASE_CANDIDATE",
+    }
+    if (result.returncode != 1
             or result.stderr.strip() !=
-            "Packaged production startup blocked; trust prerequisites are not ready."):
-        diagnostic = (f"exit={result.returncode}; stdout={result.stdout[-500:]!r}; "
-                      f"stderr={result.stderr[-1200:]!r}")
-        raise ValueError("startup guard did not preserve fixed fail-closed response: " + diagnostic)
+            "Packaged production startup blocked; see BLOCKED diagnostics above."
+            or report.get("status") != "BLOCKED"
+            or report.get("release_eligible") is not False
+            or report.get("legal_clearance") is not False
+            or set(report.get("blocker_codes", [])) != expected_codes
+            or len(report.get("messages", [])) != len(expected_codes)
+            or "PLM_" in result.stdout or "sensitive-path-marker" in result.stdout):
+        raise ValueError("packaged startup launcher report or fixed refusal differs")
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", free_loopback_port()))
-    return "FAIL_CLOSED_MISSING_FORMAL_PRODUCT_TRUST"
+
+    matrix_root = root / "startup-launcher-matrix"
+    matrix_root.mkdir()
+    try:
+        for name in ("missing-diagnostic", "corrupt-manifest"):
+            case_root = matrix_root / name
+            case_payload = case_root / "payload"
+            case_payload.mkdir(parents=True)
+            shutil_module.copyfile(script, case_payload / "start-trial.ps1")
+            shutil_module.copyfile(checksums_path, case_root / "payload-sha256sums.txt")
+            shutil_module.copyfile(diagnostic_path, case_payload / "check-startup.ps1")
+            (case_root / "manifest.json").write_bytes(before_manifest)
+            if name == "missing-diagnostic":
+                (case_payload / "check-startup.ps1").unlink()
+            else:
+                (case_root / "manifest.json").write_text("{", encoding="ascii")
+            attempt = subprocess.run(
+                [shell, "-NoLogo", "-NoProfile", "-NonInteractive",
+                 "-File", str(case_payload / "start-trial.ps1")],
+                cwd=str(case_root), capture_output=True, text=True, errors="replace",
+                timeout=20, env=env)
+            if (attempt.returncode != 1 or attempt.stdout.strip()
+                    or attempt.stderr.strip() !=
+                    "Packaged production startup blocked; trust prerequisites are not ready."):
+                raise ValueError("startup launcher diagnostic fallback differs: " + name)
+            with socket.socket() as listener:
+                listener.bind(("127.0.0.1", free_loopback_port()))
+        if (manifest_path.read_bytes() != before_manifest
+                or checksums_path.read_bytes() != before_sums
+                or digest_path(diagnostic_path) != before_diagnostic):
+            raise ValueError("startup launcher changed parent candidate inputs")
+        return {"status": "STARTUP_LAUNCHER_DIAGNOSTIC_PASS_LIMITED",
+                "blocker_codes": len(expected_codes), "fallback_cases": 2,
+                "listener_started": False, "source_manifest_unchanged": True}
+    finally:
+        if matrix_root.parent != root or matrix_root.is_symlink():
+            raise RuntimeError("refusing to clean startup launcher matrix outside smoke root")
+        shutil.rmtree(matrix_root)
 
 
 def probe_packaged_startup_guard_tamper_matrix(root: Path) -> dict:
