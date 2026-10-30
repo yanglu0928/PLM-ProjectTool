@@ -43,3 +43,10 @@
 - Run 41004441473 / parent smoke job 123899012018 的白名单阶段码显示launcher失败发生在 `VALIDATE_INPUT`，stdout为空、stderr为固定拒绝+阶段码，exit=1；没有超时或泄露。
 - 逐项检查代码发现两个checksum行正则用了双反斜杠 `\\\\.`，在PowerShell正则字符串中会尝试匹配反斜杠而非转义文件名点号，故未匹配 `payload/check-startup.ps1` 路径，触发预期fail-closed回退。
 - 此偏差在A33子进程实现引入；先记录，再只将两处regex修回单反斜杠 `\\.`。保留父清单整体SHA和文件SHA双重校验、不改变manifest/安全判断，再跑Windows hosted完整复验。
+
+
+## 第六轮 hosted 偏差：修复正则后仍在输入校验阶段回退（2026-10-30）
+
+- Run 41005582706 / parent smoke job 123902165877 在托管 Windows Server 2025 的 D:\\a\\_temp 清洁解包目录复验。后端/前端、PG18/pgvector、嵌入式运行时、父包组装及 A17 投影候选 job 均成功；启动launcher仍为 exit=1、stdout=0字节、stderr=108字节，阶段码 VALIDATE_INPUT，未超时、无服务启动或敏感输出。
+- 上一轮记录的regex修正已进入提交 e472af3e3e697de658b6b30f4a75429df5d88790，但仍未能转发诊断JSON，故上一轮修复不足，A33依然未通过。现有证据只能定位到输入校验，不足以认定仍是该正则原因。
+- 按纪律先记录本次失败，再只读核查实际校验输入、PowerShell匹配语义与打包脚本对应关系；随后提出更窄修复，保持清单哈希、逐文件哈希、非零退出、缺失/损坏回退及不启动服务条件。必须再次以同一托管路径验收。
