@@ -65,8 +65,7 @@ try {
         "FORMAL_LICENSE_TRUST_NOT_VERIFIED" = "Formal License trust has not been verified."
         "DATABASE_CREDENTIAL_REFERENCE_NOT_VERIFIED" = "The approved database credential reference has not been verified."
         "SERVICE_IDENTITY_ACL_NOT_VERIFIED" = "The service identity and folder permissions have not been verified."
-        "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED" = "TLS certificate configuration has not been verified."
-        "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED" = "TLS private key configuration has not been verified."
+        "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED" = "TLS certificate or private key configuration has not been verified."
         "NON_RELEASE_CANDIDATE" = "This package is a non-release candidate and cannot be started."
     }
     $report = [ordered]@{
