@@ -18,3 +18,10 @@
 - Run 40990172925 父包smoke在PowerShell 5.1实际命令后进入诊断矩阵，但Python smoke Harness 的断言仍引用删除前的旧变量result，触发UnboundLocalError；发生于PG initdb之前。
 - 真实父包的README相对路径命令已成功返回预期exit 2/报告合同检查点，失败属于本轮验收脚本移除副本时漏改变量引用；未启动产品服务，异常清理本run的D盘解包根。
 - 记录该Harness偏差后，将实际命令的assertions统一使用actual_result，再由hosted runner重跑；本轮不计PASS。
+
+
+## Hosted 全量回归的独立既有测试偶发失败（2026-10-30）
+
+- Run 40991376866 在进入 A31 父包 smoke 前，后端 3,849 项单测中的 `unit.test_rag_retrieval_query_crypto.RAGRetrievalQueryCryptoTests.test_identity_fingerprint_retention_and_ciphertext_tampering_fail` 的 `encrypted_payload` 子用例失败；日志显示预期的 `RetrievalQueryCryptoError` 未抛出。A31 smoke 因依赖作业失败而未执行。
+- 初步检查现有测试发现其将密文末字节固定替换成 `b"x"`；加密密文随机生成，若末字节原本已为 `x`，测试没有真正改变密文（概率约 1/256）。这是与 A31 代码无关的潜在随机性，不作已确认根因，先重跑失败作业收集证据。
+- 该失败作业重跑只验证是否偶发，不单独作为 A31 验收；完整 hosted workflow 仍须成功到达实际解包包根目录的 A31 smoke。若重跑仍失败，另开并记录单一测试修复 WBS 后处理。
