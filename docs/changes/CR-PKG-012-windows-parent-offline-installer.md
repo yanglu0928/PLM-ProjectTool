@@ -32,3 +32,7 @@
 2. 负例：错SHA、坏ZIP、绝对/穿越/重复/链接路径、manifest或清单不匹配、大小上限、已有目标、注入中断；不留下部分目标或删除非owner目录。
 3. 对A35真实非发行候选做Windows 11 D盘隔离验收；确认状态仍为 `BLOCKED`，无SCM/service/API/listener、数据库、License secret读取或C盘写入。
 4. hosted Windows workflow跑同一工具测试并重建带新入口的候选；重启和真实安装留待正式信任及可控目标环境，当前不得宣称通过。
+
+## 实施前安全细化（2026-10-30）
+
+A39 对当前 ZIP 的只读核查后，发现把可执行 bootstrap 脚本放进未签名候选包根目录会令用户在验证外层 ZIP 前先执行未验证代码，与“先验整包身份、再执行安装逻辑”目标冲突。按同一 CR 的安全目标改为：将可审查的离线接收/隔离暂存命令保留在公开源仓库，要求包外 hosted `verification-summary.json` 与完整 ZIP SHA-256 匹配；命令只调用现有受限暂存校验器、只写 `RUNNER_TEMP` 下非 C 盘新目录，生成 `installation_performed=false` 回执。第一步不把脚本嵌入候选ZIP、不发布到正式安装根、不注册或启动服务。此为实现位置细化，不改变产品/API/DB/License基线或安全门禁；后续若需自包含正式安装器，须另行具备可验证代码信任链。
