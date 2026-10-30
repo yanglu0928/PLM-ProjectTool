@@ -51,4 +51,5 @@
 - run `41013299622` 已真实运行全套PR工作流：前端、后端全套测试/轮子、Python嵌入运行时、PG18、父包组装及PG/A17前置流程均通过；A34 focused tests 4 passed，两个真实父包Artifact均成功下载且Artifact SHA匹配。A34在旧包校验清单进入安装前拒绝：父包清单同时校验 `payload/` 与 `provenance/` 文件，演练器错误地把所有清单路径都限定为 `payload/`。失败没有发生安装替换/服务启动；A34验收未通过。已先记录差异，最小修正为允许 `provenance/` 作为完整候选包内容并在隔离替换/哈希核对/恢复中一并保留；合成 fixture 增加 provenance 文件，验证其不会在重放中丢失。再跑定向测试及新hosted run。
 - 偏差修正后，D盘 `D:\A34Temp` 合成整链及边界单测再次4 passed（0.372s），fixture含 `provenance/` 文件并检查失败版隔离后仍保留；临时目录清空并移除。真实父包云端验收需以新提交重新运行，run `41013299622` 最终不得改记为A34通过（其A34 job为failure，其他依赖jobs通过）。
 - run `41014770412` 的完整依赖链再次通过，A34四项focused tests通过，旧/当前真实候选下载及Artifact SHA均成功；本轮实际完成了初装、整包替换、失败注入、显式恢复、provenance隔离与持久标记校验，并在末尾启动当前包launcher时因A33 BLOCKED输出契约比较失败退出。临时演练finally清理成功，未启动服务/API或触及系统目录；该轮不能作为A34通过。先增强仅含返回码/非敏感diagnostic字段的失败分类，再针对真实runner launcher输出核对并修复兼容条件；不调整产品launcher或放宽安全阻断。
+- run `41016315171` 完成同一整包替换/恢复过程；最新的非敏感失败分类确认A33报告状态、退出码、正式/法律标志、六项blocker code与stderr全都精确匹配。仍有一个隐藏拒绝条件需锁定：stdout中是否出现保密路径探针字串。所有被检字段均为合成候选的固定枚举或布尔值；现需把该条件也记录为布尔诊断值，避免读取/输出完整launcher stdout。失败处于最终launcher输出检查且finally清理成功，不代表验收通过。
 - 该验收只证明 Server 2025 hosted runner 的受控目录替换与失败恢复行为，不能据此关闭 Windows 11 设备安装/升级、Gate、Pilot 或正式 Release。

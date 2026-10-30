@@ -199,13 +199,14 @@ def _run_launcher(root: Path, blockers: set[str]) -> dict[str, object]:
             "A34 upgraded launcher did not emit a JSON diagnostic; stdout="
             + repr(result.stdout) + "; stderr=" + repr(result.stderr)
         ) from None
+    marker_found = "sensitive-path-marker" in result.stdout
     valid = not (result.returncode != 1 or report.get("status") != "BLOCKED"
             or result.stderr.strip() !=
             "Packaged startup blocked; see BLOCKED diagnostics above."
             or report.get("release_eligible") is not False
             or report.get("legal_clearance") is not False
             or set(report.get("blocker_codes", [])) != blockers
-            or "sensitive-path-marker" in result.stdout)
+            or marker_found)
     if not valid:
         raise ValueError(
             "A34 upgraded launcher did not retain the A33 fail-closed contract: "
@@ -218,6 +219,7 @@ def _run_launcher(root: Path, blockers: set[str]) -> dict[str, object]:
                 "expected_blocker_codes": sorted(blockers),
                 "stderr": result.stderr.strip(),
                 "stdout_bytes": len(result.stdout.encode("utf-8")),
+                "sensitive_path_marker_present": marker_found,
             }, sort_keys=True)
         )
     with socket.socket() as listener:
