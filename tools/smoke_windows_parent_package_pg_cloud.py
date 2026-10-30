@@ -217,6 +217,107 @@ def probe_packaged_startup_guard_tamper_matrix(root: Path) -> dict:
         shutil.rmtree(matrix_root)
 
 
+def probe_packaged_startup_diagnostic(root: Path) -> dict:
+    import copy
+
+    source_manifest_path = root / "manifest.json"
+    source_bytes = source_manifest_path.read_bytes()
+    source = json.loads(source_bytes.decode("utf-8-sig"))
+    source_script = root / "payload" / "check-startup.ps1"
+    if not source_script.is_file() or source_script.is_symlink():
+        raise ValueError("packaged read-only startup diagnostic missing")
+    shell = shutil.which("pwsh")
+    if not shell:
+        raise ValueError("PowerShell 7 unavailable on hosted Windows runner")
+
+    ready = copy.deepcopy(source)
+    ready["release_eligible"] = True
+    ready["legal_clearance"] = True
+    ready["startup_preflight"].update({
+        "formal_startup_ready": True,
+        "packaged_product_public_key_resource_present": True,
+        "formal_license_trust_verified": True,
+        "database_credential_reference_verified": True,
+        "service_identity_acl_verified": True,
+        "tls_certificate_configured": True,
+        "tls_private_key_configured": True,
+        "blocker_codes": [],
+    })
+    extra_field = copy.deepcopy(source)
+    extra_field["startup_preflight"]["unexpected"] = "sensitive-path-marker"
+    wrong_type = copy.deepcopy(source)
+    wrong_type["startup_preflight"]["tls_certificate_configured"] = "false"
+    cases = {
+        "ready-candidate": json.dumps(ready),
+        "extra-field": json.dumps(extra_field),
+        "wrong-type": json.dumps(wrong_type),
+        "malformed-json": "{",
+    }
+    matrix_root = root / "startup-diagnostic-matrix"
+    matrix_root.mkdir()
+    try:
+        case_root = matrix_root / "actual-candidate"
+        payload = case_root / "payload"
+        payload.mkdir(parents=True)
+        shutil.copyfile(source_script, payload / "check-startup.ps1")
+        (case_root / "manifest.json").write_bytes(source_bytes)
+        result = subprocess.run(
+            [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File",
+             str(payload / "check-startup.ps1")],
+            cwd=str(payload), capture_output=True, text=True, errors="replace",
+            timeout=20, env={key: value for key, value in os.environ.items()
+                             if not key.upper().startswith("PLM_")})
+        if result.returncode != 2 or result.stderr.strip():
+            raise ValueError("actual startup diagnostic did not return its blocked report")
+        report = json.loads(result.stdout)
+        expected_codes = {
+            "FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED",
+            "FORMAL_LICENSE_TRUST_NOT_VERIFIED",
+            "DATABASE_CREDENTIAL_REFERENCE_NOT_VERIFIED",
+            "SERVICE_IDENTITY_ACL_NOT_VERIFIED",
+            "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED",
+            "TLS_PRIVATE_KEY_NOT_CONFIGURED",
+            "NON_RELEASE_CANDIDATE",
+        }
+        if (report.get("status") != "BLOCKED" or report.get("release_eligible") is not False
+                or report.get("legal_clearance") is not False
+                or set(report.get("blocker_codes", [])) != expected_codes
+                or len(report.get("messages", [])) != len(expected_codes)
+                or any("sensitive-path-marker" in x or "PLM-" in x for x in result.stdout)):
+            raise ValueError("startup diagnostic report is incomplete or exposes forbidden details")
+
+        for name, manifest_text in cases.items():
+            case_root = matrix_root / name
+            payload = case_root / "payload"
+            payload.mkdir(parents=True)
+            shutil.copyfile(source_script, payload / "check-startup.ps1")
+            (case_root / "manifest.json").write_text(manifest_text, encoding="utf-8")
+            with socket.socket() as probe:
+                probe.bind(("127.0.0.1", 0))
+                port = probe.getsockname()[1]
+            result = subprocess.run(
+                [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File",
+                 str(payload / "check-startup.ps1")],
+                cwd=str(payload), capture_output=True, text=True, errors="replace",
+                timeout=20, env={key: value for key, value in os.environ.items()
+                                 if not key.upper().startswith("PLM_")})
+            if result.returncode != 2 or result.stdout.strip():
+                raise ValueError("invalid diagnostic input did not fail without output: " + name)
+            if result.stderr.strip() != "Startup preflight diagnostic rejected; manifest invalid.":
+                raise ValueError("invalid diagnostic input response was not fixed: " + name)
+            with socket.socket() as listener:
+                listener.bind(("127.0.0.1", port))
+        if source_manifest_path.read_bytes() != source_bytes:
+            raise ValueError("startup diagnostic changed source candidate manifest")
+        return {"status": "STARTUP_PREFLIGHT_DIAGNOSTIC_FAIL_CLOSED_PASS",
+                "blocked": True, "tamper_cases": len(cases),
+                "stdout_redacted": True, "listener_started": False}
+    finally:
+        if matrix_root.parent != root or matrix_root.is_symlink():
+            raise RuntimeError("refusing to clean startup diagnostic workspace outside smoke root")
+        shutil.rmtree(matrix_root)
+
+
 def smoke_packaged_web(root: Path) -> dict:
     caddy = root / "payload" / "runtime" / "caddy" / "caddy.exe"
     frontend = root / "payload" / "frontend" / "dist"
@@ -415,6 +516,7 @@ def main() -> int:
         startup_entrypoint_probe = probe_packaged_production_entrypoint(root)
         startup_guard_probe = probe_packaged_startup_guard(root)
         startup_manifest_tamper_matrix = probe_packaged_startup_guard_tamper_matrix(root)
+        startup_preflight_diagnostic = probe_packaged_startup_diagnostic(root)
         web_service_smoke = smoke_packaged_web(root)
     except Exception:
         if root.exists():
@@ -480,6 +582,7 @@ def main() -> int:
             "startup_entrypoint_probe": startup_entrypoint_probe,
             "startup_guard_probe": startup_guard_probe,
             "startup_manifest_tamper_matrix": startup_manifest_tamper_matrix,
+            "startup_preflight_diagnostic": startup_preflight_diagnostic,
             "web_service_smoke": web_service_smoke,
         }
     finally:
