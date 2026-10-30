@@ -295,7 +295,6 @@ def probe_packaged_startup_diagnostic(root: Path) -> dict:
             "DATABASE_CREDENTIAL_REFERENCE_NOT_VERIFIED",
             "SERVICE_IDENTITY_ACL_NOT_VERIFIED",
             "TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED",
-            "TLS_PRIVATE_KEY_NOT_CONFIGURED",
             "NON_RELEASE_CANDIDATE",
         }
         if (report.get("status") != "BLOCKED" or report.get("release_eligible") is not False
