@@ -93,7 +93,8 @@ function api(req,url){
   return envelope({items:actionSummaries,next_cursor:null,has_more:false});
  const detailMatch=path.match(/^\/api\/v1\/projects\/([^/]+)\/handover-action-items\/([^/]+)$/);
  if(detailMatch&&method==="GET"&&detailMatch[1]===ids.project){
-  const value=actionDetail(detailMatch[2]); return value?envelope(value):envelope("RESOURCE_NOT_FOUND",404);
+  const value=actionDetail(detailMatch[2]); if(!value)return envelope("RESOURCE_NOT_FOUND",404);
+  const result=envelope(value);result.headers.ETag=value.etag;return result;
  }
  const sourceMatch=path.match(/^\/api\/v1\/projects\/([^/]+)\/handover-action-items\/([^/]+)\/source-location$/);
  if(sourceMatch&&method==="GET"&&sourceMatch[1]===ids.project){
