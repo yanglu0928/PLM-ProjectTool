@@ -19,7 +19,7 @@ P01 为确保新 Output 表在业务 Owner 未就绪时不能写入，建立了�
 
 - 内部 OutputRequestService 与 SQL repository：项目身份/License/授权检查后，规范化固定引用、生成最小Context snapshot，采用幂等receipt与同generation收敛；Request/Job/Outbox/Audit/receipt共用一次UOW。
 - Jobs模块的OutputJobQueue Port/adapter：只写输出Job和最小Outbox引用，不含正文、插件运行或外部调用。
-- Alembic revision 20261103_0221：移除out_context_snapshots和out_output_requests的Owner拒绝写入trigger；保留NO-TRUNCATE trigger；为out_output_requests.job_ref增加指向plm.job_jobs.job_id的NO ACTION外键；downgrade重新封闭写入且不删除请求/快照/Job历史。
+- Alembic revision 20261102_0221：移除out_context_snapshots和out_output_requests的Owner拒绝写入trigger；保留NO-TRUNCATE trigger；为out_output_requests.job_ref增加指向plm.job_jobs.job_id的NO ACTION外键；downgrade重新封闭写入且不删除请求/快照/Job历史。
 - 内部单元与临时 PostgreSQL 合成并发/失败回滚验证。不新增公开API、插件调用、Artifact、文件输出或客户数据。
 
 ## 兼容性与风险
@@ -40,3 +40,14 @@ P01 为确保新 Output 表在业务 Owner 未就绪时不能写入，建立了�
 ## 当前结论
 
 此CR目前仅为先行记录，不能作为实现或验收通过证据。原Gate 2 DB Schema冻结内容64cdf09保留，不静默改写；迁移/Owner仍需按证据验证。失败先追加本CR，再修正。
+
+
+## 实施前代码审查补充（2026-11-02，先于修正提交）
+
+首次实现已进入分支，托管验收尚未完成。代码审查发现三项需在结论前修正/补证：
+
+1. Migration revision 使用了次日日期；修订为当日唯一序号 `20261102_0221`，同步模块名及迁移合同测试，避免迁移时间线倒置。
+2. OutputRequest 当前写入随机请求UUID作为 `idempotency_key`，没有保存调用幂等身份的稳定不可逆指纹；调整为只存 `IdempotencyScope.key_digest` 的十六进制摘要，禁止存原始调用Key，并增加回归断言。
+3. 已有单测使用内存假件，尚未覆盖声明的真实PG同事务、并发、异载荷冲突和失败回滚验收；在 GitHub hosted Windows 工作流的临时 PG18 数据库增加合成 Owner 集成验证与可逆迁移生命周期检查。若仓库已有临时数据库脚本调用约束，先按其模式接线；无可复用调用点时，补充独立 hosted validation step。
+
+此补充先于上述修正提交，以保留计划与实现的时间顺序。无客户正文或外部API调用；不扩大公开API或Production Scope。
