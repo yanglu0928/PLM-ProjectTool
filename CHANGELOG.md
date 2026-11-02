@@ -2,6 +2,13 @@
 
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
 
+- P51-A43 从固定公开输入云端重建当前 PR 源码的 Windows 父包候选；12/12 hosted jobs 成功，父包 ZIP SHA-256 63ed5c8d…05a7a、20,118 个文件。同run完成暂存、PG18/pgvector、A17 29次API合成业务流和A34隔离替换/手动恢复演练。详情见 [A43 结果](docs/progress/plt-pkg-01-a09-p51-a43-hosted-rebuild-result.md) 与 [run 41370951575](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41370951575)。
+- 兼容性：仅GitHub hosted Windows Server 2025；不能推定Windows 11新运行兼容。
+- 升级说明：生成仅限内部验证的临时候选artifact，不是安装器或正式Release；未在本机安装/运行。
+- 已知限制：正式信任、License、数据库凭据、服务ACL与TLS前置仍缺，应用/服务未启动，Pilot/Gate/Release保持NOT_READY。
+
+## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
+
 - P51-A42 将包外 Authenticode 指纹校验接入候选暂存CLI。安装器与指纹成对提供；校验失败时ZIP暂存目标不创建；成功收据仅标记 TEST_ONLY。GitHub hosted Windows run 41370763918 的26项定向回归和A35集成通过，PASS_LIMITED。
 - 兼容性：仅在 GitHub hosted Windows Server 2025 验收；不推定 Windows 11 实机兼容。
 - 升级说明：仅开发/云端验证工具更新，没有安装包升级或产品安装。

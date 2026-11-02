@@ -26,3 +26,9 @@ A17 原构建流程把本机忽略区中的 P45 父 ZIP SHA-256 `30c9d59852af7e7
 验收依序要求：官方输入固定摘要通过；独立核验新父包完整来源树、文件全集和哈希；当前源码后端 wheel/前端 dist/pgvector 注入同一提交并验证；在新 ASCII 临时目录清洁解包；只启动本次 runner 拥有的 PG18/HTTPS/API；合成 Edge 完成 A17 PlanVersion 流程；SQL/Audit/Receipt/Decision 计数满足 A17；清理本次资源且最终候选摘要不变。法律/正式信任/Windows 11 实机/Pilot/Gate/正式发行仍独立开放，不因构建 PASS 自动关闭。
 
 若任一输入不可取得、来源与哈希不符、runner 资源不足或编译结果无法验证，停止该组件并记录偏差，保留历史候选；可对可复现部分继续推进，不降低验收或标记通过。回滚为弃用全新候选/工作流，不删除或改写旧输入与历史证明。
+
+## A43 云端重建结果（2026-11-02）
+
+按本 CR 固定来源与禁止发行边界，GitHub hosted Windows run [41370951575](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41370951575) 全12项job成功；PR #61 head `4cbf2c140a1515029e5823bba1bd6935a5c33399` 对应GitHub pull_request合并提交 `9713443955f7698a687c620ab3647971f8700847`。父包内ZIP SHA-256 `63ed5c8d209f09cb9fa22aeacf9245aeb8cfebf0cff8397beea26e591dc05a7a`、20,118个payload文件，artifact ID `13109214144`，容器摘要 `1a7ec0c2a26a8eb2252817598d5a83cb1c9e94d3b4e57968dcc808843168255b`。同run完成暂存/清洁包、PG18/pgvector临时生命周期、A17合成Edge/HTTPS/PG流与A34隔离替换/手动恢复。
+
+该结果仅为 `PASS_LIMITED`。启动入口仍因数据库凭据拒绝；正式公钥/License trust/DB凭据身份/服务账户ACL/TLS仍缺，未安装或启动产品。没有Windows 11新运行、正式信任、法律放行、Gate、Pilot或Release结论。详见 `docs/progress/plt-pkg-01-a09-p51-a43-hosted-rebuild-result.md`。
