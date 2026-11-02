@@ -38,3 +38,9 @@ Phase 2 Platform Core；Gate 3、Pilot 和正式 Release 均未通过。A43 当�
 - 后端全量测试、前端测试/构建、固定来源PG/Python及父包候选组装均成功；D盘 hosted Windows smoke 在调用包内 readiness wrapper 后，空登记场景的 stdout 为空，Harness 在 JSON 解码处失败。尚未获得子进程退出分类，不能判断具体根因，也不能认定A44通过。A35/A17/A34未作为本轮整体成功证据。
 - 先记录失败，再只为该子进程加入安全诊断分类（退出码、stdout/stderr字节数，以及固定类别如导入错误/参数错误/解释器启动错误）；不输出原始 stderr、输入路径或登记值。若确认包装器/导入问题，仅修复包内只读报告调用；保持信息不回显、完整登记仍不授权、启动守门不变。
 - 下一次以 hosted D盘清洁候选重复缺项/完整/非法三类验收，并要求A44新增验证及父包全部组合job成功后才判PASS_LIMITED。
+
+
+## 第二轮 hosted 根因与先行记录（run 41374116971）
+
+- 同一 A44 报告入口再次在空登记检查时无 JSON；安全分类为 `exit=2; stdout_bytes=0; stderr_bytes=51; category=NO_CLASSIFIED_OUTPUT`。对照固定包装器提示和候选实际目录后，确认包装器误将嵌入式解释器定位为 `payload/runtime/python/python.exe`；当前包实际入口是 `payload/runtime/python.exe`（父包 smoke 已按此位置运行真实生产入口）。这是 A44 新包装器路径写错，尚未执行 readiness Python 工具。
+- 先记录后仅修正解释器相对包根路径，并把该固定提示加入 Harness 非秘密类别；不改任何授权/信任判定。下一轮再验证 Python 导入及三类登记契约。
