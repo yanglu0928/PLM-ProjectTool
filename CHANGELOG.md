@@ -2,6 +2,14 @@
 
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
 
+- P51-A42 将包外 Authenticode 指纹校验接入候选暂存CLI。安装器与指纹成对提供；校验失败时ZIP暂存目标不创建；成功收据仅标记 TEST_ONLY。GitHub hosted Windows run 41370763918 的26项定向回归和A35集成通过，PASS_LIMITED。
+- 兼容性：仅在 GitHub hosted Windows Server 2025 验收；不推定 Windows 11 实机兼容。
+- 升级说明：仅开发/云端验证工具更新，没有安装包升级或产品安装。
+- 已知问题：真实产品发布者证书/固定指纹及安全安装执行路径仍未建立；Pilot/Gate/正式Release仍 NOT_READY。
+
+
+## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
+
 - P51-A41 新增 Windows Authenticode 只读校验器，要求包外签发者指纹；未签名、签名异常、指纹不匹配或调用失败均拒绝。GitHub hosted Windows run 41370436650 的24项定向回归及真实签名/未签名文件验证通过，PASS_LIMITED。
 - 兼容性：只在 GitHub hosted Windows Server 2025 验证；不推定 Windows 11 实机兼容。
 - 升级说明：仅内部验证工具；没有改变候选父包，不安装或升级已有程序。

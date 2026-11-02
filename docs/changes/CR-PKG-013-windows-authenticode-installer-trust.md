@@ -37,3 +37,9 @@ GitHub hosted Windows run [41370436650](https://github.com/yanglu0928/PLM-Projec
 ## A42 暂存CLI接入前置（2026-11-02）
 
 在A40非发行ZIP暂存CLI增加成对的可选参数 `--installer` 与 `--expected-thumbprint`。调用者提供安装程序时，CLI必须先调用A41只读校验器；参数缺失、签名非Valid或指纹不匹配时禁止创建ZIP暂存目标。成功时在固定暂存回执标记代码签名校验结果为TEST_ONLY，并保持installation_performed=false。未提供独立安装器时，CLI仍只能暂存ZIP数据，不能启动任何包内内容。验收使用真实hosted系统签名文件+匹配pin正例及错误pin负例，后者断言目标不存在；不安装或执行安装器。
+
+## A42 暂存CLI接入验收（2026-11-02）
+
+`tools/stage_windows_parent_candidate_offline.py` 增加可选的 `--installer` 与 `--expected-thumbprint` 成对参数。提供安装器时先调用A41校验器，再进行ZIP暂存；验证拒绝时不会创建目标目录。成功回执增加 `installer_signature_status=AUTHENTICODE_VERIFIED_TEST_ONLY`；未提供安装器时仍仅暂存数据包。
+
+GitHub hosted Windows run [41370763918](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41370763918) 的26项测试及集成均通过：真实系统签名与匹配指纹通过；错误指纹在ZIP暂存前拒绝，目标不存在；A35 20,119项暂存及BLOCKED启动诊断同轮通过。未安装/启动产品。真实产品签发者证书/指纹缺失，结果不构成生产信任或Windows 11实测。
