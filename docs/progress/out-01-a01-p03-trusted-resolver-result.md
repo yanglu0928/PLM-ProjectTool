@@ -17,7 +17,7 @@
 
 ## 验收
 
-- 新增8项单元测试，覆盖合法固定快照、最小字段、fingerprint稳定，模板/策略/操作缺失，跨项目/未授权/未批准来源，模板状态/OutputType/Operation不匹配，超大Context及非JSON/深嵌套输入。
+- 新增9项单元测试，覆盖合法固定快照、最小字段、fingerprint稳定，模板/策略/操作缺失，跨项目/未授权/未批准来源，模板状态/OutputType/Operation不匹配，超大Context及非JSON/深嵌套输入。
 - 首轮run 41416698193因一个深嵌套负向测试夹具实际深度不足而失败。已先在CR-OUT-003记录，再修正夹具；失败不是测试证明的生产越权问题。
 - 修正提交的run 41417503109全13 jobs成功：后端全量测试/wheel、前端测试/typecheck/build、PG18/pgvector重建、parent candidate、A50 Edge来源导航、A17 PlanVersion Edge/HTTPS/PG、临时PG生命周期和A34离线替换/人工恢复均通过。
 - 内部父包候选Artifact：13129330605。该候选不是发行包；没有安装或启动产品服务。
@@ -30,4 +30,4 @@
 
 ## 下一项
 
-OUT-01-A01-P04：生产固定注册提供方与Requirement/Solution/Plan Source Owner adapters编码前检查。先确认是否涉及数据库Schema/Owner边界；如需偏离冻结Schema，在实施前建立独立CR。完成前不得把P03合成Port当作生产注册或启用默认Output Create。
+PLG-01-A01：开发者签名插件包不可变元数据 Schema/ORM。先完成编码前检查及依赖顺序记录；本项只做冻结 PLG-01 存储基础，不实现签名验证、安装、运行时或输出适配。

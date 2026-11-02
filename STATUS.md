@@ -1,4 +1,4 @@
-|Next WBS|OUT-01-A01-P04：模板/策略/Plugin Operation 固定注册与源模块适配器编码前检查|
+|Next WBS|PLG-01-A01：开发者签名插件包不可变元数据 Schema/ORM 编码前检查|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
@@ -14,7 +14,7 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；当前增量至`20261102_0221`（CR-OUT-001新增OutputRequest/OutputContextSnapshot表；CR-OUT-002开放受控Owner写路径、保留快照不可变与Job引用约束；原Gate 2冻结提交64cdf09未改写，此前计划类增量和历史均保留）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|P03 hosted run 41417503109全13 jobs成功：后端全量/wheel、前端测试/typecheck/build、PG18组件重建、parent candidate、P03含8项边界测试、A50 Edge、A17 PlanVersion Edge/HTTPS/PG、A34隔离替换恢复和临时PG生命周期均通过。P03 resolver仅合成Ports验收，无生产registry/adapters；无产品安装/启动、无Win11实机、无客户数据/外发。|
+|Test Summary|P03 hosted run 41417503109全13 jobs成功：后端全量/wheel、前端测试/typecheck/build、PG18组件重建、parent candidate、P03含9项边界测试、A50 Edge、A17 PlanVersion Edge/HTTPS/PG、A34隔离替换恢复和临时PG生命周期均通过。P03 resolver仅合成Ports验收，无生产registry/adapters；无产品安装/启动、无Win11实机、无客户数据/外发。|
 |Latest Test Summary|GitHub hosted run [41417503109](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41417503109)全13 jobs成功，源码提交e0b69bdcdc06765e5192d57fe84f924d30606958。父包候选artifact [13129330605](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41417503109/artifacts/13129330605)；同run A17/PG与A34链通过。后端全量/wheel、前端测试/typecheck/build、组件重建、P03固定来源resolver测试均通过。仅GitHub hosted Windows Server 2025/D盘临时空间和合成输入；未验证生产registry、正式身份/License信任、Windows11实机、安装/启动、Gate3/Pilot/Release。|
 |Next WBS|OUT-01-A01-P03：可信固定来源、模板与策略解析器编码前检查|
 |Latest Validation|A33 run 41008231772 在D盘hosted Windows Server 2025验证当前父包20,119项SHA、startup diagnostic六阻断码、缺脚本/损坏manifest回退、A29七类守门矩阵、A30四类诊断篡改、临时PG生命周期与A17 29 API PlanVersion流程；product API/service/listener未启动。无Windows11设备、正式License trust、安装升级、UAT、Gate或Release结论。|
