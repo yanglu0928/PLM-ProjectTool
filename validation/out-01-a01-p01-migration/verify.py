@@ -117,7 +117,8 @@ def main() -> int:
         with psycopg.connect(empty_dsn) as conn:
             closed = conn.execute("SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('trg_out_context_snapshots__owner_closed','trg_out_output_requests__owner_closed')").fetchone()[0]
             job_fk = conn.execute("SELECT count(*) FROM pg_constraint WHERE conname='fk_out_output_requests__job'").fetchone()[0]
-        if closed != 0 or job_fk != 1: raise AssertionError("0221 upgrade contract mismatch")
+            immutable = conn.execute("SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname='trg_out_context_snapshots__immutable'").fetchone()[0]
+        if closed != 0 or job_fk != 1 or immutable != 1: raise AssertionError("0221 upgrade contract mismatch")
         result["owner_migration_downgrade_reupgrade"] = "PASS"
         downgrade_database(empty_url, "20261026_0210")
         if _revision(empty_dsn) != "20261026_0210": raise AssertionError("P01 downgrade failed")
