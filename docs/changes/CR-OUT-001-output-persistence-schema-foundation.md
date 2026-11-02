@@ -53,3 +53,10 @@ GitHub Actions hosted run [41399398488](https://github.com/yanglu0928/PLM-Projec
 ## 执行与关闭条件
 
 按用户 2026-09-24 的持续授权自动实施，无需逐项确认。CR 只有在严格 metadata inventory、定向测试、全量后端回归、托管 PostgreSQL 空库/现有库升级、降级/再升级以及安全扫描均有证据后，才能关闭为 `VERIFIED`；未完成前保持 `IN_PROGRESS`。不构成 Gate、Pilot 或正式 Release 放行。
+
+
+## 托管迁移验收脚本首次运行偏差（2026-11-02）
+
+GitHub Actions hosted run [41402169269](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41402169269) 的后端 3,853 项、前端构建、PG18 sidecar、A50 Edge、父包组装、A35和A17均成功；A17候选SHA-256为 `20629fb70c1dd96084753722c8df05f8b38b997a1a0800022f36c4d55b9da56d`、20,120文件，A17结果PASS_LIMITED。PG smoke job在调用新增迁移脚本时失败：`tools/smoke_windows_parent_package_pg_cloud.py` 未定义 `ROOT`，抛出 `NameError`。因此本次空库/有数据 Alembic 验证没有启动，也没有迁移断言失败；A34因依赖该 smoke 失败按工作流跳过。数据库只在托管runner临时目录，未触碰生产/用户数据。
+
+下一修正仅为给托管 smoke harness 明确定义仓库根路径，然后重跑同一完整托管工作流；不改产品 ORM、Migration、API或冻结语义。该具体接线失误在修正前已写入本 CR。

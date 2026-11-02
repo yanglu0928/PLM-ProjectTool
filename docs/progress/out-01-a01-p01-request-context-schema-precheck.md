@@ -46,3 +46,8 @@
 初版前置检查把冻结 DB Schema V1 的首次 Output 物理扩展误判为无需 Change Request。复核后在继续修正测试前建立 `CR-OUT-001`，记录该基线扩展、流程偏差、风险与回滚。此前误分类作为历史保留，不覆盖；新代码尚未部署或触碰运行数据库。该 CR 完成之前不继续改变产品 schema/Owner 范围。
 
 首次托管回归 run `41399398488`：后端 3,853 项中 1 项失败，原因是 `test_orm_metadata.py` 的显式历史元数据集合未纳入新 Output 表；前端/运行时构建前置与 A50 Edge job 成功，依赖后端测试的后续父包/A17工作按条件跳过。修正限定在测试清单，需在新完整托管 run 重验。该失败没有证明 PostgreSQL migration 升/降级，相关验收仍待。
+
+
+## 第二次托管回归记录（2026-11-02）
+
+run `41402169269` 中后端全量 3,853 项、前端、父包、A35及A17通过，A17为受限合成PASS_LIMITED。新增 PG18 migration 验证在 smoke harness 入口失败，错误为 `NameError: ROOT is not defined`，发生在调用 Alembic 测试脚本前；未执行迁移验证。本错误和修正范围已先记入 `CR-OUT-001`，随后才修复 harness 路径。不要把该 run 记作本 WBS migration 验收通过。
