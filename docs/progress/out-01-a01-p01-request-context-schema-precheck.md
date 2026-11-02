@@ -51,3 +51,8 @@
 ## 第二次托管回归记录（2026-11-02）
 
 run `41402169269` 中后端全量 3,853 项、前端、父包、A35及A17通过，A17为受限合成PASS_LIMITED。新增 PG18 migration 验证在 smoke harness 入口失败，错误为 `NameError: ROOT is not defined`，发生在调用 Alembic 测试脚本前；未执行迁移验证。本错误和修正范围已先记入 `CR-OUT-001`，随后才修复 harness 路径。不要把该 run 记作本 WBS migration 验收通过。
+
+
+## 第三次托管迁移验证发现（2026-11-02）
+
+run `41403739067` 已真实通过空库 head upgrade、Output revision downgrade 到 `20261026_0210`、再 upgrade head。旧版本升级夹具准备失败，因为旧迁移链已预置 `plt_maintenance_state` 单例，验证脚本重复插入冲突；未执行到 Output migration 的带数据升级断言。CR-OUT-001 已在继续改动前记录；修复限于读取旧版本已有合成记录并比较升级后值。
