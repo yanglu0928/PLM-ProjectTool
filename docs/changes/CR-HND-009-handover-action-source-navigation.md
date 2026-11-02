@@ -89,3 +89,11 @@
 - 复核现有 HandOver 读取客户端契约，Analysis 详情响应同样要求 ETag header 与正文 etag 匹配；合成服务仅在正文设置 etag，遗漏 HTTP ETag header，导致目标页按安全规则拒绝 Analysis。请求无客户数据。
 - 修复计划：先记录后，仅给合成 Analysis GET 添加与正文一致的 ETag header；不改产品实现、API、数据库或权限，无迁移。回滚移除该 header。
 - 复验计划：在 GitHub hosted Windows Edge 上重跑固定版本 Analysis 详情和 201 项跨页定位，以及 HUMAN/跨项目/过期来源场景；保留失败 run。
+
+
+### A50-E01 合成问题卡片 DTO 偏差（八，修复前）
+
+- 2026-11-02 hosted run 41396022079 已成功读取 Analysis、版本和固定版本目标页，但问题列表按既有 DTO 严格校验失败，导致页面没有呈现目标问题；E01 仍不通过。
+- 根因：fixture 将条目声明为 NEED_CONFIRM 却未提供至少两个合法选项；同时 source_missing=false 但 evidence_refs 为空。现有 Handover 读取客户端明确拒绝这两种不一致，按 fail-closed 预期处理；这是合成问题夹具偏差。
+- 修复计划：先记录后为全部合成 NEED_CONFIRM 问题补两项有效选项及最小合成 Evidence 引用，并把版本摘要的 evidence 计数同步为 1；只改 isolated harness fixture，无产品/API/DB/客户数据修改、无迁移。回滚恢复旧 fixture。
+- 复验计划：hosted Windows Edge 重新执行完整固定版本跨页定位及 HUMAN/跨项目/失效来源场景，保留失败 run。
