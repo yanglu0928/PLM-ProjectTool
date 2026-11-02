@@ -43,6 +43,28 @@ jobs:
       - name: Run A37, A38, A40 and A34 focused regression
         run: |
           python -B -m unittest tools.tests.test_validate_windows_pilot_input_register tools.tests.test_windows_pilot_readiness_report tools.tests.test_stage_windows_parent_candidate_offline tools.tests.test_rehearse_windows_parent_candidate_upgrade_cloud tools.tests.test_verify_windows_authenticode -v
+      - name: Exercise Authenticode verifier against hosted Windows signatures
+        shell: pwsh
+        run: |
+          $signedBinary = Join-Path $PSHOME 'pwsh.exe'
+          $signature = Get-AuthenticodeSignature -LiteralPath $signedBinary
+          if ($signature.Status -ne 'Valid' -or -not $signature.SignerCertificate) {
+            throw "Hosted PowerShell binary does not have a valid Authenticode signature"
+          }
+          $pin = $signature.SignerCertificate.Thumbprint
+          $verified = & python -B tools/verify_windows_authenticode.py --file $signedBinary --expected-thumbprint $pin | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $verified.status -ne 'AUTHENTICODE_VERIFIED_TEST_ONLY') {
+            throw "Valid hosted signature with matching external pin was rejected"
+          }
+          $unsigned = Join-Path $env:RUNNER_TEMP ("a41-unsigned-" + $env:GITHUB_RUN_ID + ".ps1")
+          Set-Content -LiteralPath $unsigned -Value 'Write-Output "fixture"' -Encoding ascii
+          $rejected = & python -B tools/verify_windows_authenticode.py --file $unsigned --expected-thumbprint $pin | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 2 -or $rejected.reason_code -ne 'SIGNATURE_NOT_VALID') {
+            throw "Unsigned hosted fixture did not fail closed"
+          }
+          Remove-Item -LiteralPath $unsigned
+          $global:LASTEXITCODE = 0
+          Write-Host "Authenticode live check: signed publisher pin accepted; unsigned D-drive fixture rejected."
       - name: Download A35 verified parent candidate from hosted run
         uses: actions/download-artifact@v4
         with:
