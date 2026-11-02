@@ -61,7 +61,7 @@ class OutputRequestRepositoryPort(Protocol):
         input_fingerprint:bytes,template_version_ref:uuid.UUID,output_policy_ref:str,
         generation_no:int)->CreatedOutputRequest|None:...
     def create(self,transaction:object,*,command:CreateOutputRequest,actor_id:uuid.UUID,
-        context:ResolvedOutputContext,input_fingerprint:bytes)->uuid.UUID:...
+        context:ResolvedOutputContext,input_fingerprint:bytes,idempotency_digest:str)->uuid.UUID:...
     def snapshot_id(self,transaction:object,*,project_id:uuid.UUID,
         output_request_id:uuid.UUID)->uuid.UUID:...
     def attach_job(self,transaction:object,*,project_id:uuid.UUID,
@@ -131,7 +131,7 @@ class OutputRequestService:
                         "V1_OUTPUT_REQUEST",existing.output_request_id,202))
                     tx.commit();return existing
                 request_id=self._repo.create(tx,command=command,actor_id=actor,
-                    context=context,input_fingerprint=fingerprint)
+                    context=context,input_fingerprint=fingerprint,idempotency_digest=scope.key_digest.hex())
                 context_id=self._repo.snapshot_id(tx,project_id=command.project_id,
                     output_request_id=request_id)
                 job_id=self._jobs.enqueue_output(tx,project_id=command.project_id,

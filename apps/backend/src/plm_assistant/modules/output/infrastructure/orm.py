@@ -126,6 +126,10 @@ class OutputRequestRow(Base):
             name="fk_out_output_requests__context_project",
             ondelete="NO ACTION",
         ),
+        ForeignKeyConstraint(
+            ["job_ref"], ["plm.job_jobs.job_id"],
+            name="fk_out_output_requests__job", ondelete="NO ACTION",
+        ),
         CheckConstraint(
             "output_type IN ('DOCX', 'PPTX', 'PNG', 'JPEG')",
             name="ck_out_output_requests__type",

@@ -23,7 +23,7 @@ class SqlAlchemyOutputRequestRepository:
             OutputRequestRow.generation_no==generation_no).with_for_update()).scalar_one_or_none()
         return None if row is None else self._view(row)
     def create(self,transaction:object,*,command:CreateOutputRequest,actor_id:uuid.UUID,
-        context:ResolvedOutputContext,input_fingerprint:bytes)->uuid.UUID:
+        context:ResolvedOutputContext,input_fingerprint:bytes,idempotency_digest:str)->uuid.UUID:
         session=self._session(transaction);snapshot_id,request_id=uuid.uuid4(),uuid.uuid4()
         session.add(OutputContextSnapshotRow(context_snapshot_id=snapshot_id,
             project_id=command.project_id,
@@ -35,7 +35,7 @@ class SqlAlchemyOutputRequestRepository:
             source_version_refs=[str(v) for v in context.source_version_refs],
             output_policy_ref=command.output_policy_ref,plugin_operation=command.plugin_operation,
             context_snapshot_id=snapshot_id,input_fingerprint=input_fingerprint,
-            generation_no=1,request_state="REQUESTED",idempotency_key=str(request_id),
+            generation_no=1,request_state="REQUESTED",idempotency_key=idempotency_digest,
             trace_id=command.trace_id,requested_by=actor_id))
         session.flush();return request_id
     def snapshot_id(self,transaction:object,*,project_id:uuid.UUID,
