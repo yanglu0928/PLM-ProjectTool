@@ -82,7 +82,7 @@ jobs:
           $diagnosticExit = $LASTEXITCODE
           $diagnosticText = $diagnosticOutput -join [Environment]::NewLine
           Write-Host "Packaged diagnostic result: $diagnosticText; exit=$diagnosticExit"
-          if ($diagnosticExit -ne 2 -or $diagnosticText -notmatch '"status":"BLOCKED"') {
+          if ($diagnosticExit -ne 2 -or -not $diagnosticText.Contains('"status":"BLOCKED"')) {
             throw "Packaged read-only diagnostic did not fail closed"
           }
           New-Item -ItemType Directory -Path $env:PLM_A40_EVIDENCE_DIR | Out-Null
