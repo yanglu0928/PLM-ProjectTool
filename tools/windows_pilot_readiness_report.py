@@ -217,6 +217,7 @@ def build_report(manifest: Any, register: Any) -> dict[str, Any]:
             if field in FIELD_GUIDANCE
         },
         "recommended_actions": recommended_actions,
+        "recommended_first_action": recommended_actions[0] if recommended_actions else None,
         "startup_blocker_codes": startup_codes if manifest_valid else [],
         "reason_codes": sorted(reason_codes),
     }
@@ -244,6 +245,15 @@ def render_readable_report(report: dict[str, Any]) -> str:
         lines.append("启动阻断项：")
         lines.extend("- " + code for code in blockers if isinstance(code, str))
     actions = report.get("recommended_actions", [])
+    first_action = report.get("recommended_first_action")
+    if first_action:
+        lines.extend((
+            "建议先处理：" + str(first_action.get("title", "当前第一项待办")),
+            "  建议责任角色：" + str(first_action.get("owner_role", "项目负责人")),
+            "  下一步操作：" + str(first_action.get("next_step", "按固定模板补充非秘密证据引用")),
+        ))
+    elif report.get("input_register_status") == "COMPLETE_REQUIRES_INDEPENDENT_VERIFICATION":
+        lines.append("当前没有登记缺项；仍需独立核验。")
     if actions:
         lines.append("建议处理顺序（只作提示，不代表核验通过）：")
         for index, action in enumerate(actions, start=1):

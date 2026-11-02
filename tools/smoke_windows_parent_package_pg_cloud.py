@@ -198,6 +198,8 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                        for item in incomplete_report.get("input_register_guidance", {}).values())
                 or [a.get("code") for a in incomplete_report.get("recommended_actions", [])]
                    != ["TRUST_KEY_LICENSE", "DATABASE_SCOPE", "SERVICE_IDENTITY_ACL", "TLS_CHAIN_ENDPOINT"]
+                or incomplete_report.get("recommended_first_action")
+                   != incomplete_report.get("recommended_actions", [None])[0]
                 or incomplete_report.get("pilot_ready") is not False
                 or incomplete_report.get("launch_authorized") is not False):
             raise ValueError("packaged readiness report incomplete-register contract differs")
@@ -214,6 +216,7 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                 or "参考来源：" not in readable.stdout or "请勿填写：" not in readable.stdout
                 or "建议责任角色：" not in readable.stdout or "下一步操作：" not in readable.stdout
                 or "建议处理顺序（只作提示" not in readable.stdout
+                or readable.stdout.index("建议先处理：") > readable.stdout.index("建议处理顺序（只作提示")
                 or readable.stdout.index("正式产品公钥与 License 信任") > readable.stdout.index("数据库凭据目标与权限范围")
                 or readable.stdout.index("数据库凭据目标与权限范围") > readable.stdout.index("Windows 服务身份与目录权限")
                 or readable.stdout.index("Windows 服务身份与目录权限") > readable.stdout.index("HTTPS 证书链、域名与续期")
@@ -267,6 +270,7 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
         verified_report = json.loads(verified_json.stdout)
         if (verified_json.returncode != 0 or verified_json.stderr
                 or verified_report.get("recommended_actions") != []
+                or verified_report.get("recommended_first_action") is not None
                 or verified_report.get("launch_authorized") is not False
                 or verified_report.get("pilot_ready") is not False
                 or verified_report.get("release_eligible") is not False
@@ -275,6 +279,8 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
         verified_text = run_verified_format("text")
         if (verified_text.returncode != 0 or verified_text.stderr
                 or "建议处理顺序" in verified_text.stdout
+                or "建议先处理：" in verified_text.stdout
+                or "当前没有登记缺项；仍需独立核验。" not in verified_text.stdout
                 or "仍需独立核验" not in verified_text.stdout
                 or "启动授权：否" not in verified_text.stdout
                 or "发行资格：否" not in verified_text.stdout

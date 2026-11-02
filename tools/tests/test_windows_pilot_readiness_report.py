@@ -70,6 +70,7 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertEqual([a["code"] for a in result["recommended_actions"]],
                          ["TRUST_KEY_LICENSE", "DATABASE_SCOPE", "SERVICE_IDENTITY_ACL", "TLS_CHAIN_ENDPOINT"])
         self.assertTrue(all(a["blocker_codes"] or a["fields"] for a in result["recommended_actions"]))
+        self.assertEqual(result["recommended_first_action"], result["recommended_actions"][0])
         self.assertFalse(result["launch_authorized"])
         self.assertFalse(result["pilot_ready"])
 
@@ -84,6 +85,7 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertFalse(result["legal_clearance"])
         self.assertFalse(result["launch_authorized"])
         self.assertEqual(result["recommended_actions"], [])
+        self.assertIsNone(result["recommended_first_action"])
 
     def test_readable_summary_includes_guidance_without_authorizing_or_echoing_values(self) -> None:
         result = build_report(manifest(), register())
@@ -95,6 +97,7 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertIn("建议责任角色：", rendered)
         self.assertIn("下一步操作：", rendered)
         self.assertIn("建议处理顺序", rendered)
+        self.assertLess(rendered.index("建议先处理："), rendered.index("建议处理顺序"))
         self.assertLess(rendered.index("正式产品公钥与 License 信任"), rendered.index("数据库凭据目标与权限范围"))
         self.assertGreater(rendered.count("\\n"), 20)
         self.assertIn("启动授权：否", rendered)
