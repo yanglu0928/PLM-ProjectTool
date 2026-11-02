@@ -1,9 +1,11 @@
-name: P51 A40 offline staging sandbox
+name: P51 A40-A41 hosted package trust validation
 on:
   push:
     branches:
       - feature/p51-a33-launcher-checksum-recovery
     paths:
+      - tools/verify_windows_authenticode.py
+      - tools/tests/test_verify_windows_authenticode.py
       - tools/stage_windows_parent_candidate_cloud.py
       - tools/stage_windows_parent_candidate_offline.py
       - tools/tests/test_stage_windows_parent_candidate_offline.py
@@ -40,7 +42,7 @@ jobs:
           "PLM_A40_EVIDENCE_DIR=$sandboxTemp\evidence" >> $env:GITHUB_ENV
       - name: Run A37, A38, A40 and A34 focused regression
         run: |
-          python -B -m unittest tools.tests.test_validate_windows_pilot_input_register tools.tests.test_windows_pilot_readiness_report tools.tests.test_stage_windows_parent_candidate_offline tools.tests.test_rehearse_windows_parent_candidate_upgrade_cloud -v
+          python -B -m unittest tools.tests.test_validate_windows_pilot_input_register tools.tests.test_windows_pilot_readiness_report tools.tests.test_stage_windows_parent_candidate_offline tools.tests.test_rehearse_windows_parent_candidate_upgrade_cloud tools.tests.test_verify_windows_authenticode -v
       - name: Download A35 verified parent candidate from hosted run
         uses: actions/download-artifact@v4
         with:
