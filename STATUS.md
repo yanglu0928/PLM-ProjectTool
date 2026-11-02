@@ -1,4 +1,4 @@
-|Next WBS|OUT-01-A01-P02：OutputRequest 同事务创建与幂等 Owner；先做单问题编码前检查，保持接口/插件/Artifact范围分离|
+|Next WBS|OUT-01-A01-P03：可信固定来源、模板与策略解析器编码前检查|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
@@ -16,7 +16,7 @@
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|P02 hosted run 41413844603 全13 jobs成功；后端/前端完整验证通过，PG18.6/pgvector0.8.6空库及含历史迁移往返、P02真实SQL事务与并发验收通过；父包、A17/A34链PASS_LIMITED。仅云端合成数据；未安装或启动产品服务，未使用正式信任或客户数据。详见OUT-01-A01-P02结果文档|
 |Latest Test Summary|GitHub hosted PR run [41413844603](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41413844603) 全13 jobs成功：后端全量与wheel、前端测试/typecheck/build、PG18.6/pgvector0.8.6父包生命周期、Output migration 空库/历史库升级、0221↔0220含Output历史往返、P02幂等/并发/同事务/快照不可变验证、A34恢复和A17 PlanVersion Edge/HTTPS/PG 29次API均通过。父包SHA-256 a3062a6311d20c6d63f93dea6ce13b58136b8c0c45115e93345d45708cb3e1ea（20,126文件）；A17候选SHA-256 d2215bd8b57ede09bb956c94659a68872cc82dc86cde45ff60fc13162d63ffe5（20,120文件）。仅Hosted Windows Server 2025/D盘临时环境，P02 `PASS_SCOPE_LIMITED`；无用户本机执行、客户数据/外部API、正式License trust、安装或产品服务启动；Win11/Gate3/Pilot/Release仍未通过|
-|Next WBS|OUT-01-A01-P02：OutputRequest 同事务创建与幂等 Owner；编码前检查确认新建层只消费已验证ORM，不扩大至Plugin/Artifact或公开HTTP|
+|Next WBS|OUT-01-A01-P03：可信固定来源、模板与策略解析器编码前检查|
 |Latest Validation|A33 run 41008231772 在D盘hosted Windows Server 2025验证当前父包20,119项SHA、startup diagnostic六阻断码、缺脚本/损坏manifest回退、A29七类守门矩阵、A30四类诊断篡改、临时PG生命周期与A17 29 API PlanVersion流程；product API/service/listener未启动。无Windows11设备、正式License trust、安装升级、UAT、Gate或Release结论。|
 
 - 2026-10-27 `PLT-PKG-01-A09-P51-A17`：PR #55 hosted Windows run 40456511998 完成源码/前端/Python base/PG18 sidecar/embedded backend assembly全量云端验证。输出 297 MB 非发行候选 artifact 12712399237，逐文件哈希读回通过。ModelScope临时profile/cache前置、certifi公共CA bundle以及future PEM测试夹具的受限处理分别记录在CR-EXEC-008/009/010。仍缺真实OCR模型推理、PG集成、原生组件与完整父包安装/Edge/HTTPS验收；Pilot/Release不变。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A18`：PR #55 hosted run 40457725517 将同run frontend dist、Python 3.13.15 embedded backend（94 distributions）与PG18.6/pgvector 0.8.6（1,629文件）组合为20,111项父包候选；组件来源/摘要校验和最终ZIP逐项readback通过。产物SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`，artifact 12712678647。明确未安装、未启动数据库、非发行/未法律放行；包内Edge/OCR模型/正式信任等证据尚缺。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A19`：首次run 40458978359因pg_ctl stdout pipe继承挂起被取消，按CR-EXEC-011修复；run 40464618526暴露多语句psql状态行导致版本断言误判；拆分查询后run 40466454597成功。在D盘hosted runner temp清洁解包20,111项并逐项校验，同包PG18.6/pgvector0.8.6临时初始化/loopback查询/创建扩展/fast stop/临时目录清理全通过。父包artifact 12716703530，SHA-256 `259af5595251083e8e67abe648727cb2410930455278d97fe2eb1067971498c1`；smoke artifact 12717400427。`product_api_started=false`、正式trust未用，故仅`PASS_LIMITED`。详见 `docs/progress/plt-pkg-01-a09-p51-a19-parent-pg-smoke-result.md`。\n\n## 自动执行策略
