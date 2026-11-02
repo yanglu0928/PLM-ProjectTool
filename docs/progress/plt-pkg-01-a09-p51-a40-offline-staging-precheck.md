@@ -11,6 +11,6 @@
 涉及实体：包外verification-summary.json、候选ZIP、非 C盘 `RUNNER_TEMP` 内的新隔离暂存目录及固定字段暂存回执。
 涉及API：无。
 涉及权限：只读候选ZIP/summary；写入仅限显式指定、已存在的非 C `RUNNER_TEMP` 直系新目录；不触碰真实安装根/用户文件，不联网、不读密钥/credential，不启动服务/DB/API，不执行Migration，不重启。
-验收标准：CLI必须提供完整SHA绑定的非发行verification summary；重用候选身份/安全路径/重复成员/链接/扩展名/清单/逐文件hash校验；目标目录必须是新的RUNNER_TEMP直系子项且非C盘；完成后写入明确 `installation_performed=false`、`services_started=false` 的回执；错误仅输出固定代码/异常类型且清理只限owner staging。Windows 11 D盘对A35真实候选执行一次完整离线暂存并用A38报告器确认仍阻断；定向测试覆盖拒绝路径、错误SHA和回执非授权字段。
+验收标准：CLI必须提供完整SHA绑定的非发行verification summary；重用候选身份/安全路径/重复成员/链接/扩展名/清单/逐文件hash校验；目标目录必须是新的RUNNER_TEMP直系子项且非C盘；完成后写入明确 `installation_performed=false`、`services_started=false` 的回执；错误仅输出固定代码/异常类型且清理只限owner staging。GitHub hosted Windows sandbox 对A35真实候选执行一次完整离线暂存并用A38报告器确认仍阻断；不在用户电脑运行任何程序；定向测试覆盖拒绝路径、错误SHA和回执非授权字段。
 风险：误把隔离暂存当作安装；summary不可信；临时目录清理越界；包内launcher误启动。回执保持非发行/未安装，summary须匹配整个ZIP SHA，暂存命令不调用launcher。
 回滚：删除新CLI及其测试/文档；复原暂存器默认hosted receipt标签；无需还原数据库/API/服务或安装目录。

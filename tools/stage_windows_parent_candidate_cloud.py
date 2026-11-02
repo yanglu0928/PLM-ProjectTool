@@ -110,7 +110,13 @@ def ensure_runner_temp(path: Path) -> Path:
     return runner_temp
 
 
-def stage_candidate(archive: Path, summary_path: Path, target: Path) -> dict:
+def stage_candidate(archive: Path, summary_path: Path, target: Path, *,
+                    receipt_status: str = "HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED") -> dict:
+    if receipt_status not in {
+        "HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED",
+        "WINDOWS11_D_DRIVE_OFFLINE_CANDIDATE_STAGING_PASS_LIMITED",
+    }:
+        raise ValueError("unsupported staging receipt status")
     runner_temp = ensure_runner_temp(target)
     if archive.is_symlink() or not archive.is_file():
         raise ValueError("candidate archive missing or linked")
@@ -193,7 +199,7 @@ def stage_candidate(archive: Path, summary_path: Path, target: Path) -> dict:
         os.replace(staging, target)
         committed = True
         receipt = {
-            "status": "HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED",
+            "status": receipt_status,
             "archive_sha256": archive_hash,
             "payload_file_count": len(expected),
             "release_eligible": False,
