@@ -1,5 +1,5 @@
 from __future__ import annotations
-import unittest,uuid
+import hashlib,unittest,uuid
 from contextlib import AbstractContextManager
 from datetime import datetime,timezone
 from plm_assistant.modules.output.application.create_request import (
@@ -24,11 +24,12 @@ class Resolver:
     def __init__(self,refs,payload):self.refs=refs;self.payload=payload
     def resolve(self,*_,**__):return ResolvedOutputContext(self.refs,self.payload,canonical_payload_fingerprint(self.payload))
 class Repository:
-    def __init__(self):self.existing=None;self.created=[];self.jobs={}
+    def __init__(self):self.existing=None;self.created=[];self.jobs={};self.idempotency_digests=[]
     def lock_generation(self,*_,**__):pass
     def find_generation(self,*_,**__):return self.existing
-    def create(self,*_,**__):
-        request=uuid.uuid4();self.created.append(request);self.jobs[request]=uuid.uuid4();return request
+    def create(self,*_,**kw):
+        request=uuid.uuid4();self.created.append(request);self.jobs[request]=uuid.uuid4()
+        self.idempotency_digests.append(kw["idempotency_digest"]);return request
     def snapshot_id(self,*_,**__):return uuid.uuid4()
     def attach_job(self,*_,**__):pass
     def get(self,tx,*,project_id,output_request_id):
@@ -60,6 +61,8 @@ class OutputRequestOwnerTests(unittest.TestCase):
         self.assertEqual((result.status_code,result.request_state),(202,"QUEUED"))
         self.assertEqual((self.uow.commits,self.uow.rollbacks),(1,0))
         self.assertEqual((len(self.repo.created),len(self.jobs.jobs),len(self.audit.events),len(self.receipts.completed)),(1,1,1,1))
+        self.assertEqual(self.repo.idempotency_digests,[hashlib.sha256(b"out-create-key-0001").hexdigest()])
+        self.assertNotIn("out-create-key-0001",self.repo.idempotency_digests)
     def test_same_generation_on_a_new_key_reuses_request_without_audit(self):
         self.repo.existing=CreatedOutputRequest(uuid.uuid4(),self.project,uuid.uuid4(),"QUEUED")
         result=self.service.create(self.command,idempotency_key="out-create-key-0002")
