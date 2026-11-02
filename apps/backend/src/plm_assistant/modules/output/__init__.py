@@ -1,0 +1,1 @@
+"""Output business domain."""
