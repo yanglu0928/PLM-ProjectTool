@@ -22,7 +22,7 @@ class OfflineParentCandidateStagingCliTests(unittest.TestCase):
             expected = {"status": cli.HOSTED_RECEIPT_STATUS, "archive_sha256": "a" * 64,
                         "payload_file_count": 3, "release_eligible": False,
                         "legal_clearance": False, "installation_performed": False,
-                        "services_started": False}
+                        "services_started": False, "installer_signature_status": None}
             output = io.StringIO()
             with patch.object(sys, "argv", argv):
                 with patch.object(cli, "stage_candidate", return_value=expected):
