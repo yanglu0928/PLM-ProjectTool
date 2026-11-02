@@ -255,7 +255,9 @@ def main() -> int:
                       idempotency_receipt_rows=4, concurrent_generation_coalesced=True,
                       same_key_replay=True, different_payload_conflict=True,
                       audit_failure_rolled_back=True, denied_call_wrote_nothing=True,
-                      raw_idempotency_key_persisted=False,\n                      context_immutable_update_delete=True,\n                      migration_history_preserved_across_downgrade=True)
+                      raw_idempotency_key_persisted=False,
+                      context_immutable_update_delete=True,
+                      migration_history_preserved_across_downgrade=True)
     finally:
         if runtime is not None:
             runtime.dispose()
