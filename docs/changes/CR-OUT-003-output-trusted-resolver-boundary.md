@@ -1,7 +1,7 @@
 # CR-OUT-003：Output 可信解析器边界与模板注册前置
 
 - 日期：2026-11-02
-- 状态：实施前已记录；P03 代码与云端验收待完成
+- 状态：P03 resolver boundary PASS_SCOPE_LIMITED；CR仅对该切片按证据关闭，生产registry/adapters仍待
 - 分支：feature/p51-a33-launcher-checksum-recovery
 - 关联 WBS：OUT-01-A01-P03
 - 基线：Gate 2 冻结 API-03、DM-04 与 DB Schema V1（原提交 64cdf09）；保留 CR-OUT-001/002 和 P02 历史
@@ -39,3 +39,12 @@ P02 已完成原子请求创建，但接受的固定来源解析器仍由注入�
 ## 首轮云端验收失败记录（2026-11-02，修复前）
 
 hosted run `41416698193` 中，前端、A50 Edge、Python/PG组件重建均通过；后端完整套件因新增的嵌套 JSON 深度拒绝用例没有实际超过解析器上限而失败（测试夹具深度设置不足），不是解析器放行已证明的越权输入。其余父包/A17/A34依赖步骤按工作流条件跳过。先记录后修正：加深负向夹具，使其确实超过受限层数，再重新运行完整云端工作流。该失败和修正不涉及用户本机或客户数据。
+
+
+## 最终验收结论（2026-11-02）
+
+修正后的代码提交 e0b69bdcdc06765e5192d57fe84f924d30606958 在 GitHub hosted run [41417503109](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41417503109) 全13 jobs成功。后端全量与wheel、前端测试/typecheck/build、PG18/pgvector组件重建、内部父包候选、A50 Edge、A17 PlanVersion Edge/HTTPS/PG、临时PG生命周期、A34离线替换/人工恢复均通过。父包候选artifact为 13129330605。
+
+P03新增resolver用例验证固定版本匹配、最小白名单Context、fingerprint稳定、缺注册拒绝、跨项目/未授权/未批准状态拒绝、模板状态和类型/操作不匹配拒绝、Context超限与非JSON/过深字段拒绝。该resolver通过合成Port做单元验收；P02真实PG验收随完整回归通过，但没有把P03 resolver接入真实Source/Template/Policy/Plugin registries或PostgreSQL适配器。因此仅标记 PASS_SCOPE_LIMITED，不能称生产Output已可用。
+
+无Migration/API/公开HTTP变化；未调用AI/网络/插件，未读取或外发客户数据，未在用户本机/C盘运行，未安装或启动产品服务，未完成Windows11设备验收。生产registry/adapters为下一任务；Gate 3、Pilot、正式Release保持未通过。
