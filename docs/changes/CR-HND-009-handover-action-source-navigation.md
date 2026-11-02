@@ -97,3 +97,12 @@
 - 根因：fixture 将条目声明为 NEED_CONFIRM 却未提供至少两个合法选项；同时 source_missing=false 但 evidence_refs 为空。现有 Handover 读取客户端明确拒绝这两种不一致，按 fail-closed 预期处理；这是合成问题夹具偏差。
 - 修复计划：先记录后为全部合成 NEED_CONFIRM 问题补两项有效选项及最小合成 Evidence 引用，并把版本摘要的 evidence 计数同步为 1；只改 isolated harness fixture，无产品/API/DB/客户数据修改、无迁移。回滚恢复旧 fixture。
 - 复验计划：hosted Windows Edge 重新执行完整固定版本跨页定位及 HUMAN/跨项目/失效来源场景，保留失败 run。
+
+
+## A50-E01 最终云端验收结果（2026-11-02）
+
+- 最终 run：[41396427656](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41396427656)，13/13 jobs成功。分支代码提交 `bfb94cfa0a401b391793e01cbd15200bd2a46073`，PR合并测试提交由GitHub托管工作流生成；产物均以同一run来源标识。
+- A50-E01 Edge证据摘要：PASS_LIMITED；Microsoft Edge headless，GitHub hosted Windows Server 2025，D盘runner temp；synthetic_data=true、customer_data=false、external_api_calls=0、formal_license_trust=false。四项通过：分析待办跳到固定版本且在第二页找到精确Item并滚动；HUMAN不显示定位且不发来源请求；跨项目目标被拒并保留Action状态；失效来源失败关闭并保留Action详情。共3次Analysis/cross-project/expired source-location请求、2页固定Item查询。
+- 同run产品回归：后端3,850 tests与wheel成功；前端2,075 tests/200 files、typecheck、production build成功。Windows父包候选SHA-256 `238d6a53db0f5e7e9955020e6caeecbb5a8d445a0f2025eadca081638ff83237`，20,122 payload文件；PG18.6/pgvector0.8.6临时生命周期、A34离线替换/显式手动恢复及A17 PlanVersion Edge/HTTPS/PG（29次API）成功。
+- 云端失败偏差均先记录后修复，已在上文列明：Actions表达式/runner上下文、合成Action排序及UUID、详情等待竞态、Action/Analysis强ETag、NEED_CONFIRM选项和Evidence合同。失败尝试只说明workflow/harness fixture未满足既有上下文或DTO合同；没有据此更改产品API/数据库或Gate结论。最终E01专用job与其上传的合成证据Artifact成功。
+- 边界：结果限于托管Windows Server 2025+D盘runner temp；不等同Windows11实机、用户本机运行、正式安装、正式License trust、Gate 3、Pilot或Release通过。未使用客户数据、外部AI/API、生产服务或正式凭据。
