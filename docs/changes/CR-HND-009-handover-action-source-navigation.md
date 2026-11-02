@@ -43,3 +43,9 @@
 - 影响：仅影响新加 A50-E01 hosted Edge job 的 YAML表达式；产品代码和既有 workflow jobs 未变。尚未把 E01 标记为通过。
 - 修复：先记录后将表达式恢复为标准 Actions token，补上云端 Node 语法检查步骤；不改产品行为、API或数据库，无迁移。
 - 验证：由随后 GitHub hosted PR workflow 在 Windows runner 执行 harness；若 job 未触发或YAML校验失败，继续按日志记录和修复。
+
+### A50-E01 工作流上下文偏差（二，修复前）
+
+- 2026-11-02 hosted run 41393864311 因新增job的 `env` 在job层引用仅适用于step层的 `runner.temp`，GitHub未创建任何job，不能记为代码验收失败或通过。
+- 修复：先记录后移除job级TEMP/TMP，把 `TEMP`/`TMP` 限定到启动Edge harness的step级 `env`；Artifact/下载路径仍用允许的 `runner.temp` 表达式。工作流不接触客户数据、生产信任或用户设备。
+- 复验：提交后从 Actions API 确认新run实际生成A50专用job，再依据该job及前端构建结果验收。
