@@ -41,3 +41,9 @@ A39 对当前 ZIP 的只读核查后，发现把可执行 bootstrap 脚本放进
 ## 执行环境变更（2026-11-02）
 
 用户明确要求此后不在本机运行任何程序，所有运行均在模拟沙箱完成。A40验收已调整为 GitHub hosted Windows 2025 sandbox；临时目录必须在非C盘runner temp。该环境只能证明云端沙箱中的Windows Server 2025行为，不推定Windows 11兼容。此前Windows 11本机演练保留为历史证据，本轮及后续新运行不在本机执行。
+
+## A40 云端验收结果（2026-11-02）
+
+GitHub hosted Windows 2025 workflow run [41369734304](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41369734304) 完成：19/19定向测试通过；从A35 hosted run取得的ZIP摘要为 `94700239dc2218466087fd4beec90f9d34cd4a6c96ceed1049033df58342e2f2`，核对外部摘要后在D盘 `RUNNER_TEMP` 完成20,119项暂存。回执固定为 `HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED`，安装、服务启动、发行及法务放行均为false。A38 readiness报告维持5项阻断，父包诊断为BLOCKED/exit 2。证据artifact ID `13108667793`，SHA-256 `c3caf121738c27a678d0efc9b25030a12f5bf5f65aee625763f68761513f49aa`。
+
+首次云端试跑暴露并修正三项执行偏差：A34要求RUNNER_TEMP保持D盘根目录，故只将TEMP/TMP指向该根并将证据放入其专属子目录；Windows临时合成输入必须继承D盘TEMP/TMP；预期的诊断exit 2须在成功断言后清零，避免Actions将安全拒绝误判为步骤失败。所有修复由后续同一专用workflow复验通过。全程未在用户本机执行程序；托管Windows 2025结果不推定Windows 11兼容。
