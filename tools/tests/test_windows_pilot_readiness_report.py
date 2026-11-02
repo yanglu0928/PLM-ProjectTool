@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from windows_pilot_readiness_report import build_report  # noqa: E402
+from windows_pilot_readiness_report import build_report, render_readable_report  # noqa: E402
 
 
 def register(*, complete: bool = False) -> dict:
@@ -80,6 +80,20 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertFalse(result["release_eligible"])
         self.assertFalse(result["legal_clearance"])
         self.assertFalse(result["launch_authorized"])
+
+    def test_readable_summary_includes_guidance_without_authorizing_or_echoing_values(self) -> None:
+        result = build_report(manifest(), register())
+        rendered = render_readable_report(result)
+        self.assertIn("PLM Pilot 准备度检查", rendered)
+        self.assertIn("产品公钥 SHA-256", rendered)
+        self.assertIn("参考来源：", rendered)
+        self.assertIn("请勿填写：", rendered)
+        self.assertIn("启动授权：否", rendered)
+        self.assertIn("发行资格：否", rendered)
+        complete = render_readable_report(build_report(manifest(verified=True), register(complete=True)))
+        self.assertIn("仍需独立核验", complete)
+        self.assertIn("启动授权：否", complete)
+        self.assertNotIn("pilot.example.com", complete)
 
     def test_malformed_manifest_is_invalid_and_unknown_values_are_not_echoed(self) -> None:
         candidate = manifest()

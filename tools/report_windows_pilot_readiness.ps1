@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string]$RegisterPath
+    [string]$RegisterPath,
+    [switch]$Readable
 )
 $ErrorActionPreference = "Stop"
 $payloadRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -17,5 +18,11 @@ if (-not (Test-Path -LiteralPath $python -PathType Leaf) -or
     [Console]::Error.WriteLine("Pilot readiness diagnostic inputs are unavailable.")
     exit 2
 }
-& $python -I -B $reportTool --manifest $manifest --register $RegisterPath
+if ($Readable) {
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    [Console]::OutputEncoding = $utf8
+    & $python -X utf8 -I -B $reportTool --format text --manifest $manifest --register $RegisterPath
+} else {
+    & $python -I -B $reportTool --manifest $manifest --register $RegisterPath
+}
 exit $LASTEXITCODE

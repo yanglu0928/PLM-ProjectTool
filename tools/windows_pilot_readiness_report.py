@@ -153,6 +153,45 @@ def build_report(manifest: Any, register: Any) -> dict[str, Any]:
     }
 
 
+def render_readable_report(report: dict[str, Any]) -> str:
+    """Render a fixed, non-authorizing Chinese operator summary."""
+    lines = [
+        "PLM Pilot 准备度检查（只读诊断）",
+        "诊断状态：当前未就绪",
+        "启动授权：否",
+        "发行资格：否",
+        "法律放行：否",
+        "包清单：有效（非发行候选）" if report.get("package_manifest_status") == "VALID_NON_RELEASE_CANDIDATE" else "包清单：无效",
+    ]
+    status_labels = {
+        "INCOMPLETE": "信息不完整",
+        "INVALID": "格式无效，请按固定模板修正",
+        "COMPLETE_REQUIRES_INDEPENDENT_VERIFICATION": "登记完整，仍需独立核验",
+    }
+    register_status = report.get("input_register_status")
+    lines.append("登记表：" + status_labels.get(register_status, "无法确认"))
+    blockers = report.get("startup_blocker_codes", [])
+    if blockers:
+        lines.append("启动阻断项：")
+        lines.extend("- " + code for code in blockers if isinstance(code, str))
+    guidance = report.get("input_register_guidance", {})
+    if guidance:
+        lines.append("待补充字段：")
+        for item in guidance.values():
+            if not isinstance(item, dict):
+                continue
+            label = item.get("label", "未命名字段")
+            lines.extend((
+                "- " + str(label),
+                "  需要维护：" + str(item.get("maintain", "按模板维护固定引用")),
+                "  参考来源：" + str(item.get("source", "参照受控证据记录")),
+                "  请勿填写：" + str(item.get("never", "密码、密钥或客户材料")),
+            ))
+    elif register_status == "COMPLETE_REQUIRES_INDEPENDENT_VERIFICATION":
+        lines.append("登记项齐全，但必须独立核验证据；这不代表可以启动或发行。")
+    return "\\n".join(lines) + "\\n"
+
+
 def _read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -161,6 +200,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--register", type=Path, required=True)
+    parser.add_argument("--format", choices=("json", "text"), default="json")
     args = parser.parse_args()
     try:
         manifest = _read_json(args.manifest)
@@ -177,7 +217,12 @@ def main() -> int:
             exit_code = 1
         else:
             exit_code = 0
-    print(json.dumps(report, separators=(",", ":")))
+    if args.format == "text":
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="strict")
+        sys.stdout.write(render_readable_report(report))
+    else:
+        print(json.dumps(report, separators=(",", ":")))
     return exit_code
 
 

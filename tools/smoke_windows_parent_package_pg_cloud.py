@@ -154,12 +154,13 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
            if not key.upper().startswith("PLM_")}
     env.pop("PYTHONPATH", None)
 
-    def run(register_path: Path) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
-            [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(wrapper),
-             "-RegisterPath", str(register_path)],
-            cwd=str(root), capture_output=True, text=True, errors="replace",
-            timeout=30, env=env)
+    def run(register_path: Path, *, readable: bool = False) -> subprocess.CompletedProcess[str]:
+        command = [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(wrapper),
+                   "-RegisterPath", str(register_path)]
+        if readable:
+            command.append("-Readable")
+        return subprocess.run(command, cwd=str(root), capture_output=True, text=True,
+                              encoding="utf-8", errors="replace", timeout=30, env=env)
 
     try:
         incomplete = run(incomplete_path)
@@ -196,6 +197,18 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                 or incomplete_report.get("pilot_ready") is not False
                 or incomplete_report.get("launch_authorized") is not False):
             raise ValueError("packaged readiness report incomplete-register contract differs")
+
+        readable = run(incomplete_path, readable=True)
+        expected_labels = (
+            "产品公钥 SHA-256", "License 核验记录", "Windows 服务身份",
+            "TLS 证书 Thumbprint", "TLS DNS 名称", "License 证据引用",
+            "服务 ACL 证据引用", "TLS 链与续期证据引用", "数据库凭据范围证据引用",
+        )
+        if (readable.returncode != 1 or readable.stderr
+                or "PLM Pilot 准备度检查" not in readable.stdout
+                or any(label not in readable.stdout for label in expected_labels)
+                or "参考来源：" not in readable.stdout or "请勿填写：" not in readable.stdout):
+            raise ValueError("packaged readiness readable mode omitted fixed guidance or changed status")
 
         complete = copy.deepcopy(template)
         complete["references"].update({
