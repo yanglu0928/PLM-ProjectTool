@@ -29,3 +29,10 @@
 - 影响：这是既有组合根清单测试未随新增可选 Operation 更新；不表示运行时授权或业务逻辑失败。后端全量不能标 PASS，后续依赖包任务被工作流跳过。
 - 修复：仅更新该测试预期路由列表，纳入 `/api/v1/projects/{project_id}/handover-action-items/{action_item_id}/source-location`；产品代码、Schema、权限合同和数据均不变。无迁移；回滚仅恢复旧断言。
 - 复验：本条先于测试代码修复写入；随后重新运行 GitHub Hosted PR 全量流水线。要求后端全量、wheel、前端全量/typecheck/build以及工作流适用的云端检查通过后才能关闭 A50。该 Windows runner 是托管 Server 2025，不构成真实 Windows 11 设备验收。
+
+## 2026-11-02 云端复验结果与剩余证据
+
+- 修正提交 `ae1c0455f0fdb7c54d4f9fe6b7364c8a5ae37c12` 的 GitHub hosted run [41391544470](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41391544470) 全12 jobs成功。后端全量3,850项、前端2,075项（200文件）、前端 typecheck/build 成功；PG18.6/pgvector0.8.6临时生命周期、父包离线替换/手动恢复及既有 A17 Packaged PlanVersion Edge/HTTPS/PG（29次 API调用）通过。
+- 父候选包摘要 `24f37f60eb1f95a893af829b796926873c02b55e4f0b7d4762486f8dc6db3eda`，payload 20,122项。PG/安装演练仅用本轮临时数据，产品 API/services 均未启动；正式 License trust未使用，legal_clearance/release_eligible均false。
+- 范围边界：A17仅为PlanVersion浏览器流程，不构成待办来源导航的专项 Edge 证据；因此A50记录为PASS_LIMITED，下一WBS A50-E01为 hosted Windows Edge 合成来源导航验收。该补充任务完成前不把A50提升为完整PASS。
+- 本轮没有在用户本机或其C盘运行程序；hosted验收runner将仓库/临时数据放在D盘runner temp。托管Windows Server 2025不推定Windows11实机兼容；Gate 3、Pilot、正式Release不变。

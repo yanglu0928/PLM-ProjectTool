@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
+
+- P51-A50 实现交接待办按需解析固定来源并跳转到精确问题卡片；新增可选只读 source-location 子资源，冻结 Action GET 与数据库结构不变，无 Migration。Hosted run [41391544470](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41391544470) 全12 jobs成功：后端3,850项、前端2,075项/200文件、typecheck/build通过；父包20,122文件 SHA-256 `24f37f60…f8dc6db3eda`，PG18.6/pgvector0.8.6临时生命周期、A34隔离替换恢复、A17 packaged PlanVersion Edge/HTTPS/PG 29 API通过。A50结果为PASS_LIMITED，专项待办导航 Edge 验收留至A50-E01。
+- 兼容性：本轮仅GitHub hosted Windows Server 2025；未进行新的Windows 11设备验收。没有在用户本机运行代码。
+- 升级说明：非发行候选内部功能增量；无数据库迁移，不构成安装/升级包，不启动产品服务。
+- 已知限制：A17浏览器测试覆盖PlanVersion，不覆盖A50来源导航；正式信任及Pilot/Gate/Release仍NOT_READY。
+
 # Changelog
 
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）

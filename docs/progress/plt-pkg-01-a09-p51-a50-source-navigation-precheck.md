@@ -34,3 +34,14 @@
 
 使用合成Project/Action/Analysis/Version/Item/Document/Evidence。hosted Windows runner：后端Owner/API/显式Windows只读组合、跨Project/不存在/HUMAN/关系不一致；前端Client/View精确导航、越权/异常保持状态、分页/失效目标；Vite typecheck/build及Edge packaged/browser。仅本机零代码运行；无客户资料外发；不测试正式信任/生产服务，不推定Windows11设备、Gate、Pilot或Release通过。
 
+
+## 实施结果（2026-11-02）
+
+- 状态：PASS_LIMITED；代码与全量自动化验证通过，来源导航专项 hosted Edge 验收待 A50-E01。
+- 后端：新增只读 source-location 子资源和同权限 Owner/项目范围来源解析；HUMAN来源受控不可用，既有Action GET及Schema/Migration不变。
+- 前端：新增严格同源响应客户端和“打开原始问题与证据位置”入口；只有服务端解析到的固定来源才构造内部路由，详情按固定版本分页到准确问题卡并滚动定位。
+- hosted run [41391544470](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41391544470) 全12 jobs成功：后端3,850项，前端2,075项/200文件，类型检查/生产构建通过；父包、A34、PG18.6/pgvector0.8.6和A17 PlanVersion Edge/HTTPS/PG通过。
+- 首轮 run 41391080344 暴露既有Windows组合根测试仍断言2条路由；偏差先记于 CR-HND-009，再更新清单，复验全绿。
+- 限制：run内A17 Edge只验证PlanVersion，未验证A50的Action入口、HUMAN/失效响应与精准锚点浏览器路径；不据此宣称A50专项Edge通过或Windows11设备/Gate/Pilot/Release通过。
+- 环境：GitHub Hosted Windows Server 2025 runner，仓库与临时数据在D盘；未在用户本机或C盘运行项目程序。无产品服务/API正式启动、无客户资料外发。
+- 下一项：`PLT-PKG-01-A09-P51-A50-E01` hosted Windows Edge合成待办来源导航端到端验收。
