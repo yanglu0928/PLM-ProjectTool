@@ -163,6 +163,27 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
 
     try:
         incomplete = run(incomplete_path)
+        if not incomplete.stdout.strip():
+            diagnostic = (incomplete.stderr or "").casefold()
+            if "modulenotfounderror" in diagnostic or "no module named" in diagnostic:
+                category = "PYTHON_MODULE_IMPORT_FAILURE"
+            elif "unrecognized arguments" in diagnostic:
+                category = "REPORT_ARGUMENT_REJECTION"
+            elif "can't open file" in diagnostic or "cannot find the path" in diagnostic:
+                category = "REPORT_FILE_UNAVAILABLE"
+            elif "commandnotfoundexception" in diagnostic or "not recognized as the name" in diagnostic:
+                category = "PYTHON_LAUNCH_FAILURE"
+            elif "traceback" in diagnostic or "exception" in diagnostic:
+                category = "PYTHON_RUNTIME_FAILURE"
+            else:
+                category = "NO_CLASSIFIED_OUTPUT"
+            raise ValueError(
+                "packaged readiness report emitted no JSON: "
+                f"exit={incomplete.returncode}; "
+                f"stdout_bytes={len(incomplete.stdout.encode('utf-8'))}; "
+                f"stderr_bytes={len(incomplete.stderr.encode('utf-8'))}; "
+                f"category={category}"
+            )
         incomplete_report = json.loads(incomplete.stdout)
         expected_missing = 9
         if (incomplete.returncode != 1 or incomplete.stderr
