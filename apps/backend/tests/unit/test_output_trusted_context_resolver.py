@@ -154,7 +154,7 @@ class TrustedOutputContextResolverTests(unittest.TestCase):
             self.resolver.resolve(object(), actor_id=self.actor, command=self.command)
 
     def test_rejects_non_json_or_deep_projection(self):
-        for bad in (object(), {"nested": {"too": {"deep": {"deeper": {"x": "y"}}}}}):
+        for bad in (object(), {"a": {"b": {"c": {"d": {"e": {"f": {"g": {"h": {"i": "too deep"}}}}}}}}}):
             with self.subTest(bad=type(bad).__name__):
                 self.sources.rows[self.source_ref] = FixedSourceVersion(
                     self.project, self.source_ref, "PLAN_VERSION", "APPROVED",
