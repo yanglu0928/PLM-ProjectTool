@@ -16,6 +16,8 @@ import urllib.request
 import zipfile
 from pathlib import Path, PurePosixPath
 
+ROOT = Path(__file__).resolve().parents[1]
+
 from stage_windows_parent_candidate_cloud import stage_candidate
 
 
