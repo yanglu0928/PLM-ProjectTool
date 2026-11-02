@@ -1,7 +1,7 @@
 # OUT-01-A01-P01：OutputRequest 与固定 Context 持久层编码前检查
 
 - 日期：2026-11-02
-- 状态：PRECHECK_COMPLETE / READY_TO_IMPLEMENT
+- 状态：PASS_SCOPE_LIMITED（编码前检查、实现及托管验收完成；实施后流程偏差按CR-OUT-001追溯）
 - 阶段：Phase 2；先完成 Windows 11 内部 Pilot 纵向链所缺 Output 起步层
 - 本轮工作树：`feature/p51-a33-launcher-checksum-recovery`
 - 依据：CR-EXEC-002、冻结的 API-03 Output 契约、DM-04 OutputRequest/OutputContextSnapshot 语义、当前 STATUS 与最新分支源码/迁移树
@@ -56,3 +56,20 @@ run `41402169269` 中后端全量 3,853 项、前端、父包、A35及A17通过�
 ## 第三次托管迁移验证发现（2026-11-02）
 
 run `41403739067` 已真实通过空库 head upgrade、Output revision downgrade 到 `20261026_0210`、再 upgrade head。旧版本升级夹具准备失败，因为旧迁移链已预置 `plt_maintenance_state` 单例，验证脚本重复插入冲突；未执行到 Output migration 的带数据升级断言。CR-OUT-001 已在继续改动前记录；修复限于读取旧版本已有合成记录并比较升级后值。
+
+
+## 托管验收结果（2026-11-02）
+
+结果：`OUT_01_A01_P01_PASS_SCOPE_LIMITED`。GitHub hosted PR run [41405621292](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41405621292) 全13 jobs成功，分支提交 `df7c79b3673e2825e70da379946dacbe3997d59a`。
+
+1. 后端3,853项全量测试、backend wheel、前端测试/typecheck/build通过。
+2. 托管 PostgreSQL 18.6 / pgvector 0.8.6：空库升级到head；降至`20261026_0210`并再次升级；既有合成维护哨兵升级后逐字段保持一致。
+3. 父包临时生命周期、A34替换/失败隔离/显式手动恢复及A17 PlanVersion Edge/HTTPS/PG 29次API流程通过。
+4. 对8个关联代码/验证文件进行目标式Secret pattern扫描/复核：无真实凭据或私钥；匹配项为测试合成哨兵。代码、依赖和临时数据在GitHub hosted Windows Server 2025的D盘runner目录。
+5. 未安装产品、未启动服务/API、无客户数据、外部API或正式License信任。本项不含Windows 11设备、Output Owner/HTTP/Plugin/Artifact和端到端验证。
+
+后续任务：`OUT-01-A01-P02` OutputRequest同事务创建/幂等Owner，需重新执行编码前检查；该Owner通过前新表保持写入关闭。
+
+## 执行偏差追溯
+
+编码前曾把冻结 DB Schema V1 首次实体扩展误判为计划内实现、无需CR。实施后在继续修正前建立`CR-OUT-001`，保留原始记录而不覆盖Gate 2基线。元数据清单遗漏、harness ROOT缺失和旧版本夹具重复插入也均逐项记录后修正。
