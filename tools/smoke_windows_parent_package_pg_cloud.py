@@ -196,6 +196,8 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                    != set(incomplete_report.get("input_register_missing_fields", []))
                 or any(set(item) != {"label", "maintain", "source", "never", "owner_role", "next_step"}
                        for item in incomplete_report.get("input_register_guidance", {}).values())
+                or [a.get("code") for a in incomplete_report.get("recommended_actions", [])]
+                   != ["TRUST_KEY_LICENSE", "DATABASE_SCOPE", "SERVICE_IDENTITY_ACL", "TLS_CHAIN_ENDPOINT"]
                 or incomplete_report.get("pilot_ready") is not False
                 or incomplete_report.get("launch_authorized") is not False):
             raise ValueError("packaged readiness report incomplete-register contract differs")
@@ -211,6 +213,10 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                 or any(label not in readable.stdout for label in expected_labels)
                 or "参考来源：" not in readable.stdout or "请勿填写：" not in readable.stdout
                 or "建议责任角色：" not in readable.stdout or "下一步操作：" not in readable.stdout
+                or "建议处理顺序（只作提示" not in readable.stdout
+                or readable.stdout.index("正式产品公钥与 License 信任") > readable.stdout.index("数据库凭据目标与权限范围")
+                or readable.stdout.index("数据库凭据目标与权限范围") > readable.stdout.index("Windows 服务身份与目录权限")
+                or readable.stdout.index("Windows 服务身份与目录权限") > readable.stdout.index("HTTPS 证书链、域名与续期")
                 or "\\n" in readable.stdout or readable.stdout.count("\n") < 20):
             raise ValueError("packaged readiness readable mode omitted fixed guidance or changed status")
 
@@ -234,7 +240,8 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                 or success_report.get("input_register_status") != "COMPLETE_REQUIRES_INDEPENDENT_VERIFICATION"
                 or success_report.get("input_register_guidance") != {}
                 or success_report.get("pilot_ready") is not False
-                or success_report.get("launch_authorized") is not False):
+                or success_report.get("launch_authorized") is not False
+                or not success_report.get("recommended_actions")):
             raise ValueError("packaged readiness report complete-register fail-closed contract differs")
         readable_complete = run(complete_path, readable=True)
         if (readable_complete.returncode != 0 or readable_complete.stderr

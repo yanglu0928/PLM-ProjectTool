@@ -67,6 +67,9 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertTrue(all(set(item) == {"label", "maintain", "source", "never", "owner_role", "next_step"}
                             for item in result["input_register_guidance"].values()))
         self.assertIn("TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED", result["startup_blocker_codes"])
+        self.assertEqual([a["code"] for a in result["recommended_actions"]],
+                         ["TRUST_KEY_LICENSE", "DATABASE_SCOPE", "SERVICE_IDENTITY_ACL", "TLS_CHAIN_ENDPOINT"])
+        self.assertTrue(all(a["blocker_codes"] or a["fields"] for a in result["recommended_actions"]))
         self.assertFalse(result["launch_authorized"])
         self.assertFalse(result["pilot_ready"])
 
@@ -90,6 +93,8 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertIn("请勿填写：", rendered)
         self.assertIn("建议责任角色：", rendered)
         self.assertIn("下一步操作：", rendered)
+        self.assertIn("建议处理顺序", rendered)
+        self.assertLess(rendered.index("正式产品公钥与 License 信任"), rendered.index("数据库凭据目标与权限范围"))
         self.assertGreater(rendered.count("\\n"), 20)
         self.assertIn("启动授权：否", rendered)
         self.assertIn("发行资格：否", rendered)

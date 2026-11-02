@@ -105,6 +105,41 @@ FIELD_BLOCKERS = {
     "service_identity_acl_verified": "SERVICE_IDENTITY_ACL_NOT_VERIFIED",
 }
 
+RECOMMENDED_ACTIONS = (
+    {
+        "code": "TRUST_KEY_LICENSE",
+        "title": "核对正式产品公钥与 License 信任",
+        "blocker_codes": ("FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED", "FORMAL_LICENSE_TRUST_NOT_VERIFIED"),
+        "fields": ("product_public_key_sha256", "license_evidence_ref", "evidence_refs.license"),
+        "owner_role": "发布负责人 / License 管理负责人",
+        "next_step": "从受控发布与License工作台独立核对材料及证据编号。",
+    },
+    {
+        "code": "DATABASE_SCOPE",
+        "title": "核对数据库凭据目标与权限范围",
+        "blocker_codes": ("DATABASE_CREDENTIAL_REFERENCE_NOT_VERIFIED",),
+        "fields": ("evidence_refs.database_scope",),
+        "owner_role": "数据库运维负责人",
+        "next_step": "核实固定Credential Manager目标、最小权限和轮换记录。",
+    },
+    {
+        "code": "SERVICE_IDENTITY_ACL",
+        "title": "核对 Windows 服务身份与目录权限",
+        "blocker_codes": ("SERVICE_IDENTITY_ACL_NOT_VERIFIED",),
+        "fields": ("service_identity_ref", "evidence_refs.service_acl"),
+        "owner_role": "Windows 运维 / 安全负责人",
+        "next_step": "核实服务身份以及安装目录、数据目录ACL并登记独立证据。",
+    },
+    {
+        "code": "TLS_CHAIN_ENDPOINT",
+        "title": "核对 HTTPS 证书链、域名与续期",
+        "blocker_codes": ("TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED",),
+        "fields": ("tls_certificate_thumbprint", "tls_dns_name", "evidence_refs.tls_chain_renewal"),
+        "owner_role": "信息安全 / 证书负责人",
+        "next_step": "核对证书链与SAN域名、有效期及续期责任。",
+    },
+)
+
 
 def _manifest_blockers(manifest: Any) -> tuple[bool, list[str]]:
     if not isinstance(manifest, dict):
@@ -152,6 +187,21 @@ def build_report(manifest: Any, register: Any) -> dict[str, Any]:
     else:
         reason_codes.add("INPUT_REGISTER_REQUIRES_INDEPENDENT_VERIFICATION")
 
+    missing = set(register_result["missing_fields"])
+    recommended_actions = []
+    for action in RECOMMENDED_ACTIONS:
+        active_blockers = [code for code in action["blocker_codes"] if code in startup_codes]
+        active_fields = [field for field in action["fields"] if field in missing]
+        if active_blockers or active_fields:
+            recommended_actions.append({
+                "code": action["code"],
+                "title": action["title"],
+                "blocker_codes": active_blockers,
+                "fields": active_fields,
+                "owner_role": action["owner_role"],
+                "next_step": action["next_step"],
+            })
+
     return {
         "status": "DIAGNOSTIC_ONLY_NOT_READY",
         "pilot_ready": False,
@@ -166,6 +216,7 @@ def build_report(manifest: Any, register: Any) -> dict[str, Any]:
             for field in register_result["missing_fields"]
             if field in FIELD_GUIDANCE
         },
+        "recommended_actions": recommended_actions,
         "startup_blocker_codes": startup_codes if manifest_valid else [],
         "reason_codes": sorted(reason_codes),
     }
@@ -192,6 +243,18 @@ def render_readable_report(report: dict[str, Any]) -> str:
     if blockers:
         lines.append("启动阻断项：")
         lines.extend("- " + code for code in blockers if isinstance(code, str))
+    actions = report.get("recommended_actions", [])
+    if actions:
+        lines.append("建议处理顺序（只作提示，不代表核验通过）：")
+        for index, action in enumerate(actions, start=1):
+            blockers = ", ".join(action.get("blocker_codes", [])) or "登记引用待补充"
+            lines.extend((
+                f"{index}. {action.get('title', '处理就绪阻断项')}",
+                "  对应阻断：" + blockers,
+                "  涉及字段：" + (", ".join(action.get("fields", [])) or "独立核验"),
+                "  建议责任角色：" + str(action.get("owner_role", "项目负责人")),
+                "  下一步操作：" + str(action.get("next_step", "按固定模板补充非秘密证据引用")),
+            ))
     guidance = report.get("input_register_guidance", {})
     if guidance:
         lines.append("待补充字段：")
