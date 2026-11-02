@@ -27,3 +27,8 @@ A45/A46 已把每个缺项的维护内容、证据来源、禁止输入信息以
 ## 编码前检查结论
 
 此WBS聚焦“谁负责、下一步做什么”的提示，不扩展输入、信任或授权边界。复用A45字段字典和A46显示模式；合成样例可覆盖全部九种字段。先提交前置记录，再编码，所有输出值固定并进行不回显验证。
+
+
+## 验收结果（2026-11-02）
+
+Hosted run [41383869172](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41383869172) 12/12 jobs通过。父包真实 smoke 确认9项静态指引各含 `owner_role`/`next_step`，中文模式展示责任角色与操作动作；完整登记仍不授权，哨兵/未知值不回显。父ZIP SHA-256 `1db6e14e10fb878cf290add82cb69b5ebd387ccaca783c0da23e2c6d1452d370`，20,122 files；A17合成流程/A34恢复/PG smoke通过。仅PASS_LIMITED，未安装服务且无Windows11新实测。

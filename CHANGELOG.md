@@ -2,6 +2,14 @@
 
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
 
+- P51-A47 为9个 readiness 缺项增加静态责任角色和下一步动作；hosted run 41383869172 全12 jobs成功。父包ZIP SHA-256 `1db6e14e…1452d370`、20,122 files；完整不授权、未知/秘密输入不回显；A17/A34/PG组合通过。PASS_LIMITED。
+- 兼容性：仅 hosted Windows Server 2025；没有新的 Windows 11 实机验收。
+- 升级说明：仅内部非发行候选诊断工具更新；未安装产品。
+- 已知限制：正式公钥/License、DB身份、服务ACL、TLS与法务放行缺；Pilot/Gate/Release NOT_READY。
+
+
+## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
+
 - P51-A46 为 readiness PowerShell 入口新增可选中文可读模式；GitHub hosted run 41382282100 全12 jobs成功。不完整/完整/无效三态通过，完整不授权、哨兵不回显，默认JSON保持兼容。候选ZIP SHA-256 `c9b6d945…7164d3`、20,122 files；A17/A34/PG18组合通过，PASS_LIMITED。
 - 兼容性：仅 hosted Windows Server 2025；无新的 Windows 11 实机运行。
 - 升级说明：只更新内部非发行父包诊断工具；没有安装/升级程序。

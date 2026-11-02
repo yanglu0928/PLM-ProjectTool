@@ -47,3 +47,8 @@ A17 原构建流程把本机忽略区中的 P45 父 ZIP SHA-256 `30c9d59852af7e7
 ## A46 云端结果（2026-11-02）
 
 Hosted Windows Server 2025 run [41382282100](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41382282100) 全12 jobs成功。父包可读模式对不完整/完整/无效输入三态实测，UTF-8中文提示正确，完整仍不授权、秘密哨兵不回显，默认JSON兼容。父ZIP SHA-256 `c9b6d945f359e6777396b6a12309c62b7deff141b0f6808f340d195a407164d3`，20,122 files。A17 29 API、A34显式恢复、PG18/pgvector通过。未进行Windows 11新测试；Pilot/Gate/Release保持NOT_READY。
+
+
+## A47 云端验收（2026-11-02）
+
+Hosted Windows Server 2025 run [41383869172](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41383869172) 12/12 jobs成功。9项登记缺失均显示静态责任角色及下一步；完整/无效登记不授权且不回显注入值。父ZIP SHA-256 `1db6e14e10fb878cf290add82cb69b5ebd387ccaca783c0da23e2c6d1452d370`、20,122 files；A17/A34/PG smoke成功。该run不构成Windows 11新测试、Pilot/Gate或Release通过。

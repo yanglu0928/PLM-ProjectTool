@@ -62,3 +62,8 @@ A45为父包只读报告新增9项缺失引用的静态指导，注明需维护�
 ## A46 中文可读就绪报告（2026-11-02）
 
 PowerShell包内入口增加可选 `-Readable`，展示UTF-8中文状态和字段指导；默认JSON模式及exit code保持。Hosted run [41382282100](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41382282100) 12/12 jobs成功，真实父包 smoke 覆盖不完整/完整/无效三态；完整仍需独立核验、不授权，非法合成值不回显，manifest不变。ZIP SHA-256 `c9b6d945f359e6777396b6a12309c62b7deff141b0f6808f340d195a407164d3`、20,122 files。A17/A34/PG通过。仅PASS_LIMITED；正式信任及Pilot/Gate/Release未通过。首轮换行及覆盖偏差、处置详见A46记录。
+
+
+## A47 责任角色与下一步提示（2026-11-02）
+
+九项非秘密缺项各自附加固定职责角色和静态下一步，JSON/中文可读报告都展示；不代填、不访问外部系统、不改变授权。Hosted run [41383869172](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41383869172) 12/12成功，父ZIP SHA-256 `1db6e14e10fb878cf290add82cb69b5ebd387ccaca783c0da23e2c6d1452d370`、20,122 files；完整登记不授权，非法输入不回显，A17/A34/PG组合通过。仅PASS_LIMITED，Pilot/Gate/Release仍NOT_READY。
