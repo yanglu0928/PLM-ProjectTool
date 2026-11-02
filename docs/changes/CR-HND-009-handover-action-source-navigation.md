@@ -81,3 +81,11 @@
 - 根因：既有只读详情客户端除严格校验 DTO 外，还要求响应 ETag header 与详情正文中的 etag 完全相同；合成服务器当前只回正文，漏设该响应头，详情因此按安全规则失败关闭。这是 mock 合同不完整，不代表服务端实际缺陷。
 - 修复计划：先登记后，仅在合成 Action detail GET 中添加与正文一致的 ETag header；不改产品代码/API/DB/权限及客户数据，无迁移。回滚移除该合成响应头。
 - 复验计划：重跑 hosted Windows Edge 浏览器验证，要求详情加载并完成固定版本跨页定位及三类安全退化；保留失败 run。
+
+
+### A50-E01 Analysis 详情 ETag 夹具偏差（七，修复前）
+
+- 2026-11-02 hosted run 41395665552 已成功加载 Action 列表/详情、来源子资源，并跳转到正确的固定 Version 与目标 Item URL；目标页面显示项目交接分析读取失败，E01 仍不通过。
+- 复核现有 HandOver 读取客户端契约，Analysis 详情响应同样要求 ETag header 与正文 etag 匹配；合成服务仅在正文设置 etag，遗漏 HTTP ETag header，导致目标页按安全规则拒绝 Analysis。请求无客户数据。
+- 修复计划：先记录后，仅给合成 Analysis GET 添加与正文一致的 ETag header；不改产品实现、API、数据库或权限，无迁移。回滚移除该 header。
+- 复验计划：在 GitHub hosted Windows Edge 上重跑固定版本 Analysis 详情和 201 项跨页定位，以及 HUMAN/跨项目/过期来源场景；保留失败 run。
