@@ -86,6 +86,7 @@ jobs:
           $diagnosticPass = ($diagnosticExit -eq 2 -and $diagnosticObject.status -eq 'BLOCKED')
           Write-Host "Packaged diagnostic assertion: exit_ok=$($diagnosticExit -eq 2); status=$($diagnosticObject.status)"
           if (-not $diagnosticPass) { throw "Packaged read-only diagnostic did not fail closed" }
+          $global:LASTEXITCODE = 0
           New-Item -ItemType Directory -Path $env:PLM_A40_EVIDENCE_DIR | Out-Null
           $receipt | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $env:PLM_A40_EVIDENCE_DIR 'candidate-staging-receipt.json') -Encoding utf8
           $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $env:PLM_A40_EVIDENCE_DIR 'readiness-report.json') -Encoding utf8
