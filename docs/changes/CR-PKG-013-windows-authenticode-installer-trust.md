@@ -33,3 +33,7 @@
 新增 `tools/verify_windows_authenticode.py`，使用Windows原生 `Get-AuthenticodeSignature`，仅在签名状态为Valid且签发者Thumbprint与调用者提供的40位外部指纹完全匹配时报告 `AUTHENTICODE_VERIFIED_TEST_ONLY`。拒绝结果不回显候选路径、签名命令输出或异常文本；校验器不执行候选文件、不改证书存储、不联网。
 
 GitHub hosted Windows run [41370436650](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41370436650) 完成：24项定向测试全通过，并在真实Windows环境用已签名PowerShell程序验证匹配指纹正例、用D盘未签名临时文件验证拒绝负例。只作为验证器功能证据；测试正例的系统签名不能替代本产品真实发布者指纹。尚未将验证器作为安装执行器，也没有安装或启动产品。
+
+## A42 暂存CLI接入前置（2026-11-02）
+
+在A40非发行ZIP暂存CLI增加成对的可选参数 `--installer` 与 `--expected-thumbprint`。调用者提供安装程序时，CLI必须先调用A41只读校验器；参数缺失、签名非Valid或指纹不匹配时禁止创建ZIP暂存目标。成功时在固定暂存回执标记代码签名校验结果为TEST_ONLY，并保持installation_performed=false。未提供独立安装器时，CLI仍只能暂存ZIP数据，不能启动任何包内内容。验收使用真实hosted系统签名文件+匹配pin正例及错误pin负例，后者断言目标不存在；不安装或执行安装器。
