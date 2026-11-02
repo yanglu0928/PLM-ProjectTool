@@ -2,6 +2,14 @@
 
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
 
+- P51-A45 为包内就绪报告增加9个缺项的静态中文填写指导；hosted run 41378263123 全12 jobs成功。候选ZIP SHA-256 `e2858a6b…0256ca`、20,122 files；完整登记不授权、非法值不回显、manifest不变。A17/A34/PG组合通过，结果 PASS_LIMITED。
+- 兼容性：仅 GitHub hosted Windows Server 2025；未进行新的 Windows 11 实机验收。
+- 升级说明：仅更新内部非发行候选诊断工具；未安装或启动产品。
+- 已知限制：正式公钥/License、DB身份、服务ACL、TLS和法律放行仍缺；Pilot/Gate/Release NOT_READY。
+
+
+## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
+
 - P51-A44 将非秘密 Pilot 就绪报告/模板和 PowerShell 入口纳入 Windows 候选包，并在 hosted run 41376505925 完成12/12组合验收；9项缺项正确显示、完整登记仍不授权、非法输入不回显。父包SHA-256 `8e3e4e37…f801d`，20,122 files；A17 29 API/A34恢复通过。详情见 [A44结果](docs/progress/plt-pkg-01-a09-p51-a44-readiness-tool-bundling-result.md) 与 [run](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41376505925)。
 - 兼容性：仅 GitHub hosted Windows Server 2025；未进行新的 Windows 11 实机验收。
 - 升级说明：仅内部非发行包内容变化；没有产品安装/服务升级。

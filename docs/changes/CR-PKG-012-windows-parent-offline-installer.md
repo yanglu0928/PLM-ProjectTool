@@ -52,3 +52,8 @@ GitHub hosted Windows 2025 workflow run [41369734304](https://github.com/yanglu0
 ## A44 readiness report 随包接入（2026-11-02）
 
 按本 CR 的包级操作说明与不授权边界，A44 将现有非秘密输入登记器和只读报告工具纳入父包，模板及脚本均受父包逐文件SHA清单覆盖。hosted run [41376505925](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41376505925) 12/12 jobs成功：9缺项列示、完整合成登记仍不授权、非法值不回显、manifest/checksum不变；A17 29 API流与A34手动恢复均成功。内部父包SHA-256 `8e3e4e37224ad3653c2f2d758d024e23a5c6591fde89cb85efd375bc304f801d`。A44仅PASS_LIMITED，未安装或启动产品。两项实施偏差及处理详见A44前置/结果记录；新报告资源仅属于父包操作区，应用运行布局排除规则以显式路径清单更新且未知路径仍失败关闭。
+
+
+## A45 就绪报告字段指导（2026-11-02）
+
+A45为父包只读报告新增9项缺失引用的静态指导，注明需维护内容、证据来源和禁止输入项；不回显登记值，也不改变启动授权。Hosted run [41378263123](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41378263123) 全12 jobs成功，父包ZIP SHA-256 `e2858a6b6af852ada906e84671b539dee25c2571387940e4680346dd2c0256ca`、20,122 files；A17/A34和PG组合检查通过。仅PASS_LIMITED，Pilot/Gate/Release仍NOT_READY；不构成Windows 11新实测或产品安装。结果见 `docs/progress/plt-pkg-01-a09-p51-a45-field-guidance-result.md`。

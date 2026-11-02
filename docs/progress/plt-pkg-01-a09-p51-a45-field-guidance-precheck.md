@@ -1,7 +1,7 @@
 # PLT-PKG-01-A09-P51-A45：报告逐字段填写指引（编码前检查）
 
 - 日期：2026-11-02
-- 状态：编码前检查完成；尚未改程序。
+- 状态：PASS_LIMITED；编码前检查已完成并保留。
 
 ## 任务定位
 
@@ -32,3 +32,7 @@ Phase 2 Platform Core；Gate 3、Pilot、Formal Release 均未通过。A44 已�
 ## 编码前检查结论
 
 本WBS仅解决报告缺项之后的即时可操作性，不将指引当作已验证事实，也不将登记完整当成授权。复用A44已验证的只读包边界与合成输入；先提交本检查，随后方可编码。更新结果必须在STATUS、CHANGELOG、CR-PKG-012/CR-EXEC-005并保留历史失败/修复记录。
+
+## 验收结论（2026-11-02）
+
+GitHub hosted Windows run [41378263123](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41378263123) 12/12 jobs成功。A45单测和父包集成确认9个缺项均有匹配静态指导，完整登记无指导但继续要求独立核验且不授权；无效输入不回显，manifest不变。父ZIP SHA-256 `e2858a6b6af852ada906e84671b539dee25c2571387940e4680346dd2c0256ca`、20,122 files；A17/A34/PG组合通过。仅 hosted Windows Server 2025，未在用户本机运行，未新验Windows 11。正式启动信任缺口仍开放。

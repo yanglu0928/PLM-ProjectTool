@@ -37,3 +37,8 @@ A17 原构建流程把本机忽略区中的 P45 父 ZIP SHA-256 `30c9d59852af7e7
 ## A44 云端结果（2026-11-02）
 
 当前 PR 源码完整 run [41376505925](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41376505925) 12/12 jobs success；A44包内非秘密 Pilot readiness report通过缺项、完整但不授权、非法值不回显三组实测；A17/A34/PG smoke同run成功。父包内ZIP SHA-256 `8e3e4e37224ad3653c2f2d758d024e23a5c6591fde89cb85efd375bc304f801d`，20,122 files。PR head `f182eb37cb572da99b6615746655d7c7a0e2b30c` 对应 merge commit `325ce2e90b298d657ca3acceb98bcb8a54968abe`。见 A44 进度结果。未提供正式产品信任，Pilot/Gate/Release不变。
+
+
+## A45 结果（2026-11-02）
+
+当前固定来源重建流程在 hosted Windows Server 2025 run [41378263123](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41378263123) 12/12 jobs成功。新父ZIP SHA-256 `e2858a6b6af852ada906e84671b539dee25c2571387940e4680346dd2c0256ca`、20,122 files；A17 29 API合成PlanVersion流、A34替换/恢复和PG18/pgvector通过。仅证明 hosted Windows Server 2025，不是Windows 11实测或release。正式信任与启动阻断仍保持。
