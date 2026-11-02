@@ -72,3 +72,8 @@ PowerShell包内入口增加可选 `-Readable`，展示UTF-8中文状态和字�
 ## A48 推荐处理顺序（2026-11-02）
 
 就绪报告新增静态四组建议顺序：公钥/License信任、DB凭据范围、服务身份/ACL、TLS证书/域名/续期。JSON和中文模式一致显示当前仍阻断项；顺序只是操作建议，不授权或关闭验收。Hosted run [41386839114](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41386839114) 12/12成功，20,122文件父ZIP SHA-256 `8e642dc1c4393fdae80935622349b094122b18509816fc8ce4a9d7805aa48948`。零blocker完整登记合成分支仍不授权、要求独立核验；A17/A34/PG通过。仅PASS_LIMITED。
+
+
+## A49 突出第一条待办（2026-11-02）
+
+可读报告新增置顶第一条动作；JSON `recommended_first_action` 与列表第0项复用同一对象。零待办时显示仍需独立核验，不授权。Hosted run [41388401825](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41388401825) 12/12成功；父ZIP `07d74e91529ef35f3215dd6d5045a59152fc778345825df8aa37a0f49c88920c`，20,122 files；完整blocked、零blocker完整、无效三态和A17/A34/PG通过。仅PASS_LIMITED，Pilot/Gate/Release保持NOT_READY。

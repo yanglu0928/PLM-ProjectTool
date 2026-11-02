@@ -19,3 +19,8 @@
 ## 兼容与回滚
 
 新增展示字段及只读文本段，既有字段和exit code不变；回滚删除first-action projection、呈现段及对应测试，不需迁移/API/DB变更。
+
+
+## 验收结果（2026-11-02）
+
+Hosted run [41388401825](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41388401825) 12/12 jobs通过。JSON `recommended_first_action` 与 `recommended_actions[0]`相同；正常待办可读摘要先于有序列表，零待办场景不显示第一项且保留“仍需独立核验”，所有授权布尔值false。父ZIP SHA-256 `07d74e91529ef35f3215dd6d5045a59152fc778345825df8aa37a0f49c88920c`，20,122 files；候选manifest未改变，A17/A34/PG通过。PASS_LIMITED；没有Win11新实测或本机运行。

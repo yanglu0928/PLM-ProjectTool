@@ -2,6 +2,14 @@
 
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
 
+- P51-A49 在可读就绪报告置顶第一条待办，并以JSON字段复用有序动作首项；hosted run 41388401825 全12 jobs成功。零待办仍要求独立核验，授权值全false。父ZIP SHA-256 `07d74e91…f49c88920c`、20,122 files；A17/A34/PG通过。PASS_LIMITED。
+- 兼容性：仅 hosted Windows Server 2025；无新Windows 11实测。
+- 升级说明：仅内部非发行诊断候选更新，没有产品安装/升级。
+- 已知限制：正式信任、DB身份、服务ACL、TLS和法务放行缺；Pilot/Gate/Release NOT_READY。
+
+
+## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
+
 - P51-A48 按固定依赖顺序输出信任、DB凭据、服务ACL、TLS四组readiness待办；hosted run 41386839114 全12 jobs成功。零blocker完整登记仍需独立核验且不授权；候选ZIP SHA-256 `8e642dc1…aa48948`、20,122 files；A17/A34/PG通过。PASS_LIMITED。
 - 兼容性：仅 hosted Windows Server 2025，无新Windows 11实测。
 - 升级说明：仅内部非发行诊断候选更新；未安装/升级产品。

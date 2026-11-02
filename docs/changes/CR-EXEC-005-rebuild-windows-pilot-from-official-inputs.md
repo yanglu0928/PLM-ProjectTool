@@ -57,3 +57,8 @@ Hosted Windows Server 2025 run [41383869172](https://github.com/yanglu0928/PLM-P
 ## A48 云端验收（2026-11-02）
 
 Hosted Windows Server 2025 run [41386839114](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41386839114) 12/12 jobs成功。父包完整组合流程覆盖固定阻断顺序与零blocker+完整登记边界；后者仍需独立核验、所有授权布尔值false，正式manifest/hash保持不变。父ZIP SHA-256 `8e642dc1c4393fdae80935622349b094122b18509816fc8ce4a9d7805aa48948`，20,122 files。A17/A34通过；不构成Windows 11新测、Pilot/Gate或Release通过。
+
+
+## A49 云端验收（2026-11-02）
+
+Hosted run [41388401825](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41388401825) 全12 jobs成功。可读模式突出第一条动作，JSON第一项引用一致；零待办仍显示独立核验且false授权。父ZIP SHA-256 `07d74e91529ef35f3215dd6d5045a59152fc778345825df8aa37a0f49c88920c`、20,122 files。仅hosted Windows Server 2025，非Windows 11新验证。
