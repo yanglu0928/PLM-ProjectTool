@@ -120,20 +120,22 @@ def main() -> int:
         existing_dsn = _dsn(existing_db, args.port)
         upgrade_database(existing_url, "20261026_0210")
         with psycopg.connect(existing_dsn) as conn:
-            conn.execute(
-                "INSERT INTO plm.plt_maintenance_state"
-                "(state_id,state,lock_version,changed_at) "
-                "VALUES (1,'RUNNING',0,statement_timestamp())"
-            )
+            existing_maintenance = conn.execute(
+                "SELECT state,lock_version,changed_at FROM plm.plt_maintenance_state "
+                "WHERE state_id=1"
+            ).fetchone()
+        if existing_maintenance is None:
+            raise AssertionError("prior migration did not create its expected maintenance singleton")
         upgrade_database(existing_url, "head")
         if _revision(existing_dsn) != "20261102_0220":
             raise AssertionError("existing database upgrade did not reach OUT-01 migration head")
         _assert_output_tables(existing_dsn, True)
         with psycopg.connect(existing_dsn) as conn:
             row = conn.execute(
-                "SELECT state,lock_version FROM plm.plt_maintenance_state WHERE state_id=1"
+                "SELECT state,lock_version,changed_at FROM plm.plt_maintenance_state "
+                "WHERE state_id=1"
             ).fetchone()
-        if row != ("RUNNING", 0):
+        if row != existing_maintenance:
             raise AssertionError("pre-existing synthetic data changed during migration")
         result["existing_synthetic_data_upgrade"] = "PASS"
     finally:
