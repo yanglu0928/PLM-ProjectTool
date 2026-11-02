@@ -911,6 +911,14 @@ def main() -> int:
                 or migration_lifecycle.get("owner_migration_downgrade_reupgrade") != "PASS"
                 or migration_lifecycle.get("existing_synthetic_data_upgrade") != "PASS"):
             raise RuntimeError("Output migration lifecycle validation failed")
+        plugin_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/plg-01-a01-package-schema/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        plugin_validation = json.loads(plugin_run.stdout.strip().splitlines()[-1])
+        if plugin_validation.get("status") != "PASS_LIMITED":
+            raise RuntimeError("Plugin package schema validation failed")
         owner_run = run_checked(
             [sys.executable,
              str(ROOT / "validation/out-01-a01-p02-owner/verify.py"),
@@ -928,6 +936,7 @@ def main() -> int:
             "parent_archive_sha256": parent["archive_sha256"],
             "postgresql_version": version, "pgvector_version": vector_version,
             "output_owner_validation": owner_validation,
+            "plugin_package_schema_validation": plugin_validation,
             "listen_host": "127.0.0.1", "temporary_database_only": True,
             "production_installation": False, "product_api_started": False,
             "license_trust_used": False, "runner_drive": root.drive,

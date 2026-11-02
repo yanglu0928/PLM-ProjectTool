@@ -100,8 +100,8 @@ def main() -> int:
         empty_url = _database_url(empty_db, args.port)
         empty_dsn = _dsn(empty_db, args.port)
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261102_0221":
-            raise AssertionError("empty upgrade did not reach OUT-01 migration head")
+        if _revision(empty_dsn) != "20261102_0222":
+            raise AssertionError("empty upgrade did not reach schema head")
         _assert_output_tables(empty_dsn, True)
         result["empty_database_upgrade"] = "PASS"
 
@@ -113,7 +113,7 @@ def main() -> int:
             job_fk = conn.execute("SELECT count(*) FROM pg_constraint WHERE conname='fk_out_output_requests__job'").fetchone()[0]
         if closed != 2 or job_fk != 0: raise AssertionError("0221 downgrade contract mismatch")
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261102_0221": raise AssertionError("owner re-upgrade failed")
+        if _revision(empty_dsn) != "20261102_0222": raise AssertionError("owner re-upgrade failed")
         with psycopg.connect(empty_dsn) as conn:
             closed = conn.execute("SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('trg_out_context_snapshots__owner_closed','trg_out_output_requests__owner_closed')").fetchone()[0]
             job_fk = conn.execute("SELECT count(*) FROM pg_constraint WHERE conname='fk_out_output_requests__job'").fetchone()[0]
@@ -124,7 +124,7 @@ def main() -> int:
         if _revision(empty_dsn) != "20261026_0210": raise AssertionError("P01 downgrade failed")
         _assert_output_tables(empty_dsn, False)
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261102_0221": raise AssertionError("full re-upgrade failed")
+        if _revision(empty_dsn) != "20261102_0222": raise AssertionError("full re-upgrade failed")
         _assert_output_tables(empty_dsn, True)
         result["empty_database_downgrade_reupgrade"] = "PASS"
 
@@ -141,8 +141,8 @@ def main() -> int:
         if existing_maintenance is None:
             raise AssertionError("prior migration did not create its expected maintenance singleton")
         upgrade_database(existing_url, "head")
-        if _revision(existing_dsn) != "20261102_0221":
-            raise AssertionError("existing database upgrade did not reach OUT-01 migration head")
+        if _revision(existing_dsn) != "20261102_0222":
+            raise AssertionError("existing database upgrade did not reach schema head")
         _assert_output_tables(existing_dsn, True)
         with psycopg.connect(existing_dsn) as conn:
             row = conn.execute(
