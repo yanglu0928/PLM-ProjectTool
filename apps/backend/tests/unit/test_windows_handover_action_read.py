@@ -31,6 +31,7 @@ class WindowsHandoverActionReadCompositionTests(unittest.TestCase):
         self.assertEqual([
             "/api/v1/projects/{project_id}/handover-action-items",
             "/api/v1/projects/{project_id}/handover-action-items/{action_item_id}",
+            "/api/v1/projects/{project_id}/handover-action-items/{action_item_id}/source-location",
         ], [route.path for route in router.routes])
         self.assertEqual([HANDOVER_ACTION_CURSOR_KEY_REF], keys.refs)
 
