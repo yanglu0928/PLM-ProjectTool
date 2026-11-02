@@ -47,3 +47,8 @@ A39 对当前 ZIP 的只读核查后，发现把可执行 bootstrap 脚本放进
 GitHub hosted Windows 2025 workflow run [41369734304](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41369734304) 完成：19/19定向测试通过；从A35 hosted run取得的ZIP摘要为 `94700239dc2218466087fd4beec90f9d34cd4a6c96ceed1049033df58342e2f2`，核对外部摘要后在D盘 `RUNNER_TEMP` 完成20,119项暂存。回执固定为 `HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED`，安装、服务启动、发行及法务放行均为false。A38 readiness报告维持5项阻断，父包诊断为BLOCKED/exit 2。证据artifact ID `13108667793`，SHA-256 `c3caf121738c27a678d0efc9b25030a12f5bf5f65aee625763f68761513f49aa`。
 
 首次云端试跑暴露并修正三项执行偏差：A34要求RUNNER_TEMP保持D盘根目录，故只将TEMP/TMP指向该根并将证据放入其专属子目录；Windows临时合成输入必须继承D盘TEMP/TMP；预期的诊断exit 2须在成功断言后清零，避免Actions将安全拒绝误判为步骤失败。所有修复由后续同一专用workflow复验通过。全程未在用户本机执行程序；托管Windows 2025结果不推定Windows 11兼容。
+
+
+## A44 readiness report 随包接入（2026-11-02）
+
+按本 CR 的包级操作说明与不授权边界，A44 将现有非秘密输入登记器和只读报告工具纳入父包，模板及脚本均受父包逐文件SHA清单覆盖。hosted run [41376505925](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41376505925) 12/12 jobs成功：9缺项列示、完整合成登记仍不授权、非法值不回显、manifest/checksum不变；A17 29 API流与A34手动恢复均成功。内部父包SHA-256 `8e3e4e37224ad3653c2f2d758d024e23a5c6591fde89cb85efd375bc304f801d`。A44仅PASS_LIMITED，未安装或启动产品。两项实施偏差及处理详见A44前置/结果记录；新报告资源仅属于父包操作区，应用运行布局排除规则以显式路径清单更新且未知路径仍失败关闭。

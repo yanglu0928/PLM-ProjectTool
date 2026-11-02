@@ -32,3 +32,8 @@ A17 原构建流程把本机忽略区中的 P45 父 ZIP SHA-256 `30c9d59852af7e7
 按本 CR 固定来源与禁止发行边界，GitHub hosted Windows run [41370951575](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41370951575) 全12项job成功；PR #61 head `4cbf2c140a1515029e5823bba1bd6935a5c33399` 对应GitHub pull_request合并提交 `9713443955f7698a687c620ab3647971f8700847`。父包内ZIP SHA-256 `63ed5c8d209f09cb9fa22aeacf9245aeb8cfebf0cff8397beea26e591dc05a7a`、20,118个payload文件，artifact ID `13109214144`，容器摘要 `1a7ec0c2a26a8eb2252817598d5a83cb1c9e94d3b4e57968dcc808843168255b`。同run完成暂存/清洁包、PG18/pgvector临时生命周期、A17合成Edge/HTTPS/PG流与A34隔离替换/手动恢复。
 
 该结果仅为 `PASS_LIMITED`。启动入口仍因数据库凭据拒绝；正式公钥/License trust/DB凭据身份/服务账户ACL/TLS仍缺，未安装或启动产品。没有Windows 11新运行、正式信任、法律放行、Gate、Pilot或Release结论。详见 `docs/progress/plt-pkg-01-a09-p51-a43-hosted-rebuild-result.md`。
+
+
+## A44 云端结果（2026-11-02）
+
+当前 PR 源码完整 run [41376505925](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41376505925) 12/12 jobs success；A44包内非秘密 Pilot readiness report通过缺项、完整但不授权、非法值不回显三组实测；A17/A34/PG smoke同run成功。父包内ZIP SHA-256 `8e3e4e37224ad3653c2f2d758d024e23a5c6591fde89cb85efd375bc304f801d`，20,122 files。PR head `f182eb37cb572da99b6615746655d7c7a0e2b30c` 对应 merge commit `325ce2e90b298d657ca3acceb98bcb8a54968abe`。见 A44 进度结果。未提供正式产品信任，Pilot/Gate/Release不变。
