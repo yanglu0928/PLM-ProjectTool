@@ -1,7 +1,7 @@
 # OUT-01-A01-P02：OutputRequest 原子创建与幂等 Owner 编码前检查
 
 - 日期：2026-11-02
-- 状态：PRECHECK_COMPLETE / READY_TO_IMPLEMENT（内部 Owner；不接公开HTTP）
+- 状态：IMPLEMENTED / PASS_SCOPE_LIMITED（内部 Owner；不接公开HTTP）
 - Phase/WBS：Phase 2 / OUT-01-A01-P02
 - 输入：`OUT-01-A01-P01`、CR-OUT-001、冻结 API-03、DM-04、现有 Jobs/Outbox、Audit、Project Authorization 与通用 Idempotency receipt 基础
 - 计划验证：GitHub hosted Windows Server 2025 runner 的D盘临时目录与临时 PostgreSQL 18；不在用户本机运行
@@ -37,3 +37,12 @@
 ## 验收边界与下一项
 
 只有托管 PostgreSQL与完整回归证据通过才标`PASS_SCOPE_LIMITED`。本项不代表HTTP/UI、真实来源解析、Plugin、Artifact、Windows 11/Gate 3/Pilot/Release通过。下一项在此验收后做来源/模板策略解析或HTTP创建入口的单问题前置检查，以STATUS为准。
+
+
+## 实施与独立验收结论
+
+- 生产代码：OutputRequest Application Owner、Output SQL repository、Jobs-owned enqueue Port/adapter及 Alembic `20261102_0221`；Request、Context、Job、Outbox、Audit及Idempotency Receipt在单一UOW提交。
+- 仅持久化幂等Key摘要；Project授权/License重检；并发同代由PostgreSQL advisory lock合流；ContextSnapshot UPDATE/DELETE受数据库触发器拒绝；保留截断保护和到Job外键。
+- hosted Windows Server 2025 run [41413844603](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41413844603) 全13 jobs成功；P02专用真实PG18.6合成集成检查、0221降/升含历史保留、后端全量与前端构建均成功。
+- 首轮与第二轮脚本错误/缺证补充已分别记录在CR-OUT-002；最终验收边界以 CR 当前结论为准。
+- 当前状态：`PASS_SCOPE_LIMITED`；公开HTTP、生产授权/来源resolver、Plugin、Artifact、生成文件及Windows11实机链尚未实现或验证。

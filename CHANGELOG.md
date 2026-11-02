@@ -1,5 +1,7 @@
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
 
+- OUT-01-A01-P02 已完成OutputRequest同事务Owner、幂等回执、Jobs-owned Outbox入队与可逆migration `20261102_0221`。hosted PR run [41413844603](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41413844603) 全13 jobs通过；PG18.6合成验收含并发合流、冲突、故障回滚、快照不可变及含历史的降级/重升级。仅PASS_SCOPE_LIMITED，不含公开HTTP、真实来源/模板注册、插件/Artifact、客户数据或Win11/正式发行验证。详情见 `docs/progress/out-01-a01-p02-create-idempotent-owner-result.md`。
+
 - OUT-01-A01-P01 新增冻结 DM-04/API-03 语义下的 OutputRequest 与不可变 OutputContextSnapshot ORM/迁移，revision `20261102_0220`；CR-OUT-001 按本切片证据验证关闭。hosted run [41405621292](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41405621292) 全13 jobs成功，后端3,853项全量测试通过；PG18.6 空库升级、降级/再升级、既有合成数据升级通过。父包SHA-256 `a3062a6311d20c6d63f93dea6ce13b58136b8c0c45115e93345d45708cb3e1ea`，20,126文件。
 - 兼容性：仅GitHub hosted Windows Server 2025，临时工作目录/数据位于D盘runner temp；没有在用户本机C盘运行。未进行本轮Windows 11设备验收。
 - 升级说明：仅内部开发分支增量迁移，未在任何用户/生产数据库安装。

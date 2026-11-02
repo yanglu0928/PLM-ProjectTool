@@ -3,19 +3,19 @@
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|A50修正提交 ae1c0455f0fdb7c54d4f9fe6b7364c8a5ae37c12；hosted run 41391544470全12 jobs成功。A35 Windows11 Home build26300 D盘隔离父包复验仍为历史PASS_LIMITED；本轮不代表实机Windows11验收。正式信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|OUT-01-A01-P01：OutputRequest 与 OutputContextSnapshot ORM/迁移持久层 PASS_SCOPE_LIMITED|
-|Latest WBS Status|OUT-01-A01-P01 通过：后端3,853项、空库升级、降级后重升、既有合成数据升级均有托管证据；详细范围见 docs/progress/out-01-a01-p01-request-context-schema-result.md。仅 hosted Windows Server 2025 / D盘 runner temp；不代表Win11、Gate、Pilot或Release|
-|Current Status|OUT_01_A01_P01_PASS_SCOPE_LIMITED / PLT_PKG_01_A09_P51_A50_E01_PASS_LIMITED / PHASE_2_IN_PROGRESS|
+|Current WBS|OUT-01-A01-P02：OutputRequest 同事务创建与幂等 Owner PASS_SCOPE_LIMITED|
+|Latest WBS Status|OUT-01-A01-P02 通过：同事务Request/Context/Job/Outbox/Audit/receipt、幂等重放与并发合流、冲突、拒绝无副作用、故障回滚、快照不可变及已有历史迁移往返均有hosted PG18证据。详见 docs/progress/out-01-a01-p02-create-idempotent-owner-result.md；仅Windows Server 2025云端合成验证，不代表Win11/Gate/Pilot/Release|
+|Current Status|OUT_01_A01_P02_PASS_SCOPE_LIMITED / PLT_PKG_01_A09_P51_A50_E01_PASS_LIMITED / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
 |Blockers|Gate 3审计确认：Handover、Survey与Requirement前三阶段已顺序组合至PROTOTYPE/v10；Requirement读写、真实聚合Owner/PG/HTTP、前端及Edge证据已完成，Prototype、Solution、Plan真实业务Owner和后续阶段仍待。POC-03新集合同0/7、技术协议1/8且旧质量分类48%/引用74%继续阻塞Gate 3/UAT；正式发行公钥、目标服务账户Vault/ACL/CA、SCM安装恢复与20并发性能未验。DOC生产清理入口、Server2025当前运行链、Debian13实机按用户指令跳过、Server Office及Ghostscript发行合规继续作为独立Release约束|
 |Pending User Decisions|无普通开发决策待确认。新客户材料/正文对外AI发送仍需当轮明确授权；付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
-|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；当前增量至`20261102_0220`（CR-OUT-001新增OutputRequest/OutputContextSnapshot表；原Gate 2冻结提交64cdf09未改写，此前计划类增量和历史均保留）|
+|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；当前增量至`20261102_0221`（CR-OUT-001新增OutputRequest/OutputContextSnapshot表；CR-OUT-002开放受控Owner写路径、保留快照不可变与Job引用约束；原Gate 2冻结提交64cdf09未改写，此前计划类增量和历史均保留）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|Hosted run 41405621292 全13 jobs成功。后端3,853项测试；PG18.6/pgvector0.8.6下Output migration空库升级、降级至20261026_0210后重升、既有合成哨兵数据升级均通过。父包临时生命周期、A34显式恢复、A17 PlanVersion Edge/HTTPS/PG均PASS_LIMITED；无产品安装/服务启动/正式信任/客户数据。详见OUT-01-A01-P01结果文档|
-|Latest Test Summary|GitHub hosted PR run [41405621292](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41405621292) 全13 jobs成功：后端3,853项与wheel、前端测试/typecheck/build、PG18.6/pgvector0.8.6父包临时生命周期、Output migration空库升级/降级再升级/既有合成数据升级、A34手动恢复和A17 PlanVersion Edge/HTTPS/PG 29次API均通过。父包SHA-256 a3062a6311d20c6d63f93dea6ce13b58136b8c0c45115e93345d45708cb3e1ea（20,126文件）；A17候选SHA-256 d2215bd8b57ede09bb956c94659a68872cc82dc86cde45ff60fc13162d63ffe5（20,120文件）。仅Hosted Windows Server 2025/D盘临时环境，PASS_LIMITED；无用户本机执行、客户数据/外部API、正式License trust、安装或产品服务启动；Win11/Gate3/Pilot/Release仍未通过|
+|Test Summary|P02 hosted run 41413844603 全13 jobs成功；后端/前端完整验证通过，PG18.6/pgvector0.8.6空库及含历史迁移往返、P02真实SQL事务与并发验收通过；父包、A17/A34链PASS_LIMITED。仅云端合成数据；未安装或启动产品服务，未使用正式信任或客户数据。详见OUT-01-A01-P02结果文档|
+|Latest Test Summary|GitHub hosted PR run [41413844603](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41413844603) 全13 jobs成功：后端全量与wheel、前端测试/typecheck/build、PG18.6/pgvector0.8.6父包生命周期、Output migration 空库/历史库升级、0221↔0220含Output历史往返、P02幂等/并发/同事务/快照不可变验证、A34恢复和A17 PlanVersion Edge/HTTPS/PG 29次API均通过。父包SHA-256 a3062a6311d20c6d63f93dea6ce13b58136b8c0c45115e93345d45708cb3e1ea（20,126文件）；A17候选SHA-256 d2215bd8b57ede09bb956c94659a68872cc82dc86cde45ff60fc13162d63ffe5（20,120文件）。仅Hosted Windows Server 2025/D盘临时环境，P02 `PASS_SCOPE_LIMITED`；无用户本机执行、客户数据/外部API、正式License trust、安装或产品服务启动；Win11/Gate3/Pilot/Release仍未通过|
 |Next WBS|OUT-01-A01-P02：OutputRequest 同事务创建与幂等 Owner；编码前检查确认新建层只消费已验证ORM，不扩大至Plugin/Artifact或公开HTTP|
 |Latest Validation|A33 run 41008231772 在D盘hosted Windows Server 2025验证当前父包20,119项SHA、startup diagnostic六阻断码、缺脚本/损坏manifest回退、A29七类守门矩阵、A30四类诊断篡改、临时PG生命周期与A17 29 API PlanVersion流程；product API/service/listener未启动。无Windows11设备、正式License trust、安装升级、UAT、Gate或Release结论。|
 

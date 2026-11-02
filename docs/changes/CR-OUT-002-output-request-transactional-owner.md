@@ -1,7 +1,7 @@
 # CR-OUT-002：OutputRequest 原子创建 Owner 与受控写路径
 
 - 日期：2026-11-02
-- 状态：已记录 / 按持续授权实施 / 待托管验收
+- 状态：P02 `PASS_SCOPE_LIMITED` / CR 已按证据关闭；不代表 Gate、Pilot、Release
 - 分支：feature/p51-a33-launcher-checksum-recovery
 - 关联 WBS：OUT-01-A01-P02
 - 前置：CR-OUT-001 / 20261102_0220
@@ -66,3 +66,14 @@ P01 为确保新 Output 表在业务 Owner 未就绪时不能写入，建立了�
 ## 第二轮云端失败记录（2026-11-02，修复前）
 
 run `41412359625` 的后端全量、前端构建、PG18组件重建、父包及A35候选均通过；PG集成步骤在解释 `validation/out-01-a01-p02-owner/verify.py` 时因结果字典更新误写字面 `\\n`，于第258行触发SyntaxError。尚未进入新增的不可变/历史迁移断言，不代表业务断言失败。先记录后修正为实际换行并重新跑云端完整验收。
+
+
+## 最终验证结论（2026-11-02）
+
+GitHub hosted PR run [41413844603](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41413844603) 全13 jobs成功，提交 `d1a28f531a7b2291f997b156e38818f83f77f8d5`。后端全量测试/wheel、前端全量测试/typecheck/build、PG18.6/pgvector0.8.6迁移/父包、A17与A34均通过。
+
+P02 专项合成PG验收：2个OutputRequest、ContextSnapshot、Job、Outbox与Audit原子提交；4份收据；同Key重放保持固定Request/Job，同generation并发合流，异载荷同Key冲突；Audit故障回滚全部写入，未授权无写入；原始幂等Key未落库；快照UPDATE/DELETE拒绝；含历史的0221降级至0220再升级后六类历史行及固定身份均未改变。
+
+本结果仅为 `PASS_SCOPE_LIMITED`：仅GitHub hosted Windows Server 2025/D盘临时空间、PG18.6/pgvector0.8.6及合成身份/授权/来源。未接公开HTTP或生产来源解析、未执行Plugin/Artifact/文件生成、未启动产品服务或安装、未验证Windows11/Gate/Pilot/Release；没有客户资料或外部API调用。
+
+已登记并修正的偏差：迁移日期序号错误；数据库幂等字段原先写随机request UUID而非摘要；开放Owner触发器时补上ContextSnapshot不可变守卫；首轮计划未覆盖含历史迁移往返；第二轮验证脚本结果字段误写字面换行，均先记录后修正。Gate 2冻结提交`64cdf09`未改写。
