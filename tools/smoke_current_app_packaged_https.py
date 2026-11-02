@@ -20,11 +20,17 @@ from rehearse_windows_unified_pg18_layout import validate_output_root
 from smoke_packaged_platform_write_https import smoke as original_smoke
 from verify_windows_unified_extract import verify as verify_stage
 
-PARENT_ONLY_PAYLOAD_PATHS = frozenset({"payload/check-startup.ps1"})
+PARENT_ONLY_PAYLOAD_PATHS = frozenset({
+    "payload/check-startup.ps1",
+    "payload/report-pilot-readiness.ps1",
+    "payload/tools/windows_pilot_readiness_report.py",
+    "payload/tools/validate_windows_pilot_input_register.py",
+    "payload/config/pilot-input-register.example.json",
+})
 
 
 def _app_projection_hashes(hashes: dict[str, str]) -> dict[str, str]:
-    """Keep verified app files; omit only the parent-level startup diagnostic."""
+    """Keep verified app files; omit only enumerated parent-operation resources."""
     return {name: digest for name, digest in hashes.items()
             if name not in PARENT_ONLY_PAYLOAD_PATHS}
 
