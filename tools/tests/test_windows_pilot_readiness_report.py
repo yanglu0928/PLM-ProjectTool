@@ -95,6 +95,11 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertIn("仍需独立核验", complete)
         self.assertIn("启动授权：否", complete)
         self.assertNotIn("pilot.example.com", complete)
+        invalid = register()
+        invalid["private_key_pem"] = "SYNTHETIC_PRIVATE_SENTINEL"
+        rejected = render_readable_report(build_report(manifest(), invalid))
+        self.assertIn("格式无效", rejected)
+        self.assertNotIn("SYNTHETIC_PRIVATE_SENTINEL", rejected)
 
     def test_malformed_manifest_is_invalid_and_unknown_values_are_not_echoed(self) -> None:
         candidate = manifest()

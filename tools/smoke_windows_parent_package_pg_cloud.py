@@ -233,6 +233,14 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                 or success_report.get("pilot_ready") is not False
                 or success_report.get("launch_authorized") is not False):
             raise ValueError("packaged readiness report complete-register fail-closed contract differs")
+        readable_complete = run(complete_path, readable=True)
+        if (readable_complete.returncode != 0 or readable_complete.stderr
+                or "登记完整，仍需独立核验" not in readable_complete.stdout
+                or "启动授权：否" not in readable_complete.stdout
+                or "发行资格：否" not in readable_complete.stdout
+                or "pilot.example.com" in readable_complete.stdout
+                or "LIC-SYNTHETIC-01" in readable_complete.stdout):
+            raise ValueError("packaged readiness readable mode authorized or echoed complete synthetic input")
 
         invalid = copy.deepcopy(complete)
         invalid["unexpected"] = "SYNTHETIC_SECRET_SENTINEL"
@@ -243,6 +251,12 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                 or "SYNTHETIC_SECRET_SENTINEL" in rejected.stdout
                 or "unexpected" in rejected.stdout):
             raise ValueError("packaged readiness report echoed invalid register data")
+        readable_rejected = run(invalid_path, readable=True)
+        if (readable_rejected.returncode != 2 or readable_rejected.stderr
+                or "格式无效" not in readable_rejected.stdout
+                or "SYNTHETIC_SECRET_SENTINEL" in readable_rejected.stdout
+                or "unexpected" in readable_rejected.stdout):
+            raise ValueError("packaged readiness readable mode echoed invalid register data")
         if before != (sha_file(manifest_path), sha_file(sums_path)):
             raise ValueError("readiness report changed package manifest/checksum source")
         return {"status": "PACKAGED_PILOT_READINESS_DIAGNOSTIC_PASS_LIMITED",
