@@ -71,6 +71,7 @@ jobs:
           $reportOutput = & python -B tools/windows_pilot_readiness_report.py --manifest $manifest --register $register
           if ($LASTEXITCODE -ne 0) { throw "A38 report generation failed" }
           $report = $reportOutput | ConvertFrom-Json
+          Write-Host "A38 report: status=$($report.status); blockers=$($report.startup_blocker_codes.Count); pilot_ready=$($report.pilot_ready); launch_authorized=$($report.launch_authorized)"
           if ($report.status -ne 'DIAGNOSTIC_ONLY_NOT_READY' -or $report.pilot_ready -ne $false -or
               $report.launch_authorized -ne $false -or $report.release_eligible -ne $false -or
               $report.legal_clearance -ne $false -or $report.startup_blocker_codes.Count -ne 5) {
@@ -80,6 +81,7 @@ jobs:
           $diagnosticOutput = & pwsh -NoProfile -File $diagnostic
           $diagnosticExit = $LASTEXITCODE
           $diagnosticText = $diagnosticOutput -join [Environment]::NewLine
+          Write-Host "Packaged diagnostic result: $diagnosticText; exit=$diagnosticExit"
           if ($diagnosticExit -ne 2 -or $diagnosticText -notmatch '"status":"BLOCKED"') {
             throw "Packaged read-only diagnostic did not fail closed"
           }
