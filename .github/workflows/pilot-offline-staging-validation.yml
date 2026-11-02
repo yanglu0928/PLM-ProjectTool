@@ -33,6 +33,8 @@ jobs:
           $sandboxTemp = Join-Path $runnerTempRoot ("plm-a40-" + $env:GITHUB_RUN_ID)
           if (Test-Path -LiteralPath $sandboxTemp) { throw "A40 temp directory already exists" }
           New-Item -ItemType Directory -Path $sandboxTemp | Out-Null
+          "TEMP=$runnerTempRoot" >> $env:GITHUB_ENV
+          "TMP=$runnerTempRoot" >> $env:GITHUB_ENV
           "PYTHONPYCACHEPREFIX=$sandboxTemp\pycache" >> $env:GITHUB_ENV
           "PLM_A40_ARTIFACT_DIR=$runnerTempRoot\plm-a40-artifact-$env:GITHUB_RUN_ID" >> $env:GITHUB_ENV
           "PLM_A40_EVIDENCE_DIR=$sandboxTemp\evidence" >> $env:GITHUB_ENV
