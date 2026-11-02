@@ -49,3 +49,11 @@
 - 2026-11-02 hosted run 41393864311 因新增job的 `env` 在job层引用仅适用于step层的 `runner.temp`，GitHub未创建任何job，不能记为代码验收失败或通过。
 - 修复：先记录后移除job级TEMP/TMP，把 `TEMP`/`TMP` 限定到启动Edge harness的step级 `env`；Artifact/下载路径仍用允许的 `runner.temp` 表达式。工作流不接触客户数据、生产信任或用户设备。
 - 复验：提交后从 Actions API 确认新run实际生成A50专用job，再依据该job及前端构建结果验收。
+
+
+### A50-E01 合成待办排序偏差（三，修复前）
+
+- 2026-11-02 hosted run 41394132945 的 A50 Edge 专项 job 已在 GitHub 托管 Windows Server 2025 上启动；前端构建产物来源校验和 Node harness 语法检查均通过。浏览器加载“交接待办”列表时，因严格 DTO 客户端拒绝合成列表，超时后展示受控不可用状态；请求未进入待办详情与来源定位步骤。
+- 根因：四个合成摘要具有相同 updated_at，fixture 按 Action ID 升序排列，而生产读取客户端在更新时间相同情况下要求 Action ID 严格倒序。它是验收夹具不符合既有只读 API 合同，不是产品运行时故障；本次浏览器结果不能验收 A50-E01。
+- 修复计划：本条先登记，然后仅反转合成摘要顺序以满足既有排序合同；不修改产品代码、API、数据库、权限或客户数据，无迁移。回滚仅恢复原 fixture 顺序。
+- 复验计划：重新运行同一 GitHub hosted PR workflow，确认列表/详情、固定版本跨页定位、HUMAN 安全退化、跨项目拒绝及失效来源状态保留全部通过；保留本失败 run 作为审计记录。
