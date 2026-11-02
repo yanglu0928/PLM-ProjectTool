@@ -67,3 +67,8 @@ PowerShell包内入口增加可选 `-Readable`，展示UTF-8中文状态和字�
 ## A47 责任角色与下一步提示（2026-11-02）
 
 九项非秘密缺项各自附加固定职责角色和静态下一步，JSON/中文可读报告都展示；不代填、不访问外部系统、不改变授权。Hosted run [41383869172](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41383869172) 12/12成功，父ZIP SHA-256 `1db6e14e10fb878cf290add82cb69b5ebd387ccaca783c0da23e2c6d1452d370`、20,122 files；完整登记不授权，非法输入不回显，A17/A34/PG组合通过。仅PASS_LIMITED，Pilot/Gate/Release仍NOT_READY。
+
+
+## A48 推荐处理顺序（2026-11-02）
+
+就绪报告新增静态四组建议顺序：公钥/License信任、DB凭据范围、服务身份/ACL、TLS证书/域名/续期。JSON和中文模式一致显示当前仍阻断项；顺序只是操作建议，不授权或关闭验收。Hosted run [41386839114](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41386839114) 12/12成功，20,122文件父ZIP SHA-256 `8e642dc1c4393fdae80935622349b094122b18509816fc8ce4a9d7805aa48948`。零blocker完整登记合成分支仍不授权、要求独立核验；A17/A34/PG通过。仅PASS_LIMITED。

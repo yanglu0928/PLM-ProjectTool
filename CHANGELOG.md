@@ -2,6 +2,14 @@
 
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
 
+- P51-A48 按固定依赖顺序输出信任、DB凭据、服务ACL、TLS四组readiness待办；hosted run 41386839114 全12 jobs成功。零blocker完整登记仍需独立核验且不授权；候选ZIP SHA-256 `8e642dc1…aa48948`、20,122 files；A17/A34/PG通过。PASS_LIMITED。
+- 兼容性：仅 hosted Windows Server 2025，无新Windows 11实测。
+- 升级说明：仅内部非发行诊断候选更新；未安装/升级产品。
+- 已知限制：正式信任/DB/ACL/TLS/法务条件未满足，Pilot/Gate/Release保持NOT_READY。
+
+
+## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
+
 - P51-A47 为9个 readiness 缺项增加静态责任角色和下一步动作；hosted run 41383869172 全12 jobs成功。父包ZIP SHA-256 `1db6e14e…1452d370`、20,122 files；完整不授权、未知/秘密输入不回显；A17/A34/PG组合通过。PASS_LIMITED。
 - 兼容性：仅 hosted Windows Server 2025；没有新的 Windows 11 实机验收。
 - 升级说明：仅内部非发行候选诊断工具更新；未安装产品。

@@ -52,3 +52,8 @@ Hosted Windows Server 2025 run [41382282100](https://github.com/yanglu0928/PLM-P
 ## A47 云端验收（2026-11-02）
 
 Hosted Windows Server 2025 run [41383869172](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41383869172) 12/12 jobs成功。9项登记缺失均显示静态责任角色及下一步；完整/无效登记不授权且不回显注入值。父ZIP SHA-256 `1db6e14e10fb878cf290add82cb69b5ebd387ccaca783c0da23e2c6d1452d370`、20,122 files；A17/A34/PG smoke成功。该run不构成Windows 11新测试、Pilot/Gate或Release通过。
+
+
+## A48 云端验收（2026-11-02）
+
+Hosted Windows Server 2025 run [41386839114](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41386839114) 12/12 jobs成功。父包完整组合流程覆盖固定阻断顺序与零blocker+完整登记边界；后者仍需独立核验、所有授权布尔值false，正式manifest/hash保持不变。父ZIP SHA-256 `8e642dc1c4393fdae80935622349b094122b18509816fc8ce4a9d7805aa48948`，20,122 files。A17/A34通过；不构成Windows 11新测、Pilot/Gate或Release通过。

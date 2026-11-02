@@ -1,7 +1,7 @@
 # PLT-PKG-01-A09-P51-A48：就绪阻断项优先顺序（编码前检查）
 
 - 日期：2026-11-02
-- 状态：编码前检查完成；先同步本检查再实现。
+- 状态：PASS_LIMITED；编码前检查与覆盖偏差均保留。
 
 ## 单一目标
 
@@ -28,3 +28,8 @@
 ## 兼容/回滚
 
 新增JSON字段和可读文本块，既有键/退出码不变。回滚移除固定排序函数、渲染与测试；无需迁移，不修改CR-LIC-001/API/DB。
+
+
+## 最终验收结果（2026-11-02）
+
+首轮 `41385387249` 的边界覆盖差异已按前置记录补齐。最终提交 `4158bde7dd805cbd78a50fe8275c941694fdd692` 的 hosted run [41386839114](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41386839114) 12/12 jobs成功。真实父包smoke：正常缺项四组顺序正确；完整登记但startup blockers仍存在继续列步骤；零blocker临时manifest+完整登记下步骤为空，但JSON/text仍提示独立核验且pilot/launch/release/legal均false；不回显合成数据，候选manifest和hash清单不变。父ZIP SHA `8e642dc1c4393fdae80935622349b094122b18509816fc8ce4a9d7805aa48948`，20,122 files；A17/A34/PG组合通过。仅hosted Windows Server 2025/D盘runner temp，非Windows11实测。
