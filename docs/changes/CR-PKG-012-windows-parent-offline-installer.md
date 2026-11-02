@@ -57,3 +57,8 @@ GitHub hosted Windows 2025 workflow run [41369734304](https://github.com/yanglu0
 ## A45 就绪报告字段指导（2026-11-02）
 
 A45为父包只读报告新增9项缺失引用的静态指导，注明需维护内容、证据来源和禁止输入项；不回显登记值，也不改变启动授权。Hosted run [41378263123](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41378263123) 全12 jobs成功，父包ZIP SHA-256 `e2858a6b6af852ada906e84671b539dee25c2571387940e4680346dd2c0256ca`、20,122 files；A17/A34和PG组合检查通过。仅PASS_LIMITED，Pilot/Gate/Release仍NOT_READY；不构成Windows 11新实测或产品安装。结果见 `docs/progress/plt-pkg-01-a09-p51-a45-field-guidance-result.md`。
+
+
+## A46 中文可读就绪报告（2026-11-02）
+
+PowerShell包内入口增加可选 `-Readable`，展示UTF-8中文状态和字段指导；默认JSON模式及exit code保持。Hosted run [41382282100](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41382282100) 12/12 jobs成功，真实父包 smoke 覆盖不完整/完整/无效三态；完整仍需独立核验、不授权，非法合成值不回显，manifest不变。ZIP SHA-256 `c9b6d945f359e6777396b6a12309c62b7deff141b0f6808f340d195a407164d3`、20,122 files。A17/A34/PG通过。仅PASS_LIMITED；正式信任及Pilot/Gate/Release未通过。首轮换行及覆盖偏差、处置详见A46记录。

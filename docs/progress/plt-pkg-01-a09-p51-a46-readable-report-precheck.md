@@ -1,7 +1,7 @@
 # PLT-PKG-01-A09-P51-A46：控制台可读就绪报告（编码前检查）
 
 - 日期：2026-11-02
-- 状态：编码前检查完成；本检查提交后方可编码。
+- 状态：PASS_LIMITED；编码前检查与偏差处置均保留。
 
 ## 任务定位
 
@@ -40,3 +40,10 @@ WBS单一聚焦于诊断结果可读性；依赖A45静态指导和既有只读�
 ## 编码后静态复核偏差（2026-11-02）
 
 首次代码提交 `f2641dd92d1b954e2fef048f5bd46c74d83505d2` 后、云端 A46 验收前的静态复核发现，文本渲染函数使用了双重转义换行，输出会显示字面字符 `\\n` 而不能分行。未进行本机运行；JSON默认分支和安全边界未受影响。先记录该偏差，再修正为真实换行，并将分行断言纳入 hosted PowerShell smoke。回滚方式不变；本次不保留该坏输出作为通过证据。
+
+
+## 最终验收结论（2026-11-02）
+
+最终修订提交 `1c8a727ffb399505a36de81e0212ef8e862b1dfd` 的 hosted run [41382282100](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41382282100) 12/12 jobs成功。真实父包 smoke 覆盖 incomplete/complete/invalid 三个可读模式分支；9项中文指导、UTF-8分行、完整仍需独立核验且不授权、无效哨兵/未知键不回显均通过；默认JSON合同通过且manifest不变。父包ZIP SHA `c9b6d945f359e6777396b6a12309c62b7deff141b0f6808f340d195a407164d3`、20,122 files，父artifact ID 13114391252。
+
+同run A17 合成流程 PASS_LIMITED（29 API、0 customer decisions），A34替换/显式恢复 PASS_LIMITED；PG18/pgvector smoke成功。仅GitHub hosted Windows Server 2025/D盘runner临时目录；本机零运行，不推定Windows 11。Pilot/Gate/Release维持NOT_READY。
