@@ -191,6 +191,8 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
         if (incomplete.returncode != 1 or incomplete.stderr
                 or incomplete_report.get("input_register_status") != "INCOMPLETE"
                 or len(incomplete_report.get("input_register_missing_fields", [])) != expected_missing
+                or set(incomplete_report.get("input_register_guidance", {}))
+                   != set(incomplete_report.get("input_register_missing_fields", []))
                 or incomplete_report.get("pilot_ready") is not False
                 or incomplete_report.get("launch_authorized") is not False):
             raise ValueError("packaged readiness report incomplete-register contract differs")
@@ -213,6 +215,7 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
         success_report = json.loads(success.stdout)
         if (success.returncode != 0 or success.stderr
                 or success_report.get("input_register_status") != "COMPLETE_REQUIRES_INDEPENDENT_VERIFICATION"
+                or success_report.get("input_register_guidance") != {}
                 or success_report.get("pilot_ready") is not False
                 or success_report.get("launch_authorized") is not False):
             raise ValueError("packaged readiness report complete-register fail-closed contract differs")

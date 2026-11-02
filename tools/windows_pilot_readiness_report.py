@@ -23,6 +23,63 @@ EXPECTED_STARTUP_FIELDS = {
     "tls_certificate_configured",
     "tls_private_key_configured",
 }
+FIELD_GUIDANCE = {
+    "product_public_key_sha256": {
+        "label": "产品公钥 SHA-256",
+        "maintain": "登记正式产品公钥文件的 64 位 SHA-256 摘要。",
+        "source": "从受控发布材料取得公钥文件并独立计算摘要；摘要本身不代表信任校验通过。",
+        "never": "不要粘贴公钥文件正文、私钥或签名材料。",
+    },
+    "license_evidence_ref": {
+        "label": "License 核验记录",
+        "maintain": "登记正式 License 核验/签发流程对应的 LIC- 编号。",
+        "source": "来自受控工作台的正式 License 验证记录。",
+        "never": "不要填写 License 正文、签名值、客户码或私钥。",
+    },
+    "service_identity_ref": {
+        "label": "Windows 服务身份",
+        "maintain": "登记固定 Windows 服务身份引用，例如 NT SERVICE\\PLMProjectTool。",
+        "source": "来自目标部署主机上已配置并独立核实的服务身份。",
+        "never": "不要填写账户密码、Token 或含凭据的命令行。",
+    },
+    "tls_certificate_thumbprint": {
+        "label": "TLS 证书 Thumbprint",
+        "maintain": "登记目标 HTTPS 证书的 40 或 64 位十六进制 Thumbprint。",
+        "source": "从目标部署证书存储/受控证书清单读取公开指纹。",
+        "never": "不要提供证书私钥、PFX/P12 文件或导出密码。",
+    },
+    "tls_dns_name": {
+        "label": "TLS DNS 名称",
+        "maintain": "登记与 HTTPS 证书匹配的 DNS 主机名。",
+        "source": "来自已批准部署域名和证书 SAN。",
+        "never": "不要填写用户名、口令或访问 Token。",
+    },
+    "evidence_refs.license": {
+        "label": "License 证据引用",
+        "maintain": "登记正式 License 核验记录的 EVD- 编号。",
+        "source": "来自经独立复核的 License 证据目录。",
+        "never": "不要附加 License 文件或签名载荷。",
+    },
+    "evidence_refs.service_acl": {
+        "label": "服务 ACL 证据引用",
+        "maintain": "登记服务身份、安装目录和数据目录 ACL 检查的 EVD- 编号。",
+        "source": "来自目标主机受控的 ACL 审核记录。",
+        "never": "不要粘贴用户/客户资料或账户秘密。",
+    },
+    "evidence_refs.tls_chain_renewal": {
+        "label": "TLS 链与续期证据引用",
+        "maintain": "登记证书链、DNS 匹配和续期安排的 EVD- 编号。",
+        "source": "来自证书管理系统或受控证书核验记录。",
+        "never": "不要附加私钥或私有证书导出包。",
+    },
+    "evidence_refs.database_scope": {
+        "label": "数据库凭据范围证据引用",
+        "maintain": "登记数据库凭据目标、作用域与轮换约束的 EVD- 编号。",
+        "source": "来自 Credential Manager 目标配置与数据库权限核验记录。",
+        "never": "不要填写密码、连接串或 Credential Manager Secret 内容。",
+    },
+}
+
 FIELD_BLOCKERS = {
     "packaged_product_public_key_resource_present": "FORMAL_PRODUCT_PUBLIC_KEY_NOT_PACKAGED",
     "formal_license_trust_verified": "FORMAL_LICENSE_TRUST_NOT_VERIFIED",
@@ -86,6 +143,11 @@ def build_report(manifest: Any, register: Any) -> dict[str, Any]:
         "package_manifest_status": "VALID_NON_RELEASE_CANDIDATE" if manifest_valid else "INVALID",
         "input_register_status": register_result["status"],
         "input_register_missing_fields": register_result["missing_fields"],
+        "input_register_guidance": {
+            field: FIELD_GUIDANCE[field]
+            for field in register_result["missing_fields"]
+            if field in FIELD_GUIDANCE
+        },
         "startup_blocker_codes": startup_codes if manifest_valid else [],
         "reason_codes": sorted(reason_codes),
     }

@@ -61,6 +61,11 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         result = build_report(manifest(), register())
         self.assertEqual(result["status"], "DIAGNOSTIC_ONLY_NOT_READY")
         self.assertEqual(result["input_register_status"], "INCOMPLETE")
+        self.assertEqual(set(result["input_register_guidance"]),
+                         set(result["input_register_missing_fields"]))
+        self.assertEqual(len(result["input_register_guidance"]), 9)
+        self.assertTrue(all(set(item) == {"label", "maintain", "source", "never"}
+                            for item in result["input_register_guidance"].values()))
         self.assertIn("TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED", result["startup_blocker_codes"])
         self.assertFalse(result["launch_authorized"])
         self.assertFalse(result["pilot_ready"])
@@ -69,6 +74,7 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         result = build_report(manifest(verified=True), register(complete=True))
         self.assertEqual(result["package_manifest_status"], "VALID_NON_RELEASE_CANDIDATE")
         self.assertEqual(result["input_register_status"], "COMPLETE_REQUIRES_INDEPENDENT_VERIFICATION")
+        self.assertEqual(result["input_register_guidance"], {})
         self.assertIn("INPUT_REGISTER_REQUIRES_INDEPENDENT_VERIFICATION", result["reason_codes"])
         self.assertIn("NON_RELEASE_CANDIDATE", result["reason_codes"])
         self.assertFalse(result["release_eligible"])
