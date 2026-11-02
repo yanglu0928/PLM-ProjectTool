@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "references": {
+    "product_public_key_sha256": null,
+    "license_evidence_ref": null,
+    "database_credential_target": "PLMProjectTool/Database",
+    "service_identity_ref": null,
+    "tls_certificate_thumbprint": null,
+    "tls_dns_name": null
+  },
+  "evidence_refs": {
+    "license": null,
+    "service_acl": null,
+    "tls_chain_renewal": null,
+    "database_scope": null
+  }
+}

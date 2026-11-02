@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate_windows_pilot_input_register import DATABASE_CREDENTIAL_TARGET, validate_register
 
 
@@ -105,10 +106,17 @@ def main() -> int:
     except (OSError, UnicodeError, json.JSONDecodeError):
         report = build_report(None, None)
         report["reason_codes"] = sorted(set(report["reason_codes"]) | {"INPUT_FILE_UNREADABLE_OR_INVALID_JSON"})
+        exit_code = 2
     else:
         report = build_report(manifest, register)
+        if report["package_manifest_status"] == "INVALID" or report["input_register_status"] == "INVALID":
+            exit_code = 2
+        elif report["input_register_status"] == "INCOMPLETE":
+            exit_code = 1
+        else:
+            exit_code = 0
     print(json.dumps(report, separators=(",", ":")))
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":

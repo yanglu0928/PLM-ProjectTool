@@ -252,6 +252,17 @@ This archive is not an installer or a Pilot release. Its PostgreSQL component wa
 ## Read-only startup preflight
 
 Run `powershell -NoProfile -File .\\payload\\check-startup.ps1` from the extracted package folder. The command reads only the package manifest and prints a short, non-secret list of missing startup prerequisites. This non-release candidate will report `BLOCKED` and exit with code 2. It does not read credentials, start a service, or make the package release-ready. If you run `powershell -NoProfile -File .\\payload\\start-trial.ps1`, the launcher repeats that verified BLOCKED report and still exits with code 1 before starting any service.
+
+## Pilot readiness report
+
+First verify the complete candidate ZIP against its independently obtained SHA-256. Then copy the non-secret template to a file beside (outside) the extracted package and run the report:
+
+```powershell
+Copy-Item .\\payload\\config\\pilot-input-register.example.json ..\\pilot-input-register.json
+powershell -NoProfile -File .\\payload\\report-pilot-readiness.ps1 -RegisterPath ..\\pilot-input-register.json
+```
+
+Maintain only these references in the JSON: `references.product_public_key_sha256` (public-key file digest), `license_evidence_ref` (LIC record ID), fixed `database_credential_target`, `service_identity_ref` (Windows service identity), `tls_certificate_thumbprint`, `tls_dns_name`; and evidence record IDs under `evidence_refs.license`, `service_acl`, `tls_chain_renewal`, and `database_scope`. Do not put passwords, private keys, API keys, license contents, or customer data in this file. The report prints missing field names and fixed blocker codes only; even a complete register requires independent verification and never authorizes launch or release.
 """
     launcher_path = Path(__file__).with_name("start_windows_trial_candidate.ps1")
     if not launcher_path.is_file() or launcher_path.is_symlink():
@@ -267,11 +278,42 @@ Run `powershell -NoProfile -File .\\payload\\check-startup.ps1` from the extract
     if any(token in diagnostic_bytes.lower() for token in
            (b"-----begin private key-----", b"api_key:", b"password:", b".pfx", b".p12")):
         raise ValueError("startup diagnostic source contains a secret marker or private-file reference")
+    readiness_report_path = Path(__file__).with_name("windows_pilot_readiness_report.py")
+    readiness_validator_path = Path(__file__).with_name("validate_windows_pilot_input_register.py")
+    readiness_wrapper_path = Path(__file__).with_name("report_windows_pilot_readiness.ps1")
+    for source_path in (readiness_report_path, readiness_validator_path, readiness_wrapper_path):
+        if not source_path.is_file() or source_path.is_symlink():
+            raise ValueError("packaged Pilot readiness diagnostic source missing")
+    readiness_report_bytes = readiness_report_path.read_bytes()
+    readiness_validator_bytes = readiness_validator_path.read_bytes()
+    readiness_wrapper_bytes = readiness_wrapper_path.read_bytes()
+    if any(token in (readiness_report_bytes + readiness_validator_bytes + readiness_wrapper_bytes).lower()
+           for token in (b"-----begin private key-----", b"api_key:", b"password:", b".pfx", b".p12")):
+        raise ValueError("Pilot readiness diagnostic source contains a secret marker")
+    readiness_register_template = {
+        "schema_version": 1,
+        "references": {
+            "product_public_key_sha256": None, "license_evidence_ref": None,
+            "database_credential_target": DATABASE_CREDENTIAL_TARGET,
+            "service_identity_ref": None, "tls_certificate_thumbprint": None,
+            "tls_dns_name": None,
+        },
+        "evidence_refs": {
+            "license": None, "service_acl": None,
+            "tls_chain_renewal": None, "database_scope": None,
+        },
+    }
     package_docs = {
         "payload/config/bootstrap.example.yaml": config_text.encode("utf-8"),
+        "payload/config/pilot-input-register.example.json": (
+            json.dumps(readiness_register_template, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+        ).encode("utf-8"),
         "payload/README-FIRST.md": first_readme.encode("utf-8"),
         "payload/start-trial.ps1": launcher_bytes,
         "payload/check-startup.ps1": diagnostic_bytes,
+        "payload/report-pilot-readiness.ps1": readiness_wrapper_bytes,
+        "payload/tools/windows_pilot_readiness_report.py": readiness_report_bytes,
+        "payload/tools/validate_windows_pilot_input_register.py": readiness_validator_bytes,
     }
 
     output = args.output_dir

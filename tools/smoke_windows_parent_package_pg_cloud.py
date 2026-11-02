@@ -126,6 +126,94 @@ def probe_packaged_production_entrypoint(root: Path) -> str:
     return "FAIL_CLOSED_MISSING_ACCOUNT_DATABASE_CREDENTIAL"
 
 
+def probe_packaged_pilot_readiness_report(root: Path) -> dict:
+    import copy
+
+    payload = root / "payload"
+    wrapper = payload / "report-pilot-readiness.ps1"
+    template_path = payload / "config" / "pilot-input-register.example.json"
+    tool = payload / "tools" / "windows_pilot_readiness_report.py"
+    validator = payload / "tools" / "validate_windows_pilot_input_register.py"
+    manifest_path = root / "manifest.json"
+    sums_path = root / "payload-sha256sums.txt"
+    if any(not path.is_file() or path.is_symlink()
+           for path in (wrapper, template_path, tool, validator, manifest_path, sums_path)):
+        raise ValueError("packaged Pilot readiness report resources missing")
+    if not root.drive or root.drive.casefold() == "c:":
+        raise ValueError("readiness probe must stay outside C drive")
+    shell = shutil.which("powershell")
+    if not shell:
+        raise ValueError("Windows PowerShell unavailable on hosted runner")
+    before = (sha_file(manifest_path), sha_file(sums_path))
+    probe = root / "pilot-readiness-probe"
+    probe.mkdir()
+    template = json.loads(template_path.read_text(encoding="utf-8"))
+    incomplete_path = probe / "incomplete.json"
+    incomplete_path.write_text(json.dumps(template), encoding="utf-8")
+    env = {key: value for key, value in os.environ.items()
+           if not key.upper().startswith("PLM_")}
+    env.pop("PYTHONPATH", None)
+
+    def run(register_path: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(wrapper),
+             "-RegisterPath", str(register_path)],
+            cwd=str(root), capture_output=True, text=True, errors="replace",
+            timeout=30, env=env)
+
+    try:
+        incomplete = run(incomplete_path)
+        incomplete_report = json.loads(incomplete.stdout)
+        expected_missing = 9
+        if (incomplete.returncode != 1 or incomplete.stderr
+                or incomplete_report.get("input_register_status") != "INCOMPLETE"
+                or len(incomplete_report.get("input_register_missing_fields", [])) != expected_missing
+                or incomplete_report.get("pilot_ready") is not False
+                or incomplete_report.get("launch_authorized") is not False):
+            raise ValueError("packaged readiness report incomplete-register contract differs")
+
+        complete = copy.deepcopy(template)
+        complete["references"].update({
+            "product_public_key_sha256": "a" * 64,
+            "license_evidence_ref": "LIC-SYNTHETIC-01",
+            "service_identity_ref": r"NT SERVICE\PLMProjectTool",
+            "tls_certificate_thumbprint": "b" * 40,
+            "tls_dns_name": "pilot.example.com",
+        })
+        complete["evidence_refs"].update({
+            "license": "EVD-LIC-01", "service_acl": "EVD-ACL-01",
+            "tls_chain_renewal": "EVD-TLS-01", "database_scope": "EVD-DB-01",
+        })
+        complete_path = probe / "complete.json"
+        complete_path.write_text(json.dumps(complete), encoding="utf-8")
+        success = run(complete_path)
+        success_report = json.loads(success.stdout)
+        if (success.returncode != 0 or success.stderr
+                or success_report.get("input_register_status") != "COMPLETE_REQUIRES_INDEPENDENT_VERIFICATION"
+                or success_report.get("pilot_ready") is not False
+                or success_report.get("launch_authorized") is not False):
+            raise ValueError("packaged readiness report complete-register fail-closed contract differs")
+
+        invalid = copy.deepcopy(complete)
+        invalid["unexpected"] = "SYNTHETIC_SECRET_SENTINEL"
+        invalid_path = probe / "invalid.json"
+        invalid_path.write_text(json.dumps(invalid), encoding="utf-8")
+        rejected = run(invalid_path)
+        if (rejected.returncode != 2 or rejected.stderr
+                or "SYNTHETIC_SECRET_SENTINEL" in rejected.stdout
+                or "unexpected" in rejected.stdout):
+            raise ValueError("packaged readiness report echoed invalid register data")
+        if before != (sha_file(manifest_path), sha_file(sums_path)):
+            raise ValueError("readiness report changed package manifest/checksum source")
+        return {"status": "PACKAGED_PILOT_READINESS_DIAGNOSTIC_PASS_LIMITED",
+                "incomplete_fields": expected_missing, "complete_still_not_authorized": True,
+                "invalid_input_value_echoed": False, "package_manifest_unchanged": True}
+    finally:
+        if probe.parent != root or probe.is_symlink():
+            raise RuntimeError("refusing to clean readiness probe outside smoke root")
+        shutil.rmtree(probe)
+
+
 def probe_packaged_startup_guard(root: Path) -> dict:
     import shutil as shutil_module
 
@@ -649,6 +737,7 @@ def main() -> int:
 
     try:
         startup_entrypoint_probe = probe_packaged_production_entrypoint(root)
+        pilot_readiness_report = probe_packaged_pilot_readiness_report(root)
         startup_guard_probe = probe_packaged_startup_guard(root)
         startup_manifest_tamper_matrix = probe_packaged_startup_guard_tamper_matrix(root)
         startup_preflight_diagnostic = probe_packaged_startup_diagnostic(root)
@@ -715,6 +804,7 @@ def main() -> int:
             "startup_preflight": startup,
             "candidate_staging": staging_result,
             "startup_entrypoint_probe": startup_entrypoint_probe,
+            "pilot_readiness_report": pilot_readiness_report,
             "startup_guard_probe": startup_guard_probe,
             "startup_manifest_tamper_matrix": startup_manifest_tamper_matrix,
             "startup_preflight_diagnostic": startup_preflight_diagnostic,

@@ -17,7 +17,7 @@ Phase 2 Platform Core；Gate 3、Pilot 和正式 Release 均未通过。A43 当�
 
 ## 验收标准
 
-- 父包在独立 `payload/tools/` 中附带报告器和校验器，并附带全部字段为 null 的示例登记JSON；父包清单逐文件hash覆盖所有新增文件。
+- 父包在独立 `payload/tools/` 中附带报告器和校验器，并附带非固定字段为 null、固定数据库凭据目标预填的示例登记JSON；父包清单逐文件hash覆盖所有新增文件。
 - 包装脚本对包根/目录边界固定定位，调用随包 Python，不接受任意命令/路径；返回结构固定且以非零码表示 incomplete/invalid，但 complete 仍为诊断态。
 - hosted Windows runner 对实际组装候选执行：空模板得到所有预期缺字段；合成完整引用得到 `COMPLETE_REQUIRES_INDEPENDENT_VERIFICATION`，`pilot_ready=false`、`launch_authorized=false`；篡改/未知字段拒绝且不回显输入值；候选 hash/原有启动拒绝行为保持正确。
 - 全程只使用 GitHub hosted Windows Server 2025 的非 C 盘 runner 临时区；不在本机运行，不推定 Windows 11 新兼容，不更改 Gate/Pilot/Release 状态。

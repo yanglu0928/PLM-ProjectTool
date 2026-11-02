@@ -109,7 +109,7 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
                  "--manifest", str(manifest_path), "--register", str(register_path)],
                 capture_output=True, text=True, check=False,
             )
-        self.assertEqual(completed.returncode, 0)
+        self.assertEqual(completed.returncode, 1)
         self.assertEqual(completed.stderr, "")
         result = json.loads(completed.stdout)
         self.assertFalse(result["launch_authorized"])
