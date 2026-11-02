@@ -1,7 +1,7 @@
 # CR-PKG-013：Windows 安装代码包外 Authenticode 信任校验
 
 - 日期：2026-11-02
-- 状态：实施前记录；沿用用户持续自主执行授权；尚未实现或通过。
+- 状态：已实现并经 hosted Windows 验收，PASS_LIMITED；不代表真实产品信任建立。
 - 来源：CR-PKG-012 约束未签名父包不得承载安装脚本；A40 已完成受限暂存，但正式安装仍需要可验证的包外代码信任链。
 
 ## 变更目标
@@ -27,3 +27,9 @@
 2. 证明验证过程只读候选文件与证书状态，不联网、不改系统信任存储，不写C盘；临时测试证书及文件限定在非C RUNNER_TEMP，并在作业结束清理。
 3. 无真实发布者证书时结果只能标为测试证据，不可记为生产安装器信任已建立。
 4. 云端 hosted Windows Server 2025 结果不推定 Windows 11。Pilot/Gate/Release 状态按其它阻断项维持未通过。
+
+## A41 实施与验收结果（2026-11-02）
+
+新增 `tools/verify_windows_authenticode.py`，使用Windows原生 `Get-AuthenticodeSignature`，仅在签名状态为Valid且签发者Thumbprint与调用者提供的40位外部指纹完全匹配时报告 `AUTHENTICODE_VERIFIED_TEST_ONLY`。拒绝结果不回显候选路径、签名命令输出或异常文本；校验器不执行候选文件、不改证书存储、不联网。
+
+GitHub hosted Windows run [41370436650](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41370436650) 完成：24项定向测试全通过，并在真实Windows环境用已签名PowerShell程序验证匹配指纹正例、用D盘未签名临时文件验证拒绝负例。只作为验证器功能证据；测试正例的系统签名不能替代本产品真实发布者指纹。尚未将验证器作为安装执行器，也没有安装或启动产品。

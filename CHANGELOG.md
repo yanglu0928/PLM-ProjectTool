@@ -2,6 +2,14 @@
 
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
 
+- P51-A41 新增 Windows Authenticode 只读校验器，要求包外签发者指纹；未签名、签名异常、指纹不匹配或调用失败均拒绝。GitHub hosted Windows run 41370436650 的24项定向回归及真实签名/未签名文件验证通过，PASS_LIMITED。
+- 兼容性：只在 GitHub hosted Windows Server 2025 验证；不推定 Windows 11 实机兼容。
+- 升级说明：仅内部验证工具；没有改变候选父包，不安装或升级已有程序。
+- 已知限制：未提供真实产品代码签名证书/外部正式指纹，验证结果标记 TEST_ONLY；Pilot/Gate/正式Release仍 NOT_READY。
+
+
+## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
+
 - P51-A40 新增 hosted 离线候选暂存CLI与专用 GitHub Actions 验收；19/19 定向测试通过。A35 父包 SHA-256 `94700239…e2f2`，20,119 payload files 验证并暂存；A38 保持5项启动阻断，包内诊断 `BLOCKED/exit 2`。验收 run [41369734304](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41369734304)，结果 PASS_LIMITED。
 - 兼容性：验收运行于 GitHub hosted Windows Server 2025、D盘 runner temp；不构成 Windows 11 实机兼容证据。自2026-11-02起没有在用户本机运行程序。
 - 升级说明：仅内部开发工具/云端workflow变更；没有生成可安装升级包，不触碰已有安装。
