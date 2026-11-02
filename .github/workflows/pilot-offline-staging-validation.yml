@@ -82,13 +82,15 @@ jobs:
           $diagnosticExit = $LASTEXITCODE
           $diagnosticText = $diagnosticOutput -join [Environment]::NewLine
           Write-Host "Packaged diagnostic result: $diagnosticText; exit=$diagnosticExit"
-          if ($diagnosticExit -ne 2 -or -not $diagnosticText.Contains('"status":"BLOCKED"')) {
-            throw "Packaged read-only diagnostic did not fail closed"
-          }
+          $diagnosticObject = $diagnosticText | ConvertFrom-Json
+          $diagnosticPass = ($diagnosticExit -eq 2 -and $diagnosticObject.status -eq 'BLOCKED')
+          Write-Host "Packaged diagnostic assertion: exit_ok=$($diagnosticExit -eq 2); status=$($diagnosticObject.status)"
+          if (-not $diagnosticPass) { throw "Packaged read-only diagnostic did not fail closed" }
           New-Item -ItemType Directory -Path $env:PLM_A40_EVIDENCE_DIR | Out-Null
           $receipt | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $env:PLM_A40_EVIDENCE_DIR 'candidate-staging-receipt.json') -Encoding utf8
           $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $env:PLM_A40_EVIDENCE_DIR 'readiness-report.json') -Encoding utf8
-          @{ status = 'BLOCKED'; exit_code = $diagnosticExit } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $env:PLM_A40_EVIDENCE_DIR 'startup-diagnostic.json') -Encoding utf8
+          @{ status = $diagnosticObject.status; exit_code = $diagnosticExit } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $env:PLM_A40_EVIDENCE_DIR 'startup-diagnostic.json') -Encoding utf8
+          Write-Host 'A40 hosted staging evidence files written.'
       - name: Upload compact non-secret A40 evidence
         uses: actions/upload-artifact@v4
         with:
