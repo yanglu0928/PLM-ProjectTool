@@ -98,7 +98,7 @@ describe("ProjectHandoverDetailView", () => {
     const supplied = clients(); const { wrapper } = await view(await session(), supplied,
       `/projects/${project}/handover/${analysisId}?fixedVersionId=${versionId}&sourceItemId=${actor}`);
     expect(supplied.handover.listItems).toHaveBeenCalledWith(project, analysisId, versionId, 200);
-    expect(wrapper.get(`#handover-item-${actor}`).exists()).toBe(true); wrapper.unmount();
+    expect(wrapper.get(`#handover-item-${actor}`).attributes("id")).toBe(`handover-item-${actor}`); wrapper.unmount();
   });
   it("loads an exact fixed version even when it is absent from the current version page", async () => {
     const supplied = clients(); vi.mocked(supplied.handover.listVersions).mockResolvedValueOnce({ items: [], next_cursor: null, has_more: false });
