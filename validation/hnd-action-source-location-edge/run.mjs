@@ -24,10 +24,10 @@ const ids={
  docVersion:"71234567-89ab-4cde-8123-456789abcdef",
  evidence:"81234567-89ab-4cde-8123-456789abcdef",
  trace:"91234567-89ab-4cde-8123-456789abcdef",
- analysisAction:"a1234567-89ab-4cde-8123-456789abce",
- humanAction:"b1234567-89ab-4cde-8123-456789abce",
- expiredAction:"c1234567-89ab-4cde-8123-456789abce",
- foreignAction:"d1234567-89ab-4cde-8123-456789abce"
+ analysisAction:"a1234567-89ab-4cde-8123-456789abc001",
+ humanAction:"b1234567-89ab-4cde-8123-456789abc002",
+ expiredAction:"c1234567-89ab-4cde-8123-456789abc003",
+ foreignAction:"d1234567-89ab-4cde-8123-456789abc004"
 };
 const now="2026-11-02T00:00:00Z", csrf="a".repeat(64), trace=ids.trace;
 const requests=[];
