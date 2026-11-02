@@ -419,6 +419,15 @@ jobs:
         with:
           name: plm-windows-parent-candidate-${{ github.sha }}
           path: ${{ runner.temp }}/plm-parent-smoke-input
+      - name: Install minimal migration verification dependencies
+        shell: pwsh
+        env:
+          PIP_CACHE_DIR: ${{ runner.temp }}/plm-migration-pip-cache
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          python -m pip install --disable-pip-version-check "Alembic==1.20.0" "SQLAlchemy==2.0.54" "psycopg[binary]==3.3.5" "pgvector==0.5.0"
+          if ($LASTEXITCODE -ne 0) { throw "Migration verifier dependency install failed" }
       - name: Extract on runner temp and smoke PostgreSQL/pgvector
         shell: pwsh
         run: |

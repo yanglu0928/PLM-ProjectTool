@@ -898,6 +898,16 @@ def main() -> int:
         vector_version = run_checked(
             psql_args + ["SELECT extversion FROM pg_extension WHERE extname='vector';"],
             60).stdout.strip()
+        migration_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p01-migration/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        migration_lifecycle = json.loads(migration_run.stdout.strip().splitlines()[-1])
+        if (migration_lifecycle.get("empty_database_upgrade") != "PASS"
+                or migration_lifecycle.get("empty_database_downgrade_reupgrade") != "PASS"
+                or migration_lifecycle.get("existing_synthetic_data_upgrade") != "PASS"):
+            raise RuntimeError("Output migration lifecycle validation failed")
         if version != "18.6" or vector_version != "0.8.6":
             raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
                              + version + "/" + vector_version)
@@ -918,6 +928,7 @@ def main() -> int:
             "startup_manifest_tamper_matrix": startup_manifest_tamper_matrix,
             "startup_preflight_diagnostic": startup_preflight_diagnostic,
             "web_service_smoke": web_service_smoke,
+            "output_migration_lifecycle": migration_lifecycle,
         }
     finally:
         if start_attempted and data_dir.is_dir():
