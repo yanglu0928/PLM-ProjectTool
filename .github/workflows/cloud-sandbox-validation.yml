@@ -698,9 +698,6 @@ jobs:
     needs: [frontend]
     runs-on: windows-2025
     timeout-minutes: 20
-    env:
-      TEMP: ${{ runner.temp }}
-      TMP: ${{ runner.temp }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -726,6 +723,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "A50 hosted Edge harness syntax check failed" }
       - name: Run synthetic Handover navigation in hosted Edge on D-drive temp
         shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
         run: |
           $summary = Join-Path $env:RUNNER_TEMP "plm-a50-edge-summary.json"
           node validation/hnd-action-source-location-edge/run.mjs --dist (Join-Path $env:RUNNER_TEMP "plm-a50-frontend") --summary-out $summary
