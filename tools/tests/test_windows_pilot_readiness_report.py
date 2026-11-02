@@ -64,7 +64,7 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertEqual(set(result["input_register_guidance"]),
                          set(result["input_register_missing_fields"]))
         self.assertEqual(len(result["input_register_guidance"]), 9)
-        self.assertTrue(all(set(item) == {"label", "maintain", "source", "never"}
+        self.assertTrue(all(set(item) == {"label", "maintain", "source", "never", "owner_role", "next_step"}
                             for item in result["input_register_guidance"].values()))
         self.assertIn("TLS_CERTIFICATE_CONFIGURATION_NOT_VERIFIED", result["startup_blocker_codes"])
         self.assertFalse(result["launch_authorized"])
@@ -88,6 +88,8 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertIn("产品公钥 SHA-256", rendered)
         self.assertIn("参考来源：", rendered)
         self.assertIn("请勿填写：", rendered)
+        self.assertIn("建议责任角色：", rendered)
+        self.assertIn("下一步操作：", rendered)
         self.assertGreater(rendered.count("\\n"), 20)
         self.assertIn("启动授权：否", rendered)
         self.assertIn("发行资格：否", rendered)

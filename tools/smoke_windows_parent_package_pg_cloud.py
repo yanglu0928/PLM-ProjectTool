@@ -194,6 +194,8 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                 or len(incomplete_report.get("input_register_missing_fields", [])) != expected_missing
                 or set(incomplete_report.get("input_register_guidance", {}))
                    != set(incomplete_report.get("input_register_missing_fields", []))
+                or any(set(item) != {"label", "maintain", "source", "never", "owner_role", "next_step"}
+                       for item in incomplete_report.get("input_register_guidance", {}).values())
                 or incomplete_report.get("pilot_ready") is not False
                 or incomplete_report.get("launch_authorized") is not False):
             raise ValueError("packaged readiness report incomplete-register contract differs")
@@ -208,6 +210,7 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                 or "PLM Pilot 准备度检查" not in readable.stdout
                 or any(label not in readable.stdout for label in expected_labels)
                 or "参考来源：" not in readable.stdout or "请勿填写：" not in readable.stdout
+                or "建议责任角色：" not in readable.stdout or "下一步操作：" not in readable.stdout
                 or "\\n" in readable.stdout or readable.stdout.count("\n") < 20):
             raise ValueError("packaged readiness readable mode omitted fixed guidance or changed status")
 
