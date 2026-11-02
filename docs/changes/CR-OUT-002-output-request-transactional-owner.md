@@ -51,3 +51,8 @@ P01 为确保新 Output 表在业务 Owner 未就绪时不能写入，建立了�
 3. 已有单测使用内存假件，尚未覆盖声明的真实PG同事务、并发、异载荷冲突和失败回滚验收；在 GitHub hosted Windows 工作流的临时 PG18 数据库增加合成 Owner 集成验证与可逆迁移生命周期检查。若仓库已有临时数据库脚本调用约束，先按其模式接线；无可复用调用点时，补充独立 hosted validation step。
 
 此补充先于上述修正提交，以保留计划与实现的时间顺序。无客户正文或外部API调用；不扩大公开API或Production Scope。
+
+
+## 追加安全审查（2026-11-02，先于迁移修正）
+
+迁移审查发现：若移除 ContextSnapshot 的拒绝写trigger后不另加不可变约束，任意后续 SQL 写路径可以覆盖/删除已锁定上下文，与 DM-04 不可变快照要求冲突。0221 将新增仅阻止 `UPDATE/DELETE` 的 ContextSnapshot 不可变 trigger，允许 Owner `INSERT`；保留既有 NO-TRUNCATE trigger。迁移验收将同时检查该 trigger 在升级、降级、重升后的状态。
