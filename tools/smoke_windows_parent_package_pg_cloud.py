@@ -243,6 +243,44 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                 or success_report.get("launch_authorized") is not False
                 or not success_report.get("recommended_actions")):
             raise ValueError("packaged readiness report complete-register fail-closed contract differs")
+        verified_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        verified_startup = verified_manifest["startup_preflight"]
+        for key in ("database_credential_reference_verified", "formal_license_trust_verified",
+                    "formal_startup_ready", "packaged_product_public_key_resource_present",
+                    "service_identity_acl_verified", "tls_certificate_configured",
+                    "tls_private_key_configured"):
+            verified_startup[key] = True
+        verified_startup["blocker_codes"] = []
+        verified_manifest_path = probe / "verified-no-blocker-manifest.json"
+        verified_manifest_path.write_text(json.dumps(verified_manifest), encoding="utf-8")
+        packaged_python = payload / "runtime" / "python.exe"
+        def run_verified_format(fmt: str) -> subprocess.CompletedProcess[str]:
+            command = [str(packaged_python)]
+            if fmt == "text":
+                command.extend(("-X", "utf8"))
+            command.extend(("-I", "-B", str(tool), "--format", fmt,
+                            "--manifest", str(verified_manifest_path),
+                            "--register", str(complete_path)))
+            return subprocess.run(command, cwd=str(root), capture_output=True, text=True,
+                                  encoding="utf-8", errors="replace", timeout=30, env=env)
+        verified_json = run_verified_format("json")
+        verified_report = json.loads(verified_json.stdout)
+        if (verified_json.returncode != 0 or verified_json.stderr
+                or verified_report.get("recommended_actions") != []
+                or verified_report.get("launch_authorized") is not False
+                or verified_report.get("pilot_ready") is not False
+                or verified_report.get("release_eligible") is not False
+                or verified_report.get("legal_clearance") is not False):
+            raise ValueError("complete register and zero blockers changed the non-authorizing JSON contract")
+        verified_text = run_verified_format("text")
+        if (verified_text.returncode != 0 or verified_text.stderr
+                or "建议处理顺序" in verified_text.stdout
+                or "仍需独立核验" not in verified_text.stdout
+                or "启动授权：否" not in verified_text.stdout
+                or "发行资格：否" not in verified_text.stdout
+                or "pilot.example.com" in verified_text.stdout):
+            raise ValueError("zero-blocker readable report failed independent-verification boundary")
+
         readable_complete = run(complete_path, readable=True)
         if (readable_complete.returncode != 0 or readable_complete.stderr
                 or "登记完整，仍需独立核验" not in readable_complete.stdout
@@ -271,7 +309,8 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
             raise ValueError("readiness report changed package manifest/checksum source")
         return {"status": "PACKAGED_PILOT_READINESS_DIAGNOSTIC_PASS_LIMITED",
                 "incomplete_fields": expected_missing, "complete_still_not_authorized": True,
-                "invalid_input_value_echoed": False, "package_manifest_unchanged": True}
+                "invalid_input_value_echoed": False, "package_manifest_unchanged": True,
+                "complete_zero_blockers_still_not_authorized": True}
     finally:
         if probe.parent != root or probe.is_symlink():
             raise RuntimeError("refusing to clean readiness probe outside smoke root")

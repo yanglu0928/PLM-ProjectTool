@@ -28,8 +28,3 @@
 ## 兼容/回滚
 
 新增JSON字段和可读文本块，既有键/退出码不变。回滚移除固定排序函数、渲染与测试；无需迁移，不修改CR-LIC-001/API/DB。
-
-
-## 覆盖差异（2026-11-02）
-
-A48首轮hosted run [41385387249](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41385387249) 12/12通过，真实父包blocked场景验证四步顺序；不过“登记完整且模拟startup blocker为空”边界只存在于工具单测，未在本轮workflow实际执行。此边界已列入本WBS验收标准，故先记录差异，不关闭A48。下一提交在真实父包探针临时副本中合成零blocker manifest，直接调用随包Python诊断器JSON/text两种格式，确认建议列表为空、独立核验提示仍在且所有授权布尔值仍false；只改探针副本，不改候选manifest。

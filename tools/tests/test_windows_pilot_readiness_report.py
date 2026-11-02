@@ -83,6 +83,7 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertFalse(result["release_eligible"])
         self.assertFalse(result["legal_clearance"])
         self.assertFalse(result["launch_authorized"])
+        self.assertEqual(result["recommended_actions"], [])
 
     def test_readable_summary_includes_guidance_without_authorizing_or_echoing_values(self) -> None:
         result = build_report(manifest(), register())
