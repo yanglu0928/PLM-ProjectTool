@@ -60,7 +60,7 @@ const analysis={handover_analysis_id:ids.analysis,project_id:ids.project,analysi
 const versionSummary={handover_analysis_version_id:ids.version,handover_analysis_id:ids.analysis,project_id:ids.project,
  version_no:1,state:"DRAFT",source_set_ref:"sha256:"+"a".repeat(64),capability_baseline_id:ids.owner,
  capability_baseline_version_ref:ids.trace,content_fingerprint:"b".repeat(64),declared_source_count:1,
- declared_item_count:201,declared_evidence_count:0,declared_capability_ref_count:0,declared_ai_task_count:0,
+ declared_item_count:201,declared_evidence_count:1,declared_capability_ref_count:0,declared_ai_task_count:0,
  supersedes_version_ref:null,review_ref:null,review_round_ref:null,created_by:ids.owner,created_at:now,
  source_documents:[],ai_tasks:[]};
 const versionDetail={...versionSummary,source_documents:[{document_id:ids.doc,document_version_id:ids.docVersion,ordinal:0}]};
@@ -70,7 +70,9 @@ function analysisItem(itemId,ordinal,title){
   severity:"HIGH",priority:"URGENT",recommendation:"Use only the fixed synthetic source",
   confirmation_question:"Synthetic confirmation question",
   required_input_spec:{fields:[{name:"Deployment scope",format:"text",example:"synthetic example",required:true}]},
-  source_missing:false,state:"CANDIDATE",evidence_refs:[],capability_refs:[],options:[]};
+  source_missing:false,state:"CANDIDATE",evidence_refs:[ids.evidence],capability_refs:[],options:[
+   {option_code:"A",label:"Synthetic option A",description:null,ordinal:0},
+   {option_code:"B",label:"Synthetic option B",description:"Synthetic alternative",ordinal:1}]};
 }
 const fillers=Array.from({length:200},(_,i)=>{
  const hex=(i+1).toString(16).padStart(8,"0");
