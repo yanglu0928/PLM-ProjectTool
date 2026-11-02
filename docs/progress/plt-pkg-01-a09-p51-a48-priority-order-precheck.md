@@ -20,7 +20,7 @@
 ## 验收标准
 
 - 缺项结果稳定排序，重复运行顺序相同；每步只引用静态键名/code/owner/action。
-- 完整合成登记不列补充步骤且仍显式“不授权/需独立核验”。
+- 完整登记如仍有package startup blockers，推荐步骤仍按这些未关闭阻断项显示；只有固定blocker为空且登记完整时步骤列表才为空，同时仍显式“不授权/需独立核验”。
 - 注入值、路径、秘密或未知字段不得出现在排序输出。
 - 父包readiness smoke、JSON和中文可读模式、A17/A34/PG18全组合在GitHub hosted Windows Server 2025 D盘runner temp验收；不得用户本机运行或推断Windows 11。
 - 无产品安装/服务启动/API/数据库连接、文件持久写入或外部网络访问。
