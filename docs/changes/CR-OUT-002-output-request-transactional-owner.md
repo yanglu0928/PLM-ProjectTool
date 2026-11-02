@@ -56,3 +56,8 @@ P01 为确保新 Output 表在业务 Owner 未就绪时不能写入，建立了�
 ## 追加安全审查（2026-11-02，先于迁移修正）
 
 迁移审查发现：若移除 ContextSnapshot 的拒绝写trigger后不另加不可变约束，任意后续 SQL 写路径可以覆盖/删除已锁定上下文，与 DM-04 不可变快照要求冲突。0221 将新增仅阻止 `UPDATE/DELETE` 的 ContextSnapshot 不可变 trigger，允许 Owner `INSERT`；保留既有 NO-TRUNCATE trigger。迁移验收将同时检查该 trigger 在升级、降级、重升后的状态。
+
+
+## 首轮验收差距记录（2026-11-02，补充测试前）
+
+托管 run `41410442243` 的首轮 P02 PostgreSQL/后端/前端/父包链通过；复核发现迁移生命周期覆盖了空库的 `0221 ↔ 0220`，但尚未用已有 OutputRequest/Context/Job 历史执行该回滚往返。原验证计划要求证明历史保持，因此在 WBS 关闭前将补充合成数据降级/重升级保留检查，并实测 ContextSnapshot UPDATE/DELETE 被拒绝。首轮全链通过不替代这两项尚缺证据。
