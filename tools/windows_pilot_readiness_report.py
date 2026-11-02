@@ -189,7 +189,7 @@ def render_readable_report(report: dict[str, Any]) -> str:
             ))
     elif register_status == "COMPLETE_REQUIRES_INDEPENDENT_VERIFICATION":
         lines.append("登记项齐全，但必须独立核验证据；这不代表可以启动或发行。")
-    return "\\n".join(lines) + "\\n"
+    return chr(10).join(lines) + chr(10)
 
 
 def _read_json(path: Path) -> Any:

@@ -207,7 +207,8 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
         if (readable.returncode != 1 or readable.stderr
                 or "PLM Pilot 准备度检查" not in readable.stdout
                 or any(label not in readable.stdout for label in expected_labels)
-                or "参考来源：" not in readable.stdout or "请勿填写：" not in readable.stdout):
+                or "参考来源：" not in readable.stdout or "请勿填写：" not in readable.stdout
+                or "\\n" in readable.stdout or readable.stdout.count("\n") < 20):
             raise ValueError("packaged readiness readable mode omitted fixed guidance or changed status")
 
         complete = copy.deepcopy(template)

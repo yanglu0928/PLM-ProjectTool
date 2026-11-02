@@ -88,6 +88,7 @@ class WindowsPilotReadinessReportTests(unittest.TestCase):
         self.assertIn("产品公钥 SHA-256", rendered)
         self.assertIn("参考来源：", rendered)
         self.assertIn("请勿填写：", rendered)
+        self.assertGreater(rendered.count("\\n"), 20)
         self.assertIn("启动授权：否", rendered)
         self.assertIn("发行资格：否", rendered)
         complete = render_readable_report(build_report(manifest(verified=True), register(complete=True)))
