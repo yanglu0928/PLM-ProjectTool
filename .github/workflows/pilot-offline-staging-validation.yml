@@ -59,6 +59,7 @@ jobs:
           }
           $target = Join-Path $env:RUNNER_TEMP ("plm-a40-staged-" + $env:GITHUB_RUN_ID)
           $stageOutput = & python -B tools/stage_windows_parent_candidate_offline.py --candidate $candidateFiles[0].FullName --verification-summary $summaryFiles[0].FullName --target $target
+          Write-Host "A40 staging result (path-free): $stageOutput"
           if ($LASTEXITCODE -ne 0) { throw "A40 staging CLI rejected the A35 parent candidate" }
           $receipt = Get-Content -LiteralPath (Join-Path $target 'candidate-staging-receipt.json') -Raw | ConvertFrom-Json
           if ($receipt.status -ne 'HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED' -or
