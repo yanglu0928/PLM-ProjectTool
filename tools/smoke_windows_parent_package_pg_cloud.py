@@ -171,6 +171,8 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
                 category = "REPORT_ARGUMENT_REJECTION"
             elif "can't open file" in diagnostic or "cannot find the path" in diagnostic:
                 category = "REPORT_FILE_UNAVAILABLE"
+            elif "pilot readiness diagnostic inputs are unavailable." in diagnostic:
+                category = "WRAPPER_FIXED_INPUTS_UNAVAILABLE"
             elif "commandnotfoundexception" in diagnostic or "not recognized as the name" in diagnostic:
                 category = "PYTHON_LAUNCH_FAILURE"
             elif "traceback" in diagnostic or "exception" in diagnostic:

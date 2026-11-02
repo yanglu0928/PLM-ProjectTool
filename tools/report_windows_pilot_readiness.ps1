@@ -5,7 +5,7 @@ param(
 $ErrorActionPreference = "Stop"
 $payloadRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $packageRoot = Split-Path -Parent $payloadRoot
-$python = Join-Path $packageRoot "payload\runtime\python\python.exe"
+$python = Join-Path $packageRoot "payload\runtime\python.exe"
 $reportTool = Join-Path $packageRoot "payload\tools\windows_pilot_readiness_report.py"
 $manifest = Join-Path $packageRoot "manifest.json"
 if (-not $RegisterPath) {
