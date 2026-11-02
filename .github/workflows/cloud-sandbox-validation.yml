@@ -692,3 +692,43 @@ jobs:
             ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
             ${{ runner.temp }}/plm-a35-current-chunks/current.part-07.bin
           retention-days: 14
+
+  run-a50-edge-source-location:
+    name: A50 hosted Edge source navigation
+    needs: [frontend]
+    runs-on: windows-2025
+    timeout-minutes: 20
+    env:
+      TEMP: \${{ runner.temp }}
+      TMP: \${{ runner.temp }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Download same-run frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-\${{ github.sha }}
+          path: \${{ runner.temp }}/plm-a50-frontend
+      - name: Verify same-run frontend provenance
+        shell: pwsh
+        run: |
+          $dist = Join-Path $env:RUNNER_TEMP "plm-a50-frontend"
+          $manifest = Get-Content -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Raw | ConvertFrom-Json
+          if ($manifest.source_commit -ne $env:GITHUB_SHA -or [string]$manifest.workflow_run -ne $env:GITHUB_RUN_ID -or $manifest.release_eligible -ne $false) { throw "A50 Edge frontend artifact provenance mismatch" }
+          if (-not (Test-Path (Join-Path $dist "index.html"))) { throw "A50 Edge frontend artifact incomplete" }
+          Remove-Item -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Force
+      - name: Run synthetic Handover navigation in hosted Edge on D-drive temp
+        shell: pwsh
+        run: |
+          $summary = Join-Path $env:RUNNER_TEMP "plm-a50-edge-summary.json"
+          node validation/hnd-action-source-location-edge/run.mjs --dist (Join-Path $env:RUNNER_TEMP "plm-a50-frontend") --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "A50 Edge source navigation acceptance failed" }
+      - name: Upload A50 Edge synthetic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-a50-edge-source-navigation-\${{ github.sha }}
+          path: \${{ runner.temp }}/plm-a50-edge-summary.json
+          if-no-files-found: error
+          retention-days: 14
