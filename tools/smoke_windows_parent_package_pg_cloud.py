@@ -908,8 +908,17 @@ def main() -> int:
         migration_lifecycle = json.loads(migration_run.stdout.strip().splitlines()[-1])
         if (migration_lifecycle.get("empty_database_upgrade") != "PASS"
                 or migration_lifecycle.get("empty_database_downgrade_reupgrade") != "PASS"
+                or migration_lifecycle.get("owner_migration_downgrade_reupgrade") != "PASS"
                 or migration_lifecycle.get("existing_synthetic_data_upgrade") != "PASS"):
             raise RuntimeError("Output migration lifecycle validation failed")
+        owner_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p02-owner/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        owner_validation = json.loads(owner_run.stdout.strip().splitlines()[-1])
+        if owner_validation.get("status") != "PASS_LIMITED":
+            raise RuntimeError("OutputRequest transactional owner validation failed")
         if version != "18.6" or vector_version != "0.8.6":
             raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
                              + version + "/" + vector_version)
@@ -918,6 +927,7 @@ def main() -> int:
             "source_commit": parent["source_commit"], "workflow_run": parent["workflow_run"],
             "parent_archive_sha256": parent["archive_sha256"],
             "postgresql_version": version, "pgvector_version": vector_version,
+            "output_owner_validation": owner_validation,
             "listen_host": "127.0.0.1", "temporary_database_only": True,
             "production_installation": False, "product_api_started": False,
             "license_trust_used": False, "runner_drive": root.drive,
