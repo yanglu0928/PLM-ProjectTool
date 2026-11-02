@@ -88,6 +88,16 @@ class HandoverActionDetailView:
 
 
 @dataclass(frozen=True, slots=True)
+class HandoverActionSourceLocationView:
+    source_kind: str
+    resolution_state: str
+    analysis_id: uuid.UUID | None
+    version_id: uuid.UUID | None
+    item_id: uuid.UUID | None
+    unavailable_reason: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class HandoverActionPage:
     items: tuple[HandoverActionSummaryView, ...]
     next_updated_at: datetime | None
@@ -103,6 +113,8 @@ class HandoverActionReadRepositoryPort(Protocol):
     ) -> tuple[HandoverActionSummaryView, ...]: ...
     def get(self, transaction: object, *, project_id: uuid.UUID,
             action_item_id: uuid.UUID) -> HandoverActionDetailView | None: ...
+    def source_location(self, transaction: object, *, project_id: uuid.UUID,
+                        action_item_id: uuid.UUID) -> HandoverActionSourceLocationView | None: ...
 
 
 class HandoverActionReadService:
@@ -146,6 +158,21 @@ class HandoverActionReadService:
                 tx, project_id=query.project_id, action_item_id=action_item_id,
             )
             if type(item) is not HandoverActionDetailView:
+                raise HandoverActionReadError("RESOURCE_NOT_FOUND")
+            return item
+        return self._run(query, "HND_ACTION_GET", read)
+
+    def source_location(self, query: HandoverActionReadQuery,
+                        action_item_id: uuid.UUID) -> HandoverActionSourceLocationView:
+        self._validate_query(query)
+        if type(action_item_id) is not uuid.UUID or action_item_id.int == 0:
+            raise HandoverActionReadError("RESOURCE_NOT_FOUND")
+
+        def read(tx: object) -> HandoverActionSourceLocationView:
+            item = self._repository.source_location(
+                tx, project_id=query.project_id, action_item_id=action_item_id,
+            )
+            if type(item) is not HandoverActionSourceLocationView:
                 raise HandoverActionReadError("RESOURCE_NOT_FOUND")
             return item
         return self._run(query, "HND_ACTION_GET", read)

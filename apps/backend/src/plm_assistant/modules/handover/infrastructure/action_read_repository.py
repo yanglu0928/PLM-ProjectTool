@@ -10,13 +10,14 @@ from sqlalchemy import and_, or_, select
 from plm_assistant.modules.handover.application.read_actions import (
     HandoverActionCurrentEventView, HandoverActionDetailView,
     HandoverActionEvidenceView, HandoverActionResponseView,
-    HandoverActionSummaryView,
+    HandoverActionSourceLocationView, HandoverActionSummaryView,
 )
 
 from .analysis_create_repository import _session
 from .orm import (
     HandoverActionEvidenceRefRow, HandoverActionItemRow,
     HandoverActionResponseRefRow, HandoverActionStateEventRow,
+    HandoverAnalysisItemRow,
 )
 
 
@@ -30,6 +31,43 @@ def _summary(row: HandoverActionItemRow) -> HandoverActionSummaryView:
 
 
 class SqlAlchemyHandoverActionReadRepository:
+    def source_location(self, transaction: object, *, project_id: uuid.UUID,
+                        action_item_id: uuid.UUID) -> HandoverActionSourceLocationView | None:
+        session = _session(transaction)
+        action = session.execute(select(
+            HandoverActionItemRow.source_kind,
+            HandoverActionItemRow.source_analysis_version_ref,
+            HandoverActionItemRow.source_item_id,
+        ).where(
+            HandoverActionItemRow.project_id == project_id,
+            HandoverActionItemRow.action_item_id == action_item_id,
+        )).one_or_none()
+        if action is None:
+            return None
+        source_kind, version_id, item_id = action
+        if source_kind == "HUMAN" and version_id is None and item_id is None:
+            return HandoverActionSourceLocationView(
+                "HUMAN", "UNAVAILABLE", None, None, None,
+                "MANUAL_SOURCE_NOT_FIXED",
+            )
+        if source_kind != "ANALYSIS_ITEM" or version_id is None or item_id is None:
+            raise RuntimeError("Handover Action source shape invalid")
+        target = session.execute(select(
+            HandoverAnalysisItemRow.handover_analysis_id,
+            HandoverAnalysisItemRow.handover_analysis_version_id,
+            HandoverAnalysisItemRow.analysis_item_id,
+        ).where(
+            HandoverAnalysisItemRow.project_id == project_id,
+            HandoverAnalysisItemRow.handover_analysis_version_id == version_id,
+            HandoverAnalysisItemRow.analysis_item_id == item_id,
+        )).one_or_none()
+        if target is None:
+            raise RuntimeError("Handover Action immutable source target missing")
+        return HandoverActionSourceLocationView(
+            "ANALYSIS_ITEM", "LOCATABLE", target.handover_analysis_id,
+            target.handover_analysis_version_id, target.analysis_item_id, None,
+        )
+
     def list_page(
         self, transaction: object, *, project_id: uuid.UUID,
         after_updated_at: datetime | None, after_action_item_id: uuid.UUID | None,
