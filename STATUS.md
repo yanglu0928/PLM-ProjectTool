@@ -1,4 +1,4 @@
-|Next WBS|按 CR-EXEC-002 与 Gate 3 审计继续推进 Pilot 纵向链；下一步先从 Prototype 真实业务 Owner 缺口中锁定单问题 WBS 并完成编码前检查，未擅自推定用户业务事实|
+|Next WBS|OUT-01-A01-P01：实现冻结 API-03/DM-04 的 OutputRequest 与固定 OutputContextSnapshot ORM/迁移持久层；本项不包含 HTTP/Plugin/Artifact，后续 Owner 另行拆分|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
@@ -2779,3 +2779,6 @@
 - 2026-11-02 P51-A48：hosted run [41386839114](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41386839114) 12/12成功；readiness四组阻断项稳定排序，零blocker完整登记合成边界仍不授权且需独立核验。父ZIP SHA `8e642dc1...aa48948`、20,122 files；A17/A34/PG通过。PASS_LIMITED，Pilot/Gate/Release NOT_READY。结果详见A48记录。
 
 - 2026-11-02 P51-A49：hosted run [41388401825](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41388401825) 全12 jobs成功。第一条建议与有序列表索引0一致；零待办仍提示独立核验。父ZIP SHA `07d74e91...f49c88920c`、20,122 files；A17/A34/PG通过。PASS_LIMITED，Pilot/Gate/Release仍NOT_READY。
+
+
+- 2026-11-02 路线纠正：P51-A50-E01 已完成；STATUS 中 Prototype Owner 的 Next WBS 文案沿用旧路线。复核当前分支发现 PlanVersion 创建/校验/送审已分项实现，而 Output 模块与物理迁移尚不存在。按 CR-EXEC-002 将下一项校正为 `OUT-01-A01-P01`，从冻结 API-03/DM-04 的 OutputRequest 与不可变 ContextSnapshot 持久层开始；具体证据与边界见 `docs/progress/out-01-a01-p01-request-context-schema-precheck.md`。不将任何局部代码结果等同 Pilot/Gate/Release 通过。
