@@ -15,3 +15,10 @@
 - 回滚：移除该只读子路由/客户端按钮和目标页的可选 source item 导航参数；既有 Action GET、业务记录和历史确认保持不变。
 - 验证计划：云端 Hosted Windows runner 上运行后端读 Owner/API/Windows Composition 定向与全量测试；前端客户端/Action 工作台/HandOver 详情定向与全量 typecheck/build；托管 Edge 合成测试验证同项目跳转、跨项目拒绝、HUMAN 安全退化、失效版本/不存在 item 错误、列表翻页定位和动作后状态不丢。无客户数据；不进行本机代码运行、正式安装、服务启动、外部数据发送或 Gate 推定。
 - 本次变更不替代真实 Windows 11 设备验收，不关闭 Gate 3、Pilot 或 Release。
+
+## 云端验证偏差记录（修复前）
+
+- 2026-11-02 hosted run 41390769460：前端 Vitest 200 个文件/2,075 项通过；TypeScript 检查发现新增 Handover 目标锚点测试在 `DOMWrapper` 上调用类型不提供的 `.exists()`，造成构建失败。这是验证断言与组件测试库 API 的不兼容，不是运行时产品功能缺陷。
+- 影响：仅阻断该提交的前端 typecheck/build；当前证据不能标记 A50 通过。后端全量验证仍进行中。
+- 修复：只改测试断言为读取定位元素的 `id` 属性并与合成来源 Item ID 比对；不改产品逻辑、API、Schema、权限或用户数据。回滚可恢复原测试文本；无需迁移。
+- 复验：记录此偏差后，提交测试修正，重跑 GitHub hosted Windows PR 完整流水线，要求全量前端 tests/typecheck/build 与后端全量测试/wheel 成功；保留失败 run 和修复后 run 链接。
