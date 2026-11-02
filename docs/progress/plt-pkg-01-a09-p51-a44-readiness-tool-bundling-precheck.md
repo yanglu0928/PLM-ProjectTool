@@ -44,3 +44,10 @@ Phase 2 Platform Core；Gate 3、Pilot 和正式 Release 均未通过。A43 当�
 
 - 同一 A44 报告入口再次在空登记检查时无 JSON；安全分类为 `exit=2; stdout_bytes=0; stderr_bytes=51; category=NO_CLASSIFIED_OUTPUT`。对照固定包装器提示和候选实际目录后，确认包装器误将嵌入式解释器定位为 `payload/runtime/python/python.exe`；当前包实际入口是 `payload/runtime/python.exe`（父包 smoke 已按此位置运行真实生产入口）。这是 A44 新包装器路径写错，尚未执行 readiness Python 工具。
 - 先记录后仅修正解释器相对包根路径，并把该固定提示加入 Harness 非秘密类别；不改任何授权/信任判定。下一轮再验证 Python 导入及三类登记契约。
+
+
+## A17 组合路径偏差（run 41375086838，2026-11-02）
+
+- A44 的父包启动/只读报告 smoke 和 A34 D盘隔离替换/手动恢复均通过。A17 PlanVersion Edge/HTTPS/PG job 在应用投影构建失败，异常只暴露固定路径分类：`unmapped candidate payload family: payload/report-pilot-readiness.ps1`。没有数据库/HTTP业务验收结论，不能认定 A17 或 A44 整体通过。
+- 根因是新增的父包操作资源（readiness wrapper、工具脚本、非秘密登记模板）进入应用布局投影；它们不属于运行时应用，也不应进入当前应用候选。
+- 先记录再修复：在既有父包专用投影过滤器中准确排除新增4个路径（report wrapper、2个readiness工具、register example），扩展单测证明仅排除这些已知父包专用路径，未知未来payload仍保留并由既有完整性/白名单策略处理；不改父包 hash清单、不跳过文件校验。然后重新运行全部 cloud workflow，要求 A17、A34、PG smoke均成功。
