@@ -29,7 +29,7 @@ from plm_assistant.modules.output.infrastructure.create_request_repository impor
 from plm_assistant.modules.platform.application.idempotency import canonical_payload_fingerprint
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
-from plm_assistant.modules.platform.infrastructure.migration import upgrade_database
+from plm_assistant.modules.platform.infrastructure.migration import downgrade_database, upgrade_database
 from plm_assistant.modules.project.infrastructure.orm import ProjectRow
 
 
@@ -111,6 +111,20 @@ def row_counts(database_dsn: str, project_id: uuid.UUID) -> tuple[int, ...]:
         return tuple(connection.execute(query, (project_id,)).fetchone()[0] for query in queries)
 
 
+def history_snapshot(database_dsn: str, project_id: uuid.UUID) -> tuple[tuple[tuple[object, ...], ...], ...]:
+    queries = (
+        ("SELECT context_snapshot_id, project_id, context_fingerprint FROM plm.out_context_snapshots WHERE project_id=%s ORDER BY context_snapshot_id",),
+        ("SELECT output_request_id, project_id, job_ref, context_snapshot_id, idempotency_key FROM plm.out_output_requests WHERE project_id=%s ORDER BY output_request_id",),
+        ("SELECT job_id, project_id, idempotency_key FROM plm.job_jobs WHERE project_id=%s AND owner_module='output' ORDER BY job_id",),
+        ("SELECT event_id, project_id, aggregate_ref, idempotency_key FROM plm.job_outbox_events WHERE project_id=%s AND owner_module='output' ORDER BY event_id",),
+        ("SELECT audit_event_id, target_project_id, target_object_id FROM plm.aud_events WHERE target_project_id=%s AND action='OUTPUT_REQUEST_CREATE' ORDER BY audit_event_id",),
+        ("SELECT receipt_id, project_id, operation, key_digest, result_ref_id FROM plm.plt_idempotency_receipts WHERE project_id=%s AND operation='V1_OUTPUT_REQUEST_CREATE' ORDER BY receipt_id",),
+    )
+    with psycopg.connect(database_dsn) as connection:
+        return tuple(tuple(row) for (query,) in queries
+                     for row in connection.execute(query, (project_id,)).fetchall())
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, required=True)
@@ -171,6 +185,28 @@ def main() -> int:
         if committed != (2, 2, 2, 2, 2, 4):
             raise AssertionError(f"unexpected atomic owner rows: {committed!r}")
 
+        database_dsn = dsn(database, args.port)
+        snapshot_id = None
+        with psycopg.connect(database_dsn) as connection:
+            snapshot_id = connection.execute(
+                "SELECT context_snapshot_id FROM plm.out_context_snapshots "
+                "WHERE project_id=%s ORDER BY context_snapshot_id LIMIT 1",
+                (project,),
+            ).fetchone()[0]
+        for statement in (
+            "UPDATE plm.out_context_snapshots SET context_payload='{}'::jsonb WHERE context_snapshot_id=%s",
+            "DELETE FROM plm.out_context_snapshots WHERE context_snapshot_id=%s",
+        ):
+            with psycopg.connect(database_dsn, autocommit=True) as connection:
+                try:
+                    connection.execute(statement, (snapshot_id,))
+                except psycopg.Error:
+                    pass
+                else:
+                    raise AssertionError("immutable ContextSnapshot mutation was accepted")
+        if row_counts(database_dsn, project) != committed:
+            raise AssertionError("rejected ContextSnapshot mutation changed stored rows")
+
         try:
             service(runtime, actor, audit=FailingAudit()).create(
                 command(project, uuid.uuid4(), template, uuid.uuid4(), "audit-failure.v1"),
@@ -205,12 +241,21 @@ def main() -> int:
         if stored != hashlib.sha256(b"p02-same-key-000001").hexdigest():
             raise AssertionError("raw or non-deterministic idempotency key persisted")
 
+        history_before = history_snapshot(database_dsn, project)
+        runtime.dispose()
+        runtime = None
+        downgrade_database(database_url, "20261102_0220")
+        if history_snapshot(database_dsn, project) != history_before:
+            raise AssertionError("0221 downgrade changed existing Output history")
+        upgrade_database(database_url, "head")
+        if history_snapshot(database_dsn, project) != history_before:
+            raise AssertionError("0221 re-upgrade changed existing Output history")
         result.update(status="PASS_LIMITED", postgresql="18.x hosted temporary database",
                       project_rows=2, request_job_outbox_audit_rows=2,
                       idempotency_receipt_rows=4, concurrent_generation_coalesced=True,
                       same_key_replay=True, different_payload_conflict=True,
                       audit_failure_rolled_back=True, denied_call_wrote_nothing=True,
-                      raw_idempotency_key_persisted=False)
+                      raw_idempotency_key_persisted=False,\n                      context_immutable_update_delete=True,\n                      migration_history_preserved_across_downgrade=True)
     finally:
         if runtime is not None:
             runtime.dispose()
