@@ -36,3 +36,10 @@
 - 父候选包摘要 `24f37f60eb1f95a893af829b796926873c02b55e4f0b7d4762486f8dc6db3eda`，payload 20,122项。PG/安装演练仅用本轮临时数据，产品 API/services 均未启动；正式 License trust未使用，legal_clearance/release_eligible均false。
 - 范围边界：A17仅为PlanVersion浏览器流程，不构成待办来源导航的专项 Edge 证据；因此A50记录为PASS_LIMITED，下一WBS A50-E01为 hosted Windows Edge 合成来源导航验收。该补充任务完成前不把A50提升为完整PASS。
 - 本轮没有在用户本机或其C盘运行程序；hosted验收runner将仓库/临时数据放在D盘runner temp。托管Windows Server 2025不推定Windows11实机兼容；Gate 3、Pilot、正式Release不变。
+
+## A50-E01 工作流表达式偏差记录（修复前）
+
+- 2026-11-02 提交 `b175d799d207dd36163c9e49dfe9313f3e3b3600` 的只读复核发现，新增 GitHub Actions job 的 `${{ runner.temp }}`/`${{ github.sha }}` 模板表达式保留了转义反斜杠，产物路径和 Artifact 名称可能不符合 Actions 求值语法。
+- 影响：仅影响新加 A50-E01 hosted Edge job 的 YAML表达式；产品代码和既有 workflow jobs 未变。尚未把 E01 标记为通过。
+- 修复：先记录后将表达式恢复为标准 Actions token，补上云端 Node 语法检查步骤；不改产品行为、API或数据库，无迁移。
+- 验证：由随后 GitHub hosted PR workflow 在 Windows runner 执行 harness；若 job 未触发或YAML校验失败，继续按日志记录和修复。
