@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, onUnmounted, ref, toRaw, watch } from "vue";
+import { inject, nextTick, onUnmounted, ref, toRaw, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
@@ -36,11 +36,14 @@ async function load() { if (!mayRead() || busy.value) return; const request = id
     const latest = ids(); if (!mounted || current !== generation || latest.projectId !== request.projectId
       || latest.analysisId !== request.analysisId || !mayRead()) return;
     analysis.value = root; versions.value = page.items; versionCursor.value = page.next_cursor;
-    const fixed = route.query.fixedVersionId;
-    if (fixed !== undefined) {
+    const fixed = route.query.fixedVersionId; const sourceItem = route.query.sourceItemId;
+    if (sourceItem !== undefined && fixed === undefined) itemError.value = "来源问题链接缺少固定版本，请重新打开来源。";
+    else if (fixed !== undefined) {
       if (typeof fixed !== "string" || !canonicalId.test(fixed)
         || fixed === "00000000-0000-0000-0000-000000000000") itemError.value = "固定版本链接无效，请核对评审中的版本编号。";
-      else await selectVersionId(fixed);
+      else if (sourceItem !== undefined && (typeof sourceItem !== "string" || !canonicalId.test(sourceItem)
+        || sourceItem === "00000000-0000-0000-0000-000000000000")) itemError.value = "来源问题链接无效，请重新打开来源。";
+      else await selectVersionId(fixed, typeof sourceItem === "string" ? sourceItem : undefined);
     }
   } catch (failure) { const latest = ids(); if (!mounted || current !== generation || latest.projectId !== request.projectId
     || latest.analysisId !== request.analysisId) return; error.value = failure instanceof HandoverReadError ? failure.message : "暂时无法读取交接分析。";
@@ -55,18 +58,36 @@ async function loadMoreVersions() { if (!mayRead() || versionBusy.value || !vers
   } catch (failure) { if (mounted && current === generation) { versions.value = []; versionCursor.value = null; clearSelection();
     versionError.value = failure instanceof HandoverReadError ? failure.message : "暂时无法读取版本。"; }
   } finally { if (mounted && current === generation) versionBusy.value = false; } }
-async function selectVersionId(versionId: string) { if (!mayRead() || itemBusy.value) return; const request = ids();
+async function selectVersionId(versionId: string, targetItemId?: string) { if (!mayRead() || itemBusy.value) return; const request = ids();
   const current = ++itemGeneration; evidenceGeneration += 1; selectedVersion.value = null; items.value = []; itemCursor.value = null;
   selectedEvidence.value = null; selectedEvidenceItem.value = ""; itemError.value = ""; evidenceError.value = ""; itemBusy.value = true;
-  try { const [detail, page] = await Promise.all([handover.getVersion(request.projectId, request.analysisId,
-    versionId), handover.listItems(request.projectId, request.analysisId, versionId)]);
+  try { const [detail, firstPage] = await Promise.all([handover.getVersion(request.projectId, request.analysisId,
+    versionId), handover.listItems(request.projectId, request.analysisId, versionId, targetItemId ? 200 : 50)]);
     if (!mounted || current !== itemGeneration || ids().projectId !== request.projectId || ids().analysisId !== request.analysisId
       || !mayRead()) return;
     if (detail.project_id !== request.projectId || detail.handover_analysis_id !== request.analysisId
-      || detail.handover_analysis_version_id !== versionId || page.items.some(item =>
+      || detail.handover_analysis_version_id !== versionId || firstPage.items.some(item =>
         item.project_id !== request.projectId || item.handover_analysis_id !== request.analysisId
         || item.handover_analysis_version_id !== versionId)) throw new HandoverReadError("HANDOVER_READ_UNAVAILABLE");
-    selectedVersion.value = detail; items.value = page.items; itemCursor.value = page.next_cursor;
+    let collected = [...firstPage.items]; let next = firstPage.next_cursor; let pages = 0;
+    while (targetItemId && !collected.some(item => item.analysis_item_id === targetItemId) && next && pages < 10) {
+      const page = await handover.listItems(request.projectId, request.analysisId, versionId, 200, next);
+      if (!mounted || current !== itemGeneration || ids().projectId !== request.projectId
+          || ids().analysisId !== request.analysisId || !mayRead()) return;
+      const known = new Set(collected.map(item => item.analysis_item_id));
+      if (page.items.some(item => known.has(item.analysis_item_id) || item.project_id !== request.projectId
+          || item.handover_analysis_id !== request.analysisId || item.handover_analysis_version_id !== versionId)) {
+        throw new HandoverReadError("HANDOVER_READ_UNAVAILABLE");
+      }
+      collected = [...collected, ...page.items]; next = page.next_cursor; pages += 1;
+    }
+    if (targetItemId && !collected.some(item => item.analysis_item_id === targetItemId)) {
+      itemError.value = next ? "来源问题未出现在前 2,200 个可见条目内，请使用问题列表继续核对。"
+        : "固定版本中不存在该来源问题，未展示其他版本内容.";
+      return;
+    }
+    selectedVersion.value = detail; items.value = Object.freeze(collected); itemCursor.value = next;
+    if (targetItemId) { await nextTick(); document.getElementById(`handover-item-${targetItemId}`)?.scrollIntoView?.({ block: "center" }); }
   } catch (failure) { if (mounted && current === itemGeneration) itemError.value = failure instanceof HandoverReadError
     ? failure.message : "暂时无法读取问题清单。";
   } finally { if (mounted && current === itemGeneration) itemBusy.value = false; } }
@@ -92,7 +113,7 @@ async function locate(item: HandoverAnalysisItemView, evidenceId: string) { if (
   } catch (failure) { if (mounted && current === evidenceGeneration) evidenceError.value = failure instanceof EvidenceViewerClientError
     ? failure.message : "暂时无法定位原文。";
   } finally { if (mounted && current === evidenceGeneration) evidenceBusy.value = false; } }
-watch(() => [route.params.projectId, route.params.analysisId, route.query.fixedVersionId], () => { generation += 1; clearSelection(); busy.value = false; void load(); }, { immediate: true });
+watch(() => [route.params.projectId, route.params.analysisId, route.query.fixedVersionId, route.query.sourceItemId], () => { generation += 1; clearSelection(); busy.value = false; void load(); }, { immediate: true });
 onUnmounted(() => { mounted = false; generation += 1; itemGeneration += 1; evidenceGeneration += 1; });
 </script>
 
@@ -139,7 +160,7 @@ onUnmounted(() => { mounted = false; generation += 1; itemGeneration += 1; evide
           :key="`submit-${selectedVersion.handover_analysis_version_id}`" :version="selectedVersion" :session="session" />
         <p v-if="itemBusy" role="status">正在读取固定版本与问题清单…</p><p v-if="itemError" role="alert">{{ itemError }}</p>
         <p v-if="selectedVersion && !items.length && !itemBusy">该版本没有可见问题。</p>
-        <article v-for="item in items" :key="item.analysis_item_id" class="issue-card">
+        <article v-for="item in items" :id="`handover-item-${item.analysis_item_id}`" :key="item.analysis_item_id" class="issue-card">
           <header><strong>{{ typeLabels[item.item_type] }}：{{ item.title }}</strong><span>{{ item.state }} · {{ item.severity }}/{{ item.priority }}</span></header>
           <p>{{ item.statement }}</p><p><strong>影响：</strong>{{ item.impact }}</p><p v-if="item.recommendation"><strong>建议：</strong>{{ item.recommendation }}</p>
           <section v-if="item.item_type === 'NEED_CONFIRM'" class="input-guide"><h3>需要人工确认</h3>
