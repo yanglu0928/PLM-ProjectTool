@@ -1,5 +1,12 @@
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
 
+- OUT-01-A01-P01 新增冻结 DM-04/API-03 语义下的 OutputRequest 与不可变 OutputContextSnapshot ORM/迁移，revision `20261102_0220`；CR-OUT-001 按本切片证据验证关闭。hosted run [41405621292](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41405621292) 全13 jobs成功，后端3,853项全量测试通过；PG18.6 空库升级、降级/再升级、既有合成数据升级通过。父包SHA-256 `a3062a6311d20c6d63f93dea6ce13b58136b8c0c45115e93345d45708cb3e1ea`，20,126文件。
+- 兼容性：仅GitHub hosted Windows Server 2025，临时工作目录/数据位于D盘runner temp；没有在用户本机C盘运行。未进行本轮Windows 11设备验收。
+- 升级说明：仅内部开发分支增量迁移，未在任何用户/生产数据库安装。
+- 已知限制：Output业务Owner尚未完成，新表保持写入关闭；未实现HTTP、Plugin、Artifact或端到端生成。未启动产品服务、未使用正式License trust、未处理客户数据；Gate 3、Pilot、正式Release仍NOT_READY。
+
+## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
+
 - P51-A50-E01 在 GitHub hosted Windows Server 2025 的 headless Edge 上完成待办来源导航专项合成验收；run [41396427656](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41396427656) 全13 jobs成功。固定版本目标在第2页精确定位；HUMAN来源不产生定位API/虚构锚点；跨项目和失效来源失败关闭并保留Action详情。后端3,850、前端2,075/200文件、typecheck/build及同run父包、PG18/pgvector、A34、A17链路均通过。父包SHA-256 `238d6a53db0f5e7e9955020e6caeecbb5a8d445a0f2025eadca081638ff83237`，20,122个payload文件。
 - 兼容性：仅GitHub hosted Windows Server 2025，临时数据/工作目录在D盘runner temp；不是Windows11实机测试。没有在用户本机运行程序，无客户数据或外部API调用。
 - 升级说明：生成非发行内部候选Artifact；没有产品安装/服务启动，不含正式License信任。
