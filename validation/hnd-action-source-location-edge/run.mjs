@@ -109,7 +109,7 @@ function api(req,url){
   return envelope("RESOURCE_NOT_FOUND",404);
  }
  const base="/api/v1/projects/"+ids.project+"/handover-analyses/"+ids.analysis;
- if(method==="GET"&&path===base)return envelope(analysis);
+ if(method==="GET"&&path===base){const result=envelope(analysis);result.headers.ETag=analysis.etag;return result;}
  if(method==="GET"&&path===base+"/versions")return envelope({items:[versionSummary],next_cursor:null,has_more:false});
  if(method==="GET"&&path===base+"/versions/"+ids.version)return envelope(versionDetail);
  if(method==="GET"&&path===base+"/versions/"+ids.version+"/items"){
