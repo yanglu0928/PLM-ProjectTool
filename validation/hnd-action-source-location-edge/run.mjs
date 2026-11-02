@@ -38,10 +38,10 @@ const sourceSummary=(actionId,sourceKind,title)=>({
  closed_at:null,resolution_trace_ref:null,updated_at:now,etag:"\"v2\""
 });
 const actionSummaries=[
- sourceSummary(ids.analysisAction,"ANALYSIS_ITEM","Synthetic analysis action"),
- sourceSummary(ids.humanAction,"HUMAN","Synthetic human action"),
+ sourceSummary(ids.foreignAction,"ANALYSIS_ITEM","Synthetic cross-project source action"),
  sourceSummary(ids.expiredAction,"ANALYSIS_ITEM","Synthetic unavailable source action"),
- sourceSummary(ids.foreignAction,"ANALYSIS_ITEM","Synthetic cross-project source action")
+ sourceSummary(ids.humanAction,"HUMAN","Synthetic human action"),
+ sourceSummary(ids.analysisAction,"ANALYSIS_ITEM","Synthetic analysis action")
 ];
 function actionDetail(actionId){
  const summary=actionSummaries.find(x=>x.action_item_id===actionId);
