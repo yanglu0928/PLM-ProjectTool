@@ -1,7 +1,7 @@
 # CR-OUT-001：Output 持久层增量扩展
 
 - 日期：2026-11-02
-- 状态：记录完成 / 按持续授权实施 / 待托管验收
+- 状态：VERIFIED（限 OUT-01-A01-P01 持久层范围；Gate 3、Pilot、Release仍未通过）
 - 工作分支：`feature/p51-a33-launcher-checksum-recovery`
 - 关联 WBS：`OUT-01-A01-P01`
 - 依据：Gate 2 冻结 API-03、DM-04、DB Schema V1；CR-EXEC-002；用户持续自主执行授权
@@ -67,3 +67,20 @@ GitHub Actions hosted run [41402169269](https://github.com/yanglu0928/PLM-Projec
 托管 run [41403739067](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41403739067) 已通过空库全量升级以及空库将 OUT migration 降至 `20261026_0210` 后再升级。带既有数据用例在准备夹具时失败：旧版本链已在 `plm.plt_maintenance_state` 创建 state_id=1 单例，测试脚本再次 INSERT 触发 `pk_plt_maintenance_state` 冲突。该步骤发生在升级至 OUT migration 之前，因此未验证旧记录保留；不是 Output migration 失败。A17/A35等不依赖此PG smoke的步骤继续在同run执行。
 
 修正只调整验证夹具：读取既有旧版本维护单例作为合成哨兵，在升级到 `20261102_0220` 后逐字段比较；不再写入重复行。此失败先记录于本 CR，再实施测试修正。产品 ORM/Migration/API 不变。
+
+
+## 最终托管验收与关闭记录（2026-11-02）
+
+GitHub Actions hosted PR run [41405621292](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41405621292)（PR #61，工作分支提交 df7c79b3673e2825e70da379946dacbe3997d59a，PR merge检查提交 3fec549457eea2a9567582be623d389b932d24be）全部13 jobs成功：
+
+- 后端全量3,853项测试及wheel构建成功；前端测试、类型检查与生产构建成功。
+- PostgreSQL 18.6 / pgvector 0.8.6：本迁移空库升级、空库降级至 `20261026_0210` 后重升、既有合成维护哨兵数据升级并逐字段确认保留均通过。仅临时数据库，未连接生产库，脚本清理临时库。
+- 同一run父包临时解包/PG生命周期、A34失败候选隔离及显式手动恢复通过；A17 PlanVersion packaged Edge/HTTPS/PG 29次API调用通过，限合成身份和hosted Windows Server 2025。
+- 对本WBS关联8个代码/验证文件执行目标式静态Secret pattern review：未发现真实凭据或私钥；两处匹配均为现有测试中的合成哨兵文本。
+- 父包验证SHA-256 `a3062a6311d20c6d63f93dea6ce13b58136b8c0c45115e93345d45708cb3e1ea`，20,126文件；A17候选SHA-256 `d2215bd8b57ede09bb956c94659a68872cc82dc86cde45ff60fc13162d63ffe5`，20,120文件。
+
+此前三项执行偏差（ORM显式元数据清单遗漏、smoke脚本缺少ROOT、旧库夹具重复插入已存在维护单例）均在CR中记录后修正；最终run通过。故本CR对 schema foundation / WBS `OUT-01-A01-P01` 标记为 VERIFIED；Gate 2冻结提交 `64cdf09` 未覆盖，迁移head为 `20261102_0220`。
+
+### 限制
+
+结论仅为持久层WBS的托管范围通过。未验证本机Windows 11、未启动产品API/服务、未安装、未使用正式License trust或客户数据；不代表Output端到端功能、Gate 3、Pilot或正式Release通过。后续WBS必须先实现并验证同事务Owner与业务授权，再开放写路径。
