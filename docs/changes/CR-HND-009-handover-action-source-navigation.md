@@ -22,3 +22,10 @@
 - 影响：仅阻断该提交的前端 typecheck/build；当前证据不能标记 A50 通过。后端全量验证仍进行中。
 - 修复：只改测试断言为读取定位元素的 `id` 属性并与合成来源 Item ID 比对；不改产品逻辑、API、Schema、权限或用户数据。回滚可恢复原测试文本；无需迁移。
 - 复验：记录此偏差后，提交测试修正，重跑 GitHub hosted Windows PR 完整流水线，要求全量前端 tests/typecheck/build 与后端全量测试/wheel 成功；保留失败 run 和修复后 run 链接。
+
+## 云端验证偏差记录（二）：后端组合路由清单
+
+- 2026-11-02 hosted run 41391080344：前端全量 2,075 项、TypeScript 检查和生产构建通过；后端全量 3,850 项中 3,849 项通过，唯一失败为 `test_composes_two_read_routes_with_dedicated_key` 仍将 Windows 显式组合根的预期路由固定为两个，未包含本次新增的只读 `/source-location` 路由。
+- 影响：这是既有组合根清单测试未随新增可选 Operation 更新；不表示运行时授权或业务逻辑失败。后端全量不能标 PASS，后续依赖包任务被工作流跳过。
+- 修复：仅更新该测试预期路由列表，纳入 `/api/v1/projects/{project_id}/handover-action-items/{action_item_id}/source-location`；产品代码、Schema、权限合同和数据均不变。无迁移；回滚仅恢复旧断言。
+- 复验：本条先于测试代码修复写入；随后重新运行 GitHub Hosted PR 全量流水线。要求后端全量、wheel、前端全量/typecheck/build以及工作流适用的云端检查通过后才能关闭 A50。该 Windows runner 是托管 Server 2025，不构成真实 Windows 11 设备验收。
