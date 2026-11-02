@@ -50,6 +50,37 @@ class OfflineParentCandidateStagingCliTests(unittest.TestCase):
         self.assertFalse(report["installation_performed"])
         self.assertNotIn(str(root), output.getvalue())
 
+
+    def test_bad_installer_signature_rejects_before_zip_staging(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="plm-a42-reject-") as temp:
+            root = Path(temp)
+            argv = ["stage", "--candidate", str(root/"candidate.zip"),
+                    "--verification-summary", str(root/"summary.json"),
+                    "--target", str(root/"runner-temp"/"staged"),
+                    "--installer", str(root/"setup.exe"), "--expected-thumbprint", "A"*40]
+            output = io.StringIO()
+            with patch.object(sys, "argv", argv), patch.object(cli, "verify_authenticode",
+                    return_value={"signature_verified":False,"status":"AUTHENTICODE_REJECTED"}):
+                with patch.object(cli, "stage_candidate") as stage:
+                    with contextlib.redirect_stdout(output):
+                        result = cli.main()
+            self.assertEqual(result, 2)
+            self.assertEqual(json.loads(output.getvalue())["reason_code"], "INSTALLER_AUTHENTICODE_REJECTED")
+            stage.assert_not_called()
+            self.assertFalse((root/"runner-temp"/"staged").exists())
+
+    def test_installer_pin_arguments_must_be_paired(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="plm-a42-pair-") as temp:
+            root = Path(temp)
+            argv = ["stage", "--candidate", str(root/"candidate.zip"),
+                    "--verification-summary", str(root/"summary.json"),
+                    "--target", str(root/"runner-temp"/"staged"), "--installer", str(root/"setup.exe")]
+            output = io.StringIO()
+            with patch.object(sys, "argv", argv), contextlib.redirect_stdout(output):
+                result = cli.main()
+            self.assertEqual(result, 2)
+            self.assertEqual(json.loads(output.getvalue())["reason_code"], "INSTALLER_PIN_PAIR_REQUIRED")
+
     def test_wrong_external_archive_digest_is_rejected_before_target_exists(self) -> None:
         with tempfile.TemporaryDirectory(prefix="plm-a40-bad-digest-") as temp:
             root = Path(temp)
