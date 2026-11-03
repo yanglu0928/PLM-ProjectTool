@@ -1,5 +1,11 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A07 实现中：新增签名包元数据原子登记服务、PostgreSQL 仓储及 Alembic `20261103_0223` 迁移；只登记经Inspector验签、Manifest解析和注入兼容策略批准的元数据，不写ZIP正文，不安装或执行插件。重复同版本同摘要幂等，不同摘要冲突；同一UOW内写Package、子表、PASSED Verification和Audit。
+- 增加合成单测及 PLG/共享migration验收脚本对0223的空库升级、闭写回退、历史保护检查；hosted云端验收正在排队/执行，最终结论待run完成后更新。本项尚未PASS_SCOPE_LIMITED。
+- 执行位置：GitHub hosted Windows Server 2025 runner 的 D 盘临时工作区；未在用户本机或C盘运行。正式信任清单仍空，生产签名导入继续失败关闭；Pilot/Gate/Release不变。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - 路线纠正：A06后续路线先误指向已在2026-11-02完成的OUT-01-A01-P03，且该P03结果当时指向已完成的PLG-01-A01。保留历史记录，依据实际结果将当前WBS校正为PLG-01-A07；详见CR-PLG-005。
 - PLG-01-A07编码前检查已完成：目标为只读验签/归档检查后的Package、Manifest operation/dependency和Verification结果原子登记；沿用0222元数据表，新增Owner migration仅允许INSERT并拒绝UPDATE/DELETE，保留TRUNCATE守卫。无公开HTTP/Job、ZIP内容落盘、安装、启用或插件执行。
 - 限制：包内正式信任清单仍为空；hosted测试只用合成key/包。A07不让测试信任源进入默认生产组合，Pilot/Gate/Release不变。
