@@ -22,3 +22,10 @@ HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；sta
 
 - 首段实现提交 f116604885d942fb9f2fa7d3d471d03c9652c9f9；run [41597429890](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41597429890) 全13/13 jobs成功。后端测试/wheel、前端、PG smoke、父包组装、A35/A17/A34通过。
 - 复核发现Application直接导入Document基础设施，属于需先登记再修正的模块依赖偏差。CR-PLG-006已记录。此首段不对外装配；A08仍进行中。
+
+
+## Protocol修正与结果归档恢复
+
+- 已按CR-PLG-006将Application的Document基础设施直接依赖改为Plugin-owned staging storage Protocol。
+- 本次提交同时恢复PLG-01-A07结果文档与CR-PLG-005关闭记录，避免早前Git Tree更新遗漏这些新增路径。
+- A08修正后hosted验证尚未完成。

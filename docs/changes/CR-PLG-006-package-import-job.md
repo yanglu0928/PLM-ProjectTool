@@ -8,3 +8,8 @@ undefined
 - 影响：不改变API、DB Schema、包格式、文件路径/内容校验行为；仅依赖方向和构造验证调整。无需数据迁移。
 - 回滚：保留旧提交历史；若修正导致验收失败，回滚新适配改动至有边界问题的内部实现并保持A08未完成（不可将其装入默认生产组合）。
 - 验证：修复后运行新增定向测试、全后端/wheel与完整hosted云验收；继续确认runner只用D盘临时工作区。
+
+
+## 分层偏差修复提交（2026-11-03，待验收）
+
+已将Plugin Application对Document.infrastructure的具体导入替换为Plugin-owned storage Protocol；组合根按结构接口注入已有私有存储实现。仅依赖方向/类型边界调整，无API、Schema、文件行为变化。A07关闭文件及本变更历史在修正提交中恢复。修正代码与归档材料进入hosted workflow复验后补录结果。

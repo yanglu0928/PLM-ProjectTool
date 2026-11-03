@@ -1,7 +1,7 @@
 # CR-PLG-005：可信插件包元数据登记Owner与路线纠正
 
 - 日期：2026-11-03
-- 状态：APPROVED_BY_CONTINUOUS_USER_AUTHORIZATION / IMPLEMENTATION_IN_PROGRESS
+- 状态：PASS_SCOPE_LIMITED
 - 适用WBS：PLG-01-A07
 - 分支：feature/p51-a33-launcher-checksum-recovery
 - 依据：Gate 2冻结的API-03/DM-04/SC-01～03、ADR-005、CR-PLG-001～004、CR-EXEC-002、用户持续自主执行授权
@@ -50,3 +50,12 @@ A07实现单一问题：将成功完成A06安全检查及受注入兼容策略�
 ## 未覆盖
 
 本WBS不提供HTTP上传/异步Job、二进制包归档、Verification失败审计、管理员授权/License Router、公开Package查询、revoke/install/enable/disable、Plugin subprocess、Output registry生产装配、正式签发key、Windows 11设备验收或Gate/Pilot/Release证据。生产service组合在可信兼容策略与正式signer source齐备之前不注册。
+
+
+## 最终验收与关闭（2026-11-03）
+
+- GitHub hosted run [41593955795](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41593955795) 全13/13 jobs成功；后端3,909项、wheel、前端、PG18/pgvector、父包、A35/A17/A34链均成功。
+- PostgreSQL 18真实临时库通过同UOW Package父行/Manifest子表/PASSED Verification/Audit提交，Audit异常回滚，重复同摘要幂等、版本摘要冲突及0223不可变守卫。
+- A07实现与父行flush修复提交分别为 `715c1646b2ba530e15998bb0cf63eddd7bf4a55f` 与 `894dd2d3f4c5fc6fc5acba5c29ec0f5a528b34c2`。
+- 结论：`PASS_SCOPE_LIMITED`。仅合成包/密钥/兼容策略与托管PG证据；未连接公开HTTP/Job、未持久化ZIP、未安装/运行插件。生产信任、Win11实机、Gate、Pilot、Release状态不变。
+- 所有测试均在GitHub hosted Windows Server 2025 runner D盘临时工作区执行，未在用户本机/C盘运行。

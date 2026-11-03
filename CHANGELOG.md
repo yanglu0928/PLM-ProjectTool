@@ -1,10 +1,9 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
-- A08首段暂存代码hosted run [41597429890](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41597429890)全13/13 jobs成功；后端全量/wheel、前端、PG smoke、父包、A35/A17/A34成功。
-- 实施后代码复核发现Plugin Application直接依赖Document Infrastructure，违反模块分层；该偏差及修复方案已先记入CR-PLG-006。修正后重跑全链；A08未完成。
-
-：新增签名插件包的有界流式暂存原语，按1MiB块校验长度/SHA-256，使用共享私有opaque storage，超过256MiB拒绝，写失败按本轮文件身份补偿清理；加入合成定向用例。
-- 当前尚未接入HTTP、幂等Job/Outbox、Audit或Worker，不标记A08完成；完整验收等待GitHub hosted workflow。代码仅同步feature分支，runner使用D盘临时环境，不在用户本机/C盘运行。
+- PLG-01-A07已由hosted run [41593955795](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41593955795)全13/13 jobs成功验收并以PASS_SCOPE_LIMITED关闭；恢复其结果文档及CR-PLG-005关闭证据。
+- A08 bounded staging首段hosted run [41597429890](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41597429890)全13/13 jobs成功。复核发现Application层依赖Document基础设施，已先按CR-PLG-006记录并改为Plugin-owned storage Protocol。
+- 修正后的源文件及A07归档材料已同步至feature分支；修正后hosted复验待完成。A08还未接HTTP/Job/Outbox/Audit，不标记完成。
+- 只用GitHub hosted D盘runner和合成数据；未在用户本机/C盘运行。Gate/Pilot/Release与Win11实机验收不变。
 
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
