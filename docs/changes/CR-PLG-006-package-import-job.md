@@ -29,3 +29,10 @@ undefined
 - 新增Plugin-owned queue contract/repository：Deployment scope、actor/API operation/key digest绑定的幂等键、同UOW Job+Outbox插入、重放验证摘要/大小并返回初次上传ID；异内容冲突。
 - 已记录Payload规则：Job仅保存opaque upload ID、SHA-256、size，Outbox只保存Job与upload ID引用。
 - 此提交的单测、hosted全回归及后续PG integration smoke尚未出结果；HTTP、Audit、staging协调和Worker仍待。
+
+
+## 队列首段测试夹具复核（2026-11-03）
+
+- 首次生成的参数化单测在模块导入时实例化无效命令，可能在pytest collection阶段先抛出异常。修正为参数化无效字段并在测试体内断言构造错误，避免收集期故障；产品逻辑未变。
+- 幂等键域分隔改为固定ASCII冒号，确保身份摘要输入易读且稳定；不影响数据库/API合同。
+- 随修正提交等待GitHub hosted workflow验收。

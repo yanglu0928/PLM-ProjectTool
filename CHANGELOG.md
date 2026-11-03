@@ -1,4 +1,6 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+- A08 Job/Outbox测试夹具已修正：无效值在测试函数中构造，避免pytest collection时提前异常；幂等键域分隔符规范化。产品逻辑未改，等待本次hosted验证。
+
 
 - A08继续开发：新增Plugin package verification Job/Outbox queue contract与PostgreSQL repository；使用Deployment-scoped幂等键摘要，Job payload只含opaque upload ID、SHA-256及大小，Outbox仅引用Job和upload ID。相同key/相同内容重放原Job，内容不同冲突。
 - 当前仍缺staging与Job协调/Audit/HTTP/Worker；定向测试与全链云端回归等待本提交运行，A08不标完成。

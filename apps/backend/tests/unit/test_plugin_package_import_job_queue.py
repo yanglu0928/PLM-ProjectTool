@@ -58,25 +58,22 @@ def test_queue_validates_and_delegates_to_transactional_repository():
 
 
 @pytest.mark.parametrize(
-    "request",
+    ("digest", "size"),
     [
-        _request(scope=_scope("0123456789abcdef")).__class__(
-            scope=IdempotencyScope.from_key(
-                actor_id=uuid.uuid4(), project_id=None,
-                operation="V1_PLUGIN_PACKAGE_IMPORT", key="0123456789abcdef",
-            ),
-            package_upload_id=uuid.uuid4(),
-            package_sha256=b"x" * 31,
-            package_size_bytes=123,
-            trace_id=uuid.uuid4(),
-        ),
-        _request(size=0),
-        _request(size=256 * 1024 * 1024 + 1),
+        (b"x" * 31, 123),
+        (b"x" * 32, 0),
+        (b"x" * 32, 256 * 1024 * 1024 + 1),
     ],
 )
-def test_request_rejects_invalid_package_evidence(request):
+def test_request_rejects_invalid_package_evidence(digest, size):
     with pytest.raises(PluginPackageImportQueueError) as caught:
-        request.__post_init__()
+        EnqueuePluginPackageImport(
+            scope=_scope(),
+            package_upload_id=uuid.uuid4(),
+            package_sha256=digest,
+            package_size_bytes=size,
+            trace_id=uuid.uuid4(),
+        )
     assert caught.value.code == "VALIDATION_FAILED"
 
 

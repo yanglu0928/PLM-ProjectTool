@@ -44,3 +44,8 @@ HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；sta
 - 幂等键在Deployment范围内以actor+API operation+IdempotencyScope摘要生成；相同内容重试复用同一Job/Outbox引用，不同内容返回冲突。
 - Job payload最小化为opaque package_upload_id、SHA-256和size；Outbox不含包正文、路径或签名。
 - 定向和hosted验收待运行。尚未实现staging协调事务、Audit、HTTP Router、worker；A08仍进行中。
+
+
+## Job queue单测夹具修正
+
+- 将无效命令测试改为在测试执行阶段创建，避免参数收集时触发构造异常；产品逻辑不变。修正后的hosted验收待完成。
