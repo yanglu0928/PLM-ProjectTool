@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-04（内部云端开发，非发行版本）
+
+- PLG-02-A05编码前检查已通过：冻结状态已含RETIRED，现有逐操作History/Audit可表达人工退役；登记CR-PLG-010后实现内部终态Owner与Migration 0229。范围排除API、物理卸载和插件执行。详见`docs/progress/plg-02-a05-installation-retirement-precheck.md`。托管验收待完成。
+
 ## Unreleased · 2026-11-04（内部云端验证，非发行版本）
 
 - PLG-02-A04按CR-PLG-009完成并以`PASS_SCOPE_LIMITED`关闭。GitHub hosted run [41738951137](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41738951137) 13/13 jobs成功：后端3,945 tests/wheel、前端/build、PG18.6 Migration 0228及有数据降级保护、父包PG smoke、A17/A34/A35/A50通过。两轮验证器偏差已先记CR再仅修正断言并完整重跑。未接公开API/默认组合/真实安装适配器，不安装/执行插件；Pilot/Gate/正式Release仍未通过。详见`docs/progress/plg-02-a04-runtime-revalidation-result.md`。下一项PLG-02-A05编码前检查。

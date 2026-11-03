@@ -3,7 +3,7 @@
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|PLG-01-A08提交e37e668e通过hosted run 41678551589全13 jobs；PG18 Worker集成 smoke随A17执行成功。用户要求本机/C盘不运行项目代码与测试；后续只用GitHub hosted runner并尽量使用D盘临时工作区。A35仍为历史PASS_LIMITED，不代表Win11实机验收。正式插件信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|PLG-02-A05：插件安装生命周期终态操作编码前检查（范围待按冻结基线核实）|
+|Current WBS|PLG-02-A05：Installation退役终态Owner实施（编码前检查已完成）|
 |Latest WBS Status|PLG-02-A04 按 CR-PLG-009 完成并为 `PASS_SCOPE_LIMITED`：运行时兼容性复验每次追加 RuntimeValidation/Audit；不兼容时同事务关闭全部操作并保留逐操作历史；从不兼容恢复仅回到 DISABLED。Hosted run [41738951137](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41738951137) 13/13 jobs 成功，backend 3,945 tests，Migration head 0228，PG18 smoke、A17、A34、A35、A50通过。未接API/默认组合/真实安装适配器，也不执行插件。详见 docs/progress/plg-02-a04-runtime-revalidation-result.md。|
 |Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P09_PASS_SCOPE_LIMITED / OUT_01_A01_P10_PASS_SCOPE_LIMITED / PLG_02_A01_PASS_SCOPE_LIMITED / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
@@ -18,7 +18,7 @@
 |Latest Test Summary|PLG-02-A04 GitHub hosted run [41738951137](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41738951137) 13/13 jobs成功：后端3,945 tests/wheel、前端/build、PG18.6/pgvector、Windows父包、clean extraction和Migration 0228空库/合成有数据升降级、A17、A34、A35、A50均通过。两轮验证断言偏差均记录在CR-PLG-009并修正验证器后重跑成功。仅合成托管数据；Pilot/Gate/Release未通过。|
 |Latest WBS Status|PLG-02-A02 PASS_SCOPE_LIMITED：受控内部Owner仅原子记录适配器核验的初始INSTALLED、RuntimeValidation及Audit；hosted run 41721092729全13/13成功。无公开API、默认生产组合、真实安装适配器、启用或插件执行。详见docs/progress/plg-02-a02-installation-owner-result.md。|
 |Latest WBS Status|PLG-02-A02编码前检查PASS_WITH_LIMITATION：仅建设核验后记录INSTALLED事实的内部Owner，禁止把VERIFIED包当已安装；无公开API/默认组合/启用/执行。数据库最小INSERT开放、宿主安装适配器及真实服务身份均作为明确后续限制。详见docs/progress/plg-02-a02-installation-owner-precheck.md。|
-|Next WBS|PLG-02-A05：Installation生命周期终态操作编码前检查；先核实冻结状态、引用保护与下架/停用语义，再登记实施CR。|
+|Next WBS|PLG-02-A05：实现Installation受控退役Owner、0229 Migration与托管全链验收（CR-PLG-010）。|
 |Latest Validation|A33 run 41008231772 在D盘hosted Windows Server 2025验证当前父包20,119项SHA、startup diagnostic六阻断码、缺脚本/损坏manifest回退、A29七类守门矩阵、A30四类诊断篡改、临时PG生命周期与A17 29 API PlanVersion流程；product API/service/listener未启动。无Windows11设备、正式License trust、安装升级、UAT、Gate或Release结论。|
 
 - 2026-10-27 `PLT-PKG-01-A09-P51-A17`：PR #55 hosted Windows run 40456511998 完成源码/前端/Python base/PG18 sidecar/embedded backend assembly全量云端验证。输出 297 MB 非发行候选 artifact 12712399237，逐文件哈希读回通过。ModelScope临时profile/cache前置、certifi公共CA bundle以及future PEM测试夹具的受限处理分别记录在CR-EXEC-008/009/010。仍缺真实OCR模型推理、PG集成、原生组件与完整父包安装/Edge/HTTPS验收；Pilot/Release不变。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A18`：PR #55 hosted run 40457725517 将同run frontend dist、Python 3.13.15 embedded backend（94 distributions）与PG18.6/pgvector 0.8.6（1,629文件）组合为20,111项父包候选；组件来源/摘要校验和最终ZIP逐项readback通过。产物SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`，artifact 12712678647。明确未安装、未启动数据库、非发行/未法律放行；包内Edge/OCR模型/正式信任等证据尚缺。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A19`：首次run 40458978359因pg_ctl stdout pipe继承挂起被取消，按CR-EXEC-011修复；run 40464618526暴露多语句psql状态行导致版本断言误判；拆分查询后run 40466454597成功。在D盘hosted runner temp清洁解包20,111项并逐项校验，同包PG18.6/pgvector0.8.6临时初始化/loopback查询/创建扩展/fast stop/临时目录清理全通过。父包artifact 12716703530，SHA-256 `259af5595251083e8e67abe648727cb2410930455278d97fe2eb1067971498c1`；smoke artifact 12717400427。`product_api_started=false`、正式trust未用，故仅`PASS_LIMITED`。详见 `docs/progress/plt-pkg-01-a09-p51-a19-parent-pg-smoke-result.md`。\n\n## 自动执行策略
@@ -2830,3 +2830,6 @@
 
 
 - 2026-11-04 `PLG-02-A04`：CR-PLG-009完成托管验收，run [41738951137](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41738951137) 13/13 jobs成功。后端3,945项及wheel、前端、PG18.6/Migration 0228升降重升和有数据降级拒绝/历史不变、父包PG smoke、A17、A34、A35、A50均通过。两轮历史Verifier文案/样例数量误报均先记CR再修正验证器；不改业务迁移保护。结论 `PASS_SCOPE_LIMITED`，未接API/默认生产组合/物理安装/插件执行，Pilot/Gate/正式Release仍未通过。下一项 PLG-02-A05 先进行终态操作Owner编码前检查。
+
+
+- 2026-11-04 `PLG-02-A05`编码前检查：A04 precheck明确将RETIRED终态排除并留后续独立WBS；A01/A02/A03/A04状态/历史与审计表可承载退役，不需加API或Root。按CR-PLG-010仅实现内部退役Owner与受控Migration 0229，清空当前操作并逐项DISABLED审计/历史、退役Installation，全部同事务；保留包/安装/历史/既有产物，不物理卸载。当前尚未编码，进入实施。
