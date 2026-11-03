@@ -404,7 +404,7 @@ def main() -> int:
         try:
             downgrade_database(existing_url, "20261104_0226")
         except RuntimeError as exc:
-            if "PluginInstallation history prevents downgrade" not in str(exc):
+            if "PluginInstallation runtime history prevents downgrade" not in str(exc):
                 raise
         else:
             raise AssertionError("PLG-02 migration allowed downgrade with installation history")
