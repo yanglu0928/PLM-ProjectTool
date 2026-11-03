@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -69,6 +70,24 @@ class PluginKeyCeremonyTests(unittest.TestCase):
             bytearray(b"synthetic-only-long-passphrase"),
             signer_key_ref="plm-plugin-publisher-v1",
         )
+
+    def test_pair_verification_failure_restores_empty_manifest_and_removes_key(self) -> None:
+        before = self.public.read_bytes()
+        with patch.object(
+            _TOOL,
+            "verify_pair",
+            side_effect=_TOOL.PluginKeyCeremonyError(),
+        ):
+            with self.assertRaises(_TOOL.PluginKeyCeremonyError):
+                _TOOL.create_pair(
+                    self.private,
+                    self.public,
+                    bytearray(b"synthetic-only-long-passphrase"),
+                )
+        self.assertEqual(self.public.read_bytes(), before)
+        self.assertFalse(self.private.exists())
+        self.assertEqual(list(self.public.parent.glob("*.tmp")), [])
+        self.assertEqual(list(self.public.parent.glob("*.restore")), [])
 
     def test_existing_private_or_nonempty_manifest_never_gets_overwritten(self) -> None:
         _TOOL.create_pair(

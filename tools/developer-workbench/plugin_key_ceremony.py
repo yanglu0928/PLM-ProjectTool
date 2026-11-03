@@ -132,7 +132,9 @@ def create_pair(
 ) -> None:
     """Create the initial encrypted private key and active public trust record."""
     private_created = False
+    public_replaced = False
     temporary_public: Path | None = None
+    initial_manifest_bytes: bytes | None = None
     try:
         password = _password(passphrase)
         _validate_paths(private_path, public_path)
@@ -142,6 +144,7 @@ def create_pair(
         if manifest["keys"] != []:
             # First-key ceremony only. Rotation/revocation is a separate controlled action.
             raise PluginKeyCeremonyError()
+        initial_manifest_bytes = public_path.read_bytes()
 
         private = Ed25519PrivateKey.generate()
         encrypted_pem = private.private_bytes(
@@ -189,6 +192,7 @@ def create_pair(
             os.fsync(stream.fileno())
         os.replace(temporary_public, public_path)
         temporary_public = None
+        public_replaced = True
         verify_pair(
             private_path,
             public_path,
@@ -201,7 +205,33 @@ def create_pair(
                 temporary_public.unlink(missing_ok=True)
             except OSError:
                 pass
-        if private_created:
+
+        rollback_complete = not public_replaced
+        restore_path: Path | None = None
+        if public_replaced and initial_manifest_bytes is not None:
+            try:
+                restore_path = public_path.with_name(
+                    f".{public_path.name}.{secrets.token_hex(12)}.restore"
+                )
+                with restore_path.open("xb") as stream:
+                    stream.write(initial_manifest_bytes)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.replace(restore_path, public_path)
+                restore_path = None
+                rollback_complete = public_path.read_bytes() == initial_manifest_bytes
+            except OSError:
+                rollback_complete = False
+            finally:
+                if restore_path is not None:
+                    try:
+                        restore_path.unlink(missing_ok=True)
+                    except OSError:
+                        pass
+
+        # If restoring the old manifest fails, retain the encrypted private key
+        # alongside the new ACTIVE public entry rather than leave an orphan entry.
+        if private_created and rollback_complete:
             try:
                 private_path.unlink(missing_ok=True)
             except OSError:
