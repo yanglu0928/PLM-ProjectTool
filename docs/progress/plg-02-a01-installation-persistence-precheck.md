@@ -29,3 +29,11 @@
 
 - 实现提交374fb1f619467e99590a622b5118c9c58c13b8da包含三表ORM、Migration 20261104_0225、Schema metadata约束和Alembic head契约检查。
 - GitHub hosted workflow尚未完成；结果补录前保持A01进行中。
+
+
+## 首轮GitHub hosted偏差（2026-11-04）
+
+- Workflow [41699265146](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41699265146) 在Backend全量测试中3925项有1项失败；失败测试为 `test_platform_audit_auth_and_license_tables_are_registered`。
+- 失败原因：该历史元数据清单的排除集合仍只覆盖既有PLG表；ORM本次正确新增的 `plg_installations`、`plg_enabled_operations`、`plg_runtime_validations` 被误计为平台/Audit/Auth/License元数据。没有证据表明Migration或业务逻辑失败；Backend步骤在完整测试后以该一项断言退出，wheel/A17后续Job因此跳过。
+- 修复计划：仅将三张PLG-02表纳入该清单的排除集合，保留本次表结构和冻结约束不变；重新运行同分支完整hosted workflow，取得PostgreSQL 18及A17证据后再关闭A01。
+- 偏差记录先于修复提交；未在本机运行测试。
