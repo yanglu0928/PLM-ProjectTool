@@ -19,3 +19,9 @@
 ## 前置检查结果
 
 通过本项有界Application Owner实现前置检查。实现后只可得`PASS_SCOPE_LIMITED`，除非独立WBS接入并验证实际包部署、正式服务身份与用户入口。不得据此宣称物理安装、插件启用、正式信任、Gate/Pilot/Release通过。
+
+
+## 首轮云端偏差（修复前记录）
+
+- Run [41717001638](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41717001638) 后端3,932项仅有一项失败：migration contract仍期待0225，而当前迁移head已按本WBS前置记录升至0226。前端、PG18 sidecar、Python base及A50通过；下游组装/父包/A17/A34跳过。
+- 失败是历史测试基线未更新的明确版本边界，不改Owner逻辑或冻结基线。先登记在CR-PLG-007，再仅修正预期migration head并重跑完整托管验收。

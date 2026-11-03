@@ -91,3 +91,9 @@
 - 本项不执行包文件部署，不启用/停用、不变更enabled_operations、不建API/默认组合、不运行插件。无真实受控适配器的部署无法调用该Owner；合成适配器仅用于hosted验收。
 - A01的所有写入关闭守卫需改为仅两张Owner目标表允许事务局部授权INSERT，继续拒绝UPDATE/DELETE/TRUNCATE；enabled_operations维持关闭。局部DB标记只约束应用写路径，不替代未来真实数据库身份隔离。该实现偏差先记于本决定，待验证失败时先补记再修复。
 - 无冻结模型/API变化、外部依赖、客户数据或外部调用；风险、迁移/回滚及PG18验收细项见`docs/progress/plg-02-a02-installation-owner-precheck.md`。`20261104_0226`降级只允许两张目标表均为空；含事实时拒绝且保留历史。
+
+
+## PLG-02-A02首轮托管回归偏差（2026-11-04，修复前记录）
+
+- Hosted run [41717001638](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41717001638) 后端运行3,932项，唯一失败为 `test_configuration_revision_follows_platform_baseline`：新增migration head实际为`20261104_0226`，历史契约测试仍期待`20261104_0225`。前端、PG18 sidecar、Python base、A50均通过；依赖后端成功的wheel、父包、A17/A34链被跳过。
+- 当前证据指向迁移head测试夹具未随合法PLG-02增量更新，不表示Owner业务断言失败。修复计划仅把该单一测试的head预期更新为0226，保留其单head检查和其他migration contract；随后重跑完整hosted工作流及PG18 Owner smoke。该偏差已先记录，后修改测试。
