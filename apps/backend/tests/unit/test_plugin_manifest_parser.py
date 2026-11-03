@@ -85,7 +85,9 @@ class PluginManifestParserTests(unittest.TestCase):
         deep: object = "x"
         for _ in range(18):
             deep = {"child": deep}
-        self.reject(deep)
+        manifest = valid_manifest()
+        manifest["name"] = deep
+        self.reject(manifest)
 
     def test_plugin_identity_versions_targets_and_architecture_are_strict(self) -> None:
         for field, value in (
@@ -156,6 +158,10 @@ class PluginManifestParserTests(unittest.TestCase):
     def test_empty_dependency_list_is_valid_and_json_types_are_strict(self) -> None:
         manifest = valid_manifest()
         manifest["dependencies"] = []
+        parsed = self.parser.parse(encode(manifest))
+        self.assertEqual(parsed.dependencies, ())
+
+        manifest = valid_manifest()
         manifest["name"] = None
         self.reject(manifest)
         manifest = valid_manifest()

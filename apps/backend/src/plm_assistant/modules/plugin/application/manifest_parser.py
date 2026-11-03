@@ -106,17 +106,27 @@ def _text(value: object, *, maximum: int, allow_empty: bool = False) -> str:
 
 
 def _entry_point(value: object) -> str:
-    raw = _text(value, maximum=512)
-    if "\\" in raw or ":" in raw or raw.startswith("/"):
+    if type(value) is not str or not value:
         raise PluginManifestError("PLUGIN_INVALID_ENTRY_POINT")
-    parts = raw.split("/")
+    try:
+        encoded = value.encode("utf-8", "strict")
+    except UnicodeError:
+        raise PluginManifestError("PLUGIN_INVALID_ENTRY_POINT") from None
+    if (
+        len(encoded) > 512
+        or value != value.strip()
+        or any(unicodedata.category(char) == "Cc" for char in value)
+    ):
+        raise PluginManifestError("PLUGIN_INVALID_ENTRY_POINT")
+    if "\\" in value or ":" in value or value.startswith("/"):
+        raise PluginManifestError("PLUGIN_INVALID_ENTRY_POINT")
+    parts = value.split("/")
     if any(part in {"", ".", ".."} for part in parts):
         raise PluginManifestError("PLUGIN_INVALID_ENTRY_POINT")
-    path = PurePosixPath(raw)
-    if path.is_absolute() or path.as_posix() != raw:
+    path = PurePosixPath(value)
+    if path.is_absolute() or path.as_posix() != value:
         raise PluginManifestError("PLUGIN_INVALID_ENTRY_POINT")
-    return raw
-
+    return value
 
 def _string_list(value: object, *, maximum_items: int, item_maximum: int) -> tuple[str, ...]:
     if type(value) is not list or not 1 <= len(value) <= maximum_items:
