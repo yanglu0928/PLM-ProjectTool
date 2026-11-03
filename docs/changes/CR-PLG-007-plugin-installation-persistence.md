@@ -43,3 +43,10 @@
 - 失败原因：该历史元数据清单的排除集合仍只覆盖既有PLG表；ORM本次正确新增的 `plg_installations`、`plg_enabled_operations`、`plg_runtime_validations` 被误计为平台/Audit/Auth/License元数据。没有证据表明Migration或业务逻辑失败；Backend步骤在完整测试后以该一项断言退出，wheel/A17后续Job因此跳过。
 - 修复计划：仅将三张PLG-02表纳入该清单的排除集合，保留本次表结构和冻结约束不变；重新运行同分支完整hosted workflow，取得PostgreSQL 18及A17证据后再关闭A01。
 - 偏差记录先于修复提交；未在本机运行测试。
+
+
+## PostgreSQL hosted smoke验收脚本偏差（2026-11-04）
+
+- Hosted run [41700273515](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41700273515) 的Backend 3,925项全量测试通过，随后父包PostgreSQL smoke因旧 `validation/out-01-a01-p01-migration/verify.py` 固定期待Migration head 20261103_0224而失败；报告为“empty upgrade did not reach schema head”。
+- 初步归因是验收脚本尚未跟进本次合法head 20261104_0225；不是数据库建表失败证据。A17在该run中的结果尚未结束，A01仍未通过。
+- 修复前计划：更新该PG verifier的目标head和下迁移边界，确保新增表存在、空库降级/重升安全且原有Output Migration保护仍验证；之后完整重跑hosted workflow。失败与修复先后保留。
