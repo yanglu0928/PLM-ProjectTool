@@ -37,6 +37,7 @@ A07实现单一问题：将成功完成A06安全检查及受注入兼容策略�
 - 云端依赖偏差（run 41588604941）：A07 PG集成脚本由Smoke runner Python调用，但Smoke的独立migration验证依赖安装未包含已批准且在 backend pyproject 固定为 `cryptography==50.0.1` 的验证器依赖，故脚本在签名夹具初始化前以ModuleNotFoundError退出。仅给托管验证器依赖安装补上相同锁定版本；不更改产品依赖或运行逻辑，再跑完整链。
 - 集成验收偏差（run 41589975872）：cryptography补齐后，真实登记调用失败并按应用安全边界返回 `PLUGIN_PACKAGE_STORE_UNAVAILABLE`；当前验收日志无法区分仓储flush与Audit append阶段。先在 synthetic verifier 中加入仅输出执行阶段、异常类型及数据库SQLSTATE的临时安全诊断，以定位缺陷；不记录异常消息、SQL参数或业务内容。定位后先在本CR记录修复，再修产品/验证并重新完整复验。
 - 第二轮诊断结果（run 41591445571）：失败定位到 `repository.create_verified`，底层为SQLAlchemy `IntegrityError`；包裹错误的SQLSTATE在 `orig.sqlstate`，约束名在 `orig.diag.constraint_name`，上一版诊断读取了外层字段因而未提供细因。仅扩展临时诊断读取上述两个结构化字段，仍不打印SQL/参数/异常消息，再定位具体约束。
+- 第三轮根因及修复计划（run 41592723031）：A07真实PG登记在 `plg_manifest_operations` 触发 `fk_plg_manifest_operations__package` / SQLSTATE `23503`。SQLAlchemy UOW关闭autoflush，且当前子表ORM无关系映射提供排序，仓储一次加入父子后批量flush使子行先写。修复仅在同一UOW中先 `flush([package])` 明确父行，再添加并flush operations/dependencies/verification；不得提前commit。子表失败或Audit失败仍整体rollback。验证覆盖真实PG首次写入、审计提交/失败回滚、幂等、冲突及迁移守卫。
 
 ## 影响、迁移、回滚和验证
 
