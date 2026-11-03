@@ -554,6 +554,7 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
         files = [item for item in Path(storage_root).rglob("*") if item.is_file()]
         if len(files) != 1:
             raise AssertionError("A08 failure compensation left an unowned staged file")
+    runtime.dispose()
     print("PLG_01_A08_PACKAGE_IMPORT_PG18_PASS: atomic Job/Outbox/staging/Audit; "
           "idempotent replay; content conflict; Audit rollback; bounded staging cleanup",
           flush=True)
