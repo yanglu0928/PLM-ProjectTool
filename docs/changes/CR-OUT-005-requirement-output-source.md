@@ -1,7 +1,7 @@
 # CR-OUT-005：Requirement固定版本作为Output Source的Owner读取适配
 
 - 日期：2026-11-04
-- 状态：编码前批准（CR-EXEC-002持续授权范围内）
+- 状态：PASS_SCOPE_LIMITED（实现与托管验收完成）
 - WBS：OUT-01-A01-P05
 - 来源：OUT-01-A01-P04源码盘点；冻结API-03/DM-04；现存RequirementVersion Owner与Project授权实现
 
@@ -24,8 +24,9 @@ Output的TrustedOutputContextResolver需要输入source_version_ref、ProjectId�
 - 若定向或PG测试失败，保留历史读API行为，回退新增Owner端口/组合适配，不修改历史版本或数据；Output源Resolver保持fail closed。
 
 
-## 实现提交（待云端验收，2026-11-04）
+## 实现与验收结果（2026-11-04）
 
-- 增加Requirement Owner内部固定版本投影读取，查询同时限定ProjectId/VersionId，并在Owner侧按REQ_VERSION_GET重新核验当前成员权限；跨模块DTO只在EntryPoint组合根转换。
-- 增加组合根单测与A17 packaged PG18烟测，覆盖合成Requirement精确版本/Project、状态保真、非成员拒绝。
-- 无migration/API变更；改动已按本CR编码。定向测试、PG18及全链云端结果待本提交。
+- 提交 `188a2ca0036acedfeb95b77883446a2315c90255` 新增Requirement Owner内部固定版本投影读取，SQL同时限定ProjectId/VersionId，Owner侧按REQ_VERSION_GET重新核验当前成员权限；跨模块DTO只在EntryPoint组合根转换。
+- GitHub hosted run [41684956861](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41684956861) 13/13 jobs成功：后端全量测试/wheel、前端、PG18/pgvector、父包、A35 handoff、临时PG smoke、A17与A34通过。A17 evidence明示专项marker `OUT_01_A01_P05_REQUIREMENT_FIXED_SOURCE_PG_PASS`。
+- 隔离PG18验证合成Requirement精确版本/Project、审核态保真及非成员拒绝；无migration/API/schema变更，无客户数据外发。本项PASS_SCOPE_LIMITED，非Win11实机验收。
+- 回滚仍仅移除新增Owner读取Port/组合适配，不触碰现有API/数据。后续Output模板、Policy、Plugin启用/真实信任缺口保持失败关闭，Pilot/Gate/正式Release未通过。

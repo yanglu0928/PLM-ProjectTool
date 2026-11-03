@@ -1,7 +1,7 @@
 # OUT-01-A01-P05：Requirement固定版本Output Source读取前置
 
 - 日期：2026-11-04
-- 状态：编码前检查PASS_SCOPE_LIMITED；实现进行中
+- 状态：PASS_SCOPE_LIMITED（实现及云端验收完成）
 - WBS：OUT-01-A01-P05
 - 依据：CR-OUT-005、冻结API-03/DM-04、OUT-01-A01-P04结果
 
@@ -20,8 +20,8 @@
 实现具体Owner DTO字段白名单与错误码时保持Source Owner语义；先实现Requirement内部Port，再由entrypoint组合根做适配，禁止跨业务模块引用对方ORM。实现后再更新本文件验收结果。
 
 
-## 实现记录（2026-11-04，验收待云端）
+## 实现与验收结果（2026-11-04）
 
 - 增加RequirementVersionReadService内部读取方法，按ProjectId+固定RequirementVersionId查询；Owner重新执行REQ_VERSION_GET授权并保留版本审核状态。
 - 新增SQL repository受控字段投影以及EntryPoint组合适配器，Requirement模块不依赖Output模块。未新增ORM表或migration。
-- 新增Unit测试和A17 packaged PG18烟测。后端全量/wheel、PG18集成、父包/A17/A34验收待本次工作流；本项尚未关闭。
+- 新增Owner读取单测、组合适配单测及A17 packaged PG18烟测。提交188a2ca0036acedfeb95b77883446a2315c90255的hosted run [41684956861](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41684956861)全13/13 jobs通过；A17结果包含专项PG18 marker，校验精确版本/Project、APPROVED状态及非成员拒绝。无Migration/API改动，仅synthetic hosted Windows Server 2025；本项PASS_SCOPE_LIMITED，不是Win11设备验收，也不代表Output模板/Policy/Plugin或Output Create已可用。

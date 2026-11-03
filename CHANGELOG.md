@@ -263,5 +263,6 @@
 
 
 ## Unreleased · 2026-11-04（Requirement固定版本Source接线）
-- OUT-01-A01-P05新增Requirement Owner按ProjectId+RequirementVersionId读取受控Source投影，并由EntryPoint组合根映射到Output FixedSourceVersion；同时增加真实Project授权隔离PG18 smoke。当前未执行云端验收。
-- 未新增数据库迁移或外部数据发送；本提交验证计划通过GitHub hosted runner完成。
+- OUT-01-A01-P05提交 [188a2ca0](https://github.com/yanglu0928/PLM-ProjectTool/commit/188a2ca0036acedfeb95b77883446a2315c90255) 的GitHub hosted run [41684956861](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41684956861) 全13/13 jobs成功。后端全量测试/wheel、前端构建、PG18/pgvector、Windows父包、A35、临时PG smoke、A17及A34均通过；A17 Artifact明确包含 `OUT_01_A01_P05_REQUIREMENT_FIXED_SOURCE_PG_PASS`。
+- PG18合成烟测验证ProjectId+固定RequirementVersionId精确读取、`APPROVED`状态保真及非成员拒绝；无Schema/API/Migration变更、无外发数据。仅GitHub hosted Windows Server 2025，不构成Windows 11设备/Pilot/Gate/正式发行结论。
+- Output文件模板/Policy Registry、Plugin启用/正式信任仍未实现，真实Output Create继续失败关闭。下一项为P06模板固定版本Registry编码前核查。
