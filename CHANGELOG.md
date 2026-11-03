@@ -1,9 +1,8 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
-- PLG-01-A07由run [41593955795](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41593955795)全13/13 jobs通过并以PASS_SCOPE_LIMITED关闭；验收结果及CR-PLG-005关闭记录已恢复在当前分支。
-- A08首段bounded staging使用Plugin-owned storage Protocol修正分层偏差后，run [41599893419](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41599893419)全13/13 jobs成功；后端/wheel、前端、PG18、父包及A35/A17/A34通过。
-- A08仍在开发：尚未接入导入HTTP、DB staging metadata、幂等Job/Outbox/Audit及worker；不标记完成。
-- 所有执行均在GitHub hosted runner D盘临时工作区，未在用户本机/C盘；不代表Win11实机/Gate/Pilot/Release。
+- A08继续开发：新增Plugin package verification Job/Outbox queue contract与PostgreSQL repository；使用Deployment-scoped幂等键摘要，Job payload只含opaque upload ID、SHA-256及大小，Outbox仅引用Job和upload ID。相同key/相同内容重放原Job，内容不同冲突。
+- 当前仍缺staging与Job协调/Audit/HTTP/Worker；定向测试与全链云端回归等待本提交运行，A08不标完成。
+- 执行全部通过GitHub hosted runner；不在用户本机/C盘运行。
 
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 

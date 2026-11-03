@@ -36,3 +36,11 @@ HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；sta
 - 修正提交 8baaaf827bf6b7bbc1cf4b47e8a5606712e4b02e；run [41599893419](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41599893419) 全13/13 jobs成功。
 - Plugin Application跨模块具体依赖已移除；本次仅验证暂存原语及全链路回归，A08导入API/Job/Worker仍未完成。
 - 此提交同时恢复A07结果文档和CR-PLG-005的最终PASS_SCOPE_LIMITED关闭证据。
+
+
+## Job/Outbox队列Owner首段
+
+- 新增Plugin-owned Application queue contract和SQLAlchemy Job/Outbox repository；复用既有job schema，不新增migration。
+- 幂等键在Deployment范围内以actor+API operation+IdempotencyScope摘要生成；相同内容重试复用同一Job/Outbox引用，不同内容返回冲突。
+- Job payload最小化为opaque package_upload_id、SHA-256和size；Outbox不含包正文、路径或签名。
+- 定向和hosted验收待运行。尚未实现staging协调事务、Audit、HTTP Router、worker；A08仍进行中。

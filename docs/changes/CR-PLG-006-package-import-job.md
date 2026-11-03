@@ -21,3 +21,11 @@ undefined
 - hosted run [41599893419](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41599893419) 全13/13 jobs成功；后端全量/wheel、前端、PG18/pgvector、父包、A35/A17/A34通过。
 - 复核确认Plugin Application不再导入Document模块；暂存端口由Plugin-owned Protocol表达，层间依赖由组合根负责。
 - 本修复只关闭依赖方向偏差，不关闭A08；HTTP、Job/Outbox/Audit、worker和完整导入链仍待实现。
+
+
+## Job/Outbox实现进展（2026-11-03）
+
+- 复用现有JOB-01通用Job/Outbox Schema，不新增字段或migration。
+- 新增Plugin-owned queue contract/repository：Deployment scope、actor/API operation/key digest绑定的幂等键、同UOW Job+Outbox插入、重放验证摘要/大小并返回初次上传ID；异内容冲突。
+- 已记录Payload规则：Job仅保存opaque upload ID、SHA-256、size，Outbox只保存Job与upload ID引用。
+- 此提交的单测、hosted全回归及后续PG integration smoke尚未出结果；HTTP、Audit、staging协调和Worker仍待。
