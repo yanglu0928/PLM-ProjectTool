@@ -296,3 +296,9 @@
 
 ## Unreleased · 2026-11-04（P09首轮云端失败记录）
 - run [41692180197](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41692180197) 后端测试单项失败：测试误将空Policy目录的精确错误期待成通用目录无效消息。已先记录CR-OUT-007/P09进度文档，待修正测试断言后重跑全链；P09尚未通过，不是发布版本。
+
+
+## Unreleased · 2026-11-04（内置Output Policy Registry受限完成）
+- P09首轮run 41692180197仅因新增测试对空目录错误文本断言不匹配而失败，偏差先记于CR-OUT-007；产品逻辑未改，后修正测试并重跑。
+- 修正提交 ac7cae27 的GitHub hosted run [41693364068](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41693364068) 13/13 jobs成功。后端全量/wheel、前端、PG18/pgvector、父包、A35、PG smoke、A17、A34成功；A17证据含 OUT_01_A01_P09_BUILTIN_POLICY_REGISTRY_PASS。
+- Policy仅允许固定DOCX/Template/RequirementVersion APPROVED及有限字段/来源/上下文大小；word.generate allowlist不意味着Operation installed/enabled/trusted。无Schema/API/Migration变更，不接生产Output Create。仅PASS_SCOPE_LIMITED，无Win11新设备/Pilot/Gate/正式发行结论。

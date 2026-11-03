@@ -1,10 +1,10 @@
-|Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P05_PASS_SCOPE_LIMITED / OUT_01_A01_P06_PASS_SCOPE_LIMITED / OUT_01_A01_P07_PASS_SCOPE_LIMITED / OUT_01_A01_P08_PASS_SCOPE_LIMITED / OUT_01_A01_P09_TEST_FIX_IN_PROGRESS / PHASE_2_IN_PROGRESS|
+|Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P05_PASS_SCOPE_LIMITED / OUT_01_A01_P06_PASS_SCOPE_LIMITED / OUT_01_A01_P07_PASS_SCOPE_LIMITED / OUT_01_A01_P08_PASS_SCOPE_LIMITED / OUT_01_A01_P09_PASS_SCOPE_LIMITED / OUT_01_A01_P10_PRECHECK_IN_PROGRESS / PHASE_2_IN_PROGRESS|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|PLG-01-A08提交e37e668e通过hosted run 41678551589全13 jobs；PG18 Worker集成 smoke随A17执行成功。用户要求不在本机运行；后续继续用GitHub hosted runner。A35仍为历史PASS_LIMITED，不代表Win11实机验收。正式插件信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|OUT-01-A01-P09：内置Output Policy固定版本Registry与契约验证|
-|Latest WBS Status|P09内置Output Policy已提交；hosted run 41692180197因新增测试对空catalog错误文本预期不符而后端失败，后续父包/A17/A34跳过。偏差与修正计划已先记CR-OUT-007，代码修复尚未实施，P09不得关闭。|
+|Current WBS|OUT-01-A01-P10：Plugin Operation生产能力事实Owner编码前核查|
+|Latest WBS Status|P09按CR-OUT-007 PASS_SCOPE_LIMITED完成：修正空目录断言后hosted run 41693364068全13 jobs成功；A17包含P09固定ref/allowlist marker，A34恢复通过。策略只允许DOCX/P07模板/RequirementVersion APPROVED和三字段、4来源/8192 bytes；word.generate并无生产enabled/trusted事实，Output Create继续失败关闭。下一项核查Plugin Operation生产Owner。|
 |Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P04_PASS_SCOPE_LIMITED / OUT_01_A01_P05_PASS_SCOPE_LIMITED / OUT_01_A01_P06_PASS_SCOPE_LIMITED / OUT_01_A01_P07_IMPLEMENTATION_IN_PROGRESS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -16,7 +16,7 @@
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|A07 run 41593955795全13/13 jobs成功。A08 bounded staging及Plugin-owned storage Protocol修正由run 41599893419全13/13 jobs成功验收：后端全量/wheel、前端/build、PG18/pgvector、父包、A35/A17/A34通过。仅内部合成/hosted证据，不构成Win11实机、正式信任、Gate/Pilot/Release结论。|
 |Latest Test Summary|Job/Outbox首段run 41602717998全13/13 jobs通过。当前0224 schema/validator更新已触发hosted PG18迁移验收；此前migration head 0223，现推进至0224。|
-|Next WBS|OUT-01-A01-P09：内置Output Policy固定版本Registry与契约验证|
+|Next WBS|OUT-01-A01-P10：Plugin Operation生产能力事实Owner编码前核查|
 |Latest Validation|A33 run 41008231772 在D盘hosted Windows Server 2025验证当前父包20,119项SHA、startup diagnostic六阻断码、缺脚本/损坏manifest回退、A29七类守门矩阵、A30四类诊断篡改、临时PG生命周期与A17 29 API PlanVersion流程；product API/service/listener未启动。无Windows11设备、正式License trust、安装升级、UAT、Gate或Release结论。|
 
 - 2026-10-27 `PLT-PKG-01-A09-P51-A17`：PR #55 hosted Windows run 40456511998 完成源码/前端/Python base/PG18 sidecar/embedded backend assembly全量云端验证。输出 297 MB 非发行候选 artifact 12712399237，逐文件哈希读回通过。ModelScope临时profile/cache前置、certifi公共CA bundle以及future PEM测试夹具的受限处理分别记录在CR-EXEC-008/009/010。仍缺真实OCR模型推理、PG集成、原生组件与完整父包安装/Edge/HTTPS验收；Pilot/Release不变。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A18`：PR #55 hosted run 40457725517 将同run frontend dist、Python 3.13.15 embedded backend（94 distributions）与PG18.6/pgvector 0.8.6（1,629文件）组合为20,111项父包候选；组件来源/摘要校验和最终ZIP逐项readback通过。产物SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`，artifact 12712678647。明确未安装、未启动数据库、非发行/未法律放行；包内Edge/OCR模型/正式信任等证据尚缺。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A19`：首次run 40458978359因pg_ctl stdout pipe继承挂起被取消，按CR-EXEC-011修复；run 40464618526暴露多语句psql状态行导致版本断言误判；拆分查询后run 40466454597成功。在D盘hosted runner temp清洁解包20,111项并逐项校验，同包PG18.6/pgvector0.8.6临时初始化/loopback查询/创建扩展/fast stop/临时目录清理全通过。父包artifact 12716703530，SHA-256 `259af5595251083e8e67abe648727cb2410930455278d97fe2eb1067971498c1`；smoke artifact 12717400427。`product_api_started=false`、正式trust未用，故仅`PASS_LIMITED`。详见 `docs/progress/plt-pkg-01-a09-p51-a19-parent-pg-smoke-result.md`。\n\n## 自动执行策略
@@ -2813,3 +2813,6 @@
 
 
 - 2026-11-04 P09首轮run 41692180197后端新增单测因空策略目录错误文本预期不符失败，后续依赖job跳过。先记CR-OUT-007：这是测试断言问题，下一提交修正预期后完整重跑；当前P09未通过。
+
+
+- 2026-11-04 OUT-01-A01-P09：内置Policy Registry按CR-OUT-007完成；修正首轮新增测试的空catalog错误预期后，hosted run [41693364068](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41693364068) 13/13 jobs成功。A17 marker包含P09 allowlist策略，后端/wheel/父包/A35/A17/A34成功。仅合成托管验证。Policy允许操作不代表Plugin安装、启用或信任；Output Create仍失败关闭。下一项P10盘点Plugin Operation生产事实Owner。

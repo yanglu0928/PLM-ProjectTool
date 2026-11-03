@@ -1,7 +1,7 @@
 # CR-OUT-007：内置Output Policy固定版本Registry
 
 - 日期：2026-11-04
-- 状态：编码前批准（CR-EXEC-002持续授权范围内）
+- 状态：PASS_SCOPE_LIMITED（实现与托管验收完成）
 - WBS：OUT-01-A01-P09
 - 来源：P06/P07基线核查、冻结API-03/DM-04/DB Schema V1、现有Resolver DTO/Port、CR-OUT-004/006
 
@@ -41,3 +41,10 @@ Output resolver要求Policy固定允许的模板版本、输出类型、插件�
 - GitHub hosted run [41692180197](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41692180197) 在后端测试中1项失败，导致后续wheel/父包/A17/A34依赖job跳过。
 - 失败根因是新增测试对空Policy目录断言通用文本“catalog is invalid”，而实现对空目录返回更精确的“builtin output policy catalog is empty”；没有证据表明Registry接受非法数据或产品逻辑失效。
 - 修正方案：仅更正测试预期为目录为空错误；重复/扩大策略继续断言catalog invalid。然后在GitHub hosted runner重跑定向、后端全量/wheel及完整父包链。修改前不关闭P09，不降低验收项。
+
+
+## 修正与最终验收（2026-11-04）
+
+- 首轮run [41692180197](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41692180197) 的唯一失败是新增测试对空目录错误文本断言错误；修正只改测试预期，未改变产品逻辑。偏差及计划在实施前已补录本CR。
+- 修正提交ac7cae27的run [41693364068](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41693364068) 全13/13 jobs成功；后端全量/wheel、前端、PG18/pgvector、父包/A35、临时PG、A17和A34全部通过。A17 Artifact含marker `OUT_01_A01_P09_BUILTIN_POLICY_REGISTRY_PASS`。
+- 结论PASS_SCOPE_LIMITED：只验证合成固定策略。没有Production Plugin Operation enabled/trusted facts，无Output Create、渲染或Artifact发布，也没有Win11实机/Pilot/Gate/正式Release验收。
