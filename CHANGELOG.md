@@ -1,5 +1,9 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A03 第三次 hosted run [41572410413](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41572410413) 发现12个入口路径子例由测试fixture helper误传dict导致，目标字段规则没有被测到。根因已记入CR-PLG-002/前置记录，修复测试后重跑，A03保持未通过。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A03 第二次 hosted run [41571779122](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41571779122) 仍在入口路径错误码专项断言失败；首次修正未闭合问题。已在CR-PLG-002与前置记录追加复现，暂停PASS结论并进行更精确定位。
 
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）

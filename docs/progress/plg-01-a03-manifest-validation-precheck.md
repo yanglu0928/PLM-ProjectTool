@@ -41,3 +41,10 @@ GitHub hosted run [41571211968](https://github.com/yanglu0928/PLM-ProjectTool/ac
 ## 第二次云端验收失败记录（2026-11-03，修复前）
 
 Hosted run [41571779122](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41571779122) 在提交 `fc723a86` 上仍出现同一专项错误码失败。源码已改为路径专属控制字符检查，但全量测试仍捕获 `PLUGIN_INVALID_MANIFEST`；原测试循环未报告具体路径，使定位信息不足。后端其余测试、前端/PG18/A50成功；依赖包/A17/A34跳过。先记录本次复现，再调整解析顺序并为每个拒绝路径添加subTest上下文，不将重复失败略过。
+
+
+## 第三次云端验收失败记录与根因（2026-11-03，修复前）
+
+Hosted run [41572410413](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41572410413) 后端3,889项中入口路径测试的12个subTest均失败，预期 `PLUGIN_INVALID_ENTRY_POINT`、实际 `PLUGIN_INVALID_MANIFEST`。进一步追踪发现 `reject()` helper 对 dict fixture 直接调用 bytes-only `parse()`，每个用例都在输入类型守卫处退出，未执行Manifest/路径验证。此前针对parser错误映射的两次代码调整因此没有被这些测试验证；不代表安全绕过，也不能把该边界声称已验证。
+
+先记录根因；修复helper：dict fixture通过正式JSON UTF-8 encoder转bytes，bytes malformed JSON保持原样；补充subTest路径信息，随后全量验证真实字段规则。
