@@ -68,7 +68,7 @@ def _assert_output_tables(dsn: str, expected: bool) -> None:
 
 
 def _assert_plugin_installation_tables(dsn: str, expected: bool) -> None:
-    tables = ("plg_installations", "plg_enabled_operations", "plg_runtime_validations")
+    tables = ("plg_installations", "plg_enabled_operations", "plg_runtime_validations", "plg_enabled_operation_history")
     with psycopg.connect(dsn) as conn:
         found = [conn.execute("SELECT to_regclass(%s)", ("plm." + name,)).fetchone()[0]
                  for name in tables]
@@ -84,35 +84,35 @@ def _assert_plugin_installation_contract(dsn: str) -> None:
             "SELECT "
             "(SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN "
             "('trg_plg_installations__owner_closed','trg_plg_enabled_operations__owner_closed',"
-            "'trg_plg_runtime_validations__owner_closed')),"
+            "'trg_plg_runtime_validations__owner_closed','trg_plg_enabled_operation_history__owner_closed')),"
             "(SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN "
             "('trg_plg_installations__no_truncate','trg_plg_enabled_operations__no_truncate',"
-            "'trg_plg_runtime_validations__no_truncate')),"
+            "'trg_plg_runtime_validations__no_truncate','trg_plg_enabled_operation_history__no_truncate')),"
             "(SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
-            "AND tgname='trg_plg_runtime_validations__immutable')"
+            "AND tgname IN ('trg_plg_runtime_validations__immutable','trg_plg_enabled_operation_history__immutable'))"
         ).fetchone()
         fk_count = conn.execute(
             "SELECT count(*) FROM pg_constraint WHERE contype='f' AND conname IN "
             "('fk_plg_installations__package_plugin',"
             "'fk_plg_enabled_operations__installation_package',"
             "'fk_plg_enabled_operations__manifest_operation',"
-            "'fk_plg_runtime_validations__installation')"
+            "'fk_plg_runtime_validations__installation','fk_plg_enabled_operation_history__installation','fk_plg_enabled_operation_history__manifest_operation','fk_plg_enabled_operation_history__audit_event')"
         ).fetchone()[0]
         unique_index = conn.execute(
             "SELECT count(*) FROM pg_indexes WHERE schemaname='plm' "
             "AND indexname='uq_plg_enabled_operations__plugin_operation'"
         ).fetchone()[0]
-    if owner_closed != 3 or no_truncate != 3 or immutable != 1:
+    if owner_closed != 4 or no_truncate != 4 or immutable != 2:
         raise AssertionError(
             "PluginInstallation trigger contract mismatch: "
             f"owner_closed={owner_closed}, no_truncate={no_truncate}, immutable={immutable}"
         )
-    if fk_count != 4 or unique_index != 1:
+    if fk_count != 7 or unique_index != 1:
         raise AssertionError(
             f"PluginInstallation relation contract mismatch: fk={fk_count}, unique_index={unique_index}"
         )
 
-    for table in ("plg_installations", "plg_enabled_operations", "plg_runtime_validations"):
+    for table in ("plg_installations", "plg_enabled_operations", "plg_runtime_validations", "plg_enabled_operation_history"):
         with psycopg.connect(dsn) as conn:
             try:
                 with conn.transaction():
@@ -138,8 +138,8 @@ def _assert_plugin_installation_contract(dsn: str) -> None:
         try:
             with conn.transaction():
                 conn.execute(
-                    "TRUNCATE plm.plg_installations, "
-                    "plm.plg_enabled_operations, plm.plg_runtime_validations"
+                    "TRUNCATE plm.plg_installations, plm.plg_enabled_operations, "
+                    "plm.plg_runtime_validations, plm.plg_enabled_operation_history"
                 )
         except errors.RaiseException:
             pass
@@ -221,6 +221,21 @@ def _seed_plugin_installation_history(dsn: str, package_id: uuid.UUID) -> tuple[
         conn.execute(
             "SELECT set_config('plm.plugin_installation_owner_write', 'on', true)"
         )
+        audit_id = conn.execute(
+            "INSERT INTO plm.aud_events "
+            "(trace_id,event_scope,actor_type,actor_id,action,outcome,"
+            "target_owner_module,target_object_type,target_object_id,before_state,after_state) "
+            "VALUES (%s,'DEPLOYMENT','USER',%s,'PLUGIN_OPERATION_ENABLE','SUCCESS',"
+            "'plugin','PLG-02',%s,'INSTALLED','ENABLED') RETURNING audit_event_id",
+            (uuid.uuid4(), actor_id, installation_ids[0]),
+        ).fetchone()[0]
+        conn.execute(
+            "INSERT INTO plm.plg_enabled_operation_history "
+            "(plugin_installation_id,plugin_package_id,plugin_id_normalized,operation_id,"
+            "transition,actor_id,trace_id,audit_event_id) "
+            "VALUES (%s,%s,'synthetic.upgrade','document.render','ENABLED',%s,%s,%s)",
+            (installation_ids[0], package_id, actor_id, uuid.uuid4(), audit_id),
+        )
         conn.execute(
             "INSERT INTO plm.plg_runtime_validations "
                 "(plugin_installation_id,compatibility_state,runtime_snapshot,validated_by) "
@@ -267,7 +282,7 @@ def main() -> int:
         empty_url = _database_url(empty_db, args.port)
         empty_dsn = _dsn(empty_db, args.port)
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261104_0226":
+        if _revision(empty_dsn) != "20261104_0227":
             raise AssertionError("empty upgrade did not reach schema head")
         _assert_output_tables(empty_dsn, True)
         _assert_plugin_installation_tables(empty_dsn, True)
@@ -281,7 +296,7 @@ def main() -> int:
             job_fk = conn.execute("SELECT count(*) FROM pg_constraint WHERE conname='fk_out_output_requests__job'").fetchone()[0]
         if closed != 2 or job_fk != 0: raise AssertionError("0221 downgrade contract mismatch")
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261104_0226": raise AssertionError("owner re-upgrade failed")
+        if _revision(empty_dsn) != "20261104_0227": raise AssertionError("owner re-upgrade failed")
         with psycopg.connect(empty_dsn) as conn:
             closed = conn.execute("SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('trg_out_context_snapshots__owner_closed','trg_out_output_requests__owner_closed')").fetchone()[0]
             job_fk = conn.execute("SELECT count(*) FROM pg_constraint WHERE conname='fk_out_output_requests__job'").fetchone()[0]
@@ -293,7 +308,7 @@ def main() -> int:
         _assert_output_tables(empty_dsn, False)
         _assert_plugin_installation_tables(empty_dsn, False)
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261104_0226": raise AssertionError("full re-upgrade failed")
+        if _revision(empty_dsn) != "20261104_0227": raise AssertionError("full re-upgrade failed")
         _assert_output_tables(empty_dsn, True)
         _assert_plugin_installation_tables(empty_dsn, True)
         result["empty_database_downgrade_reupgrade"] = "PASS"
@@ -330,7 +345,7 @@ def main() -> int:
                 (package_id,),
             )
         upgrade_database(existing_url, "head")
-        if _revision(existing_dsn) != "20261104_0226":
+        if _revision(existing_dsn) != "20261104_0227":
             raise AssertionError("existing database upgrade did not reach schema head")
         _assert_output_tables(existing_dsn, True)
         _assert_plugin_installation_tables(existing_dsn, True)
@@ -353,26 +368,27 @@ def main() -> int:
         installation_ids = _seed_plugin_installation_history(existing_dsn, package_id)
         result["installation_constraints"] = "PASS"
         try:
-            downgrade_database(existing_url, "20261104_0225")
+            downgrade_database(existing_url, "20261104_0226")
         except RuntimeError as exc:
             if "PluginInstallation history prevents downgrade" not in str(exc):
                 raise
         else:
             raise AssertionError("PLG-02 migration allowed downgrade with installation history")
-        if _revision(existing_dsn) != "20261104_0226":
+        if _revision(existing_dsn) != "20261104_0227":
             raise AssertionError("blocked PluginInstallation downgrade changed migration revision")
         with psycopg.connect(existing_dsn) as conn:
             counts = conn.execute(
                 "SELECT (SELECT count(*) FROM plm.plg_installations),"
                 "(SELECT count(*) FROM plm.plg_enabled_operations),"
-                "(SELECT count(*) FROM plm.plg_runtime_validations)"
+                "(SELECT count(*) FROM plm.plg_runtime_validations),"
+                "(SELECT count(*) FROM plm.plg_enabled_operation_history)"
             ).fetchone()
             installation_count = conn.execute(
                 "SELECT count(*) FROM plm.plg_installations "
                 "WHERE plugin_installation_id IN (%s,%s)",
                 installation_ids,
             ).fetchone()[0]
-        if counts != (2, 1, 1) or installation_count != 2:
+        if counts != (2, 1, 1, 1) or installation_count != 2:
             raise AssertionError(
                 f"blocked PluginInstallation downgrade changed history: {counts!r}"
             )

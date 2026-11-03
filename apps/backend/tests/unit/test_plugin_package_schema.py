@@ -18,6 +18,7 @@ class PluginPackageSchemaTests(unittest.TestCase):
                 "plg_installations",
                 "plg_enabled_operations",
                 "plg_runtime_validations",
+                "plg_enabled_operation_history",
             },
             {table.name for table in Base.metadata.tables.values() if table.name.startswith("plg_")},
         )
@@ -39,6 +40,7 @@ class PluginPackageSchemaTests(unittest.TestCase):
             plugin_orm.PluginInstallationRow.__table__,
             plugin_orm.PluginEnabledOperationRow.__table__,
             plugin_orm.PluginRuntimeValidationRow.__table__,
+            plugin_orm.PluginEnabledOperationHistoryRow.__table__,
         ):
             self.assertTrue(forbidden.isdisjoint({column.name for column in table.columns}))
 
@@ -55,6 +57,10 @@ class PluginPackageSchemaTests(unittest.TestCase):
         self.assertIn("fk_plg_enabled_operations__manifest_operation", op_constraints)
         self.assertIn("uq_plg_enabled_operations__plugin_operation", {i.name for i in operation.indexes})
         validation_constraints = {item.name for item in validation.constraints if item.name}
+        history = plugin_orm.PluginEnabledOperationHistoryRow.__table__
+        history_constraints = {item.name for item in history.constraints if item.name}
+        self.assertIn("fk_plg_enabled_operation_history__audit_event", history_constraints)
+        self.assertIn("fk_plg_enabled_operation_history__manifest_operation", history_constraints)
         self.assertIn("fk_plg_runtime_validations__installation", validation_constraints)
         self.assertIn("ck_plg_runtime_validations__state", validation_constraints)
 

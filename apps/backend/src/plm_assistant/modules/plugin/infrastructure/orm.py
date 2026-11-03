@@ -377,3 +377,45 @@ class PluginRuntimeValidationRow(Base):
     validated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     validated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
         nullable=False, server_default=text("statement_timestamp()"))
+
+
+
+class PluginEnabledOperationHistoryRow(Base):
+    """Immutable exact operation-level activation history linked to Audit."""
+    __tablename__ = "plg_enabled_operation_history"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["plugin_installation_id", "plugin_package_id", "plugin_id_normalized"],
+            ["plm.plg_installations.plugin_installation_id",
+             "plm.plg_installations.plugin_package_id",
+             "plm.plg_installations.plugin_id_normalized"],
+            name="fk_plg_enabled_operation_history__installation", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["plugin_package_id", "operation_id"],
+            ["plm.plg_manifest_operations.plugin_package_id",
+             "plm.plg_manifest_operations.operation_id"],
+            name="fk_plg_enabled_operation_history__manifest_operation", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["audit_event_id"], ["plm.aud_events.audit_event_id"],
+            name="fk_plg_enabled_operation_history__audit_event", ondelete="NO ACTION"),
+        CheckConstraint("transition IN ('ENABLED','DISABLED')",
+                        name="ck_plg_enabled_operation_history__transition"),
+        CheckConstraint("isfinite(changed_at)",
+                        name="ck_plg_enabled_operation_history__changed_at"),
+        Index("ix_plg_enabled_operation_history__plugin_operation_time",
+              "plugin_id_normalized", "operation_id", "changed_at", "activation_history_id"),
+        {"schema": "plm"},
+    )
+    activation_history_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plugin_installation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plugin_package_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plugin_id_normalized: Mapped[str] = mapped_column(Text, nullable=False)
+    operation_id: Mapped[str] = mapped_column(Text, nullable=False)
+    transition: Mapped[str] = mapped_column(Text, nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    audit_event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    changed_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
