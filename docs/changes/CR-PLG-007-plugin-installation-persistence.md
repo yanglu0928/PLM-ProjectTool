@@ -83,3 +83,11 @@
 - 同run父包候选20161个文件，归档SHA-256 `5227ebdf41bca790a5af75ae68964b599059807ad5117ed6e9a88e8abcd01858`；不是发行包。A17与A34均成功，但它们不表示用户Windows 11新设备、正式插件信任、实际插件安装/执行通过。
 - 先前偏差与修复已按顺序留痕：ORM历史metadata清单漏排除三表；旧PG验证器期待0224；实库验收最初只检查元数据；首次TRUNCATE根表探测被FK预检查提前拒绝。对应偏差均先在本CR/进度文件记录再修正验证器或测试。
 - 结论：PLG-02-A01 `PASS_SCOPE_LIMITED`，范围仅为冻结持久化结构及迁移保护；安装事实Owner API、启用流程、正式信任、插件执行均未开放。Pilot、Gate、正式Release状态不变。下一项PLG-02-A02安装事实Owner编码前核查。
+
+
+## PLG-02-A02编码前决定（2026-11-04）
+
+- 检查确认冻结模型定义Installation事实，但当前只有PLG-01 Package元数据登记和A01关闭写入表；没有物理安装器、Installation Owner、公开API或默认组合。为避免把VERIFIED误记成已安装，本WBS限定为：内部Owner只接收受控安装适配器核实的精确Package/包Hash及宿主兼容性快照，原子创建`INSTALLED`行、RuntimeValidation和Audit；重复installation ID同内容回放幂等、内容冲突拒绝。
+- 本项不执行包文件部署，不启用/停用、不变更enabled_operations、不建API/默认组合、不运行插件。无真实受控适配器的部署无法调用该Owner；合成适配器仅用于hosted验收。
+- A01的所有写入关闭守卫需改为仅两张Owner目标表允许事务局部授权INSERT，继续拒绝UPDATE/DELETE/TRUNCATE；enabled_operations维持关闭。局部DB标记只约束应用写路径，不替代未来真实数据库身份隔离。该实现偏差先记于本决定，待验证失败时先补记再修复。
+- 无冻结模型/API变化、外部依赖、客户数据或外部调用；风险、迁移/回滚及PG18验收细项见`docs/progress/plg-02-a02-installation-owner-precheck.md`。`20261104_0226`降级只允许两张目标表均为空；含事实时拒绝且保留历史。

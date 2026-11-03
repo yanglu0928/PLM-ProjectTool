@@ -1,5 +1,7 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- PLG-02-A02编码前检查通过有界范围：只记录由受控适配器验证的INSTALLED事实，不安装文件、不启用、不执行；数据库Owner开放需事务局部标记，明确不等于正式数据库身份隔离。无安装来源时失败关闭。详见`docs/progress/plg-02-a02-installation-owner-precheck.md`及CR-PLG-007。
+
 - PLG-02-A01代码提交374fb1f6新增冻结Installation、EnabledOperation、RuntimeValidation三表ORM与PostgreSQL Migration 20261104_0225，包含精确Package/Manifest引用、重复启用唯一索引和Owner关闭/历史保护。GitHub hosted验收待完成。
 - 本轮未接安装或启用API，未运行插件，也未创建真实信任/客户事实。
 

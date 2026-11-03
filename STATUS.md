@@ -3,7 +3,7 @@
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|PLG-01-A08提交e37e668e通过hosted run 41678551589全13 jobs；PG18 Worker集成 smoke随A17执行成功。用户要求本机/C盘不运行项目代码与测试；后续只用GitHub hosted runner并尽量使用D盘临时工作区。A35仍为历史PASS_LIMITED，不代表Win11实机验收。正式插件信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|PLG-02-A02：Installation事实Owner编码前核查（待恢复上下文）|
+|Current WBS|PLG-02-A02：经核验安装事实Owner（仅记录事实，不部署/启用/执行）|
 |Latest WBS Status|PLG-02-A01按CR-PLG-007完成，hosted run 41711045048全13/13 jobs成功。PG18.6合成库验证0225三表、4个复合FK/唯一索引、Owner INSERT关闭、TRUNCATE拒绝、空库回退及带合成安装历史降级拒绝/记录保留。后端全量/wheel、前端、父包、A17、A34均通过。仅PASS_SCOPE_LIMITED；无安装/启用API、正式信任或插件执行。|
 |Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P09_PASS_SCOPE_LIMITED / OUT_01_A01_P10_PASS_SCOPE_LIMITED / PLG_02_A01_PASS_SCOPE_LIMITED / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
@@ -16,7 +16,8 @@
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|A07 run 41593955795全13/13 jobs成功。A08 bounded staging及Plugin-owned storage Protocol修正由run 41599893419全13/13 jobs成功验收：后端全量/wheel、前端/build、PG18/pgvector、父包、A35/A17/A34通过。仅内部合成/hosted证据，不构成Win11实机、正式信任、Gate/Pilot/Release结论。|
 |Latest Test Summary|PLG-02-A01最终提交hosted run 41711045048全13/13 jobs成功。PG18.6 migration smoke确认empty upgrade/downgrade/re-upgrade、既有合成数据保留、约束/Owner/TRUNCATE/有数据降级保护；A17/A34通过。父包候选20161项SHA-256 `5227ebdf…01858`。仅合成数据与托管runner证据；Pilot/Gate/Release未通过。|
-|Next WBS|PLG-02-A02：核对冻结Installation事实Owner接口、状态转换与事务边界；完成前置检查后继续实现|
+|Latest WBS Status|PLG-02-A02编码前检查PASS_WITH_LIMITATION：仅建设核验后记录INSTALLED事实的内部Owner，禁止把VERIFIED包当已安装；无公开API/默认组合/启用/执行。数据库最小INSERT开放、宿主安装适配器及真实服务身份均作为明确后续限制。详见docs/progress/plg-02-a02-installation-owner-precheck.md。|
+|Next WBS|PLG-02-A02：实现受控Installation事实Owner，并在GitHub hosted D盘完成独立验收|
 |Latest Validation|A33 run 41008231772 在D盘hosted Windows Server 2025验证当前父包20,119项SHA、startup diagnostic六阻断码、缺脚本/损坏manifest回退、A29七类守门矩阵、A30四类诊断篡改、临时PG生命周期与A17 29 API PlanVersion流程；product API/service/listener未启动。无Windows11设备、正式License trust、安装升级、UAT、Gate或Release结论。|
 
 - 2026-10-27 `PLT-PKG-01-A09-P51-A17`：PR #55 hosted Windows run 40456511998 完成源码/前端/Python base/PG18 sidecar/embedded backend assembly全量云端验证。输出 297 MB 非发行候选 artifact 12712399237，逐文件哈希读回通过。ModelScope临时profile/cache前置、certifi公共CA bundle以及future PEM测试夹具的受限处理分别记录在CR-EXEC-008/009/010。仍缺真实OCR模型推理、PG集成、原生组件与完整父包安装/Edge/HTTPS验收；Pilot/Release不变。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A18`：PR #55 hosted run 40457725517 将同run frontend dist、Python 3.13.15 embedded backend（94 distributions）与PG18.6/pgvector 0.8.6（1,629文件）组合为20,111项父包候选；组件来源/摘要校验和最终ZIP逐项readback通过。产物SHA-256 `089daa5375a64b3a2c4533b85efcc0237c534dd232f66013ddbb3d8fe13b89b8`，artifact 12712678647。明确未安装、未启动数据库、非发行/未法律放行；包内Edge/OCR模型/正式信任等证据尚缺。\n\n- 2026-10-27 `PLT-PKG-01-A09-P51-A19`：首次run 40458978359因pg_ctl stdout pipe继承挂起被取消，按CR-EXEC-011修复；run 40464618526暴露多语句psql状态行导致版本断言误判；拆分查询后run 40466454597成功。在D盘hosted runner temp清洁解包20,111项并逐项校验，同包PG18.6/pgvector0.8.6临时初始化/loopback查询/创建扩展/fast stop/临时目录清理全通过。父包artifact 12716703530，SHA-256 `259af5595251083e8e67abe648727cb2410930455278d97fe2eb1067971498c1`；smoke artifact 12717400427。`product_api_started=false`、正式trust未用，故仅`PASS_LIMITED`。详见 `docs/progress/plt-pkg-01-a09-p51-a19-parent-pg-smoke-result.md`。\n\n## 自动执行策略
