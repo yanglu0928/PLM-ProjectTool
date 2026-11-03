@@ -18,7 +18,7 @@ from plm_assistant.modules.auth.api.session import _csrf_header, _session_cookie
 from plm_assistant.modules.auth.application.session_service import SessionError, SessionService
 from plm_assistant.modules.platform.application.errors import ApplicationError
 from plm_assistant.modules.platform.application.idempotency import (
-    IdempotencyError, IdempotencyScope,
+    IdempotencyError, IdempotencyScope, validate_idempotency_key,
 )
 from plm_assistant.modules.plugin.application.package_archive_inspector import MAX_PACKAGE_BYTES
 from plm_assistant.modules.plugin.application.package_import_service import (
@@ -66,10 +66,7 @@ def _claims(headers: tuple[tuple[bytes, bytes], ...]) -> tuple[str, int, bytes, 
     if len(signature) != 64 or not signer_key_ref:
         raise ApplicationError("VALIDATION_FAILED")
     try:
-        IdempotencyScope.from_key(
-            actor_id=uuid.UUID(int=1), project_id=None,
-            operation="V1_PLUGIN_PACKAGE_IMPORT", key=idempotency_key,
-        )
+        validate_idempotency_key(idempotency_key)
     except IdempotencyError:
         raise ApplicationError("VALIDATION_FAILED") from None
     return idempotency_key, length, bytes.fromhex(sha_text), signature, signer_key_ref
