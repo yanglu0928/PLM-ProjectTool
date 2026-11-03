@@ -1,7 +1,7 @@
 # PLG-02-A01：PluginInstallation冻结根持久化编码前检查
 
 - 日期：2026-11-04
-- 状态：PASS（范围与验收方案已核对；尚未改代码）
+- 状态：CODE_SUBMITTED_AWAITING_HOSTED（编码前检查已通过；云端验收待完成）
 - WBS：PLG-02-A01
 - 变更记录：CR-PLG-007
 - 当前分支父提交：38ade3a290ba2b69113ad6c207357d045c65500f
@@ -23,3 +23,9 @@
 ## 明确不在本项
 
 不安装或启用插件，不更改publisher trust manifest，不把VERIFIED写成ENABLED，不运行插件子进程，不实现安装/升级/启停Owner/API，也不宣称Output Create可用。A01通过最多为PASS_SCOPE_LIMITED；Pilot/Gate/Release结论不变。
+
+
+## 实现提交
+
+- 实现提交374fb1f619467e99590a622b5118c9c58c13b8da包含三表ORM、Migration 20261104_0225、Schema metadata约束和Alembic head契约检查。
+- GitHub hosted workflow尚未完成；结果补录前保持A01进行中。

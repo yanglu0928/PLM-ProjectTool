@@ -1,5 +1,8 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- PLG-02-A01代码提交374fb1f6新增冻结Installation、EnabledOperation、RuntimeValidation三表ORM与PostgreSQL Migration 20261104_0225，包含精确Package/Manifest引用、重复启用唯一索引和Owner关闭/历史保护。GitHub hosted验收待完成。
+- 本轮未接安装或启用API，未运行插件，也未创建真实信任/客户事实。
+
 - OUT-01-A01-P10只读源码盘点完成（PASS_SCOPE_LIMITED）：PLG-01-A08只登记VERIFIED包，没有PluginInstallation/启用操作/正式运行信任事实Owner；Output Create继续失败关闭。
 - 已先登记CR-PLG-007并完成PLG-02-A01编码前检查。下一项按冻结PLG-02表映射新增Installation/启用操作/runtime validation ORM与受保护Migration 20261104_0225；只在GitHub hosted D盘运行验收，本机/C盘不运行。
 - 当前不实现安装/启用业务Owner或API，不执行插件，不创建信任或客户事实；云端全链验收后再更新本记录与STATUS。

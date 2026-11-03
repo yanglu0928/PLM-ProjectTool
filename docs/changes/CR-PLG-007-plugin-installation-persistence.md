@@ -28,3 +28,10 @@
 ## 授权边界
 
 按用户已持续授权自主实施。此CR不授权真实发布者Key/信任、客户数据访问或外发、插件正式安装/启用、插件代码执行、付款、强推或不可恢复生产变更；验收结论仅按实际hosted run记录。
+
+
+## PLG-02-A01编码提交（hosted验收待完成，2026-11-04）
+
+- 实现提交：374fb1f619467e99590a622b5118c9c58c13b8da。新增Installation、enabled operation和runtime validation ORM以及Migration 20261104_0225；三表Owner写入口关闭，enabled operation复合引用安装和Package Manifest，unique index限制同插件操作的重复启用行。
+- 增加插件Schema metadata与Migration head契约测试。已推送至PR #61分支；等待GitHub hosted全链验收，通过前不关闭A01。
+- 目前没有安装/启用Owner/API或写入数据；信任清单未变，未运行插件。
