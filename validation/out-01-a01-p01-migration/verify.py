@@ -123,6 +123,9 @@ def _assert_plugin_installation_contract(dsn: str) -> None:
                 pass
             else:
                 raise AssertionError(f"closed PluginInstallation Owner accepted INSERT on {table}")
+
+    for table in ("plg_enabled_operations", "plg_runtime_validations"):
+        with psycopg.connect(dsn) as conn:
             try:
                 with conn.transaction():
                     conn.execute(sql.SQL("TRUNCATE plm.{}").format(sql.Identifier(table)))
@@ -130,6 +133,18 @@ def _assert_plugin_installation_contract(dsn: str) -> None:
                 pass
             else:
                 raise AssertionError(f"PluginInstallation Owner allowed TRUNCATE on {table}")
+
+    with psycopg.connect(dsn) as conn:
+        try:
+            with conn.transaction():
+                conn.execute(
+                    "TRUNCATE plm.plg_installations, "
+                    "plm.plg_enabled_operations, plm.plg_runtime_validations"
+                )
+        except errors.RaiseException:
+            pass
+        else:
+            raise AssertionError("PluginInstallation Owner allowed grouped TRUNCATE")
 
 
 def _seed_plugin_installation_history(dsn: str, package_id: uuid.UUID) -> tuple[uuid.UUID, uuid.UUID]:
