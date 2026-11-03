@@ -1,5 +1,12 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A05 新增只读包内发布者公钥Resolver并适配现有Plugin签名Verifier。hosted run [41579068045](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41579068045) 13/13 jobs成功，后端3,895项、wheel、前端、PG18、父包及A35/A17/A34链通过。空正式key manifest继续拒绝所有真实发布者签名。
+- 兼容性：仅GitHub hosted Windows Server 2025；不在用户本机/C盘运行。没有Win11设备验收。
+- 升级说明：无ORM/Migration/API；新Resolver只读取包内公开资源，无插件导入/安装/执行。
+- 已知限制：仅PASS_SCOPE_LIMITED；无真实发布者key、动态撤销源或生产签名包。Gate3/Pilot/Release状态不变。下一项先固定ZIP envelope和无落盘安全读取合同，见CR-PLG-004。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A04 完成 Developer Workbench 插件 Ed25519 key ceremony 工具、空发布者清单资源及回滚恢复。首轮run [41575141107](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41575141107) 全13 jobs成功后，独立代码审查发现失败回滚残留ACTIVE清单，已先记CR并修复；修复提交 aaef9391b0a98b8b202e5140f7266b8a0a8841a0 的 hosted run [41576991044](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41576991044) 全13 jobs成功。后端3,889项、仪式5项、wheel、前端、PG18、父包、A35/A17/A34通过。
 - 兼容性：只在 GitHub hosted runner 执行；工作目录/测试key使用 runner D盘临时环境。不在用户本机/C盘运行。
 - 升级说明：无DB/API/Migration；wheel包含空公开信任清单。真实签发私钥不生成、不上传。

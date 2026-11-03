@@ -30,3 +30,10 @@
 - 新增 apps/backend/src/plm_assistant/modules/plugin/infrastructure/packaged_signer_resolver.py
 - 新增 apps/backend/tests/unit/test_packaged_plugin_signer_resolver.py
 - 必要时只补充该类的trust resource package-data测试，实际格式沿用CR-PLG-003，不改空清单内容。
+
+
+## 最终验收
+
+- 提交ce6a40e185cfa736208060d14030f0d17809131b；hosted run [41579068045](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41579068045)全13 jobs成功，后端3,895项、wheel、前端、PG18、父包及A35/A17/A34通过。
+- 新增解析器用例覆盖6组场景：空包内trust失败关闭、active合成key验签、未知/REVOKED拒绝、schema/base64/重复键/重复ref/超限拒绝，以及Verifier错误映射。
+- A05结论：PASS_SCOPE_LIMITED。清单仍空；没有真实发布者密钥、Win11实机或插件安装/执行验收。

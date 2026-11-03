@@ -1,0 +1,38 @@
+# CR-PLG-004：Plugin ZIP Envelope 与安全只读检查边界
+
+- 日期：2026-11-03
+- 状态：APPROVED_BY_CONTINUOUS_USER_AUTHORIZATION / IMPLEMENTATION_IN_PROGRESS
+- 适用WBS：PLG-01-A06
+- 依据：冻结ADR-005、DM-04/API-03、CR-PLG-001/002/003、用户持续自主执行授权
+
+## 问题
+
+A02已有完整归档字节Ed25519 detached verifier，A03已有有界Manifest parser，A05已有包内publisher key resolver，但尚无正式归档Envelope合同，也没有证明待解析Manifest和EntryPoint确属被验签的同一ZIP。若分别接受调用方提供的Manifest与ZIP签名输入，会产生对象错配；若直接解压，则引入路径穿越、链接和资源耗尽风险。
+
+## 决定与偏差
+
+1. 正式开发包使用ZIP容器；唯一Manifest路径为ZIP根目录的 manifest.json，内容必须符合CR-PLG-002的 plm.plugin.manifest.v1。选择该名称与POC-08现有manifest.json惯例兼容，但其旧入口SHA字段不能升级为正式开发者签名。
+2. 签名为包外detached Ed25519签名及明确 signer_key_ref；签名输入覆盖完整、原始ZIP字节，依CR-PLG-001绑定包SHA-256与key-ref。不得信任压缩包内自带公钥或签名身份。
+3. 本WBS只做内存中的只读归档检查、Manifest解析、签名验证及entry_point存在性核对；不解压到文件系统、不保存、导入、安装、启动、持久化或授权插件。
+4. 严格边界：压缩包不超过256 MiB；最多4,096个归档项；Manifest未压缩与解压后都不超过64 KiB；任一普通文件声明未压缩大小不超过512 MiB；全体声明未压缩大小总计不超过2 GiB；单文件压缩比不超过200:1。加密成员、重复/大小写折叠冲突路径、非规范POSIX路径、Windows设备保留名、链接/特殊文件、缺失/重复/非根Manifest及声明入口非普通文件均拒绝。
+5. 目录项可省略；如存在，只允许规范相对目录名；文件与目录不可产生路径/大小写折叠冲突。ZIP中央目录和成员元数据必须有界；Manifest读取使用64KiB+1硬限制。
+
+替代方案：
+- 延用POC入口SHA字段：无法证明发布者身份，拒绝。
+- 在压缩包内嵌公钥/身份：可由包作者自签自信，拒绝。
+- 先解压后验证：验证前已写文件，增大攻击面，拒绝。
+- 选定包外签名、受控包内公钥资源、内存有界检查。
+
+## 影响、兼容性、迁移与回滚
+
+- 仅新增application层只读检查Service及单测；本WBS不连接PluginPackage ORM、不改变DB Schema/API/外部文件格式，不执行解压或运行。
+- 新格式是插件开发包输入合同；旧POC目录/manifest不会自动转换或被标记为正式可信包。
+- 设定的压缩包上限尚无客户数据基线，依据首版单机/小团队插件包与安全封顶选择；超限时需新版本合同/CR，禁止静默放宽。
+- 回滚只移除新增检查器及测试；无客户持久数据/安装包迁移。保持所有Plugin导入/安装入口关闭。
+- Hosted测试使用内存合成ZIP和仅进程内签名key，不读取客户资料、不上传测试包artifact。只在GitHub hosted runner临时环境执行。
+
+## 验证计划
+
+- 合法包：根Manifest/真实EntryPoint/active合成签名通过；包字节或key-ref篡改失败；正式空keyring失败关闭。
+- 恶意输入：坏ZIP、中央目录/大小/项数边界、加密成员、绝对/drive/UNC/回退路径、重复/大小写冲突、symlink/device、目录与文件冲突、Manifest缺失/重复/超限/坏schema、入口不存在/非普通文件。
+- 后端全量、wheel、GitHub hosted PR集成链通过；A06仍为PASS_SCOPE_LIMITED，不外推安装/执行/Win11或Gate/Pilot/Release。
