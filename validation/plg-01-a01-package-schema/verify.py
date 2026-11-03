@@ -92,8 +92,8 @@ def _assert_guards(dsn: str) -> None:
             "SELECT count(*) FROM pg_trigger "
             "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%'"
         ).fetchone()[0]
-    if actual != 17:
-        raise AssertionError(f"expected 17 PLG immutable/truncate/owner guards at 0227, got {actual}")
+    if actual != 20:
+        raise AssertionError(f"expected 20 PLG immutable/truncate/owner guards at 0227, got {actual}")
     with psycopg.connect(dsn) as conn:
         closed = conn.execute(
             "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
