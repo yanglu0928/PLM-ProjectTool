@@ -14,6 +14,7 @@ class PluginPackageSchemaTests(unittest.TestCase):
                 "plg_manifest_operations",
                 "plg_manifest_dependencies",
                 "plg_package_verifications",
+                "plg_package_import_stagings",
             },
             {table.name for table in Base.metadata.tables.values() if table.name.startswith("plg_")},
         )
