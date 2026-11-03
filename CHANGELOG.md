@@ -1,10 +1,9 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
-- PLG-01-A04 首轮实现已提交；hosted run [41575141107](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41575141107) 13/13 jobs成功，包括合成密钥仪式单测、后端全量/wheel、前端、PG18、父包与A17/A34链。
-- 编码后独立审查发现：首次创建在最终私钥/公钥清单发布后若pair核验失败，会删除私钥但留下ACTIVE公钥条目；未发现密钥泄露或签名绕过，但形成不可签发的残留信任记录。根因、风险和修复先行记录于CR-PLG-003，当前A04不关闭。
-- 兼容性：仅GitHub hosted Windows Server 2025 D盘runner环境；不在用户本机/C盘执行。
-- 升级说明：未新增DB/API/Migration；程序包结果为内部验证。
-- 已知限制：回滚修复和复验待完成；不代表真实key、离线备份、runtime trust、Win11设备、Gate、Pilot或Release通过。
+- PLG-01-A04 完成 Developer Workbench 插件 Ed25519 key ceremony 工具、空发布者清单资源及回滚恢复。首轮run [41575141107](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41575141107) 全13 jobs成功后，独立代码审查发现失败回滚残留ACTIVE清单，已先记CR并修复；修复提交 aaef9391b0a98b8b202e5140f7266b8a0a8841a0 的 hosted run [41576991044](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41576991044) 全13 jobs成功。后端3,889项、仪式5项、wheel、前端、PG18、父包、A35/A17/A34通过。
+- 兼容性：只在 GitHub hosted runner 执行；工作目录/测试key使用 runner D盘临时环境。不在用户本机/C盘运行。
+- 升级说明：无DB/API/Migration；wheel包含空公开信任清单。真实签发私钥不生成、不上传。
+- 已知限制：A04仅PASS_SCOPE_LIMITED；真实密钥仪式、离线备份恢复、运行时信任、Windows11实机、Gate/Pilot/Release均未由本项证明。详细见 docs/progress/plg-01-a04-key-ceremony-result.md。
 
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 

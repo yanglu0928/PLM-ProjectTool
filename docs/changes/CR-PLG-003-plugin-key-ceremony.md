@@ -1,7 +1,7 @@
 # CR-PLG-003：Developer Workbench 插件签发密钥与发布者清单
 
 - 日期：2026-11-03
-- 状态：APPROVED_BY_CONTINUOUS_USER_AUTHORIZATION / IMPLEMENTATION_IN_PROGRESS
+- 状态：APPROVED_BY_CONTINUOUS_USER_AUTHORIZATION / PASS_SCOPE_LIMITED
 - 适用 WBS：PLG-01-A04
 - 依据：ADR-005、Module Boundaries、DM-04、CR-PLG-001/002、Developer Workbench既有License key ceremony规则、用户持续自主执行授权
 
@@ -47,3 +47,12 @@ PLG-01-A02/03已有Ed25519 verifier与Manifest parser，但没有Developer Workb
 - 方案比较：A) 异常路径把清单原子恢复为原始字节，并删临时/新私钥；B) 重构为同目录暂存两件文件后发布并增加恢复日志。选择A，改动较小且保留现有工作台文件格式；必须覆盖发布后注入核验失败、assert原清单逐字节恢复、私钥/临时文件不存在。
 - 回滚：无数据库/API迁移；修复可逆，若失败则保持A04未关闭、保持空trust信任失败关闭状态，不引入真实key。
 - 当前偏差状态：已登记，待修复、hosted复验及更新A04结果文档后再关闭。
+
+
+## PLG-01-A04 修复与验收关闭（2026-11-03）
+
+- 首轮提交 19b214ae777b2b899509639ae3c31b934ef31479 hosted run [41575141107](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41575141107) 全13 jobs成功；复核后发现 pair 核验失败回滚会留下ACTIVE孤立公钥，详见前述修复前记录。
+- 修复提交 aaef9391b0a98b8b202e5140f7266b8a0a8841a0 将原空清单字节暂存至可恢复值；核验失败时用同目录临时文件+原子替换恢复原始清单，成功恢复后删除新私钥。若恢复失败，保留加密私钥与仍登记的新公钥配对，避免孤立ACTIVE条目；所有暂存文件均尽力清理并仅返回无敏感信息错误。
+- 新增失败注入测试覆盖“清单已替换、pair核验随后失败”，断言原空清单逐字节恢复、新私钥不存在、无restore/temp残留。
+- 修复后hosted run [41576991044](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41576991044) 全13 jobs成功：后端3,889项、仪式工具5项、wheel、前端、PG18、非发行父包、A35/A17/A34。
+- A04状态：PASS_SCOPE_LIMITED。真实密钥仪式/离线备份、ACL、正式发布者Trust、Win11实机、Gate/Pilot/Release均不在本证据范围。
