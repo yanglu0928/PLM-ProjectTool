@@ -50,3 +50,11 @@
 - Hosted run [41700273515](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41700273515) 的Backend 3,925项全量测试通过，随后父包PostgreSQL smoke因旧 `validation/out-01-a01-p01-migration/verify.py` 固定期待Migration head 20261103_0224而失败；报告为“empty upgrade did not reach schema head”。
 - 初步归因是验收脚本尚未跟进本次合法head 20261104_0225；不是数据库建表失败证据。A17在该run中的结果尚未结束，A01仍未通过。
 - 修复前计划：更新该PG verifier的目标head和下迁移边界，确保新增表存在、空库降级/重升安全且原有Output Migration保护仍验证；之后完整重跑hosted workflow。失败与修复先后保留。
+
+
+## Windows父包PG smoke的PLG-01验证器版本边界偏差（2026-11-04）
+
+- Hosted run [41702575629](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41702575629) 的后端全量回归、前端构建、PG18 sidecar、Windows父包组装、A17 PlanVersion流程、A35交接均通过；父包PG smoke在调用既有 `validation/plg-01-a01-package-schema/verify.py` 时失败，原因是该脚本仍把当前Migration head固定为 `20261103_0224`。
+- 该偏差来自PLG-02新增head `20261104_0225` 后，PLG-01端到端迁移验证器未同步版本边界；不是PLG-02迁移建表失败证据。A17虽通过，但A34因父包PG smoke依赖失败而跳过；本轮整体不可判全通过。
+- 修复计划：将PLG-01 verifier的预期head更新为 `20261104_0225`，保留其 `0223` downgrade边界及原PLG-01存量保护断言；另在PG18脚本里核对PLG-02三张表、Owner关闭和TRUNCATE守卫，并覆盖空库升级/降级/重升。随后重跑GitHub hosted完整工作流。此变更只同步schema验证目标，不修改产品Schema/API/Owner。
+- 偏差在修复提交之前登记；所有运行只在GitHub hosted Windows runner的D盘临时区进行。
