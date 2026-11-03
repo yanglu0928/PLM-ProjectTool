@@ -1,7 +1,7 @@
 # PLG-01-A03：版本化 Plugin Manifest 解析与入口路径校验编码前检查
 
 - 日期：2026-11-03
-- 状态：PRECHECK_COMPLETE / READY_TO_IMPLEMENT
+- 状态：IMPLEMENTED / PASS_SCOPE_LIMITED
 - Phase/WBS：Phase 2 / PLG-01-A03
 - Change Request：CR-PLG-002（格式边界先记录）
 - 上一项：PLG-01-A02 Ed25519 verifier PASS_SCOPE_LIMITED；正式Trust source材料缺失
@@ -48,3 +48,11 @@ Hosted run [41571779122](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [41572410413](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41572410413) 后端3,889项中入口路径测试的12个subTest均失败，预期 `PLUGIN_INVALID_ENTRY_POINT`、实际 `PLUGIN_INVALID_MANIFEST`。进一步追踪发现 `reject()` helper 对 dict fixture 直接调用 bytes-only `parse()`，每个用例都在输入类型守卫处退出，未执行Manifest/路径验证。此前针对parser错误映射的两次代码调整因此没有被这些测试验证；不代表安全绕过，也不能把该边界声称已验证。
 
 先记录根因；修复helper：dict fixture通过正式JSON UTF-8 encoder转bytes，bytes malformed JSON保持原样；补充subTest路径信息，随后全量验证真实字段规则。
+
+
+## 最终验收结果（2026-11-03）
+
+- GitHub hosted run [41573036147](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41573036147) 13/13 jobs成功；backend 3,889 tests/wheel、frontend、PG18、父包、A35、A17、A34通过。
+- 先前run 41571211968/41571779122/41572410413的路径断言失败来自测试helper把dict直接交给bytes-only parser；其中首轮“NUL错误码”判断已纠正为无效测试夹具。最终helper序列化UTF-8 JSON后实际覆盖字段边界。
+- 结果 `PASS_SCOPE_LIMITED`；不涵盖ZIP解压、生产签名信任、安装、执行或Windows11实机。详见 `docs/progress/plg-01-a03-manifest-validation-result.md`。
+- 下一项：PLG-01-A04生产发布者公钥信任源、轮换与撤销编码前检查。

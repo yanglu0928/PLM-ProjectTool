@@ -1,5 +1,12 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A03 完成只读版本化Manifest parser和路径校验；hosted run [41573036147](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41573036147) 13/13 jobs成功，后端3,889项全通过。此前3次路径断言失败经追查是测试helper直接传dict给bytes parser，已在结果文档中更正测试盲区和失败根因。
+- 兼容性：仅GitHub hosted Windows Server 2025与合成Manifest；无本机/C盘运行、无Windows 11实机验收。
+- 升级说明：内部代码更新，无DB/API/Migration；不生成安装包。
+- 已知限制：不含ZIP解压、正式发布者信任、包导入/安装/执行。A03为PASS_SCOPE_LIMITED，Gate3/Pilot/Release仍NOT_READY。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A03 第三次 hosted run [41572410413](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41572410413) 发现12个入口路径子例由测试fixture helper误传dict导致，目标字段规则没有被测到。根因已记入CR-PLG-002/前置记录，修复测试后重跑，A03保持未通过。
 
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）

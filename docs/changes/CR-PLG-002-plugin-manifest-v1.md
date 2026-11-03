@@ -1,7 +1,7 @@
 # CR-PLG-002：版本化 Plugin Manifest V1 解析格式
 
 - 日期：2026-11-03
-- 状态：APPROVED_BY_CONTINUOUS_USER_AUTHORIZATION / IMPLEMENTATION_IN_PROGRESS
+- 状态：APPROVED_BY_CONTINUOUS_USER_AUTHORIZATION / PASS_SCOPE_LIMITED
 - 适用 WBS：PLG-01-A03
 - 依据：ADR-005、Gate 2 冻结 DM-04/API-03/SC-01～03、POC-08现有Manifest样例、用户2026-09-24持续自主执行授权
 
@@ -46,3 +46,11 @@ Run 41571779122 对前一次入口NUL错误码修复仍得到同一失败，表�
 ## 第三次验收根因（2026-11-03）
 
 Hosted run 41572410413显示12个entry-path子例失败。根因为测试 `reject()` helper 将Python dict原样传给仅接受bytes的Parser，导致输入类型守卫提前返回通用错误；路径与大部分结构负向测试此前均未真正执行目标解析逻辑。先前两次对错误分类的实现调整未被有效测试覆盖。修复helper为先JSON/UTF-8序列化fixture后再调用，保留直接bytes用于坏JSON/无效UTF-8用例。当前A03仍未通过。
+
+
+## 测试根因纠正及最终验收（2026-11-03）
+
+- 对先前3次失败记录进行纠正：首轮并未证明“NUL错误分类”；原因是 `reject()` 将dict fixture直接传给bytes-only parser，目标代码没有执行。第二/三轮也同样未测到具体Manifest/路径字段。详见 `docs/progress/plg-01-a03-manifest-validation-result.md`。
+- 最终修正commit `9abfa92316f0a91e1e20360a858d794173e4f7bf` 将dict fixtures序列化后再传parser；最终run [41573036147](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41573036147) 13/13 jobs成功，后端3,889全通过并构建wheel，前端/PG18/父包/A35/A17/A34通过。
+- PLG-01-A03为 `PASS_SCOPE_LIMITED`。本结果只覆盖合成Manifest bytes；不覆盖ZIP解包、生产发布者trust、安装或执行。
+- 下一项：PLG-01-A04正式Trust source/轮换/撤销编码前检查。
