@@ -44,3 +44,12 @@ A02已有完整归档字节Ed25519 detached verifier，A03已有有界Manifest p
 - 修正设计：在打开ZipFile前，从归档尾部最大65,557字节定位并校验EOCD；拒绝多磁盘、ZIP64 sentinel、前置自解压数据、偏移/长度/注释不一致；先将总项数限制为4,096、Central Directory限制为8MiB，再进入zipfile。打开后重复核对实际项数和目录元数据。
 - 选择该方案是为了保留Python标准库解析器，同时在对象创建前完成硬边界。备选“只依靠infolist后校验”未能限制前置解析成本，拒绝。ZIP64在当前256MiB/4,096项合同下无必要；未来若需支持必须由新CR放宽。
 - 该保护属于已记录合同的具体化，不增加持久格式/API；相应单测覆盖EOCD项数/中央目录/ZIP64/多磁盘和偏移伪造拒绝。此补充在实现提交前写入。
+
+
+## 首轮云端验收失败记录（2026-11-03，修复前）
+
+- 首个A06实现提交80edd9f2cfe166c2b3cf9ff5e87ad7b780db5f41触发hosted run [41581198290](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581198290)。前置PG18/前端/runner检查通过；后端3,902项中1个错误、1个失败，后续wheel/父包/A17/A34被跳过。
+- 错误根因：Windows测试生成器构建成员名时将反斜杠规范成斜杠；Manifest测试值仍包含反斜杠，故Manifest parser按合同返回PLUGIN_INVALID_ENTRY_POINT，测试辅助函数仅捕获包检查错误，显示为fixture error。归档中未实际写入反斜杠成员名，该子例未验证目标分支。
+- 失败根因：EOCD测试bytes literal包含过度转义的反斜杠文本，查找真实PK签名返回-1；该测试的伪造EOCD字段断言未执行。其他EOCD相关正向路径由主验收样例运行，但故障注入矩阵尚不完整。
+- 目前证据未显示归档检查器绕过、路径逃逸或未授权执行；A06不标PASS。下一修正仅改测试夹具：对生成后的ZIP原始文件名字节将等长正斜杠替换为反斜杠（Manifest保留合法entry_point），并使用准确的PK\x05\x06 EOCD签名字节；然后重跑定向/全量hosted CI。
+- 回滚策略不变：无DB/API/持久化，保持插件导入/安装/运行关闭。

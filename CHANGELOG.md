@@ -1,5 +1,10 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A06 首轮hosted run [41581198290](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581198290) 后端3,902项中1个测试错误、1个失败；根因为Windows ZIP测试写入器规范化反斜杠夹具与EOCD测试字面量转义错误，检查器的对应负向断言未按预期执行。失败与修正计划先记入CR-PLG-004/A06检查；没有证据显示产品安全绕过，后端失败后wheel/父包链被跳过。
+- 状态：A06未通过，正在先修正纯测试夹具后云端重跑。所有运行仍限GitHub hosted runner，不运行用户本机/C盘。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A05 新增只读包内发布者公钥Resolver并适配现有Plugin签名Verifier。hosted run [41579068045](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41579068045) 13/13 jobs成功，后端3,895项、wheel、前端、PG18、父包及A35/A17/A34链通过。空正式key manifest继续拒绝所有真实发布者签名。
 - 兼容性：仅GitHub hosted Windows Server 2025；不在用户本机/C盘运行。没有Win11设备验收。
 - 升级说明：无ORM/Migration/API；新Resolver只读取包内公开资源，无插件导入/安装/执行。

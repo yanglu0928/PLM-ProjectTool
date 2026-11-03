@@ -1,11 +1,11 @@
-|Next WBS|PLG-01-A06：插件归档安全读取与签名Manifest联合验证编码前检查|
+|Next WBS|PLG-01-A06：修复ZIP测试夹具并复验归档边界|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|A50修正提交 ae1c0455f0fdb7c54d4f9fe6b7364c8a5ae37c12；hosted run 41391544470全12 jobs成功。A35 Windows11 Home build26300 D盘隔离父包复验仍为历史PASS_LIMITED；本轮不代表实机Windows11验收。正式信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
 |Current WBS|PLG-01-A06：插件归档安全读取与签名Manifest联合验证|
-|Latest WBS Status|A05新增包内publisher manifest只读resolver，严格解析ACTIVE Ed25519 key并拒绝未知/撤销/损坏/重复/超限清单；空产品清单保持fail-closed。hosted run 41579068045全13 jobs成功，后端3,895项/wheel、前端、PG18、父包、A17/A34通过。A05为PASS_SCOPE_LIMITED，无真实发布者key。|
-|Current Status|PLG_01_A05_PASS_SCOPE_LIMITED / PLG_01_A06_PRECHECK_COMPLETE / PHASE_2_IN_PROGRESS|
+|Latest WBS Status|A05包内publisher resolver已PASS_SCOPE_LIMITED。A06提交80edd9f实现内存只读ZIP检查与EOCD中央目录预检；首轮hosted run 41581198290后端3,902项中1个测试错误/1个失败，根因均为Windows测试夹具：ZIP写入器把反斜杠规范成斜杠，EOCD标记字节串过度转义。尚未发现归档检查安全绕过；A06保持未通过，失败已记录后修测试夹具复验。|
+|Current Status|PLG_01_A05_PASS_SCOPE_LIMITED / PLG_01_A06_TEST_FIX_IN_PROGRESS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
 |Blockers|Gate 3审计确认：Handover、Survey与Requirement前三阶段已顺序组合至PROTOTYPE/v10；Requirement读写、真实聚合Owner/PG/HTTP、前端及Edge证据已完成，Prototype、Solution、Plan真实业务Owner和后续阶段仍待。POC-03新集合同0/7、技术协议1/8且旧质量分类48%/引用74%继续阻塞Gate 3/UAT；正式发行公钥、目标服务账户Vault/ACL/CA、SCM安装恢复与20并发性能未验。DOC生产清理入口、Server2025当前运行链、Debian13实机按用户指令跳过、Server Office及Ghostscript发行合规继续作为独立Release约束|
@@ -15,7 +15,7 @@
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；当前增量至`20261102_0222`（0220/0221为Output增量；0222新增PLG Package/manifest/verification元数据表；历史冻结内容未改写）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|A03 hosted run 41573036147全13 jobs成功：后端3,889全通过/wheel、前端/typecheck/build、PG18/pgvector、父包/A35/A17/A34。只读Manifest解析合成测试；没有生产trust root、包导入/解压/安装/执行、Windows11实机、Gate3/Pilot/Release验收。|
-|Latest Test Summary|PLG-01-A05提交ce6a40e185cfa736208060d14030f0d17809131b对应hosted run [41579068045](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41579068045)全13 jobs成功；后端3,895项/wheel、前端、PG18、父包、A35/A17/A34通过。Resolver定向测试覆盖Active合成验签、撤销/未知拒绝、空正式资源失败关闭、畸形/重复/超限清单拒绝。仅hosted合成信任，无真实key/Win11/Gate/Pilot/Release结论。|
+|Latest Test Summary|PLG-01-A06首轮run [41581198290](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581198290)后端3,902项中1个夹具错误、1个断言失败；两个失败分别是Windows zipfile规范化测试文件名与EOCD fixture标记误写。前置PG18/前端/runtime检查通过；后端失败使wheel/父包/A17/A34跳过。当前不判A06通过，不把测试夹具失败写成产品安全绕过。|
 |Next WBS|OUT-01-A01-P03：可信固定来源、模板与策略解析器编码前检查|
 |Latest Validation|A33 run 41008231772 在D盘hosted Windows Server 2025验证当前父包20,119项SHA、startup diagnostic六阻断码、缺脚本/损坏manifest回退、A29七类守门矩阵、A30四类诊断篡改、临时PG生命周期与A17 29 API PlanVersion流程；product API/service/listener未启动。无Windows11设备、正式License trust、安装升级、UAT、Gate或Release结论。|
 

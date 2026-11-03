@@ -35,3 +35,10 @@
 ## 中央目录预检补充（编码提交前）
 
 Python zipfile在ZipFile初始化时解析中央目录，无法先靠后续infolist()限制对象数。故实际实现必须先预检EOCD：最大尾窗65,557字节，最多4,096项，中央目录最多8MiB；拒绝ZIP64、多磁盘、自解压前缀及错位/注释长度不一致，再调用ZipFile并复核目录数量。该具体约束及原因已先追加到CR-PLG-004；新增对应恶意EOCD测试。
+
+
+## 首轮hosted失败及修正前记录（2026-11-03）
+
+- Run [41581198290](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581198290)：后端3,902项中1 error/1 failure；wheel及后续父包链跳过。失败已先追加CR-PLG-004与STATUS/CHANGELOG。
+- 反斜杠用例的Windows zipfile构造器将路径变成正斜杠，未形成预期原始ZIP路径；EOCD test literal多转义一层，未匹配真实头部。两项都是测试fixture问题，不能判产品行为通过或失败；未观察到检查器安全绕过。
+- 后续先只修正测试生成方式与签名字面量，保留生产检查逻辑，再跑云端全量验证。A06在复验前未关闭。
