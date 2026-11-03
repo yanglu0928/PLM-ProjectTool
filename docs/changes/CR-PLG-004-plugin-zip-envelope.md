@@ -60,3 +60,13 @@ A02已有完整归档字节Ed25519 detached verifier，A03已有有界Manifest p
 - 第二轮run [41581853457](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581853457) 中A06专项归档/EOCD用例未报失败；后端其余回归报1个既有测试失败（总计3,902项），导致wheel/父包/A17/A34跳过。
 - 失败用例 test_capability_proof_locks_current_item_and_global_review 使用uuid.uuid4()生成12个值，并断言repr不包含固定子串“cccc”。一个随机UUID恰含该子串，proof repr只包含正常字段而没有隐藏敏感数据，该断言仍误报。此为随机夹具与过宽子串断言的false positive，不是本WBS产品实现缺陷。
 - 预定修正仅限该单测：用确定性不含禁用标记的UUID集合替代随机UUID，让负向断言稳定且保留锁查询/返回结构验收。保留首轮两个A06 fixture根因记录。完成后重跑全量CI和集成链；在全量成功前A06保持未关闭。
+
+
+## A06云端完整复验与关闭（2026-11-03）
+
+- 代码及测试稳定化后的run [41582564698](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41582564698) 全13/13 jobs成功；后端3,902项全通过并构建wheel，前端、PG18/pgvector、父包构建/清洁解包/临时PG smoke、A35 handoff、A17 packaged PlanVersion flow、A34 offline replacement/manual restore均成功。
+- A06的ZIP/EOCD与Manifest/签名/EntryPoint负例均随该后端全量回归通过。A17验证候选摘要为`ff223e20679361a37d33a6b215d0dc423d69b0f8c7de1e30830d66004bc74ba1`；A34演练摘要与恢复标记参见run 41582564698上传的证据artifact。
+- 第二轮随机UUID误报仅调整既有测试fixture，未改变产品代码；首轮与第二轮失败及其原因继续保留为历史，不删除失败记录。
+- WBS结论：`PASS_SCOPE_LIMITED`。不代表插件导入/落盘/安装/运行，不代表正式发布信任、Windows 11设备、Gate 3、Pilot或Release通过。没有客户数据、Secret或真实信任材料进入本验收。
+- 运行位置：GitHub hosted Windows Server 2025 runner，工作区/隔离目录使用D盘；未在用户本机或C盘运行。
+- 交付结果：`docs/progress/plg-01-a06-plugin-zip-inspector-result.md`。后续转至STATUS.md中的OUT-01-A01-P03，按其已完成的前置核查与CR-OUT-003实施。

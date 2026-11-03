@@ -1,5 +1,12 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A06 全链路验收完成：GitHub hosted Windows run [41582564698](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41582564698) 13/13 jobs成功；后端3,902项/wheel、前端、PG18/pgvector、父包、A35 handoff、A17包内PlanVersion flow及A34替换/显式恢复演练通过。A06只读ZIP/Manifest/整包签名联合检查为PASS_SCOPE_LIMITED。
+- 偏差追溯：首轮Windows ZIP/EOCD fixture错误与第二轮既有随机UUID误报均先记录、后修正并完整复验，详见CR-PLG-004及A06结果文档；未改产品逻辑来消除随机误报。
+- 兼容性/升级：没有新增DB/API/Migration或外部包格式升级；不执行插件导入、安装或运行。
+- 限制：仅GitHub hosted Windows Server 2025合成验证；未形成Windows 11设备验收、正式信任、Gate、Pilot或Release证据。下一项按CR-EXEC-002为OUT-01-A01-P03。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A06 第二轮hosted run [41581853457](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581853457) 的A06定向归档/EOCD用例通过，但后端3,902项中1项既有capability source proof单测因随机UUID偶然包含“cccc”而误报敏感repr，导致wheel/父包/A17/A34跳过。根因与修正前记录见CR-PLG-004/A06检查；先固定测试fixture再跑全量链。A06尚未PASS。
 
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）

@@ -48,3 +48,10 @@ Python zipfile在ZipFile初始化时解析中央目录，无法先靠后续infol
 
 - Run [41581853457](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581853457)：A06归档/EOCD测试未报失败，后端总计3,902项仍有1个随机UUID单测误报（UUID包含测试禁用子串“cccc”）；wheel/后续集成跳过。
 - 已先记录于CR-PLG-004、STATUS与CHANGELOG。下一次只改该既有测试的随机UUID夹具为确定值，不改业务代码；其后完整云端回归验收。
+
+
+## 最终云端验收与关闭（2026-11-03）
+
+- hosted run [41582564698](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41582564698) 全13 jobs成功；后端3,902项及wheel、前端、PG18/pgvector、父包/临时PG、A35、A17、A34均通过。
+- 首轮ZIP路径/EOCD fixture缺陷和第二轮无关随机UUID误报均在实施前追加CR/状态记录后修正；本轮完整复验成功。
+- 结论：`PASS_SCOPE_LIMITED`。不包含真实信任、Windows 11实机、插件导入/安装/执行或Gate/Pilot/Release通过。详见同目录A06结果记录。
