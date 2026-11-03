@@ -86,6 +86,18 @@ def _assert_guards(dsn: str) -> None:
         raise AssertionError(f"expected INSERT Owner to be open, found {closed} closed guards")
 
 
+def _assert_guards_open_parent(dsn: str) -> None:
+    with psycopg.connect(dsn) as conn:
+        counts = conn.execute(
+            "SELECT count(*) FILTER (WHERE tgname LIKE 'trg_plg_%__immutable'),"
+            "count(*) FILTER (WHERE tgname LIKE 'trg_plg_%__no_truncate'),"
+            "count(*) FILTER (WHERE tgname LIKE 'trg_plg_%__owner_closed') "
+            "FROM pg_trigger WHERE NOT tgisinternal"
+        ).fetchone()
+    if counts != (4, 4, 0):
+        raise AssertionError(f"expected open 0223 Plugin owners and immutable guards, got {counts}")
+
+
 def _assert_guards_closed(dsn: str) -> None:
     with psycopg.connect(dsn) as conn:
         actual = conn.execute(
@@ -269,6 +281,10 @@ def main() -> int:
             raise AssertionError("empty PLG-01 import staging downgrade did not stop at 0223")
         _assert_presence(empty_dsn, True)
         _assert_import_staging_presence(empty_dsn, False)
+        _assert_guards_open_parent(empty_dsn)
+        downgrade_database(empty_url, "20261102_0222")
+        if _revision(empty_dsn) != "20261102_0222":
+            raise AssertionError("empty Plugin owner downgrade did not stop at 0222")
         _assert_guards_closed(empty_dsn)
         downgrade_database(empty_url, "20261102_0221")
         if _revision(empty_dsn) != "20261102_0221":
