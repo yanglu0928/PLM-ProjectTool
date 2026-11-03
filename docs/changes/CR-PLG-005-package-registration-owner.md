@@ -1,7 +1,7 @@
 # CR-PLG-005：可信插件包元数据登记Owner与路线纠正
 
 - 日期：2026-11-03
-- 状态：APPROVED_BY_CONTINUOUS_USER_AUTHORIZATION / PRECHECK_COMPLETE
+- 状态：APPROVED_BY_CONTINUOUS_USER_AUTHORIZATION / IMPLEMENTATION_IN_PROGRESS
 - 适用WBS：PLG-01-A07
 - 分支：feature/p51-a33-launcher-checksum-recovery
 - 依据：Gate 2冻结的API-03/DM-04/SC-01～03、ADR-005、CR-PLG-001～004、CR-EXEC-002、用户持续自主执行授权
@@ -25,6 +25,12 @@ A07实现单一问题：将成功完成A06安全检查及受注入兼容策略�
 - Migration 0223为现有闭写Owner安装窄写路径：允许INSERT；Package/Operations/Dependencies/Verifications行的UPDATE/DELETE改为显式拒绝，TRUNCATE继续拒绝。down恢复闭写并保留已存在数据；0222自身仍会阻止有历史数据的破坏性降级。
 - 数据库只保存DM-04既有元数据/签名/摘要，不保存ZIP正文、私钥、API Key、临时路径或客户资料。后续安装前必须重新获得相同包字节并验证其SHA-256或新增独立内容存储WBS。
 - 默认生产信任清单仍为空，故真实签名导入在生产组合失败关闭；合成测试使用仅进程内key，不改包内信任manifest，不产生发布信任。
+
+## 当前实施状态
+
+- A07 application service、PostgreSQL metadata repository、migration `20261103_0223` 与 synthetic unit tests 已提交到本分支。
+- PLG 与共享 Output migration validators 已适配 0223；hosted run 41585611247 等待执行，尚无 A07 验收结论。
+- SQLAlchemy/PostgreSQL实际事务集成、审计同事务、迁移上/下行及全链路仍以云端run结果为准。
 
 ## 影响、迁移、回滚和验证
 
