@@ -314,9 +314,10 @@ def main() -> int:
         result["synthetic_history_retained"] = "PASS"
         downgrade_database(empty_url, PARENT)
         if _revision(empty_dsn) != PARENT:
-            raise AssertionError("history-preserving owner downgrade did not stop at 0222")
+            raise AssertionError("history-preserving staging downgrade did not stop at 0223")
         _assert_presence(empty_dsn, True)
-        _assert_guards_closed(empty_dsn)
+        _assert_import_staging_presence(empty_dsn, False)
+        _assert_guards_open_parent(empty_dsn)
         with psycopg.connect(empty_dsn) as conn:
             retained = conn.execute(
                 "SELECT count(*) FROM plm.plg_package_verifications "
