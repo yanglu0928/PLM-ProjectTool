@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-03（内部云端开发，不是发行版本）
+
+- PLG-01-A04 先建立Developer Workbench独立插件签名密钥仪式与公开key manifest格式；只编写工具和合成测试，本轮不会在本机/云端生成真实私钥。顺序记录见 DEC-PLG-002/CR-PLG-003。
+- 兼容性：开发分支、hosted Windows Server 2025；用户本机未运行。
+- 升级说明：私钥工具在客户runtime包外；空信任清单，无应用DB/API变化。
+- 已知限制：本项完成不代表真实key产生、离线备份或runtime trust已就绪。
+
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
 - PLG-01-A03 完成只读版本化Manifest parser和路径校验；hosted run [41573036147](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41573036147) 13/13 jobs成功，后端3,889项全通过。此前3次路径断言失败经追查是测试helper直接传dict给bytes parser，已在结果文档中更正测试盲区和失败根因。
