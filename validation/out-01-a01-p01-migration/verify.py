@@ -6,10 +6,11 @@ import argparse
 import json
 import re
 import sys
+import uuid
 from pathlib import Path
 
 import psycopg
-from psycopg import sql
+from psycopg import errors, sql
 from sqlalchemy import URL
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -71,16 +72,163 @@ def _assert_plugin_installation_tables(dsn: str, expected: bool) -> None:
     with psycopg.connect(dsn) as conn:
         found = [conn.execute("SELECT to_regclass(%s)", ("plm." + name,)).fetchone()[0]
                  for name in tables]
-        owner_closed = conn.execute(
-            "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
-            "AND tgname IN ('trg_plg_installations__owner_closed', "
-            "'trg_plg_enabled_operations__owner_closed', "
-            "'trg_plg_runtime_validations__owner_closed')"
-        ).fetchone()[0]
     if (all(found)) is not expected or (not expected and any(found)):
         raise AssertionError(f"PluginInstallation table presence mismatch: {found!r}")
-    if expected and owner_closed != 3:
-        raise AssertionError(f"PluginInstallation write guards are not closed: {owner_closed}")
+    if expected:
+        _assert_plugin_installation_contract(dsn)
+
+
+def _assert_plugin_installation_contract(dsn: str) -> None:
+    with psycopg.connect(dsn) as conn:
+        owner_closed, no_truncate, immutable = conn.execute(
+            "SELECT "
+            "(SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN "
+            "('trg_plg_installations__owner_closed','trg_plg_enabled_operations__owner_closed',"
+            "'trg_plg_runtime_validations__owner_closed')),"
+            "(SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN "
+            "('trg_plg_installations__no_truncate','trg_plg_enabled_operations__no_truncate',"
+            "'trg_plg_runtime_validations__no_truncate')),"
+            "(SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
+            "AND tgname='trg_plg_runtime_validations__immutable')"
+        ).fetchone()
+        fk_count = conn.execute(
+            "SELECT count(*) FROM pg_constraint WHERE contype='f' AND conname IN "
+            "('fk_plg_installations__package_plugin',"
+            "'fk_plg_enabled_operations__installation_package',"
+            "'fk_plg_enabled_operations__manifest_operation',"
+            "'fk_plg_runtime_validations__installation')"
+        ).fetchone()[0]
+        unique_index = conn.execute(
+            "SELECT count(*) FROM pg_indexes WHERE schemaname='plm' "
+            "AND indexname='uq_plg_enabled_operations__plugin_operation'"
+        ).fetchone()[0]
+    if owner_closed != 3 or no_truncate != 3 or immutable != 1:
+        raise AssertionError(
+            "PluginInstallation trigger contract mismatch: "
+            f"owner_closed={owner_closed}, no_truncate={no_truncate}, immutable={immutable}"
+        )
+    if fk_count != 4 or unique_index != 1:
+        raise AssertionError(
+            f"PluginInstallation relation contract mismatch: fk={fk_count}, unique_index={unique_index}"
+        )
+
+    for table in ("plg_installations", "plg_enabled_operations", "plg_runtime_validations"):
+        with psycopg.connect(dsn) as conn:
+            try:
+                with conn.transaction():
+                    conn.execute(sql.SQL("INSERT INTO plm.{} DEFAULT VALUES").format(
+                        sql.Identifier(table)
+                    ))
+            except errors.RaiseException:
+                pass
+            else:
+                raise AssertionError(f"closed PluginInstallation Owner accepted INSERT on {table}")
+            try:
+                with conn.transaction():
+                    conn.execute(sql.SQL("TRUNCATE plm.{}").format(sql.Identifier(table)))
+            except errors.RaiseException:
+                pass
+            else:
+                raise AssertionError(f"PluginInstallation Owner allowed TRUNCATE on {table}")
+
+
+def _seed_plugin_installation_history(dsn: str, package_id: uuid.UUID) -> tuple[uuid.UUID, uuid.UUID]:
+    installation_ids = (uuid.uuid4(), uuid.uuid4())
+    actor_id = uuid.uuid4()
+    with psycopg.connect(dsn) as conn:
+        conn.execute(
+            "ALTER TABLE plm.plg_installations "
+            "DISABLE TRIGGER trg_plg_installations__owner_closed"
+        )
+        try:
+            for installation_id in installation_ids:
+                conn.execute(
+                    "INSERT INTO plm.plg_installations "
+                    "(plugin_installation_id,plugin_package_id,plugin_id_normalized,"
+                    "installation_state,validated_runtime_snapshot,installed_by,"
+                    "created_by,updated_by,lock_version) "
+                    "VALUES (%s,%s,'synthetic.upgrade','INSTALLED',"
+                    "'{\"schema_version\":\"1\",\"source\":\"test-only\"}'::jsonb,"
+                    "%s,%s,%s,0)",
+                    (installation_id, package_id, actor_id, actor_id, actor_id),
+                )
+        finally:
+            conn.execute(
+                "ALTER TABLE plm.plg_installations "
+                "ENABLE TRIGGER trg_plg_installations__owner_closed"
+            )
+
+        conn.execute(
+            "ALTER TABLE plm.plg_enabled_operations "
+            "DISABLE TRIGGER trg_plg_enabled_operations__owner_closed"
+        )
+        try:
+            with conn.transaction():
+                conn.execute(
+                    "INSERT INTO plm.plg_enabled_operations "
+                    "(plugin_installation_id,operation_id,plugin_package_id,plugin_id_normalized) "
+                    "VALUES (%s,'document.render',%s,'synthetic.wrong')",
+                    (installation_ids[0], package_id),
+                )
+        except errors.ForeignKeyViolation:
+            pass
+        else:
+            raise AssertionError("installation/package composite FK accepted mismatched plugin id")
+
+        try:
+            with conn.transaction():
+                conn.execute(
+                    "INSERT INTO plm.plg_enabled_operations "
+                    "(plugin_installation_id,operation_id,plugin_package_id,plugin_id_normalized) "
+                    "VALUES (%s,'missing.operation',%s,'synthetic.upgrade')",
+                    (installation_ids[0], package_id),
+                )
+        except errors.ForeignKeyViolation:
+            pass
+        else:
+            raise AssertionError("enabled operation FK accepted a missing manifest operation")
+
+        conn.execute(
+            "INSERT INTO plm.plg_enabled_operations "
+            "(plugin_installation_id,operation_id,plugin_package_id,plugin_id_normalized) "
+            "VALUES (%s,'document.render',%s,'synthetic.upgrade')",
+            (installation_ids[0], package_id),
+        )
+        try:
+            with conn.transaction():
+                conn.execute(
+                    "INSERT INTO plm.plg_enabled_operations "
+                    "(plugin_installation_id,operation_id,plugin_package_id,plugin_id_normalized) "
+                    "VALUES (%s,'document.render',%s,'synthetic.upgrade')",
+                    (installation_ids[1], package_id),
+                )
+        except errors.UniqueViolation:
+            pass
+        else:
+            raise AssertionError("enabled operation uniqueness did not span installations")
+        conn.execute(
+            "ALTER TABLE plm.plg_enabled_operations "
+            "ENABLE TRIGGER trg_plg_enabled_operations__owner_closed"
+        )
+
+        conn.execute(
+            "ALTER TABLE plm.plg_runtime_validations "
+            "DISABLE TRIGGER trg_plg_runtime_validations__owner_closed"
+        )
+        try:
+            conn.execute(
+                "INSERT INTO plm.plg_runtime_validations "
+                "(plugin_installation_id,compatibility_state,runtime_snapshot,validated_by) "
+                "VALUES (%s,'COMPATIBLE',"
+                "'{\"schema_version\":\"1\",\"source\":\"test-only\"}'::jsonb,%s)",
+                (installation_ids[0], actor_id),
+            )
+        finally:
+            conn.execute(
+                "ALTER TABLE plm.plg_runtime_validations "
+                "ENABLE TRIGGER trg_plg_runtime_validations__owner_closed"
+            )
+    return installation_ids
 
 
 def main() -> int:
@@ -103,6 +251,8 @@ def main() -> int:
         "owner_migration_downgrade_reupgrade": "PENDING",
         "empty_database_downgrade_reupgrade": "PENDING",
         "existing_synthetic_data_upgrade": "PENDING",
+        "installation_constraints": "PENDING",
+        "installation_history_blocks_downgrade": "PENDING",
         "customer_data": False,
         "external_api_calls": 0,
         "production_database": False,
@@ -199,6 +349,30 @@ def main() -> int:
         if retained != (1, 1):
             raise AssertionError("pre-existing PLG-01 package facts changed during migration")
         result["existing_synthetic_data_upgrade"] = "PASS"
+
+        installation_ids = _seed_plugin_installation_history(existing_dsn, package_id)
+        result["installation_constraints"] = "PASS"
+        try:
+            downgrade_database(existing_url, "20261103_0224")
+        except RuntimeError as exc:
+            if "PluginInstallation history prevents downgrade" not in str(exc):
+                raise
+        else:
+            raise AssertionError("PLG-02 migration allowed downgrade with installation history")
+        if _revision(existing_dsn) != "20261104_0225":
+            raise AssertionError("blocked PluginInstallation downgrade changed migration revision")
+        with psycopg.connect(existing_dsn) as conn:
+            counts = conn.execute(
+                "SELECT (SELECT count(*) FROM plm.plg_installations),"
+                "(SELECT count(*) FROM plm.plg_enabled_operations),"
+                "(SELECT count(*) FROM plm.plg_runtime_validations) "
+                "WHERE (SELECT count(*) FROM plm.plg_installations "
+                "WHERE plugin_installation_id=%s)=2",
+                (installation_ids[0],),
+            ).fetchone()
+        if counts != (2, 1, 1):
+            raise AssertionError(f"blocked PluginInstallation downgrade changed history: {counts!r}")
+        result["installation_history_blocks_downgrade"] = "PASS"
     finally:
         for name in reversed(created):
             _drop_database(admin_dsn, name)
