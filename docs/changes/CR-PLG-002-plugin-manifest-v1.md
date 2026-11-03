@@ -31,3 +31,8 @@
 - 后端全量测试/wheel及GitHub hosted Windows Server 2025 PR链；仅合成/恶意字符串输入，无客户数据、外网包或真实插件代码。所有运行仅在hosted runner D盘temp。
 
 本CR先于编码提交；详细检查见 `docs/progress/plg-01-a03-manifest-validation-precheck.md`。
+
+
+## 首轮验收失败记录（2026-11-03）
+
+Hosted run 41571211968 后端3,888项中1项失败：含NUL入口路径安全拒绝，但因错误分类顺序返回 `PLUGIN_INVALID_MANIFEST`，专项合同期望 `PLUGIN_INVALID_ENTRY_POINT`。详见A03编码前检查的失败记录。测试复核发现深度及空依赖专项夹具断言不足，修复前已一并记录。安全拒绝没有绕过；A03保持未通过，等待定向/全量云端重跑。

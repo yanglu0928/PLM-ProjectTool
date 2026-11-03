@@ -1,5 +1,11 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A03 首轮 hosted run [41571211968](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41571211968) 后端3,888项中1项入口NUL错误码断言失败；输入已被拒绝，尚未出现路径穿越绕过。已在编码前检查/CR-PLG-002中记录，修复后重新跑全链。
+- 兼容性：仅GitHub hosted Windows Server 2025；未在用户本机/C盘运行。
+- 已知限制：A03验收尚未通过，不能标为可安装/可执行；后续包/A17/A34依赖链被跳过。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG任务顺序已记录：正式Plugin发布者根公钥/撤销源尚不存在，不能将合成验签提升为生产信任；先做独立版本化Manifest parser和入口路径校验（PLG-01-A03），其格式已在 [CR-PLG-002](docs/changes/CR-PLG-002-plugin-manifest-v1.md) 固定。生产信任源后续单独建设。
 - 兼容性：开发分支文档/实现；Cloud runner D盘运行，用户本机未运行程序。没有Windows 11设备结论。
 - 升级说明：Manifest parser无Schema/API迁移；未安装产品。

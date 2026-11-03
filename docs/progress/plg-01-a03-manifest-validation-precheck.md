@@ -29,3 +29,10 @@
 ## 编码文件范围
 
 新增 `apps/backend/src/plm_assistant/modules/plugin/application/manifest_parser.py` 与 `apps/backend/tests/unit/test_plugin_manifest_parser.py`，更新CR、STATUS、CHANGELOG及结果记录。若实现发现需要解包/外部文件或新持久字段，停下并另建CR。
+
+
+## 首轮云端验收失败记录（2026-11-03，修复前）
+
+GitHub hosted run [41571211968](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41571211968) 后端3,888项中有1项失败：`test_entry_point_rejects_absolute_drive_unc_traversal_and_ambiguous_paths` 中 NUL 字符入口路径被安全拒绝，但 `_entry_point` 在路径专属校验前调用通用 `_text`，因此错误码为 `PLUGIN_INVALID_MANIFEST` 而不是 `PLUGIN_INVALID_ENTRY_POINT`。没有路径穿越绕过；这是失败分类与测试合同不一致。其余后端测试、前端/PG18/A50通过；包组装与A17/A34依赖作业被跳过。先记录后修正。
+
+编码复核另发现两项专项用例构造不充分：深层结构夹具被根字段白名单提前拒绝；空依赖列表测试未先断言合法空列表。修复时会将深层对象放入有效根字段，并单独断言空依赖有效，确保实际覆盖目标边界。
