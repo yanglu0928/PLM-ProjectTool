@@ -1,7 +1,7 @@
 # CR-OUT-006：内置Output Template Registry
 
 - 日期：2026-11-04
-- 状态：编码前批准（CR-EXEC-002持续授权范围内）
+- 状态：PASS_SCOPE_LIMITED（实现及托管验收完成）
 - WBS：OUT-01-A01-P07
 - 来源：P04/P06源码盘点、冻结Data Model V1/DB Schema V1/API-03、CR-OUT-004/005
 
@@ -34,3 +34,10 @@ P06确认当前Output resolver有OutputTemplateVersion DTO与只读Registry Port
 - 新增 `BuiltinOutputTemplateRegistry`，注册唯一固定ref的不可变DOCX/RequirementVersion metadata；版本ID不随当前指针变化。目录条目只返回Resolver DTO，不包含模板文件、用户数据、文件路径或代码。
 - 单测覆盖稳定精确查找、未知ref/畸形条目拒绝和目录不可变；A17打包运行时会验证同一registry并要求专用marker。
 - 无ORM、Migration、API或依赖变化。hosted全量/父包/A17/A34结果待本提交；未通过前不关闭P07。
+
+
+## 实现与验收结果（2026-11-04）
+
+- 提交 ab23b77e281187b9912103e70a6ab534bd7e6e7e 实现Output Owner只读内置固定ref目录，一个DOCX/REQUIREMENT_VERSION模板metadata条目；缺失/无效/重复目录fail closed，不读取文件/客户数据，不执行代码。
+- GitHub hosted run [41688934347](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41688934347) 13/13 jobs成功。后端全量/wheel、前端、PG18/pgvector、Windows父包、A35、PG smoke、A17与A34全部成功；A17专项证据 marker为 OUT_01_A01_P07_BUILTIN_TEMPLATE_REGISTRY_PASS。
+- 无Schema/API/Migration变化。仅PASS_SCOPE_LIMITED；不包含文件渲染、Output Policy、启用或信任Plugin、Artifact发布、Win11设备/Pilot/Gate/Release验收。保持后续Output链失败关闭。

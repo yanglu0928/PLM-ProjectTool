@@ -276,3 +276,14 @@
 ## Unreleased · 2026-11-04（内置Output模板Registry代码候选）
 - P07新增固定版本只读内置DOCX模板metadata Registry，限REQUIREMENT_VERSION来源；无客户DB/API/Migration、自定义模板或渲染逻辑。A17 packaged runtime新增专用标记；本提交GitHub hosted验证待完成。
 - Output Policy、Plugin enable/trust、文件生成与Artifact链仍缺；当前不支持真实Output Create。
+
+
+## Unreleased · 2026-11-04（内置Output模板Registry受限完成）
+- OUT-01-A01-P07提交 ab23b77e 的GitHub hosted run [41688934347](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41688934347) 13/13 jobs成功。后端全量/wheel、前端、PG18/pgvector、Windows父包、A35、临时PG、A17、A34全部通过；A17 evidence明确记录 OUT_01_A01_P07_BUILTIN_TEMPLATE_REGISTRY_PASS。
+- Registry只提供固定ref的内置DOCX/RequirementVersion模板metadata；不含DOCX渲染内容，不支持自定义，不接真实Output Create。无数据库/API/Migration依赖变化。仅GitHub hosted Windows Server 2025合成验证，非Win11设备或发行证明。
+- Output Policy、Plugin启用/正式信任、渲染与Artifact发布链仍缺；Pilot/Gate/正式Release保持NOT_READY。下一项P08先做Policy Registry编码前核查。
+
+
+## Unreleased · 2026-11-04（Output Policy Owner编码前核查）
+- P08确认冻结模型没有OutputPolicy Aggregate Root、DB表或管理API；插件operation registry的trusted/enabled生产事实缺失。依据CR-OUT-007，P09只实现一条内置不可变策略：P07固定DOCX、RequirementVersion/APPROVED，字段title/statement/acceptance_criteria，最多4来源/8192 bytes。word.generate允许列表不能替代plugin信任或启用。
+- P08 PASS_SCOPE_LIMITED；本轮不新增Schema/API/Migration、不生成文件、不外发客户数据。

@@ -1,0 +1,19 @@
+# OUT-01-A01-P09：内置Output Policy固定版本Registry实现
+
+- 日期：2026-11-04
+- 状态：编码前检查PASS_SCOPE_LIMITED；实现尚未开始
+- WBS：OUT-01-A01-P09
+- 依据：CR-OUT-007、P08 PASS_SCOPE_LIMITED、冻结API-03/DM-04/DB Schema V1
+
+## 编码前检查
+
+- Output Owner提供只读、内置、不可变PolicyVersion，固定ref匹配P07唯一模板。
+- 唯一策略只允许DOCX、P07固定template ref、REQUIREMENT_VERSION/APPROVED；只开放title/statement/acceptance_criteria、最多4个来源/8192字节；来源审核态/项目授权仍由Source Owner复核，Policy不能绕过。
+- word.generate只能记录成策略允许操作；不得将其解释为已安装、enabled或trusted。缺Plugin Operation Registry/真实信任时不挂生产Resolver。
+- 限制最大Sources、JSON深度/大小，测试非法/重复策略fail closed。
+- 不增加DB/ORM/Migration/API/依赖；不外发数据、不生成文档、不执行插件。GitHub hosted runner提供测试和A17 marker证据。
+- 回滚只移除Policy registry，不变更P07 template/ref及既有数据。
+
+## 剩余编码前事项
+
+P08完成后按CR-OUT-007实施单一Policy Registry。
