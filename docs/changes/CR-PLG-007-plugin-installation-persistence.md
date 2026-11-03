@@ -66,3 +66,10 @@
 - 对照本CR原始验收清单复核 `validation/out-01-a01-p01-migration/verify.py` 后发现：PLG-02 smoke 已检查三表建表、三个Owner关闭触发器及空库降级/重升，但没有实际对三表逐项执行TRUNCATE拒绝，也没有对已含PluginInstallation合成记录的库执行0225降级拒绝；复合FK/唯一索引目前仅有ORM单元契约检查，尚缺PG18实库catalog断言。故run全绿仍不足以关闭PLG-02-A01。
 - 下一步先增加本缺口记录，再扩展PG18隔离验证：核对四个复合FK和操作唯一索引、对三表执行TRUNCATE拒绝、使用仅测试库的受控触发器旁路插入合成安装事实并验证降0225被拒且revision/记录保留；不连真实客户库，不创建生产安装/信任事实。完成后重新跑完整GitHub hosted工作流，再据证据判定A01。
 - 所有反例仅运行在GitHub hosted Windows runner D盘临时区；用户本机不运行代码或测试。
+
+
+## PG18 TRUNCATE反例被外键检查提前拒绝（2026-11-04）
+
+- Hosted run [41708851678](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41708851678) 后端、前端、wheel、运行时组装均成功；新增的PG18迁移反例在检查 `plg_installations` 单表TRUNCATE时收到PostgreSQL `FeatureNotSupported`（被 `plg_enabled_operations` 外键引用），未到达目标Owner触发器。此次失败是验证方法不正确，不是业务表可被清空的证据；A01尚未通过。
+- 修复计划：保持三表触发器及FK不变。对无子表引用的enabled/runtime history分别执行TRUNCATE负例；对安装根及其子表使用同一TRUNCATE语句，避免数据库FK预检查截断验证路径，并要求触发器RaiseException。之后重跑同一完整hosted workflow。
+- 偏差已先记录；运行仍仅使用GitHub hosted runner的D盘临时数据库。
