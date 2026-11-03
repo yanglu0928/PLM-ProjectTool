@@ -78,3 +78,10 @@ undefined
 - run [41613964579](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41613964579) 在staging二进制夹具修正后，成功通过0224新增表插入/append-only校验，随后验证脚本在降级停于0223时错误期待0222才会恢复的四个INSERT owner_closed触发器。
 - 0223实际应保持四个immutable更新/删除触发器、四个禁止TRUNCATE触发器且无owner_closed；0222才重新关闭INSERT。仅把验证顺序调整为先核验0223父链开放状态，再降至0222核验四个closed触发器，之后降至0221。不更改迁移或产品数据库守卫。
 - 重跑PG18空库升级/父链降级/重升和有数据保护验收；失败记录保留在本CR。
+
+
+## 0223 history-preservation assertion follow-up (2026-11-03)
+
+- run [41613964579](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41613964579) progressed past the corrected empty-database downgrade sequence but exposed a second stale assertion in the synthetic-history path: downgrading 0224 to 0223 removes only the empty staging table and leaves the 0223 Plugin owner guards open; the test incorrectly expected the 0222 closed-owner state.
+- Corrected the verifier to confirm staging table removal and the 0223 open-owner/immutability guards. The explicit empty-database path continues to downgrade to 0222 and independently verifies the four closed INSERT-owner guards.
+- This is validation sequence/assertion correction only; migration, product database behavior, and stored history are unchanged. Repeat the hosted PostgreSQL 18 migration lifecycle and end-to-end package checks before claiming acceptance.
