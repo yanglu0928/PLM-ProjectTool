@@ -36,3 +36,8 @@
 GitHub hosted run [41571211968](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41571211968) 后端3,888项中有1项失败：`test_entry_point_rejects_absolute_drive_unc_traversal_and_ambiguous_paths` 中 NUL 字符入口路径被安全拒绝，但 `_entry_point` 在路径专属校验前调用通用 `_text`，因此错误码为 `PLUGIN_INVALID_MANIFEST` 而不是 `PLUGIN_INVALID_ENTRY_POINT`。没有路径穿越绕过；这是失败分类与测试合同不一致。其余后端测试、前端/PG18/A50通过；包组装与A17/A34依赖作业被跳过。先记录后修正。
 
 编码复核另发现两项专项用例构造不充分：深层结构夹具被根字段白名单提前拒绝；空依赖列表测试未先断言合法空列表。修复时会将深层对象放入有效根字段，并单独断言空依赖有效，确保实际覆盖目标边界。
+
+
+## 第二次云端验收失败记录（2026-11-03，修复前）
+
+Hosted run [41571779122](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41571779122) 在提交 `fc723a86` 上仍出现同一专项错误码失败。源码已改为路径专属控制字符检查，但全量测试仍捕获 `PLUGIN_INVALID_MANIFEST`；原测试循环未报告具体路径，使定位信息不足。后端其余测试、前端/PG18/A50成功；依赖包/A17/A34跳过。先记录本次复现，再调整解析顺序并为每个拒绝路径添加subTest上下文，不将重复失败略过。

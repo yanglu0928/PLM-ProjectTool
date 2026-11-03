@@ -1,5 +1,9 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A03 第二次 hosted run [41571779122](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41571779122) 仍在入口路径错误码专项断言失败；首次修正未闭合问题。已在CR-PLG-002与前置记录追加复现，暂停PASS结论并进行更精确定位。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A03 首轮 hosted run [41571211968](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41571211968) 后端3,888项中1项入口NUL错误码断言失败；输入已被拒绝，尚未出现路径穿越绕过。已在编码前检查/CR-PLG-002中记录，修复后重新跑全链。
 - 兼容性：仅GitHub hosted Windows Server 2025；未在用户本机/C盘运行。
 - 已知限制：A03验收尚未通过，不能标为可安装/可执行；后续包/A17/A34依赖链被跳过。
