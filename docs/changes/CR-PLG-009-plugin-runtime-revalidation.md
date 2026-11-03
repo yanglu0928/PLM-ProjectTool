@@ -12,7 +12,7 @@ PLG-02-A02只存首次兼容事实，A03激活要求最新兼容快照，但没�
 ## 决定与范围
 
 - 新增内部重验证Owner，通过受控安装证据端口核对Installation存在、精确Package ID/SHA和runtime快照。
-- Migration 0228允许经Owner受限更新Installation的兼容快照/状态。每次有效复验把RuntimeValidation、Installation、Audit及operation现态/history在同一事务提交。
+- Migration 0228允许经Owner受限更新Installation的兼容快照/状态。每次真实有效复验都追加新的RuntimeValidation和Audit，并把Installation、Audit及operation现态/history在同一事务提交；没有请求幂等键，不以相同快照跳过审计。expected_lock_version拒绝陈旧写入。
 - COMPATIBLE时保留合法启用；从INCOMPATIBLE恢复时转DISABLED并须重新启用。INCOMPATIBLE时清空全部启用操作，按operation追加DISABLED history/Audit，标记Installation INCOMPATIBLE。
 - 保持RuntimeValidation/history只追加，Owner外写入/TRUNCATE拒绝；不新增实体/API/依赖/默认组合。
 - 不物理安装或卸载，不启动插件，不删除既有产物。人工disable/retire终态入口不混入A04。

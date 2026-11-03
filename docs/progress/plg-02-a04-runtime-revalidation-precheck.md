@@ -31,7 +31,7 @@
 
 - 新增内部RevalidatePluginInstallationOwner；通过受控证据端口核对精确Installation仍存在、Package ID/SHA一致及当前runtime快照。缺证据、摘要不符或端口失败均拒绝，不伪造兼容结论。
 - 使用plugin级事务锁串行A03激活及A04复验，锁Package/Installation/现态操作并校验expected lock_version。
-- 每次有效检查在一个Unit of Work内追加COMPATIBLE/INCOMPATIBLE RuntimeValidation和Audit，并同步Installation当前快照/状态、操作现态、每项DISABLED Audit/history。
+- 每次真实有效检查都追加一条COMPATIBLE/INCOMPATIBLE RuntimeValidation和Audit，并同步Installation当前快照/状态、操作现态、每项DISABLED Audit/history；没有请求幂等键，不以相同快照跳过新检查审计。expected_lock_version用于拒绝陈旧写入。
 - COMPATIBLE：保持当前合法状态和仍匹配操作；若从INCOMPATIBLE恢复，只转为DISABLED，不自动恢复此前operation集合，须经A03重新明确启用。
 - INCOMPATIBLE：标记Installation为INCOMPATIBLE并撤销全部现态operation，逐项写DISABLED history/Audit；不删除安装、Package或OutputArtifact。
 - Migration 0228扩充最小Installation Owner guard，允许核验快照和INCOMPATIBLE状态的受控变更；RuntimeValidation及operation history仍只追加；Owner外写入、TRUNCATE继续拒绝。
