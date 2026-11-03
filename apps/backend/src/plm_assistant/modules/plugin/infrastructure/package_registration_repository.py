@@ -87,6 +87,9 @@ class SqlAlchemyPluginPackageRegistrationRepository:
             lock_version=0,
         )
         session.add(package)
+        # No ORM relationships connect these immutable child rows to the parent;
+        # flush the parent first while staying inside the caller-owned transaction.
+        session.flush([package])
         session.add_all(
             PluginManifestOperationRow(
                 plugin_package_id=package_id,
