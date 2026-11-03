@@ -23,7 +23,7 @@ _SCOPE = "DEPLOYMENT"
 
 def _key(request: EnqueuePluginPackageImport) -> str:
     digest = hashlib.sha256(
-        b"PLM-PLUGIN-PACKAGE-IMPORT-V1\\x00"
+        b"PLM-PLUGIN-PACKAGE-IMPORT-V1:"
         + request.scope.actor_id.bytes
         + request.scope.operation.encode("ascii")
         + request.scope.key_digest

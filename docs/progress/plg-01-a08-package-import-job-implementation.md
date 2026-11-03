@@ -49,3 +49,6 @@ HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；sta
 ## Job queue单测夹具修正
 
 - 将无效命令测试改为在测试执行阶段创建，避免参数收集时触发构造异常；产品逻辑不变。修正后的hosted验收待完成。
+
+
+- 幂等键hash前缀已按CR-PLG-006统一为固定ASCII冒号分隔；此前字符转义未命中并已记录修正。
