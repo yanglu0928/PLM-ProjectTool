@@ -3,7 +3,7 @@
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|PLG-01-A08提交e37e668e通过hosted run 41678551589全13 jobs；PG18 Worker集成 smoke随A17执行成功。用户要求本机/C盘不运行项目代码与测试；后续只用GitHub hosted runner并尽量使用D盘临时工作区。A35仍为历史PASS_LIMITED，不代表Win11实机验收。正式插件信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|PLG-02-A04：运行环境重验证及安装状态失效处理Owner编码前检查|
+|Current WBS|PLG-02-A04：运行时兼容性重验证与失败关闭Owner实施|
 |Latest WBS Status|PLG-02-A03 按 CR-PLG-008 完成并为 `PASS_SCOPE_LIMITED`：内部Owner按Manifest operation子集原子切换安装归属、Installation状态、Audit与不可变逐操作历史；GitHub hosted run 41728983860 全13/13成功，migration head 0227，PG smoke、A17和A34通过。未接API/默认组合/真实安装适配器，也不执行插件。详见 docs/progress/plg-02-a03-installation-activation-result.md。|
 |Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P09_PASS_SCOPE_LIMITED / OUT_01_A01_P10_PASS_SCOPE_LIMITED / PLG_02_A01_PASS_SCOPE_LIMITED / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
