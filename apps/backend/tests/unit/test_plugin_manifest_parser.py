@@ -38,8 +38,9 @@ class PluginManifestParserTests(unittest.TestCase):
         self.parser = PluginManifestParser()
 
     def reject(self, manifest: object, code: str = "PLUGIN_INVALID_MANIFEST") -> None:
+        manifest_bytes = encode(manifest) if type(manifest) is dict else manifest
         with self.assertRaises(PluginManifestError) as caught:
-            self.parser.parse(manifest)  # type: ignore[arg-type]
+            self.parser.parse(manifest_bytes)  # type: ignore[arg-type]
         self.assertEqual(caught.exception.code, code)
 
     def test_valid_manifest_returns_immutable_projection_and_stable_hash(self) -> None:
