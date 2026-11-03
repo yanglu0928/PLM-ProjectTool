@@ -8,6 +8,7 @@ from collections import defaultdict
 from sqlalchemy import select
 
 from plm_assistant.modules.requirement.application.read_versions import (
+    RequirementOutputSourceProjection,
     RequirementAcceptanceView, RequirementAITaskView,
     RequirementAssessmentEvidenceView, RequirementCapabilityAssessmentView,
     RequirementSourceEvidenceView, RequirementSourceView,
@@ -26,6 +27,45 @@ from .orm import (
 
 
 class SqlAlchemyRequirementVersionReadRepository:
+    def get_output_source(self, transaction: object, *, project_id: uuid.UUID, requirement_version_id: uuid.UUID) -> RequirementOutputSourceProjection | None:
+        session = _session(transaction)
+        version = session.execute(select(RequirementVersionRow).where(
+            RequirementVersionRow.project_id == project_id,
+            RequirementVersionRow.requirement_version_id == requirement_version_id,
+        )).scalar_one_or_none()
+        if version is None:
+            return None
+        acceptance = session.execute(select(
+            RequirementAcceptanceCriterionRow.ordinal,
+            RequirementAcceptanceCriterionRow.observable_result,
+            RequirementAcceptanceCriterionRow.verification_method,
+            RequirementAcceptanceCriterionRow.required_data,
+            RequirementAcceptanceCriterionRow.required_environment,
+            RequirementAcceptanceCriterionRow.evidence_requirement,
+        ).where(
+            RequirementAcceptanceCriterionRow.project_id == project_id,
+            RequirementAcceptanceCriterionRow.requirement_version_id == requirement_version_id,
+        ).order_by(RequirementAcceptanceCriterionRow.ordinal)).all()
+        fields = {
+            "title": version.title, "statement": version.statement,
+            "rationale": version.rationale, "domain_name": version.domain_name,
+            "priority": version.priority, "risk": version.risk,
+            "classification": version.requirement_classification,
+            "acceptance_criteria": [
+                {"ordinal": row.ordinal, "observable_result": row.observable_result,
+                 "verification_method": row.verification_method,
+                 "required_data": row.required_data,
+                 "required_environment": row.required_environment,
+                 "evidence_requirement": row.evidence_requirement}
+                for row in acceptance
+            ],
+        }
+        return RequirementOutputSourceProjection(
+            requirement_version_id=version.requirement_version_id,
+            project_id=version.project_id, version_state=version.version_state,
+            fields=fields,
+        )
+
     def get_trace_facts(self, transaction: object, *, project_id: uuid.UUID,
                         requirement_id: uuid.UUID,
                         requirement_version_id: uuid.UUID) -> RequirementVersionTraceFacts | None:

@@ -18,3 +18,10 @@
 ## 剩余编码前事项
 
 实现具体Owner DTO字段白名单与错误码时保持Source Owner语义；先实现Requirement内部Port，再由entrypoint组合根做适配，禁止跨业务模块引用对方ORM。实现后再更新本文件验收结果。
+
+
+## 实现记录（2026-11-04，验收待云端）
+
+- 增加RequirementVersionReadService内部读取方法，按ProjectId+固定RequirementVersionId查询；Owner重新执行REQ_VERSION_GET授权并保留版本审核状态。
+- 新增SQL repository受控字段投影以及EntryPoint组合适配器，Requirement模块不依赖Output模块。未新增ORM表或migration。
+- 新增Unit测试和A17 packaged PG18烟测。后端全量/wheel、PG18集成、父包/A17/A34验收待本次工作流；本项尚未关闭。

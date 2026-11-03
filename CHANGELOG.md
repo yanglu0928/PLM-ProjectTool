@@ -260,3 +260,8 @@
 
 ## Unreleased · 2026-11-04（Output Source 生产接线前置）
 - OUT-01-A01-P04源码盘点完成；下一项P05为Requirement固定版本Source Owner读取与组合根映射。实现边界和验收计划已在CR-OUT-005先行记录，尚未修改代码。
+
+
+## Unreleased · 2026-11-04（Requirement固定版本Source接线）
+- OUT-01-A01-P05新增Requirement Owner按ProjectId+RequirementVersionId读取受控Source投影，并由EntryPoint组合根映射到Output FixedSourceVersion；同时增加真实Project授权隔离PG18 smoke。当前未执行云端验收。
+- 未新增数据库迁移或外部数据发送；本提交验证计划通过GitHub hosted runner完成。

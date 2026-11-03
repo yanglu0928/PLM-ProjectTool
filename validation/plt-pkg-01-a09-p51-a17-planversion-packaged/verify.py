@@ -774,6 +774,64 @@ def packaged_planversion_probe(**context) -> None:
     context["user_id"] = actor
     requirement, requirement_version, _source_document, document_version = (
         a05["seed_current_requirement"](context, project))
+
+    # P05 verifies Requirement-owned exact-version reads under real PostgreSQL
+    # authorization before the composition root maps the owner DTO to Output.
+    from sqlalchemy.engine import URL
+    from plm_assistant.entrypoints.output_requirement_source_adapter import (
+        RequirementOutputSourceAdapter,
+    )
+    from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
+    from plm_assistant.modules.project.infrastructure.authorization_repository import (
+        SqlAlchemyProjectAuthorizationRepository,
+    )
+    from plm_assistant.modules.requirement.application.read_versions import (
+        RequirementVersionReadError, RequirementVersionReadService,
+    )
+    from plm_assistant.modules.requirement.infrastructure.version_read_repository import (
+        SqlAlchemyRequirementVersionReadRepository,
+    )
+    from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
+
+    source_runtime = create_database_runtime(URL.create(
+        "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
+        port=fixture_db.pg_port, database=fixture_db.database,
+    ))
+    source_reader = RequirementVersionReadService(
+        unit_of_work=source_runtime.unit_of_work,
+        access=object(), license_guard=object(),
+        authorization=ProjectAuthorizationService(
+            unit_of_work=source_runtime.unit_of_work,
+            repository=SqlAlchemyProjectAuthorizationRepository(),
+        ),
+        repository=SqlAlchemyRequirementVersionReadRepository(),
+    )
+    source_adapter = RequirementOutputSourceAdapter(source_reader)
+    with source_runtime.unit_of_work() as tx:
+        source = source_adapter.read_authorized_fixed_version(
+            tx, actor_id=actor, project_id=project,
+            source_version_ref=requirement_version,
+        )
+        tx.commit()
+    if (source.source_version_ref != requirement_version
+            or source.project_id != project
+            or source.source_kind != "REQUIREMENT_VERSION"
+            or source.review_state != "APPROVED"
+            or source.fields.get("statement") != "项目应形成可追溯的受控原型评审记录"):
+        raise AssertionError("OUT-01-A01-P05 exact Requirement source projection mismatch")
+    try:
+        with source_runtime.unit_of_work() as tx:
+            source_adapter.read_authorized_fixed_version(
+                tx, actor_id=uuid.uuid4(), project_id=project,
+                source_version_ref=requirement_version,
+            )
+    except RequirementVersionReadError:
+        pass
+    else:
+        raise AssertionError("OUT-01-A01-P05 accepted a non-member actor")
+    source_runtime.dispose()
+    print("OUT_01_A01_P05_REQUIREMENT_FIXED_SOURCE_PG_PASS: scoped/versioned/authorized",
+          flush=True)
     with fixture_db() as db:
         approved = db.execute(
             "SELECT 1 FROM plm.sol_outlines WHERE project_id=%s "

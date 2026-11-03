@@ -22,3 +22,10 @@ Output的TrustedOutputContextResolver需要输入source_version_ref、ProjectId�
 - 仅合成身份/内容，在GitHub hosted runner的临时目录和disposable PostgreSQL执行。不得在用户本机/C盘运行。
 - 风险是Requirement字段内容可能含用户业务正文；该读接口仅在服务端形成Output所需的最小快照候选，不发送模型或外部服务。后续真实Output调用仍受Policy/API/License门控。
 - 若定向或PG测试失败，保留历史读API行为，回退新增Owner端口/组合适配，不修改历史版本或数据；Output源Resolver保持fail closed。
+
+
+## 实现提交（待云端验收，2026-11-04）
+
+- 增加Requirement Owner内部固定版本投影读取，查询同时限定ProjectId/VersionId，并在Owner侧按REQ_VERSION_GET重新核验当前成员权限；跨模块DTO只在EntryPoint组合根转换。
+- 增加组合根单测与A17 packaged PG18烟测，覆盖合成Requirement精确版本/Project、状态保真、非成员拒绝。
+- 无migration/API变更；改动已按本CR编码。定向测试、PG18及全链云端结果待本提交。
