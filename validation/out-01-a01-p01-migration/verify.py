@@ -365,13 +365,17 @@ def main() -> int:
             counts = conn.execute(
                 "SELECT (SELECT count(*) FROM plm.plg_installations),"
                 "(SELECT count(*) FROM plm.plg_enabled_operations),"
-                "(SELECT count(*) FROM plm.plg_runtime_validations) "
-                "WHERE (SELECT count(*) FROM plm.plg_installations "
-                "WHERE plugin_installation_id=%s)=2",
-                (installation_ids[0],),
+                "(SELECT count(*) FROM plm.plg_runtime_validations)"
             ).fetchone()
-        if counts != (2, 1, 1):
-            raise AssertionError(f"blocked PluginInstallation downgrade changed history: {counts!r}")
+            installation_count = conn.execute(
+                "SELECT count(*) FROM plm.plg_installations "
+                "WHERE plugin_installation_id IN (%s,%s)",
+                installation_ids,
+            ).fetchone()[0]
+        if counts != (2, 1, 1) or installation_count != 2:
+            raise AssertionError(
+                f"blocked PluginInstallation downgrade changed history: {counts!r}"
+            )
         result["installation_history_blocks_downgrade"] = "PASS"
     finally:
         for name in reversed(created):
