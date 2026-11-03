@@ -85,3 +85,14 @@ undefined
 - run [41613964579](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41613964579) progressed past the corrected empty-database downgrade sequence but exposed a second stale assertion in the synthetic-history path: downgrading 0224 to 0223 removes only the empty staging table and leaves the 0223 Plugin owner guards open; the test incorrectly expected the 0222 closed-owner state.
 - Corrected the verifier to confirm staging table removal and the 0223 open-owner/immutability guards. The explicit empty-database path continues to downgrade to 0222 and independently verifies the four closed INSERT-owner guards.
 - This is validation sequence/assertion correction only; migration, product database behavior, and stored history are unchanged. Repeat the hosted PostgreSQL 18 migration lifecycle and end-to-end package checks before claiming acceptance.
+
+
+## A08 Worker编码前补充决策（2026-11-04）
+
+- **缺口与目标：** A08上传端已把签名ZIP、最小Job/Outbox、签名元数据及提交Audit接通；若没有受限消费者，Job永久停留在PENDING，A08不能验收。补齐只消费 `owner_module=plugin`、`job_type=PLUGIN_PACKAGE_VERIFY` 的Worker；不接触其它Owner的Job。
+- **执行方式：** 复用Jobs现有claim/lease/fencing/finish/retry状态机。通用claim必须排除本Owner类型；Plugin专属claim使用精确Owner过滤。领取后在一个只读UOW核对当前RUNNING Job、fencing token、actor、trace、最小payload与append-only staging行的ID/hash/size一致，然后按不透明upload ID推导私有暂存位置。
+- **文件读取与安全边界：** LocalFileStorage增加只接受本地GLOBAL暂存locator的已验证快照读取，最多256 MiB；单Worker单包，按精确长度读取并再次比对SHA-256。成功后只调用既有Ed25519签名验证、manifest/ZIP检查和兼容评估/metadata登记，不安装或执行插件代码。文件名、路径和ZIP正文不进入日志、Job/Outbox或API响应。
+- **登记和重放：** 使用原Job提交者作为Plugin登记Audit主体；注册成功但Job完成提交失败时，下一次fenced重试由现有package_id/version/hash幂等回读，避免重复登记/Audit。不可恢复包/签名/信任/兼容错误终止Job；存储/数据库暂时错误最多按既定三次Job限制重试。
+- **兼容策略：** 新增不可变策略标识 `host.platforms.v1`，只接受manifest声明的受支持产品目标OS集合（Windows 11、Windows Server 2025、Debian 13）、x86_64与Plugin API主版本1；它仅表示静态声明兼容，不表示安装或代码安全。无策略、无签名信任或撤销发布者均fail closed。
+- **影响/回滚：** 无冻结API、业务表或数据模型变化；无新增migration。Jobs内部新增精确claim方法及Plugin Worker组合入口。若Worker验收失败，保持HTTP入口关闭于默认组合并保留Job/staging数据，修正或回退Worker代码；不删除历史、不开启执行能力。
+- **验收：** hosted Windows runner D盘临时目录；定向测试 + 后端全量/wheel + PG18 claim/租约/重试/真实登记/重放与失败回滚烟测 + 父包构建及A17/A34全链路。Secret扫描通过后仅同步当前功能分支。
