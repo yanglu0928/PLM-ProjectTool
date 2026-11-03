@@ -39,3 +39,11 @@ PLG-02-A02只建立经核验的初始Installation事实。冻结模型还要求�
 - 决定：新增`plg_enabled_operation_history`，以精确operation_id、Installation/Package引用、ENABLE/DISABLE、actor、UTC、trace和不可变AuditEvent FK保存每个操作的变化；只追加，不可覆盖/删除/清空。保持公开API、Aggregate Root、Plugin权限/信任和执行范围不变。
 - 风险：多行历史需与现态变更和Audit严格同事务；由PG18原子性/Audit失败回滚/多操作切换/历史downgrade反例验证。Migration 0227降级对所有PLG-02事实表均有行时失败关闭；不重写既有0225/0226历史。
 - 该差异已在编码前登记；授权依据为用户2026-09-24持续自主实施规则。需由实际托管证据验收，范围只可PASS_SCOPE_LIMITED。
+
+
+## 托管验收偏差（2026-11-04，PLG-02-A03）
+
+- GitHub hosted run 41726736924 的后端全量/wheel、前端/build、PG18/pgvector重建、父包组装、A35、A17均成功；父包 PostgreSQL smoke 在调用既有 PLG-01 schema verifier 时失败。该 verifier 的守卫数量仍按 0226 断言 17；A03 migration 0227 合法新增 3 个操作历史守卫，实际读回 20。
+- 分类：验证脚本与数据库增量计数未同步，未发现产品实现失败；当前 run 整体不得标记通过。影响仅为 A03 整包父包 PG18 smoke 证据缺失。
+- 修正：仅把 validation/plg-01-a01-package-schema/verify.py 的 0227 预期守卫总数更新为 20，保留三个 owner_closed 断言及其它约束，不放宽守卫检查。先登记本记录，再修改并提交验证代码。
+- 重验：在 GitHub hosted runner 上重新运行完整链，要求父包 PG smoke 和 A03 migration contract均成功；禁止本机运行。未完成前 A03 状态仍为待验收。
