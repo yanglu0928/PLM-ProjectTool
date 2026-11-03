@@ -16,7 +16,7 @@
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|A07 run 41593955795全13/13 jobs成功。A08 bounded staging及Plugin-owned storage Protocol修正由run 41599893419全13/13 jobs成功验收：后端全量/wheel、前端/build、PG18/pgvector、父包、A35/A17/A34通过。仅内部合成/hosted证据，不构成Win11实机、正式信任、Gate/Pilot/Release结论。|
 |Latest Test Summary|PLG-02-A01最终提交hosted run 41711045048全13/13 jobs成功。PG18.6 migration smoke确认empty upgrade/downgrade/re-upgrade、既有合成数据保留、约束/Owner/TRUNCATE/有数据降级保护；A17/A34通过。父包候选20161项SHA-256 `5227ebdf…01858`。仅合成数据与托管runner证据；Pilot/Gate/Release未通过。|
-|Latest WBS Status|PLG-02-A02首轮hosted run 41717001638：后端3932项仅1项migration contract仍期待0225，实际新head为0226；前端、PG18 sidecar、Python base、A50通过，下游依赖job跳过。偏差已先登记CR-PLG-007，等待只修正历史head断言后重跑。|
+|Latest WBS Status|第二轮run 41718480221后端全量、前端、PG18 sidecar、内嵌后端与父包组装成功；PG18父包smoke被旧PLG-01 verifier仍固定期待0225阻断。A35通过、A17仍执行、A34跳过。偏差已先登记CR-PLG-007，随后仅同步该verifier版本head并完整重跑。|
 |Latest WBS Status|PLG-02-A02编码前检查PASS_WITH_LIMITATION：仅建设核验后记录INSTALLED事实的内部Owner，禁止把VERIFIED包当已安装；无公开API/默认组合/启用/执行。数据库最小INSERT开放、宿主安装适配器及真实服务身份均作为明确后续限制。详见docs/progress/plg-02-a02-installation-owner-precheck.md。|
 |Next WBS|PLG-02-A02：实现受控Installation事实Owner，并在GitHub hosted D盘完成独立验收|
 |Latest Validation|A33 run 41008231772 在D盘hosted Windows Server 2025验证当前父包20,119项SHA、startup diagnostic六阻断码、缺脚本/损坏manifest回退、A29七类守门矩阵、A30四类诊断篡改、临时PG生命周期与A17 29 API PlanVersion流程；product API/service/listener未启动。无Windows11设备、正式License trust、安装升级、UAT、Gate或Release结论。|

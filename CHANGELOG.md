@@ -1,5 +1,7 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- PLG-02-A02第二轮run 41718480221后端全量、前端、PG18 sidecar与父包组装成功；Windows父包PG smoke发现PLG-01迁移验证器仍固定期待0225。偏差修复前已记CR-PLG-007；A35通过，A17结果尚未确认，A34未执行。
+
 - PLG-02-A02实现提交0534e041新增受控Installation事实Owner、PostgreSQL repository、0226 append-only insert守卫和合成单测；首轮hosted run 41717001638后端3932项中一项旧migration head契约仍写0225，偏差先记入CR-PLG-007，待修正后完整重跑。未接API/默认组合、未部署真实包、未启用或运行插件。
 
 - PLG-02-A02编码前检查通过有界范围：只记录由受控适配器验证的INSTALLED事实，不安装文件、不启用、不执行；数据库Owner开放需事务局部标记，明确不等于正式数据库身份隔离。无安装来源时失败关闭。详见`docs/progress/plg-02-a02-installation-owner-precheck.md`及CR-PLG-007。

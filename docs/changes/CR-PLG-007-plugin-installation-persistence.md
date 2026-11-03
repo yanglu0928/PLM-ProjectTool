@@ -97,3 +97,9 @@
 
 - Hosted run [41717001638](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41717001638) 后端运行3,932项，唯一失败为 `test_configuration_revision_follows_platform_baseline`：新增migration head实际为`20261104_0226`，历史契约测试仍期待`20261104_0225`。前端、PG18 sidecar、Python base、A50均通过；依赖后端成功的wheel、父包、A17/A34链被跳过。
 - 当前证据指向迁移head测试夹具未随合法PLG-02增量更新，不表示Owner业务断言失败。修复计划仅把该单一测试的head预期更新为0226，保留其单head检查和其他migration contract；随后重跑完整hosted工作流及PG18 Owner smoke。该偏差已先记录，后修改测试。
+
+
+## PLG-02-A02父包PG smoke迁移版本边界偏差（2026-11-04，修复前记录）
+
+- Hosted run [41718480221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41718480221)：后端全量、前端、PG18 sidecar、Windows内嵌后端与父包组装均成功；隔离父包PG smoke在调用`validation/plg-01-a01-package-schema/verify.py`时失败。该PLG-01验证器仍将head固定为0225，当前合法迁移head已为0226，错误为“staging database did not reach current head”。A35通过，A17仍在执行中，A34因PG smoke失败跳过。
+- 根因范围为同一冻结数据库增量后PLG-01端到端验证器未同步head常量，不代表迁移或Owner写入失败。修复计划只将该验证器head与诊断文字更新到0226，保留PLG-01历史检查、0224降级边界及其他断言；之后重跑完整hosted工作流与PG18 smoke。此偏差先记录再修复。

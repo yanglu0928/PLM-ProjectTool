@@ -25,3 +25,9 @@
 
 - Run [41717001638](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41717001638) 后端3,932项仅有一项失败：migration contract仍期待0225，而当前迁移head已按本WBS前置记录升至0226。前端、PG18 sidecar、Python base及A50通过；下游组装/父包/A17/A34跳过。
 - 失败是历史测试基线未更新的明确版本边界，不改Owner逻辑或冻结基线。先登记在CR-PLG-007，再仅修正预期migration head并重跑完整托管验收。
+
+
+## 第二轮云端偏差（修复前记录）
+
+- Run [41718480221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41718480221) 后端全量、前端、PG18 sidecar、内嵌后端及父包组装成功。PG smoke随后调用历史PLG-01验证器，因其固定head为0225而本分支已到0226失败；A35通过，A17仍运行，A34依赖失败而跳过。
+- 先在CR记录后，仅同步PLG-01验证器当前head及诊断版本文字，保留0224及其他历史迁移守卫，然后重跑完整托管工作流。
