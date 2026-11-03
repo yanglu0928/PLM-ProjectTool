@@ -211,7 +211,8 @@ class PluginInstallationOwner:
     def _validate_evidence(
         package: InstallablePluginPackage, evidence: PluginInstallationEvidence,
     ) -> dict:
-        if (type(evidence.plugin_package_id) is not uuid.UUID
+        if (type(evidence) is not PluginInstallationEvidence
+                or type(evidence.plugin_package_id) is not uuid.UUID
                 or evidence.plugin_package_id != package.plugin_package_id
                 or type(evidence.installed_package_sha256) is not bytes
                 or not __import__("hmac").compare_digest(
@@ -228,8 +229,11 @@ class PluginInstallationOwner:
         }
         if type(snapshot) is not dict or set(snapshot) != required:
             raise PluginInstallationOwnerError("PLUGIN_INSTALLATION_EVIDENCE_INVALID")
-        if (snapshot["schema_version"] != "1"
+        if (type(snapshot["schema_version"]) is not str
+                or snapshot["schema_version"] != "1"
+                or type(snapshot["os"]) is not str
                 or snapshot["os"] not in _OS
+                or type(snapshot["architecture"]) is not str
                 or snapshot["architecture"] != "x86_64"
                 or type(snapshot["python_version"]) is not str
                 or not _VERSION.fullmatch(snapshot["python_version"])):
