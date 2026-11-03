@@ -28,7 +28,7 @@
 
 ## 编码文件范围
 
-预计新增 `modules/plugin/domain/signature_verifier.py`（若目录层级与现有架构不符，先在本WBS内记录调整）、合成单测及对应进度文档；不改ORM、migration、API Contract、默认组合或运行行为。
+预计新增 `modules/plugin/application/signature_verifier.py`、合成单测及对应进度文档。参考现有 License Owner 验签器的 application 层分层；Plugin 使用独立 Resolver/结果类型，不共享 License trust root；不改ORM、migration、API Contract、默认组合或运行行为。
 
 ## 约束
 

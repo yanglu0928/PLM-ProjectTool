@@ -19,7 +19,7 @@
 
 ## 影响与兼容性
 
-- 本切片仅增加纯验签服务/Port和合成单测；不新增ORM、Alembic、API、HTTP、网络调用或线上信任源。现有签名/摘要列足以保存 detached signature、signer ref 与完整包SHA-256。
+- 本切片仅增加应用层纯验签服务/Port和合成单测；不新增ORM、Alembic、API、HTTP、网络调用或线上信任源。现有签名/摘要列足以保存 detached signature、signer ref 与完整包SHA-256。
 - 现有POC-08 SHA-256 manifest signature不符合本格式，不作为签名开发者包接受。生产 PLG 表目前没有合法的已签名客户包；若发现此假设不成立，先暂停写入并在CR中记录数据兼容方案。
 - Ed25519 使用已锁定生产依赖 `cryptography==50.0.1`；无需新增依赖。
 - 对业务、Scope、公开API及数据库无迁移影响。算法固定后如需改变，新增版本化格式/CR，禁止同版本静默解释。
@@ -46,3 +46,8 @@
 ## 执行状态
 
 本CR在编码前登记；详细编码前检查见 `docs/progress/plg-01-a02-signature-verifier-precheck.md`。具体实现提交、验收结果、失败与后续差异按本文件追加更新。
+
+
+### 编码前结构检查补充（2026-11-03）
+
+现有 License 验签器位于 Owner 的 `application` 层，Plugin 模块已有相同分层约定；因此 PLG 验签器实现在 `modules/plugin/application/signature_verifier.py`，不在 domain 层新增重复公钥/密码学抽象。该路径调整不改算法、合同或Scope。
