@@ -99,8 +99,8 @@ def _assert_guards(dsn: str) -> None:
             "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
             "AND tgname LIKE 'trg_plg_%__owner_closed'"
         ).fetchone()[0]
-    if closed != 3:
-        raise AssertionError(f"expected three closed PluginInstallation Owners, found {closed}")
+    if closed != 4:
+        raise AssertionError(f"expected four closed PLG-02 Owner guards at 0227, found {closed}")
 
 
 def _assert_guards_open_parent(dsn: str) -> None:
