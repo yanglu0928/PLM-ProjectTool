@@ -1,11 +1,11 @@
-|Next WBS|PLG-01-A08：完成Windows Worker CLI与PG18端到端验收，再按证据关闭A08|
+|Next WBS|OUT-01-A01-P04：Output数据源/模板/策略/Plugin Operation生产Registry接线编码前核查|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
-|Execution Note|A08 Worker CLI提交 bcb69866 已经通过 hosted run 41673992094 全13 jobs；本次PG18 Worker端到端覆盖待云端验证。用户要求不在本机运行，使用GitHub hosted runner。A35 Windows11 Home build26300 D盘隔离父包复验仍为历史PASS_LIMITED；本轮不代表实机Windows11验收。正式信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|PLG-01-A08：受控插件包导入流式暂存与异步验证作业接入（Worker CLI与PG18端到端验收进行中）|
-|Latest WBS Status|Worker CLI/诊断角色提交 bcb69866 已通过GitHub hosted run 41673992094全13/13 jobs（后端全量/wheel、前端、PG18/pgvector、运行时、父包、A35/A17/A34）。本次新增PG18 Worker真实claim、签名拒绝、合成有效包登记、暂存故障RETRY_WAIT与恢复，并增加入口导入测试；这部分待云端验收。A08仍IMPLEMENTATION_IN_PROGRESS。|
-|Current Status|PLG_01_A07_PASS_SCOPE_LIMITED / PLG_01_A08_IMPLEMENTATION_IN_PROGRESS / PHASE_2_IN_PROGRESS|
+|Execution Note|PLG-01-A08提交e37e668e通过hosted run 41678551589全13 jobs；PG18 Worker集成 smoke随A17执行成功。用户要求不在本机运行；后续继续用GitHub hosted runner。A35仍为历史PASS_LIMITED，不代表Win11实机验收。正式插件信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
+|Current WBS|OUT-01-A01-P04：Output可信Registry与Owner Port生产接线前置核查|
+|Latest WBS Status|PLG-01-A08按CR-PLG-006以PASS_SCOPE_LIMITED关闭：提交e37e668e，hosted run 41678551589全13/13 jobs成功；包括PG18 Worker同步集成烟测及完整父包/A17/A34链。无插件执行、真实签名信任或Win11实机结论。Output P01-P03已有受限内部Owner/Resolver，但真实生产Source、Template、Policy、Plugin Operation Registry尚未接线；下一项做P04编码前核查。|
+|Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P04_PRECHECK_IN_PROGRESS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
 |Blockers|Gate 3审计确认：Handover、Survey与Requirement前三阶段已顺序组合至PROTOTYPE/v10；Requirement读写、真实聚合Owner/PG/HTTP、前端及Edge证据已完成，Prototype、Solution、Plan真实业务Owner和后续阶段仍待。POC-03新集合同0/7、技术协议1/8且旧质量分类48%/引用74%继续阻塞Gate 3/UAT；正式发行公钥、目标服务账户Vault/ACL/CA、SCM安装恢复与20并发性能未验。DOC生产清理入口、Server2025当前运行链、Debian13实机按用户指令跳过、Server Office及Ghostscript发行合规继续作为独立Release约束|
@@ -2786,3 +2786,9 @@
 - 2026-11-03 `PLG-01-A06`：run [41582564698](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41582564698) 全13 jobs成功，后端3,902项、wheel、前端、PG18/pgvector、父包/A35/A17/A34链通过。A06归档及Manifest签名联合检查按范围PASS_SCOPE_LIMITED；未落盘/安装/运行插件。此前两轮夹具与随机UUID误报均保留记录，见CR-PLG-004及A06结果文档。接续OUT-01-A01-P03，不代表Gate/Pilot/Release通过。
 
 - 2026-11-03 路线纠正：PLG-01-A06结果文档最初将下一项指向OUT-01-A01-P03，但该项已在2026-11-02以PASS_SCOPE_LIMITED完成（run 41417503109）；PLG-01-A01～A06亦均已有结果。按CR-PLG-004将持久注册留待后续独立WBS的边界，下一项改为PLG-01-A07。纠正已记录于CR-PLG-005，未改产品基线。
+
+
+- 2026-11-04 PLG-01-A08：提交 [e37e668e](https://github.com/yanglu0928/PLM-ProjectTool/commit/e37e668e89db2f64856e98799c572b7415801b8f) hosted run [41678551589](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41678551589) 13/13 jobs success。完成受控导入Job/Outbox/Audit、Windows CLI及真实PG18 worker claim/签名拒绝/合成有效登记/限次重试恢复 smoke；仅PASS_SCOPE_LIMITED。A17汇总仅列P51 marker，A08 smoke通过其同步调用、断言传播及流程退出码证明，未独立artifact化。真实publisher trust为空、未安装/执行Plugin、无Windows11实机验证。按CR-OUT-004将下一项校正为Output生产Registry编码前核查。
+
+
+- 2026-11-04路线记录：PLG-01-A08按CR-PLG-006验收关闭后，恢复Output纵向链。OUT-01-A01-P03明确记载真实Requirement/Solution/Plan固定版本Source Adapter及Template/Policy/Plugin Operation Registry仍缺；下一项先做OUT-01-A01-P04编码前检查，未选定唯一Port前不编码。边界与风险记录见CR-OUT-004及进度文件。

@@ -1,9 +1,9 @@
 # PLG-01-A08：流式暂存实现进度
 
-- 状态：IMPLEMENTATION_IN_PROGRESS
+- 状态：PASS_SCOPE_LIMITED
 - 日期：2026-11-03
 - 变更：CR-PLG-006
-- 当前阶段：第一段内部能力已编码；尚未接入HTTP、幂等Job/Outbox、Audit或显式安全组合。
+- 当前结论：受控上传、Job/Outbox/Audit/HTTP、fenced Worker及Windows CLI均已实现；按下方分段记录完成云端验收。
 
 ## 已实现
 
@@ -13,9 +13,9 @@
 - staging locator 与摘要字段从对象repr隐藏；无路径返回给HTTP。
 - 增加合成单元验证覆盖正常暂存、超长、长度/摘要错误、非法chunk和失败清理。
 
-## 尚未实现
+## 首段实现时尚未完成（历史状态）
 
-HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；staging metadata owner；Job/Outbox/Audit原子入队；worker安全执行。A08未完成，不能以此代码单独标PASS。
+HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；staging metadata owner；Job/Outbox/Audit原子入队；worker安全执行。该描述是首段实现时的历史状态；完整范围结论见本文件末尾。
 
 
 ## 首段云端验收与复核
@@ -78,3 +78,12 @@ HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；sta
 - 提交 `bcb69866d44038ab66a6948c23e996ababf3065e` 新增Windows显式组合入口、诊断角色及其单测。
 - GitHub hosted run [41673992094](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41673992094) 13/13 jobs全通过；覆盖后端全量测试/wheel、前端构建、PG18/pgvector、嵌入式Python、父包和A35/A17/A34验证。测试在GitHub runner执行，未运行用户本机代码。
 - 新增PG18端到端Worker smoke和入口模块导入门禁已进入本次待验证提交；旧run通过不能替代这些新覆盖。A08继续进行中。
+
+
+## Worker CLI与PG18端到端验收结论（2026-11-04）
+
+- 状态：PASS_SCOPE_LIMITED。提交 e37e668e89db2f64856e98799c572b7415801b8f 的GitHub hosted run [41678551589](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41678551589) 全13/13 jobs成功；后端全量测试/wheel、前端测试构建、PG18/pgvector、嵌入式Python、Windows父包、A35、A17、A34均通过。
+- A17 packaged flow的PlanVersion PG探针同步执行本文件A08 worker smoke。Smoke覆盖Plugin精确Owner领取、签名不可信时终态FAILED、仅使用本次runner内存合成Ed25519键的有效包登记VERIFIED元数据/PLUGIN_PACKAGE_REGISTER Audit、暂存读取短故障进入RETRY_WAIT、恢复文件后第二attempt成功；含可执行异常的入口脚本未被执行。A17进程退出0，说明同步调用及其断言通过。A17 evidence summary只白名单记录PlanVersion的两个P51 marker，没有单列A08 marker；本结论依赖受控源码调用点、同步异常传播及成功exit status，不声称独立A08证据artifact。
+- 未新增Schema/API/migration。所有包和密钥为合成测试输入，测试公钥仅内存存在；包内正式publisher trust manifest仍为空，真实开发者签名、产品服务安装与Windows 11实机尚未验证。
+- Windows入口导入保护/诊断角色单测、后端全量、父包及完整集成链成功。CLI只提供显式Windows进程入口，不表示Service安装或开机启动已接线。
+- Pilot、Gate 3、正式Release均保持NOT_READY。用户本机/C盘未运行代码。

@@ -111,3 +111,10 @@ undefined
 - 提交 `bcb69866d44038ab66a6948c23e996ababf3065e` 增加Windows专用Worker组合入口和进程诊断角色；不改变API/Schema，不执行插件。
 - GitHub hosted workflow [41673992094](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41673992094) 全13/13 jobs成功：后端全量与wheel、前端、PG18/pgvector、嵌入式Python、Windows父包、A35、A17、A34均通过。此结论仅覆盖该提交的实际工作流，不包含随后新增的PG18 Worker端到端smoke，也不代表Windows 11实机验收。
 - A08尚未关闭。当前publisher trust manifest为空，真实发布者信任/发布仍未验证。
+
+
+## A08 最终验收与关闭（2026-11-04）
+
+- 实现提交：e37e668e89db2f64856e98799c572b7415801b8f；hosted run [41678551589](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41678551589) 全13/13 jobs成功。
+- 后端全量/wheel、前端、PG18/pgvector、嵌入式Python、父包、A35、A17、A34均通过。PG18真实Worker smoke在A17 packaged PlanVersion probe中同步调用，成功exit status覆盖插件精确领取、签名失败关闭、合成有效包登记/Audit、retry wait和恢复后第二次attempt成功。独立summary没有A08专属marker，证据范围已在进度文档说明。
+- 结论：PLG-01-A08 PASS_SCOPE_LIMITED；没有执行插件代码、安装包或真实publisher信任源验收。包内正式publisher key manifest为空，Windows 11设备验收、服务安装、自启动仍未完成。Pilot/Gate/Release不因此通过。

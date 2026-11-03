@@ -251,3 +251,8 @@
 - Worker CLI/诊断角色提交 `bcb69866` 的GitHub hosted workflow [41673992094](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41673992094) 全13 jobs成功；不代表新加入的PG18 Worker端到端smoke已通过。
 - 新增PG18真实Worker claim/fencing、无信任签名失败关闭、synthetic Ed25519有效包只登记元数据、短暂staging故障与bounded retry恢复的验收代码，并新增Windows入口模块导入保护。验证待本轮hosted workflow。
 - 全部运行保持在云端，不使用用户本机C盘；无客户数据外发。
+
+
+## Unreleased · 2026-11-04（PLG-01-A08受限完成）
+- A08 Worker CLI与PG18端到端smoke提交 e37e668e 已通过GitHub hosted workflow [41678551589](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41678551589) 13/13 jobs。任务结论PASS_SCOPE_LIMITED；无插件执行、真实publisher trust/Windows 11设备验收。Pilot/Gate/正式Release仍NOT_READY。
+- 下一项转为OUT-01-A01-P04前置核查，调查Output固定来源和模板/策略/插件Registry真实接线，不改变冻结API或Schema。
