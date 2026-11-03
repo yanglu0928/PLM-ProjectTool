@@ -336,6 +336,7 @@ def main() -> int:
         if _revision(empty_dsn) != PARENT:
             raise AssertionError("history-preserving staging downgrade did not stop at 0223")
         _assert_presence(empty_dsn, True)
+        _assert_installation_presence(empty_dsn, False)
         _assert_import_staging_presence(empty_dsn, False)
         _assert_guards_open_parent(empty_dsn)
         with psycopg.connect(empty_dsn) as conn:
