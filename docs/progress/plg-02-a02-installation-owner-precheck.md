@@ -31,3 +31,8 @@
 
 - Run [41718480221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41718480221) 后端全量、前端、PG18 sidecar、内嵌后端及父包组装成功。PG smoke随后调用历史PLG-01验证器，因其固定head为0225而本分支已到0226失败；A35通过，A17仍运行，A34依赖失败而跳过。
 - 先在CR记录后，仅同步PLG-01验证器当前head及诊断版本文字，保留0224及其他历史迁移守卫，然后重跑完整托管工作流。
+
+
+## PLG-02-A02验收结论
+
+A02按上方有界范围完成，最终`PASS_SCOPE_LIMITED`，证据与限制见`plg-02-a02-installation-owner-result.md`。此结论不表示实际安装、用户入口、生产组合、启用或插件执行可用。

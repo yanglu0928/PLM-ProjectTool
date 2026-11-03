@@ -103,3 +103,12 @@
 
 - Hosted run [41718480221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41718480221)：后端全量、前端、PG18 sidecar、Windows内嵌后端与父包组装均成功；隔离父包PG smoke在调用`validation/plg-01-a01-package-schema/verify.py`时失败。该PLG-01验证器仍将head固定为0225，当前合法迁移head已为0226，错误为“staging database did not reach current head”。A35通过，A17仍在执行中，A34因PG smoke失败跳过。
 - 根因范围为同一冻结数据库增量后PLG-01端到端验证器未同步head常量，不代表迁移或Owner写入失败。修复计划只将该验证器head与诊断文字更新到0226，保留PLG-01历史检查、0224降级边界及其他断言；之后重跑完整hosted工作流与PG18 smoke。此偏差先记录再修复。
+
+
+## PLG-02-A02最终云端验收（2026-11-04）
+
+- 结论`PASS_SCOPE_LIMITED`。提交`0534e041`增加内部Installation事实Owner及repository；`20261104_0226`仅开放Installation和RuntimeValidation在事务局部Owner标记下的INSERT，仍阻止UPDATE/DELETE/TRUNCATE，EnabledOperation继续关闭。固定installation ID支持同Package/Actor重放，冲突拒绝；要求 VERIFIED且未撤销的精确Package和受控适配器匹配SHA/兼容快照，安装行、runtime history与Audit同事务回滚。
+- GitHub hosted workflow [41721092729](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41721092729) 13/13 jobs成功：后端3932测试/wheel、前端、PG18.6/pgvector、内嵌后端、20,164文件非发行父包、PG migration smoke、A17、A34、A35、A50。
+- PG smoke报告head 0226、空库迁移往返、既有合成PLG数据保留、授权/未授权Owner写守卫、安装历史阻止降级。父包SHA-256 `4305e24a632acef0cd690612a8a9a2b5e620c2e022a5284ca265f9019b86783a`；production install/API=false、客户数据0、external calls=0、runner工作盘D:。
+- 两项失败均在修复前登记：backend contract仍期望0225；PLG-01 parent PG verifier仍固定0225。依次仅更新head期待后全量链通过。细项见A02结果文档。
+- 仅证明合成托管环境下的Owner代码、DB守卫及既有应用链；没有真实安装适配器/生产组合、物理安装、启用、执行、正式信任或Windows11实机证据。Pilot/Gate/Release不变。下一项A03检查启用操作与Installation状态变更Owner。
