@@ -1,7 +1,7 @@
 # CR-PLG-009：PluginInstallation运行时兼容性重验证与失败关闭
 
 - 日期：2026-11-04
-- 状态：编码前登记；按持续自主授权实施，依据托管证据验收
+- 状态：已完成；依据 GitHub hosted run 41738951137 证据关闭，结论 `PASS_SCOPE_LIMITED`
 - WBS：PLG-02-A04
 - 基线：冻结Data Model V1、DB Schema V1、API Contract V1、CR-PLG-007/008
 
@@ -44,3 +44,13 @@ PLG-02-A02只存首次兼容事实，A03激活要求最新兼容快照，但没�
 更新降级错误文案断言后，PG18 smoke 已确认有 PLG-02 历史时降级被拒绝且 migration revision 不变；随后历史保留断言仍使用 A03 的旧样例计数 `(2,1,1,1)`。A04 fixture 在降级前已追加第二条 RuntimeValidation、删除其活动操作并追加第二条 OperationHistory，实际应为 `(2,0,2,2)`。失败属于验证器未覆盖 A04 新增事实，不代表迁移改写或丢失数据。
 
 处置：把 fixture 的预期行数更新为 A04 的实际固定组成，并核对安装数量；在受阻降级前后再次比较同一组计数和安装 ID，要求完全一致。保留 0228 的失败关闭降级逻辑。无Schema/API/业务行为变化，回滚只需还原 verifier 断言。之后重跑完整 hosted workflow。
+
+
+## 验收结果（2026-11-04）
+
+- 代码提交 `c780dd991cdf1e515f68d2858c685c02157b7335`；验收头提交 `0f299221c5af6b3b605f39f60a05292052285884`；GitHub Actions [run 41738951137](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41738951137) 全13/13 jobs成功。
+- 后端全量3,945 tests、synthetic key ceremony、wheel；前端tests/typecheck/build；Python embedded assembly、PG18/pgvector sidecar、父包组装均成功。
+- 父包清洁解包与PG18/pgvector smoke通过；空库迁移升至0228、对0220/0210降级往返并重升通过；合成既有包数据升级保留；带PLG-02运行历史的降级被拒绝且revision、Installation/EnabledOperation/RuntimeValidation/History行计数及安装ID保持不变。A17、A34、A35、A50通过。
+- 两轮历史保护断言偏差均已先记于本CR，再仅修正migration verifier的错误文本及旧样例计数；0228的迁移保护没有放宽。最终run成功，旧失败run不作为最终验收证据。
+- 结论：`PASS_SCOPE_LIMITED`。仅内部Owner/PG及同一候选包的合成托管验证；无客户数据/外部API/生产数据库。没有公开API、默认组合或物理安装适配器；没有安装、启动或执行插件；不能据此认定Windows 11实机、Gate、Pilot或正式Release通过。
+- 下一项：`PLG-02-A05` Installation生命周期终态操作Owner编码前检查；具体状态/引用/审计语义须先按冻结基线核对并独立登记。

@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-04（内部云端验证，非发行版本）
+
+- PLG-02-A04按CR-PLG-009完成并以`PASS_SCOPE_LIMITED`关闭。GitHub hosted run [41738951137](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41738951137) 13/13 jobs成功：后端3,945 tests/wheel、前端/build、PG18.6 Migration 0228及有数据降级保护、父包PG smoke、A17/A34/A35/A50通过。两轮验证器偏差已先记CR再仅修正断言并完整重跑。未接公开API/默认组合/真实安装适配器，不安装/执行插件；Pilot/Gate/正式Release仍未通过。详见`docs/progress/plg-02-a04-runtime-revalidation-result.md`。下一项PLG-02-A05编码前检查。
+
 - PLG-02-A04编码前检查完成：按冻结Installation/RuntimeValidation状态设计内部重验证Owner；不兼容时原子撤销操作启用、标记INCOMPATIBLE并记逐操作历史/Audit；从不兼容恢复只转DISABLED，须显式再启用。CR-PLG-009先行登记Migration 0228、回滚和托管验收计划；目前未改程序。详见 `docs/progress/plg-02-a04-runtime-revalidation-precheck.md`。用户本机不运行代码/测试。
 
 - PLG-02-A03按CR-PLG-008以 `PASS_SCOPE_LIMITED` 完成：operation集合原子切换、历史安装状态维护、同事务Audit与逐operation不可变历史；migration 0227。GitHub hosted run [41728983860](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41728983860) 13/13 jobs成功，后端3,937项、父包PG18 smoke、A17、A34、A35、A50通过。首次PG verifier 17/3守卫计数偏差已先记CR，再更新为20/4并重验通过。无API/默认组合/物理安装/PluginExecution；Pilot/Release仍未就绪。详见 `docs/progress/plg-02-a03-installation-activation-result.md`。下一项PLG-02-A04编码前检查。
