@@ -57,3 +57,11 @@ undefined
 - 新增plm.plg_package_import_stagings ORM/table，保存异步验证必需的package ID、hash、size、detached signature和signer key reference；无ZIP正文/路径。
 - append-only UPDATE/DELETE和TRUNCATE守卫；降级若有记录拒绝删除并保持版本，空表允许down。
 - PLG schema verifier及迁移head contract已更新至20261103_0224，并新增隔离PG staging行写入/守卫/数据保留/降级阻断测试；本次云端运行待完成。
+
+
+## 云端回归断言修复与暂存补偿复核（2026-11-03）
+
+- run [41606204207](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41606204207) 暴露两个 ORM 元数据单测未把0224新增表加入期望清单；产品迁移/验证任务没有报告失败。按失败日志仅修正历史清单边界和 Plugin owned-table 断言，无数据库/API行为变化。
+- 下一片实现前代码复核发现 Plugin spool 在移除跨模块导入后仍引用未定义的 LocalStorageError；补偿删除失败会触发 NameError并遮蔽原错误。调整为捕获清理异常且不覆盖主错误，并在暂存结果中保留本轮 device/inode，供后续同UOW数据库失败时精确补偿。
+- 风险/回滚：不改变持久合同或文件校验；保留原提交历史。若补偿用例失败，不装配导入路由并保持A08未完成。
+- 验证：修正后的后端全量、PG18迁移及完整hosted工作流；均只在GitHub hosted D盘执行。
