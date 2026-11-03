@@ -20,7 +20,7 @@ from plm_assistant.modules.platform.infrastructure.migration import (  # noqa: E
     upgrade_database,
 )
 
-HEAD = "20261103_0224"
+HEAD = "20261104_0225"
 PARENT = "20261103_0223"
 _TABLES = (
     "plg_packages",
@@ -69,21 +69,38 @@ def _assert_presence(dsn: str, expected: bool) -> None:
         raise AssertionError(f"PLG-01 table presence mismatch: {found!r}")
 
 
+_INSTALLATION_TABLES = (
+    "plg_installations",
+    "plg_enabled_operations",
+    "plg_runtime_validations",
+)
+
+
+def _assert_installation_presence(dsn: str, expected: bool) -> None:
+    with psycopg.connect(dsn) as conn:
+        found = [
+            conn.execute("SELECT to_regclass(%s)", ("plm." + table,)).fetchone()[0]
+            for table in _INSTALLATION_TABLES
+        ]
+    if (all(found)) is not expected or (not expected and any(found)):
+        raise AssertionError(f"PluginInstallation table presence mismatch: {found!r}")
+
+
 def _assert_guards(dsn: str) -> None:
     with psycopg.connect(dsn) as conn:
         actual = conn.execute(
             "SELECT count(*) FROM pg_trigger "
             "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%'"
         ).fetchone()[0]
-    if actual != 10:
-        raise AssertionError(f"expected ten immutable/truncate guards, got {actual}")
+    if actual != 17:
+        raise AssertionError(f"expected 17 PLG immutable/truncate/owner guards at 0225, got {actual}")
     with psycopg.connect(dsn) as conn:
         closed = conn.execute(
             "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
             "AND tgname LIKE 'trg_plg_%__owner_closed'"
         ).fetchone()[0]
-    if closed != 0:
-        raise AssertionError(f"expected INSERT Owner to be open, found {closed} closed guards")
+    if closed != 3:
+        raise AssertionError(f"expected three closed PluginInstallation Owners, found {closed}")
 
 
 def _assert_guards_open_parent(dsn: str) -> None:
@@ -272,6 +289,7 @@ def main() -> int:
         if _revision(empty_dsn) != HEAD:
             raise AssertionError("empty upgrade did not reach PLG-01 head")
         _assert_presence(empty_dsn, True)
+        _assert_installation_presence(empty_dsn, True)
         _assert_guards(empty_dsn)
         result["empty_upgrade"] = "PASS"
         result["append_only_owner_guards"] = "PASS"
@@ -280,6 +298,7 @@ def main() -> int:
         if _revision(empty_dsn) != PARENT:
             raise AssertionError("empty PLG-01 import staging downgrade did not stop at 0223")
         _assert_presence(empty_dsn, True)
+        _assert_installation_presence(empty_dsn, False)
         _assert_import_staging_presence(empty_dsn, False)
         _assert_guards_open_parent(empty_dsn)
         downgrade_database(empty_url, "20261102_0222")
@@ -294,6 +313,7 @@ def main() -> int:
         if _revision(empty_dsn) != HEAD:
             raise AssertionError("empty PLG-01 re-upgrade failed")
         _assert_presence(empty_dsn, True)
+        _assert_installation_presence(empty_dsn, True)
         _assert_import_staging_presence(empty_dsn, True)
         result["empty_downgrade_reupgrade"] = "PASS"
 
@@ -349,6 +369,7 @@ def main() -> int:
         if _revision(existing_dsn) != HEAD:
             raise AssertionError("existing synthetic database upgrade did not reach PLG-01 head")
         _assert_presence(existing_dsn, True)
+        _assert_installation_presence(existing_dsn, True)
         with psycopg.connect(existing_dsn) as conn:
             after = conn.execute(
                 "SELECT state,lock_version,changed_at FROM plm.plt_maintenance_state "
