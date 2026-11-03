@@ -1,7 +1,7 @@
 # PLG-01-A02：插件包签名验证器编码前检查
 
 - 日期：2026-11-03
-- 状态：PRECHECK_COMPLETE / READY_TO_IMPLEMENT
+- 状态：IMPLEMENTED / PASS_SCOPE_LIMITED
 - Phase/WBS：Phase 2 / PLG-01-A02
 - 上一项：PLG-01-A01 PASS_SCOPE_LIMITED（hosted run 41566771430）
 - Change Request：CR-PLG-001（算法与消息格式先记录）
@@ -33,3 +33,11 @@
 ## 约束
 
 当前未提供正式发布者公钥/撤销信任源。因此仅通过注入的合成Resolver证明验签算法与拒绝边界，不得标记真实包 `VERIFIED`、不得宣称正式信任或可安装。实装生产信任源另立WBS。
+
+
+## 云端验收结果（2026-11-03）
+
+- 代码提交 `11a4e33448fc68718e43d8d7d3572ac2c703b6a8`；GitHub hosted run [41569062762](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41569062762) 全13 jobs success。
+- 后端全量/wheel、前端、PG18、父包/A35/A17/A34通过；8项Plugin验签专项单测通过。
+- 本项没有接入生产信任源，所有验签通过仅针对运行时合成密钥。
+- 结果 `PASS_SCOPE_LIMITED`；下一项 `PLG-01-A03` 先核查并实现生产发布者公钥可信来源/撤销边界。

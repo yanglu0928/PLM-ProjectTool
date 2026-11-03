@@ -1,7 +1,7 @@
 # CR-PLG-001：冻结插件签名验证算法与消息格式
 
 - 日期：2026-11-03
-- 状态：APPROVED_BY_CONTINUOUS_USER_AUTHORIZATION / IMPLEMENTATION_IN_PROGRESS
+- 状态：APPROVED_BY_CONTINUOUS_USER_AUTHORIZATION / PASS_SCOPE_LIMITED
 - 适用 WBS：PLG-01-A02
 - 依据：ADR-005、Gate 2 冻结的 DM-04/API-03/SC-01～03、用户 2026-09-24 持续自主执行授权
 - 原基线：开发者工作台为插件包签名；加载前验签。V1 只接受开发者包，不开放客户 SDK、任意第三方或插件市场。冻结基线未规定插件签名算法/消息格式。POC-08 的 `sha256:<entry-point-hash>` 仅是入口文件完整性检查，不提供开发者身份信任。
@@ -51,3 +51,11 @@
 ### 编码前结构检查补充（2026-11-03）
 
 现有 License 验签器位于 Owner 的 `application` 层，Plugin 模块已有相同分层约定；因此 PLG 验签器实现在 `modules/plugin/application/signature_verifier.py`，不在 domain 层新增重复公钥/密码学抽象。该路径调整不改算法、合同或Scope。
+
+
+## PLG-01-A02 实施与验收记录（2026-11-03）
+
+- 代码提交：`11a4e33448fc68718e43d8d7d3572ac2c703b6a8`；GitHub hosted run [41569062762](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41569062762) 全13 jobs成功。
+- 纯验签器绑定完整归档SHA-256、Ed25519 detached signature和外部trusted signer Port；8项合成单测覆盖有效签名、篡改、撤销/禁用、无效key和key-ref边界。未添加DB/API/Migration。
+- 结果：`PASS_SCOPE_LIMITED`。没有生产Trust adapter/公钥/撤销源，不能将包标记VERIFIED。完整证据见 `docs/progress/plg-01-a02-signature-verifier-result.md`。
+- 下一项：PLG-01-A03 生产发布者公钥信任源与撤销边界编码前检查。

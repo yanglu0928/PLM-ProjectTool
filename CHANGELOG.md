@@ -1,5 +1,12 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A02 按 CR-PLG-001 增加纯Ed25519 detached插件包验签器：对完整包字节计算SHA-256并绑定签发者key-ref，密钥由独立Trust Port提供；8项定向单测及全链 hosted run [41569062762](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41569062762) 13/13成功。
+- 兼容性：GitHub hosted Windows Server 2025与合成密钥；未在用户本机/C盘运行，也无Windows 11新实机验证。
+- 升级说明：内部开发分支代码，无数据库/API变化；没有产品安装包或生产包升级。
+- 已知限制：生产公钥信任/撤销源、包导入、Manifest兼容校验、安装和执行尚未接入；结果PASS_SCOPE_LIMITED，Gate 3/Pilot/Release仍NOT_READY。详情见 `docs/progress/plg-01-a02-signature-verifier-result.md` 和 `docs/changes/CR-PLG-001-plugin-package-signature-format.md`。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A01 已增加插件包不可变元数据持久层；GitHub hosted run [41566771430](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41566771430) 全13 jobs成功。当前转入 PLG-01-A02；由于ADR-005未指定签名算法，先登记 [CR-PLG-001](docs/changes/CR-PLG-001-plugin-package-signature-format.md)，冻结 Ed25519 与完整包摘要签名格式，再开始编码。
 - 兼容性：仅云端 Windows Server 2025 runner；无本机/C盘执行、无Windows11新实测。
 - 升级说明：仅开发分支规则/代码计划，不生成安装包。
