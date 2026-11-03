@@ -112,7 +112,7 @@ class UnitOfWork:
 
 def _scope():
     return IdempotencyScope.from_key(
-        actor_id=uuid.uuid4(), project_id=None,
+        actor_id=uuid.UUID(int=1), project_id=None,
         operation="V1_PLUGIN_PACKAGE_IMPORT",
         key="stable-plugin-import-key",
     )
