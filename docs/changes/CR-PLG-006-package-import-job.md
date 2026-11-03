@@ -104,3 +104,10 @@ undefined
 - 此入口不改变默认 API 组合、Service 自动安装策略、插件信任名单或数据库/API合同；不添加 migration。Worker 仍只验签、解析 manifest、检查静态兼容和登记元数据，禁止安装/执行插件。
 - 回滚只需恢复入口、角色枚举与对应测试；不涉及持久数据。验收包含定向/全后端云端测试、wheel、Windows 同提交父包与既有A17/A34链路；PG18 的领取/登记/租约/失败复验烟测仍需单独补齐后才可关闭A08。
 - 代码提交前已将此范围纳入CR-PLG-006；无新增Secret或客户数据。
+
+
+## Windows Worker CLI 提交验收结果（2026-11-04）
+
+- 提交 `bcb69866d44038ab66a6948c23e996ababf3065e` 增加Windows专用Worker组合入口和进程诊断角色；不改变API/Schema，不执行插件。
+- GitHub hosted workflow [41673992094](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41673992094) 全13/13 jobs成功：后端全量与wheel、前端、PG18/pgvector、嵌入式Python、Windows父包、A35、A17、A34均通过。此结论仅覆盖该提交的实际工作流，不包含随后新增的PG18 Worker端到端smoke，也不代表Windows 11实机验收。
+- A08尚未关闭。当前publisher trust manifest为空，真实发布者信任/发布仍未验证。

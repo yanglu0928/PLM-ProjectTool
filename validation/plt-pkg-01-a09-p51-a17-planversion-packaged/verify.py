@@ -356,6 +356,11 @@ _handover_review["browser_probe"] = types.FunctionType(
 def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> None:
     """Verify the A08 service against the same disposable PostgreSQL 18 database."""
     import tempfile
+    import hashlib
+    import io
+    import json
+    import time
+    import zipfile
 
     from sqlalchemy import func, select
     from sqlalchemy.engine import URL
@@ -384,6 +389,33 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
     )
     from plm_assistant.modules.plugin.infrastructure.package_import_staging_repository import (
         SqlAlchemyPluginPackageImportStagingRepository,
+    )
+    from plm_assistant.modules.jobs.application.lease import JobLeaseService
+    from plm_assistant.modules.jobs.infrastructure.lease_repository import (
+        SqlAlchemyJobLeaseRepository,
+    )
+    from plm_assistant.modules.plugin.application.host_compatibility import (
+        HostPlatformsPluginCompatibility,
+    )
+    from plm_assistant.modules.plugin.application.manifest_parser import PluginManifestParser
+    from plm_assistant.modules.plugin.application.package_archive_inspector import (
+        PluginPackageArchiveInspector,
+    )
+    from plm_assistant.modules.plugin.application.package_import_worker import (
+        PluginPackageImportWorker,
+    )
+    from plm_assistant.modules.plugin.application.package_registration import (
+        PluginPackageRegistrationService,
+    )
+    from plm_assistant.modules.plugin.application.signature_verifier import (
+        PluginPackageSignatureVerifier, TrustedPluginSigner,
+    )
+    from plm_assistant.modules.plugin.infrastructure.orm import PluginPackageRow
+    from plm_assistant.modules.plugin.infrastructure.package_import_worker_repository import (
+        SqlAlchemyPluginPackageImportSource,
+    )
+    from plm_assistant.modules.plugin.infrastructure.package_registration_repository import (
+        SqlAlchemyPluginPackageRegistrationRepository,
     )
     from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
     from plm_assistant.modules.platform.infrastructure.database import (
@@ -419,7 +451,8 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
     signer_ref = "test-key:packaged-a08"
     digest = __import__("hashlib").sha256(payload).digest()
     with tempfile.TemporaryDirectory(prefix="a08-import-", dir=test_root) as storage_root:
-        spool = PluginPackageImportSpool(storage=LocalFileStorage(Path(storage_root)))
+        storage = LocalFileStorage(Path(storage_root))
+        spool = PluginPackageImportSpool(storage=storage)
         queue = PluginPackageImportQueue(SqlAlchemyPluginPackageImportQueueRepository())
         staging = SqlAlchemyPluginPackageImportStagingRepository()
 
@@ -440,12 +473,13 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             key="a08-packaged-pg18-import-idempotency",
         )
 
-        def command(*, content=payload, request_scope=scope):
+        def command(*, content=payload, request_scope=scope,
+                request_signature=signature, request_signer=signer_ref):
             return SubmitPluginPackageImport(
                 scope=request_scope, session_token=b"a" * 32,
                 trace_id=uuid.uuid4(), declared_length=len(content),
                 declared_sha256=__import__("hashlib").sha256(content).digest(),
-                detached_signature=signature, signer_key_ref=signer_ref,
+                detached_signature=request_signature, signer_key_ref=request_signer,
                 chunks=(content[:5], content[5:]),
             )
 
@@ -551,12 +585,157 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             tx.commit()
         if after != before:
             raise AssertionError("A08 Audit rollback left partial PG import rows")
+        # Run the actual fenced worker against PostgreSQL 18. One intentionally
+        # untrusted package must fail closed; a synthetic signed archive may only
+        # register verified metadata, and its entry point must remain unexecuted.
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+        private_key = Ed25519PrivateKey.generate()
+        public_key = private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        valid_signer_ref = "test-key:packaged-a08-worker"
+        manifest = {
+            "schema_version": "plm.plugin.manifest.v1",
+            "plugin_id": "synthetic.a08worker",
+            "name": "Synthetic A08 Worker",
+            "version": "1.0.0",
+            "plugin_api_version": "1.0.0",
+            "supported_os": ["windows-11", "windows-server-2025", "debian-13"],
+            "architecture": "x86_64",
+            "entry_point": "plugin/main.py",
+            "operations": [{"operation_id": "synthetic.read", "output_types": ["application/json"]}],
+            "dependencies": [],
+        }
+        archive_stream = io.BytesIO()
+        with zipfile.ZipFile(archive_stream, "w", compression=zipfile.ZIP_STORED) as archive:
+            archive.writestr("manifest.json", json.dumps(
+                manifest, sort_keys=True, separators=(",", ":"),
+            ).encode("utf-8"))
+            archive.writestr("plugin/main.py", b"raise RuntimeError('must not execute')\n")
+        valid_archive = archive_stream.getvalue()
+        valid_digest = hashlib.sha256(valid_archive).digest()
+        signature_message = (
+            b"PLM-PLUGIN-PACKAGE\x00v1\x00"
+            + len(valid_signer_ref.encode("utf-8")).to_bytes(2, "big")
+            + valid_signer_ref.encode("utf-8")
+            + valid_digest
+        )
+        valid_signature = private_key.sign(signature_message)
+
+        class SyntheticSignerResolver:
+            def resolve_trusted_signer(self, signer_key_ref):
+                if signer_key_ref != valid_signer_ref:
+                    return None
+                return TrustedPluginSigner(
+                    signer_key_ref=valid_signer_ref, public_key_raw=public_key,
+                )
+
+        worker_repo = SqlAlchemyJobLeaseRepository()
+        registration_service = PluginPackageRegistrationService(
+            unit_of_work=runtime.unit_of_work,
+            inspector=PluginPackageArchiveInspector(
+                PluginManifestParser(),
+                PluginPackageSignatureVerifier(SyntheticSignerResolver()),
+            ),
+            compatibility=HostPlatformsPluginCompatibility(),
+            repository=SqlAlchemyPluginPackageRegistrationRepository(),
+            audit=audit,
+        )
+        worker = PluginPackageImportWorker(
+            unit_of_work=runtime.unit_of_work,
+            leases=JobLeaseService(
+                unit_of_work=runtime.unit_of_work, repository=worker_repo,
+            ),
+            lease_repository=worker_repo,
+            source=SqlAlchemyPluginPackageImportSource(),
+            storage=storage,
+            registration=registration_service,
+            license_guard=license_guard,
+            worker_ref="a08-pg18-smoke-worker",
+            lease_seconds=60,
+        )
+        failed_state = worker.run_once()
+        with runtime.unit_of_work() as tx:
+            failed_job = tx.session.execute(
+                select(JobRow).where(JobRow.job_id == first.job_id)
+            ).scalar_one()
+            if failed_state != "FAILED" or failed_job.state != "FAILED":
+                raise AssertionError("A08 untrusted package did not fail closed")
+            tx.commit()
+
+        valid_scope = IdempotencyScope.from_key(
+            actor_id=actor_id, project_id=None,
+            operation="V1_PLUGIN_PACKAGE_IMPORT",
+            key="a08-packaged-pg18-worker-valid",
+        )
+        valid_job = service.submit(command(
+            content=valid_archive, request_scope=valid_scope,
+            request_signature=valid_signature, request_signer=valid_signer_ref,
+        ))
+        if worker.run_once() != "SUCCEEDED":
+            raise AssertionError("A08 worker did not register the synthetic signed package")
+        with runtime.unit_of_work() as tx:
+            job_row = tx.session.execute(
+                select(JobRow).where(JobRow.job_id == valid_job.job_id)
+            ).scalar_one()
+            package_row = tx.session.execute(
+                select(PluginPackageRow).where(
+                    PluginPackageRow.plugin_id_normalized == "synthetic.a08worker",
+                    PluginPackageRow.plugin_version == "1.0.0",
+                )
+            ).scalar_one()
+            registered_audits = tx.session.execute(
+                select(func.count()).select_from(AuditEventRow).where(
+                    AuditEventRow.action == "PLUGIN_PACKAGE_REGISTER",
+                    AuditEventRow.target_object_id == package_row.plugin_package_id,
+                )
+            ).scalar_one()
+            if (job_row.state != "SUCCEEDED" or package_row.package_state != "VERIFIED"
+                    or package_row.package_sha256 != valid_digest or registered_audits != 1):
+                raise AssertionError("A08 worker Job/package/Audit facts diverged")
+            tx.commit()
+
+        # Exercise a bounded retry on a transient staging read failure, then
+        # restore the exact synthetic file and allow the fenced generation to finish.
+        retry_scope = IdempotencyScope.from_key(
+            actor_id=actor_id, project_id=None,
+            operation="V1_PLUGIN_PACKAGE_IMPORT",
+            key="a08-packaged-pg18-worker-retry",
+        )
+        retry_job = service.submit(command(
+            content=valid_archive, request_scope=retry_scope,
+            request_signature=valid_signature, request_signer=valid_signer_ref,
+        ))
+        retry_locator, _ = storage.locators(
+            scope="GLOBAL", project_id=None, file_object_id=retry_job.package_upload_id,
+        )
+        staged_path = Path(storage_root).joinpath(*retry_locator.split("/"))
+        held_path = staged_path.with_name(staged_path.name + ".temporarily-held")
+        staged_path.replace(held_path)
+        retry_state = worker.run_once()
+        held_path.replace(staged_path)
+        if retry_state != "RETRY_WAIT":
+            raise AssertionError("A08 transient staging failure did not enter bounded retry")
+        time.sleep(5.2)
+        if worker.run_once() != "SUCCEEDED":
+            raise AssertionError("A08 bounded retry did not complete after staging recovery")
+        with runtime.unit_of_work() as tx:
+            retry_row = tx.session.execute(
+                select(JobRow).where(JobRow.job_id == retry_job.job_id)
+            ).scalar_one()
+            if retry_row.state != "SUCCEEDED" or retry_row.attempt_count != 2:
+                raise AssertionError("A08 retry did not advance its fenced attempt")
+            tx.commit()
+
         files = [item for item in Path(storage_root).rglob("*") if item.is_file()]
-        if len(files) != 1:
-            raise AssertionError("A08 failure compensation left an unowned staged file")
+        if len(files) != 3:
+            raise AssertionError("A08 worker smoke changed the staged package count")
     runtime.dispose()
-    print("PLG_01_A08_PACKAGE_IMPORT_PG18_PASS: atomic Job/Outbox/staging/Audit; "
-          "idempotent replay; content conflict; Audit rollback; bounded staging cleanup",
+    print("PLG_01_A08_PACKAGE_IMPORT_PG18_PASS: atomic upload; scoped claim; terminal signature rejection; "
+          "verified metadata registration; bounded retry recovery; Audit rollback",
           flush=True)
 
 def packaged_planversion_probe(**context) -> None:

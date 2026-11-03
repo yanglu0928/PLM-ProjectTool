@@ -71,3 +71,10 @@ HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；sta
 - 新增显式 Windows Worker 入口：读取正式 Bootstrap 和当前账户数据库凭据，执行数据库 readiness、Migration head 与 License 检查后才创建 Worker；支持 `--once` 和有界休眠的常驻轮询。
 - Worker 进程登记角色扩展为 `PLUGIN_PACKAGE_WORKER`，用于既有诊断标记；无默认 API 挂载、无服务自动安装、无插件代码执行或新 migration。
 - 新增进程角色单测。当前只提交代码，云端验证仍待；A08不关闭。PG18 Worker领取、lease/fencing、真实签名包登记与错误重试/失败验收仍是剩余项。
+
+
+## Windows Worker CLI 云端回归（2026-11-04）
+
+- 提交 `bcb69866d44038ab66a6948c23e996ababf3065e` 新增Windows显式组合入口、诊断角色及其单测。
+- GitHub hosted run [41673992094](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41673992094) 13/13 jobs全通过；覆盖后端全量测试/wheel、前端构建、PG18/pgvector、嵌入式Python、父包和A35/A17/A34验证。测试在GitHub runner执行，未运行用户本机代码。
+- 新增PG18端到端Worker smoke和入口模块导入门禁已进入本次待验证提交；旧run通过不能替代这些新覆盖。A08继续进行中。

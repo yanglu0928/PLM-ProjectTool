@@ -245,3 +245,9 @@
 - A08新增Windows Plugin package verification Worker CLI组合入口：显式读取Bootstrap/当前账户数据库凭据，检查数据库schema与License后执行一次处理或常驻轮询，并登记诊断进程角色。Worker不安装、不执行插件；未接默认API，也未自动安装服务。
 - 新增Worker诊断角色测试。该提交的后端/前端回归、wheel、Windows父包和集成验证待GitHub Actions；A08仍未关闭，Pilot与正式Release仍NOT_READY。
 - 所有代码与验证均计划在GitHub托管runner执行，不占用用户本机C盘。
+
+
+## Unreleased · 2026-11-04（A08 Worker CLI云端结果与集成验收）
+- Worker CLI/诊断角色提交 `bcb69866` 的GitHub hosted workflow [41673992094](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41673992094) 全13 jobs成功；不代表新加入的PG18 Worker端到端smoke已通过。
+- 新增PG18真实Worker claim/fencing、无信任签名失败关闭、synthetic Ed25519有效包只登记元数据、短暂staging故障与bounded retry恢复的验收代码，并新增Windows入口模块导入保护。验证待本轮hosted workflow。
+- 全部运行保持在云端，不使用用户本机C盘；无客户数据外发。
