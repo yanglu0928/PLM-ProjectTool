@@ -70,3 +70,8 @@ A02已有完整归档字节Ed25519 detached verifier，A03已有有界Manifest p
 - WBS结论：`PASS_SCOPE_LIMITED`。不代表插件导入/落盘/安装/运行，不代表正式发布信任、Windows 11设备、Gate 3、Pilot或Release通过。没有客户数据、Secret或真实信任材料进入本验收。
 - 运行位置：GitHub hosted Windows Server 2025 runner，工作区/隔离目录使用D盘；未在用户本机或C盘运行。
 - 交付结果：`docs/progress/plg-01-a06-plugin-zip-inspector-result.md`。后续转至STATUS.md中的OUT-01-A01-P03，按其已完成的前置核查与CR-OUT-003实施。
+
+
+## A06后续路线复核（2026-11-03）
+
+上一版A06结尾指向OUT-01-A01-P03，依据当时STATUS行执行前置检查后才发现该P03已由提交e0b69bdcdc06765e5192d57fe84f924d30606958及run [41417503109](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41417503109)于2026-11-02完成。PLG-01-A01也已完成，因此按“持久注册/状态转换留待后续独立WBS”的原决定转入PLG-01-A07。更正记录和编码前边界见CR-PLG-005。

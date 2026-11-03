@@ -1,11 +1,11 @@
-|Next WBS|OUT-01-A01-P03：可信固定来源、模板与策略解析器实施|
+|Next WBS|PLG-01-A07：签名插件包元数据登记与验证结果原子Owner|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|A50修正提交 ae1c0455f0fdb7c54d4f9fe6b7364c8a5ae37c12；hosted run 41391544470全12 jobs成功。A35 Windows11 Home build26300 D盘隔离父包复验仍为历史PASS_LIMITED；本轮不代表实机Windows11验收。正式信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|OUT-01-A01-P03：Output固定来源、模板与策略解析器（CR-OUT-003）|
-|Latest WBS Status|PLG-01-A06 已按限定范围完成：GitHub hosted Windows run 41582564698 的13/13 jobs成功，后端3,902项、wheel、前端、PG18、父包、A35/A17/A34链均通过；A17包内PlanVersion flow与A34替换/人工恢复分别有独立合成证据。A06为PASS_SCOPE_LIMITED，不代表插件导入/安装/运行、正式信任、Windows 11实机、Gate/Pilot/Release。详见docs/progress/plg-01-a06-plugin-zip-inspector-result.md。下一项OUT-01-A01-P03的编码前检查已完成，按CR-OUT-003实施可信固定来源/模板/策略解析边界。|
-|Current Status|PLG_01_A06_PASS_SCOPE_LIMITED / OUT_01_A01_P03_IMPLEMENTATION_IN_PROGRESS / PHASE_2_IN_PROGRESS|
+|Current WBS|PLG-01-A07：签名插件包元数据登记与验证结果原子Owner|
+|Latest WBS Status|PLG-01-A06已由run 41582564698全13 jobs成功并以PASS_SCOPE_LIMITED关闭。路线复核发现 OUT-01-A01-P03 已在2026-11-02由提交e0b69bdc、run 41417503109完成，且PLG-01-A01～A06均已有结果；上一版记录的“下一项P03”是过时路线，已更正。依据A06 CR将持久登记留给后续独立WBS，启动PLG-01-A07编码前检查：仅做可信包元数据的原子登记Owner，不接公开HTTP/Job、不持久化ZIP正文、不安装或执行插件。见CR-PLG-005与A07 precheck。|
+|Current Status|PLG_01_A06_PASS_SCOPE_LIMITED / PLG_01_A07_PRECHECK_COMPLETE / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
 |Blockers|Gate 3审计确认：Handover、Survey与Requirement前三阶段已顺序组合至PROTOTYPE/v10；Requirement读写、真实聚合Owner/PG/HTTP、前端及Edge证据已完成，Prototype、Solution、Plan真实业务Owner和后续阶段仍待。POC-03新集合同0/7、技术协议1/8且旧质量分类48%/引用74%继续阻塞Gate 3/UAT；正式发行公钥、目标服务账户Vault/ACL/CA、SCM安装恢复与20并发性能未验。DOC生产清理入口、Server2025当前运行链、Debian13实机按用户指令跳过、Server Office及Ghostscript发行合规继续作为独立Release约束|
@@ -2784,3 +2784,5 @@
 - 2026-11-02 路线纠正：P51-A50-E01 已完成；STATUS 中 Prototype Owner 的 Next WBS 文案沿用旧路线。复核当前分支发现 PlanVersion 创建/校验/送审已分项实现，而 Output 模块与物理迁移尚不存在。按 CR-EXEC-002 将下一项校正为 `OUT-01-A01-P01`，从冻结 API-03/DM-04 的 OutputRequest 与不可变 ContextSnapshot 持久层开始；具体证据与边界见 `docs/progress/out-01-a01-p01-request-context-schema-precheck.md`。不将任何局部代码结果等同 Pilot/Gate/Release 通过。
 
 - 2026-11-03 `PLG-01-A06`：run [41582564698](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41582564698) 全13 jobs成功，后端3,902项、wheel、前端、PG18/pgvector、父包/A35/A17/A34链通过。A06归档及Manifest签名联合检查按范围PASS_SCOPE_LIMITED；未落盘/安装/运行插件。此前两轮夹具与随机UUID误报均保留记录，见CR-PLG-004及A06结果文档。接续OUT-01-A01-P03，不代表Gate/Pilot/Release通过。
+
+- 2026-11-03 路线纠正：PLG-01-A06结果文档最初将下一项指向OUT-01-A01-P03，但该项已在2026-11-02以PASS_SCOPE_LIMITED完成（run 41417503109）；PLG-01-A01～A06亦均已有结果。按CR-PLG-004将持久注册留待后续独立WBS的边界，下一项改为PLG-01-A07。纠正已记录于CR-PLG-005，未改产品基线。

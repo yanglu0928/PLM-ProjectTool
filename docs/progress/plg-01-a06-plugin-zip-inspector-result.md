@@ -3,7 +3,7 @@
 - 日期：2026-11-03
 - 状态：PASS_SCOPE_LIMITED
 - Phase/WBS：Phase 2 / PLG-01-A06
-- 实施提交：`80edd9f2cfe166c2b3cf9ff5e87ad7b780db5f41`（初始实现）、`80edd9f2cfe166c2b3cf9ff5e87ad7b780db5f41`?（EOCD边界补充见CR）、`dacd018ae5bde584ed1f16d0211ce19d8617c2ca`（A06测试fixture）、`6c3fbbe5c263f773a869bf19a4283eb49c7aecfa`（既有随机UUID测试稳定化）
+- 实施提交：`994a39a6644f247e95bd4c26950a14fe54748a3`（初始实现）、`80edd9f2cfe166c2b3cf9ff5e87ad7b780db5f41`?（EOCD边界补充见CR）、`dacd018ae5bde584ed1f16d0211ce19d8617c2ca`（A06测试fixture）、`6c3fbbe5c263f773a869bf19a4283eb49c7aecfa`（既有随机UUID测试稳定化）
 - 验收提交：`6c3fbbe5c263f773a869bf19a4283eb49c7aecfa`
 - GitHub Actions：[run 41582564698](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41582564698)
 
@@ -35,4 +35,4 @@
 
 ## 下一项
 
-按STATUS.md与CR-EXEC-002继续OUT-01-A01-P03。该项编码前检查已完成，依据CR-OUT-003实现可信固定来源、模板及策略解析器；保持云端D盘runner与合成数据边界，不连接外部AI/真实插件、不在用户本机/C盘执行。
+依据CR-PLG-004中持久注册留待后续独立WBS的边界，继续PLG-01-A07：包元数据原子登记Owner。此前指向OUT-01-A01-P03的路线已纠正；P03实际上已由提交e0b69bdc、run 41417503109完成。A07仍使用GitHub hosted runner D盘与合成包/签名，不接公开HTTP/Job，不持久化ZIP正文，不安装或执行插件。
