@@ -1,7 +1,7 @@
 # OUT-01-A01-P06：Output文件模板固定版本Registry编码前核查
 
 - 日期：2026-11-04
-- 状态：PRECHECK_IN_PROGRESS（未完成证据盘点；未开始编码）
+- 状态：PASS_SCOPE_LIMITED（完成固定基线/Owner核查；未编码）
 - WBS：OUT-01-A01-P06
 - 依据：CR-OUT-004/005、冻结DM-04/API-03及P05 PASS_SCOPE_LIMITED结果
 
@@ -25,3 +25,13 @@ P04确认当前没有Output文件模板Registry；Prototype模板不是Output模
 ## 下一步
 
 完成上列文件比对后，生成CR-OUT-006并登记单项模板Registry实现计划；若发现冻结Schema缺少必需持久字段，则CR先说明兼容方案、风险、升级/回滚和验证，不静默改写基线。
+
+
+## 源码与冻结基线盘点结果（2026-11-04）
+
+- 冻结Data Model V1将Output定义为2个Aggregate Root：OutputRequest、OutputArtifact；冻结DB Schema V1只映射Output请求与Artifact，没有OutputTemplate root/table。API-03仅在OutputRequest Create引用固定template_version_ref，并没有模板管理CRUD。
+- Prototype Owner虽有PrototypeTemplate/Version，但其版本内容是不可执行的layout_contract/component_contract及原型artifact引用，服务于Prototype页面布局与组件/终端适用范围；它不定义Word/PPT/Flow输出格式与文档生成操作。跨模块复用会混淆边界，禁止直接读其ORM。
+- 当前Output Owner仅有请求/ContextSnapshot持久化；Resolver定义OutputTemplateVersion DTO/Registry Port，缺真实Registry。新增可配置数据库模板root将偏离冻结65-root Data Model/Schema，还会增加Migration及管理API范围。
+- 决定：P07实现受版本控制的内置OutputTemplate Registry，作为Output Owner的只读受控包内目录映射到Resolver既有DTO；不增加Aggregate Root、客户DB表、公开管理CRUD或项目自定义模板能力。固定模板版本ID绑定到受控代码/资源版本；未知ID与格式不匹配失败关闭。若后续必须支持管理员/项目自定义Output模板，再单独走Data Model/Schema Change Request。
+- 已记录CR-OUT-006作为P07编码前批准记录；不改API/Schema/Migration，不读客户数据，不改变Plugin信任/启用状态。真实Output Create仍因Policy/operation和render/artifact链未齐全而失败关闭。
+- P06结论PASS_SCOPE_LIMITED；下一项P07只实现内置Template Registry与契约测试，不执行插件、不生成客户文档。

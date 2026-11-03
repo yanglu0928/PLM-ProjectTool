@@ -1,11 +1,11 @@
-|Next WBS|OUT-01-A01-P06：Output文件模板固定版本Registry编码前核查|
+|Next WBS|OUT-01-A01-P07：内置Output文件模板固定版本Registry与契约验证|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|PLG-01-A08提交e37e668e通过hosted run 41678551589全13 jobs；PG18 Worker集成 smoke随A17执行成功。用户要求不在本机运行；后续继续用GitHub hosted runner。A35仍为历史PASS_LIMITED，不代表Win11实机验收。正式插件信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|OUT-01-A01-P06：Output文件模板固定版本Registry编码前核查|
-|Latest WBS Status|OUT-01-A01-P05按CR-OUT-005以PASS_SCOPE_LIMITED完成：提交188a2ca0的GitHub hosted run 41684956861全13 jobs成功；后端全量/wheel、前端、PG18/pgvector、Windows父包、A17/A34集成通过，A17证据含OUT_01_A01_P05_REQUIREMENT_FIXED_SOURCE_PG_PASS。仅合成Requirement与托管Windows Server 2025，不是Win11设备验收。Output文件模板/Policy Registry、Plugin启用与真实信任仍缺，输出创建仍失败关闭。下一项先盘点Output固定版本模板Owner与冻结Schema兼容性。|
-|Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P04_PASS_SCOPE_LIMITED / OUT_01_A01_P05_PASS_SCOPE_LIMITED / OUT_01_A01_P06_PRECHECK_IN_PROGRESS / PHASE_2_IN_PROGRESS|
+|Current WBS|OUT-01-A01-P07：内置Output文件模板固定版本Registry与契约验证|
+|Latest WBS Status|P05按CR-OUT-005 PASS_SCOPE_LIMITED完成：hosted run 41684956861全13 jobs成功，A17包含Requirement固定版本/项目授权PG18 marker。P06源码/冻结基线盘点PASS_SCOPE_LIMITED：冻结Data Model/Schema没有OutputTemplate Root/table，PrototypeTemplate是原型布局/组件合约，不能复用为DOCX/PPT/Flow生成模板。依据CR-OUT-006，P07实现只读内置模板Registry，不增DB Root/API/Migration；真实Output Create仍失败关闭。仅合成云端环境，无新Win11设备结论.|
+|Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P04_PASS_SCOPE_LIMITED / OUT_01_A01_P05_PASS_SCOPE_LIMITED / OUT_01_A01_P06_PASS_SCOPE_LIMITED / OUT_01_A01_P07_IMPLEMENTATION_IN_PROGRESS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
 |Blockers|Gate 3审计确认：Handover、Survey与Requirement前三阶段已顺序组合至PROTOTYPE/v10；Requirement读写、真实聚合Owner/PG/HTTP、前端及Edge证据已完成，Prototype、Solution、Plan真实业务Owner和后续阶段仍待。POC-03新集合同0/7、技术协议1/8且旧质量分类48%/引用74%继续阻塞Gate 3/UAT；正式发行公钥、目标服务账户Vault/ACL/CA、SCM安装恢复与20并发性能未验。DOC生产清理入口、Server2025当前运行链、Debian13实机按用户指令跳过、Server Office及Ghostscript发行合规继续作为独立Release约束|
@@ -2798,3 +2798,6 @@
 
 
 - 2026-11-04 OUT-01-A01-P05：Requirement Owner固定版本Source读取与Output组合根适配按CR-OUT-005完成，GitHub hosted run [41684956861](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41684956861) 13/13 jobs success。PG18烟测通过精确ProjectId/RequirementVersionId、APPROVED状态保真及非成员拒绝；A17结果Artifact记录专项marker。无Schema/API/Migration变化，仅synthetic hosted Windows Server 2025；Pilot/Gate/正式Release仍NOT_READY。下一项P06做Output文件模板版本Registry前置核查，边界见本次P05及CR-OUT-004。
+
+
+- 2026-11-04 OUT-01-A01-P06：确认冻结Output仅Request/Artifact两Root；Prototype模板是原型布局/组件合约，不能复用为DOCX/PPT/Flow文件模板。按CR-OUT-006采用只读包内固定版本Output Template Registry，不新增客户DB Root/API/Migration。P06 PASS_SCOPE_LIMITED；P07编码中。真实Output Create仍失败关闭。
