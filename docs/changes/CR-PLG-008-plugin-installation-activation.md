@@ -9,6 +9,12 @@
 
 PLG-02-A02只建立经核验的初始Installation事实。冻结模型还要求同一plugin_id的每个operation至多由一个Installation启用，版本切换必须原子且可审计并保留Installation历史。目前Owner关闭表及空的启停业务路径阻塞后续Output执行前的许可检查。
 
+## 编码前增量决定：保留每个Operation的切换历史
+
+- 独立复核发现冻结AuditEvent只允许状态/原因代码，没有operation ID字段；当前enabled_operations表表示现态并在版本切换时删除旧归属。因此仅写安装状态Audit无法在未来复原具体切换的operation集合。
+- 在既定持续自主授权内，增设冻结PLG-02 Aggregate的追加式owned history表 `plg_enabled_operation_history`；每次具体ENABLE/DISABLE转换同时保存精确operation ID、安装/精确Package、actor、UTC、trace和对应Audit event ID。增加SCHEMA增量仅用于内部追溯，不改变公开API/核心Root、Permission或插件执行范围。
+- 该表只INSERT、永不UPDATE/DELETE/TRUNCATE；复合FK回指Installation/Manifest operation，FK回指Audit Event。任何迁移回退只在新增history及现有PLG-02事实全部为空时允许。该冻结Data Model V1增量及风险、迁移/回滚和验收计划先记于CR，后编码。
+
 ## 决定与范围
 
 - 新增内部Owner，接收Installation ID、非空操作集合、actor/trace及目标M-DEP lock_version。只允许Manifest声明的操作子集。
@@ -25,3 +31,11 @@ PLG-02-A02只建立经核验的初始Installation事实。冻结模型还要求�
 - 迁移向前增加revision，不改既有行或冻结表字段。Rollback只有目标事实表全空才允许；存在任何安装/启用/运行时验证历史均失败关闭。
 - 用仅合成包和安装事实的GitHub hosted Windows runner D盘临时PG18/单测/全链回归验证。用户本机不运行项目代码或测试；客户数据和外部API调用为0。
 - 测试失败或发现与冻结语义不兼容时，先补本CR偏差记录，再改代码。仅PASS_SCOPE_LIMITED；不宣称实际插件执行、Windows 11安装、Gate、Pilot或正式Release通过。
+
+
+## CR-PLG-008正式偏差记录（2026-11-04）
+
+- 偏差类型：冻结Data Model V1增量；原因是冻结AuditEvent只允许有限状态代码而owned当前态表不保留已移交操作明细。静默只写状态码会丢失具体operation切换历史，与“版本切换可审计”不符。
+- 决定：新增`plg_enabled_operation_history`，以精确operation_id、Installation/Package引用、ENABLE/DISABLE、actor、UTC、trace和不可变AuditEvent FK保存每个操作的变化；只追加，不可覆盖/删除/清空。保持公开API、Aggregate Root、Plugin权限/信任和执行范围不变。
+- 风险：多行历史需与现态变更和Audit严格同事务；由PG18原子性/Audit失败回滚/多操作切换/历史downgrade反例验证。Migration 0227降级对所有PLG-02事实表均有行时失败关闭；不重写既有0225/0226历史。
+- 该差异已在编码前登记；授权依据为用户2026-09-24持续自主实施规则。需由实际托管证据验收，范围只可PASS_SCOPE_LIMITED。
