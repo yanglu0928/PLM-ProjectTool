@@ -1,6 +1,9 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
-- A08实现进行中：新增签名插件包的有界流式暂存原语，按1MiB块校验长度/SHA-256，使用共享私有opaque storage，超过256MiB拒绝，写失败按本轮文件身份补偿清理；加入合成定向用例。
+- A08首段暂存代码hosted run [41597429890](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41597429890)全13/13 jobs成功；后端全量/wheel、前端、PG smoke、父包、A35/A17/A34成功。
+- 实施后代码复核发现Plugin Application直接依赖Document Infrastructure，违反模块分层；该偏差及修复方案已先记入CR-PLG-006。修正后重跑全链；A08未完成。
+
+：新增签名插件包的有界流式暂存原语，按1MiB块校验长度/SHA-256，使用共享私有opaque storage，超过256MiB拒绝，写失败按本轮文件身份补偿清理；加入合成定向用例。
 - 当前尚未接入HTTP、幂等Job/Outbox、Audit或Worker，不标记A08完成；完整验收等待GitHub hosted workflow。代码仅同步feature分支，runner使用D盘临时环境，不在用户本机/C盘运行。
 
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
