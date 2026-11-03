@@ -416,6 +416,12 @@ from plm_assistant.modules.document.infrastructure.upload_commit_repository impo
 from plm_assistant.modules.document.infrastructure.upload_abort_repository import SqlAlchemyUploadAbortRepository
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobQueue
 from plm_assistant.modules.jobs.infrastructure.parse_enqueue_repository import SqlAlchemyParseJobQueueRepository
+from plm_assistant.modules.plugin.api.package_import import create_plugin_package_import_router
+from plm_assistant.modules.plugin.application.package_import_job_queue import PluginPackageImportQueue
+from plm_assistant.modules.plugin.application.package_import_service import PluginPackageImportService
+from plm_assistant.modules.plugin.application.package_import_spool import PluginPackageImportSpool
+from plm_assistant.modules.plugin.infrastructure.package_import_job_queue_repository import SqlAlchemyPluginPackageImportQueueRepository
+from plm_assistant.modules.plugin.infrastructure.package_import_staging_repository import SqlAlchemyPluginPackageImportStagingRepository
 
 
 class ProductionLoginStartupError(RuntimeError):
@@ -672,6 +678,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_department_deactivate_router = None
         document_upload_create_router = None
         document_upload_content_router = None
+        plugin_package_import_router = None
         document_upload_finalize_router = None
         document_read_router = None
         document_version_read_router = None
@@ -1902,6 +1909,28 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     sessions=sessions, origins=origins, service_factory=content_service,
                 )
 
+                plugin_import_spool = PluginPackageImportSpool(
+                    storage=LocalFileStorage(settings.data_root),
+                )
+
+                def plugin_import_service(token: bytes, csrf: bytes) -> PluginPackageImportService:
+                    return PluginPackageImportService(
+                        unit_of_work=runtime.unit_of_work,
+                        spool=plugin_import_spool,
+                        queue=PluginPackageImportQueue(
+                            SqlAlchemyPluginPackageImportQueueRepository(),
+                        ),
+                        staging_repository=SqlAlchemyPluginPackageImportStagingRepository(),
+                        admin_access=SqlAlchemyDeploymentReadAccess(),
+                        license_guard=licenses.guard,
+                        audit=audit,
+                    )
+
+                plugin_package_import_router = create_plugin_package_import_router(
+                    sessions=sessions, origins=origins,
+                    service_factory=plugin_import_service,
+                )
+
                 def finalize_access(token: bytes, csrf: bytes) -> DocumentUploadAccess:
                     return DocumentUploadAccess(
                         session_token=token, csrf_token=csrf,
@@ -2007,6 +2036,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_department_deactivate_router=project_department_deactivate_router,
             document_upload_create_router=document_upload_create_router,
             document_upload_content_router=document_upload_content_router,
+            plugin_package_import_router=plugin_package_import_router,
             document_upload_finalize_router=document_upload_finalize_router,
             document_read_router=document_read_router,
             document_version_read_router=document_version_read_router,
