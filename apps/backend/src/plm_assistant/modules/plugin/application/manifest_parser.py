@@ -154,6 +154,11 @@ class PluginManifestParser:
             )
         except (UnicodeError, json.JSONDecodeError, RecursionError, ValueError):
             raise PluginManifestError("PLUGIN_INVALID_MANIFEST") from None
+        # Give an invalid entry path its own stable error even if a later
+        # generic structure check would otherwise reject another field first.
+        parsed_entry_point: str | None = None
+        if type(raw) is dict and "entry_point" in raw:
+            parsed_entry_point = _entry_point(raw["entry_point"])
         if type(raw) is not dict or set(raw) != _ROOT_KEYS:
             raise PluginManifestError("PLUGIN_INVALID_MANIFEST")
         _check_json_tree(raw, 0, [0])
@@ -175,7 +180,9 @@ class PluginManifestParser:
         architecture = _text(raw["architecture"], maximum=32)
         if architecture != _ALLOWED_ARCHITECTURE:
             raise PluginManifestError("PLUGIN_INVALID_MANIFEST")
-        entry_point = _entry_point(raw["entry_point"])
+        if parsed_entry_point is None:
+            raise PluginManifestError("PLUGIN_INVALID_MANIFEST")
+        entry_point = parsed_entry_point
 
         raw_operations = raw["operations"]
         if type(raw_operations) is not list or not 1 <= len(raw_operations) <= MAX_OPERATIONS:

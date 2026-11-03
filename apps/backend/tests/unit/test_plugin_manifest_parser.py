@@ -105,7 +105,7 @@ class PluginManifestParserTests(unittest.TestCase):
             self.reject(manifest)
 
     def test_entry_point_rejects_absolute_drive_unc_traversal_and_ambiguous_paths(self) -> None:
-        for path in (
+        paths = (
             "",
             "/etc/plugin.py",
             "../plugin.py",
@@ -117,11 +117,13 @@ class PluginManifestParserTests(unittest.TestCase):
             "\\\\server\\plugin.py",
             "src\\plugin.py",
             "src/plugin.py:stream",
-            "src/\x00plugin.py",
-        ):
-            manifest = valid_manifest()
-            manifest["entry_point"] = path
-            self.reject(manifest, "PLUGIN_INVALID_ENTRY_POINT")
+            "src/\\x00plugin.py",
+        )
+        for path in paths:
+            with self.subTest(path=repr(path)):
+                manifest = valid_manifest()
+                manifest["entry_point"] = path
+                self.reject(manifest, "PLUGIN_INVALID_ENTRY_POINT")
 
     def test_operation_shape_uniqueness_and_output_types_are_checked(self) -> None:
         cases = [
