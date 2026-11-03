@@ -1,5 +1,10 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- A08编码前检查完成：按冻结API-03 Plugin Package Import，参考Document bounded streaming/private storage及Jobs transactional Outbox，建立CR-PLG-006。目标为受控流式暂存及幂等verification Job/Outbox/Audit提交；设置256MiB上限并先记录跨文件/数据库恢复风险。
+- 实施/验收尚未开始；只在GitHub hosted runner D盘和合成数据执行，未在用户本机/C盘运行。Gate/Pilot/Release状态不变。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A07 已完成并以 PASS_SCOPE_LIMITED 关闭：hosted run [41593955795](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41593955795) 全13/13 jobs成功，后端3,909项及PostgreSQL 18真实登记/Audit原子性、失败回滚、幂等/冲突、0223迁移守卫通过。A07验收结果与CR-PLG-005已更新。
 - 父子行写入顺序修复在同一事务先flush Package再添加子行；Audit/子记录失败仍整体回滚。代码未提前commit。
 - 当前进入 PLG-01-A08 编码前检查，目标对齐冻结的异步签名包导入Contract。A07不包含公开HTTP/Job、ZIP持久化、安装或插件执行。
