@@ -50,6 +50,27 @@ class QueueRepository:
         )
 
 
+class AdminAccess:
+    def __init__(self, actor_id):
+        self.actor_id = actor_id
+        self.checks = 0
+
+    def authorized_admin(self, transaction, *, session_token, now):
+        self.checks += 1
+        assert len(session_token) == 32
+        assert now.tzinfo is not None
+        return self.actor_id
+
+
+class LicenseGuard:
+    def __init__(self):
+        self.checks = []
+
+    def require_valid(self, *, trace_id):
+        self.checks.append(trace_id)
+        return object()
+
+
 class StagingRepository:
     def __init__(self):
         self.requests = []
@@ -97,9 +118,9 @@ def _scope():
     )
 
 
-def _command(payload=b"PK\\x03\\x04 synthetic plugin"):
+def _command(payload=b"PK\\x03\\x04 synthetic plugin", scope=None):
     return SubmitPluginPackageImport(
-        scope=_scope(), trace_id=uuid.uuid4(),
+        scope=scope or _scope(), session_token=b"t" * 32, trace_id=uuid.uuid4(),
         declared_length=len(payload), declared_sha256=hashlib.sha256(payload).digest(),
         detached_signature=b"s" * 64, signer_key_ref="test-key:fixture",
         chunks=(payload[:3], payload[3:]),
@@ -112,18 +133,22 @@ def _service(tmp_path, *, replay=None, fail_commit=False):
     queue_repository = QueueRepository(replay=replay)
     staging = StagingRepository()
     audit = Audit()
+    admin = AdminAccess(uuid.UUID(int=1))
+    license_guard = LicenseGuard()
     service = PluginPackageImportService(
         unit_of_work=lambda: uow,
         spool=PluginPackageImportSpool(storage=storage, max_bytes=1024),
         queue=PluginPackageImportQueue(queue_repository),
         staging_repository=staging,
+        admin_access=admin,
+        license_guard=license_guard,
         audit=audit,
     )
-    return service, storage, uow, queue_repository, staging, audit
+    return service, storage, uow, queue_repository, staging, audit, admin, license_guard
 
 
 def test_submit_persists_signature_metadata_job_and_audit_in_one_uow(tmp_path):
-    service, storage, uow, queue, staging, audit = _service(tmp_path)
+    service, storage, uow, queue, staging, audit, admin, guard = _service(tmp_path)
     command = _command()
 
     result = service.submit(command)
@@ -143,6 +168,8 @@ def test_submit_persists_signature_metadata_job_and_audit_in_one_uow(tmp_path):
     assert queue.request.package_upload_id == result.package_upload_id
     assert queue.request.package_sha256 == command.declared_sha256
     assert storage.locators_written
+    assert admin.checks == 2
+    assert len(guard.checks) == 2
 
 
 def test_idempotent_replay_discards_duplicate_file_without_duplicate_metadata_or_audit(tmp_path):
@@ -151,7 +178,7 @@ def test_idempotent_replay_discards_duplicate_file_without_duplicate_metadata_or
             b"PK\\x03\\x04 synthetic plugin"
         ).digest(), len(b"PK\\x03\\x04 synthetic plugin"),
     )
-    service, storage, uow, queue, staging, audit = _service(tmp_path, replay=prior)
+    service, storage, uow, queue, staging, audit, admin, guard = _service(tmp_path, replay=prior)
 
     result = service.submit(_command())
 
@@ -168,7 +195,7 @@ def test_idempotent_replay_discards_duplicate_file_without_duplicate_metadata_or
 
 
 def test_database_commit_failure_removes_only_new_staged_file(tmp_path):
-    service, storage, uow, queue, staging, audit = _service(
+    service, storage, uow, queue, staging, audit, admin, guard = _service(
         tmp_path, fail_commit=True,
     )
 
