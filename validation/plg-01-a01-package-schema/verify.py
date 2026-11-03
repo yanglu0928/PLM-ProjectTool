@@ -20,8 +20,8 @@ from plm_assistant.modules.platform.infrastructure.migration import (  # noqa: E
     upgrade_database,
 )
 
-HEAD = "20261102_0222"
-PARENT = "20261102_0221"
+HEAD = "20261103_0223"
+PARENT = "20261102_0222"
 _TABLES = (
     "plg_packages",
     "plg_manifest_operations",
@@ -76,13 +76,29 @@ def _assert_guards(dsn: str) -> None:
             "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%'"
         ).fetchone()[0]
     if actual != 8:
-        raise AssertionError(f"expected eight closed owner/truncate guards, got {actual}")
+        raise AssertionError(f"expected eight immutable/truncate guards, got {actual}")
+    with psycopg.connect(dsn) as conn:
+        closed = conn.execute(
+            "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
+            "AND tgname LIKE 'trg_plg_%__owner_closed'"
+        ).fetchone()[0]
+    if closed != 0:
+        raise AssertionError(f"expected INSERT Owner to be open, found {closed} closed guards")
+
+
+def _assert_guards_closed(dsn: str) -> None:
+    with psycopg.connect(dsn) as conn:
+        actual = conn.execute(
+            "SELECT count(*) FROM pg_trigger "
+            "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%__owner_closed'"
+        ).fetchone()[0]
+    if actual != 4:
+        raise AssertionError(f"expected four closed INSERT owner guards, got {actual}")
 
 
 def _seed_synthetic_history(dsn: str) -> tuple[uuid.UUID, uuid.UUID]:
     package_id, verification_id = uuid.uuid4(), uuid.uuid4()
     with psycopg.connect(dsn) as conn:
-        conn.execute("SET session_replication_role = replica")
         conn.execute(
             "INSERT INTO plm.plg_packages "
             "(plugin_package_id,plugin_id_normalized,plugin_version,package_sha256,"
@@ -113,18 +129,12 @@ def _seed_synthetic_history(dsn: str) -> tuple[uuid.UUID, uuid.UUID]:
             "statement_timestamp())",
             (verification_id, package_id, b"\x22" * 32),
         )
-        conn.execute("SET session_replication_role = origin")
     return package_id, verification_id
 
 
-def _assert_immutability_and_closed_owner(dsn: str, package_id: uuid.UUID) -> None:
+def _assert_immutability_and_insert_owner(dsn: str, package_id: uuid.UUID) -> None:
     with psycopg.connect(dsn) as conn:
         attempts = (
-            ("INSERT", "INSERT INTO plm.plg_packages "
-             "(plugin_id_normalized,plugin_version,package_sha256,manifest_snapshot,"
-             "signature,signer_key_ref,compatibility_policy_ref) "
-             "VALUES ('test.other','1.0',decode(repeat('00',32),'hex'),"
-             """'{"schema_version":"1"}'::jsonb,'x','key','host-v1')"""),
             ("UPDATE", "UPDATE plm.plg_packages SET plugin_version='2.0' "
              "WHERE plugin_package_id=%s"),
             ("DELETE", "DELETE FROM plm.plg_manifest_operations WHERE plugin_package_id=%s"),
@@ -140,7 +150,17 @@ def _assert_immutability_and_closed_owner(dsn: str, package_id: uuid.UUID) -> No
                         conn.execute(statement)
             except errors.RaiseException:
                 continue
-            raise AssertionError(f"closed package owner allowed {operation}")
+            raise AssertionError(f"append-only package owner allowed {operation}")
+        with conn.transaction():
+            conn.execute("SAVEPOINT insert_owner_probe")
+            conn.execute(
+                "INSERT INTO plm.plg_packages "
+                "(plugin_id_normalized,plugin_version,package_sha256,manifest_snapshot,"
+                "signature,signer_key_ref,compatibility_policy_ref) "
+                "VALUES ('test.insert-probe','1.0',decode(repeat('33',32),'hex'),"
+                """'{"schema_version":"1"}'::jsonb,'x','key','host-v1')"""
+            )
+            conn.execute("ROLLBACK TO SAVEPOINT insert_owner_probe")
 
 
 def main() -> int:
@@ -160,7 +180,7 @@ def main() -> int:
         "head": HEAD,
         "empty_upgrade": "PENDING",
         "empty_downgrade_reupgrade": "PENDING",
-        "closed_owner_guards": "PENDING",
+        "append_only_owner_guards": "PENDING",
         "synthetic_history_retained": "PENDING",
         "history_blocks_downgrade": "PENDING",
         "preexisting_schema_data_retained": "PENDING",
@@ -178,11 +198,16 @@ def main() -> int:
         _assert_presence(empty_dsn, True)
         _assert_guards(empty_dsn)
         result["empty_upgrade"] = "PASS"
-        result["closed_owner_guards"] = "PASS"
+        result["append_only_owner_guards"] = "PASS"
 
         downgrade_database(empty_url, PARENT)
         if _revision(empty_dsn) != PARENT:
-            raise AssertionError("empty PLG-01 downgrade did not stop at 0221")
+            raise AssertionError("empty PLG-01 owner downgrade did not stop at 0222")
+        _assert_presence(empty_dsn, True)
+        _assert_guards_closed(empty_dsn)
+        downgrade_database(empty_url, "20261102_0221")
+        if _revision(empty_dsn) != "20261102_0221":
+            raise AssertionError("empty PLG-01 schema downgrade did not stop at 0221")
         _assert_presence(empty_dsn, False)
         upgrade_database(empty_url, "head")
         if _revision(empty_dsn) != HEAD:
@@ -191,7 +216,7 @@ def main() -> int:
         result["empty_downgrade_reupgrade"] = "PASS"
 
         package_id, verification_id = _seed_synthetic_history(empty_dsn)
-        _assert_immutability_and_closed_owner(empty_dsn, package_id)
+        _assert_immutability_and_insert_owner(empty_dsn, package_id)
         with psycopg.connect(empty_dsn) as conn:
             counts = conn.execute(
                 "SELECT (SELECT count(*) FROM plm.plg_packages),"
@@ -205,15 +230,27 @@ def main() -> int:
         if counts != (1, 1, 1, 1) or history != verification_id:
             raise AssertionError("synthetic package history changed during guard checks")
         result["synthetic_history_retained"] = "PASS"
+        downgrade_database(empty_url, PARENT)
+        if _revision(empty_dsn) != PARENT:
+            raise AssertionError("history-preserving owner downgrade did not stop at 0222")
+        _assert_presence(empty_dsn, True)
+        _assert_guards_closed(empty_dsn)
+        with psycopg.connect(empty_dsn) as conn:
+            retained = conn.execute(
+                "SELECT count(*) FROM plm.plg_package_verifications "
+                "WHERE verification_id=%s", (verification_id,)
+            ).fetchone()[0]
+        if retained != 1:
+            raise AssertionError("owner downgrade changed synthetic package history")
         try:
-            downgrade_database(empty_url, PARENT)
+            downgrade_database(empty_url, "20261102_0221")
         except RuntimeError as exc:
             if "history prevents downgrade" not in str(exc):
                 raise
         else:
             raise AssertionError("package history did not prevent destructive downgrade")
-        if _revision(empty_dsn) != HEAD:
-            raise AssertionError("failed downgrade changed the Alembic revision")
+        if _revision(empty_dsn) != PARENT:
+            raise AssertionError("failed destructive downgrade changed the revision")
         result["history_blocks_downgrade"] = "PASS"
 
         _create_database(admin, existing)
