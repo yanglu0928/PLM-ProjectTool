@@ -46,3 +46,27 @@ def test_import_claims_parse_bounded_raw_package_metadata():
 def test_import_claims_reject_malformed_or_ambiguous_headers(headers):
     with pytest.raises(ApplicationError):
         _claims(headers)
+
+
+def test_import_router_is_opt_in_and_uses_only_the_frozen_write_path():
+    from plm_assistant.entrypoints.api import create_app
+    from plm_assistant.modules.plugin.api.package_import import (
+        create_plugin_package_import_router,
+    )
+
+    default_app = create_app()
+    assert not any(
+        route.path == "/api/v1/admin/plugins/packages:import"
+        for route in default_app.routes
+    )
+
+    router = create_plugin_package_import_router(
+        sessions=object(), origins=object(), service_factory=lambda token, csrf: object(),
+    )
+    write_app = create_app(plugin_package_import_router=router)
+    matching = [
+        route for route in write_app.routes
+        if route.path == "/api/v1/admin/plugins/packages:import"
+    ]
+    assert len(matching) == 1
+    assert matching[0].methods == {"POST"}
