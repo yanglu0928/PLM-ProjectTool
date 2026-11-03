@@ -401,6 +401,18 @@ def main() -> int:
 
         installation_ids = _seed_plugin_installation_history(existing_dsn, package_id)
         result["installation_constraints"] = "PASS"
+        history_query = (
+            "SELECT (SELECT count(*) FROM plm.plg_installations),"
+            "(SELECT count(*) FROM plm.plg_enabled_operations),"
+            "(SELECT count(*) FROM plm.plg_runtime_validations),"
+            "(SELECT count(*) FROM plm.plg_enabled_operation_history)"
+        )
+        with psycopg.connect(existing_dsn) as conn:
+            history_before = conn.execute(history_query).fetchone()
+        if history_before != (2, 0, 2, 2):
+            raise AssertionError(
+                f"PLG-02 incompatibility fixture shape changed: {history_before!r}"
+            )
         try:
             downgrade_database(existing_url, "20261104_0226")
         except RuntimeError as exc:
@@ -411,20 +423,16 @@ def main() -> int:
         if _revision(existing_dsn) != "20261104_0228":
             raise AssertionError("blocked PluginInstallation downgrade changed migration revision")
         with psycopg.connect(existing_dsn) as conn:
-            counts = conn.execute(
-                "SELECT (SELECT count(*) FROM plm.plg_installations),"
-                "(SELECT count(*) FROM plm.plg_enabled_operations),"
-                "(SELECT count(*) FROM plm.plg_runtime_validations),"
-                "(SELECT count(*) FROM plm.plg_enabled_operation_history)"
-            ).fetchone()
+            history_after = conn.execute(history_query).fetchone()
             installation_count = conn.execute(
                 "SELECT count(*) FROM plm.plg_installations "
                 "WHERE plugin_installation_id IN (%s,%s)",
                 installation_ids,
             ).fetchone()[0]
-        if counts != (2, 1, 1, 1) or installation_count != 2:
+        if history_after != history_before or installation_count != 2:
             raise AssertionError(
-                f"blocked PluginInstallation downgrade changed history: {counts!r}"
+                "blocked PluginInstallation downgrade changed existing history: "
+                f"before={history_before!r}; after={history_after!r}"
             )
         result["installation_history_blocks_downgrade"] = "PASS"
     finally:
