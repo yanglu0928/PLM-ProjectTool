@@ -37,3 +37,10 @@ PLG-02-A02只存首次兼容事实，A03激活要求最新兼容快照，但没�
 首次完整父包 PostgreSQL smoke 在校验“带 PLG-02 历史禁止降级”时失败关闭。迁移 0228 实际返回 `PluginInstallation runtime history prevents downgrade`；既有 migration verifier 仍期待 0225/0226 时的旧文案 `PluginInstallation history prevents downgrade`。这是验证器断言文本未随 0228 的错误信息更新，不是迁移放行或运行历史丢失。数据库 smoke 随后按失败路径停止；不记录本轮完整验收通过。
 
 处置：先保留迁移保护和当前错误文案，只修正 verifier 精确断言以对应 0228 的保护结果，随后重跑同一 hosted 全链。风险为验证语义误报；不会改数据库状态、数据、API 或插件运行行为。回滚方式为恢复旧 verifier 断言，Migration 0228 无需回滚。验证仍要求有历史时拒绝降级并保持 schema revision/history 完整。
+
+
+## 第二轮托管验证偏差记录（2026-11-04）
+
+更新降级错误文案断言后，PG18 smoke 已确认有 PLG-02 历史时降级被拒绝且 migration revision 不变；随后历史保留断言仍使用 A03 的旧样例计数 `(2,1,1,1)`。A04 fixture 在降级前已追加第二条 RuntimeValidation、删除其活动操作并追加第二条 OperationHistory，实际应为 `(2,0,2,2)`。失败属于验证器未覆盖 A04 新增事实，不代表迁移改写或丢失数据。
+
+处置：把 fixture 的预期行数更新为 A04 的实际固定组成，并核对安装数量；在受阻降级前后再次比较同一组计数和安装 ID，要求完全一致。保留 0228 的失败关闭降级逻辑。无Schema/API/业务行为变化，回滚只需还原 verifier 断言。之后重跑完整 hosted workflow。
