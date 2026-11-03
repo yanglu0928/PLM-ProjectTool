@@ -1,5 +1,7 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- 已完成PLG-02-A03编码前检查并登记CR-PLG-008：实现Manifest operation子集按操作原子切换、旧/新Installation状态和同事务Audit；不接API/默认组合、不执行插件。计划revision 0227并用合成数据在GitHub hosted D盘验收。详见`docs/progress/plg-02-a03-installation-activation-precheck.md`。
+
 - PLG-02-A02以`PASS_SCOPE_LIMITED`完成：内部安装事实Owner、PostgreSQL 0226最小INSERT守卫、原子Audit与PG18验证通过；GitHub hosted run [41721092729](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41721092729) 13/13成功，后端3932项和父包/A17/A34/A35/A50链通过。仅合成安装记录，无物理安装/默认组合/API/启用/执行/正式信任。两个迁移head断言偏差已先记CR再修复。详见`docs/progress/plg-02-a02-installation-owner-result.md`。下一项PLG-02-A03启用/状态变更Owner前置核查。
 
 - PLG-02-A02第二轮run 41718480221后端全量、前端、PG18 sidecar与父包组装成功；Windows父包PG smoke发现PLG-01迁移验证器仍固定期待0225。偏差修复前已记CR-PLG-007；A35通过，A17结果尚未确认，A34未执行。
