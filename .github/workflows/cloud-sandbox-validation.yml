@@ -41,6 +41,8 @@ jobs:
         run: python -B -m unittest discover -s ../../tools/tests -p "test_smoke_current_app_packaged_https.py"
       - name: Run backend test suite
         run: python -m unittest discover -s tests -p "test_*.py"
+      - name: Run synthetic Developer Workbench Plugin key ceremony tests
+        run: python -B -m unittest discover -s ../../tools/tests -p "test_plugin_key_ceremony.py"
       - name: Build backend wheel
         run: python -m pip wheel --no-deps --wheel-dir dist .
       - name: Create build provenance manifest
