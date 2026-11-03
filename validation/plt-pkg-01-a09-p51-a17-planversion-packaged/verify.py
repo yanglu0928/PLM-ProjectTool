@@ -846,6 +846,28 @@ def packaged_planversion_probe(**context) -> None:
         raise AssertionError("OUT-01-A01-P07 packaged builtin template mismatch")
     print("OUT_01_A01_P07_BUILTIN_TEMPLATE_REGISTRY_PASS: fixed-ref/immutable",
           flush=True)
+
+    from plm_assistant.modules.output.infrastructure.builtin_policy_registry import (
+        BUILTIN_REQUIREMENT_DOCX_POLICY_REF, BuiltinOutputPolicyRegistry,
+    )
+    packaged_policy = BuiltinOutputPolicyRegistry().get_policy(
+        None, policy_ref=BUILTIN_REQUIREMENT_DOCX_POLICY_REF,
+    )
+    if (packaged_policy is None
+            or packaged_policy.allowed_template_versions != (
+                BUILTIN_REQUIREMENT_DOCX_TEMPLATE_VERSION_ID,)
+            or packaged_policy.allowed_output_types != ("DOCX",)
+            or packaged_policy.allowed_review_states != ("APPROVED",)
+            or dict(packaged_policy.fields_by_source_kind) != {
+                "REQUIREMENT_VERSION": (
+                    "title", "statement", "acceptance_criteria",
+                ),
+            }
+            or packaged_policy.max_sources != 4
+            or packaged_policy.max_context_bytes != 8192):
+        raise AssertionError("OUT-01-A01-P09 packaged policy mismatch")
+    print("OUT_01_A01_P09_BUILTIN_POLICY_REGISTRY_PASS: fixed-ref/allowlist",
+          flush=True)
     with fixture_db() as db:
         approved = db.execute(
             "SELECT 1 FROM plm.sol_outlines WHERE project_id=%s "

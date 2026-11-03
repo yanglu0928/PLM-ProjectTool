@@ -27,3 +27,10 @@ Output resolver要求Policy固定允许的模板版本、输出类型、插件�
 
 - P08核查：docs/progress/out-01-a01-p08-policy-registry-precheck.md
 - P09结果：待实现与hosted验收后补录。
+
+
+## 实现提交（云端验收待完成，2026-11-04）
+
+- 新增固定ref策略Registry，边界固定为DOCX/P07模板/RequirementVersion APPROVED，字段title/statement/acceptance_criteria，最多4来源与8192字节。策略内word.generate只是allowlist标签；单测中的enabled/trusted operation为synthetic依赖，不表示真实信任。
+- 单测覆盖未知/扩大策略拒绝、Registry/字段映射不可变及Resolver最小字段投影；A17 packaged flow新增P09 marker。
+- 无Migration/API变化。定向/后端全量、wheel及hosted父包/A17/A34待本提交验收。

@@ -129,7 +129,8 @@ def main() -> int:
     required = ("P51_A17_PACKAGED_PLANVERSION_EDGE_PASS",
                 "P51_A17_PACKAGED_PLANVERSION_PG_PASS",
                 "OUT_01_A01_P05_REQUIREMENT_FIXED_SOURCE_PG_PASS",
-                "OUT_01_A01_P07_BUILTIN_TEMPLATE_REGISTRY_PASS")
+                "OUT_01_A01_P07_BUILTIN_TEMPLATE_REGISTRY_PASS",
+                "OUT_01_A01_P09_BUILTIN_POLICY_REGISTRY_PASS")
     if completed.returncode or any(marker not in output for marker in required):
         raise RuntimeError("A17 packaged flow did not pass: " + output[-12000:])
 

@@ -287,3 +287,8 @@
 ## Unreleased · 2026-11-04（Output Policy Owner编码前核查）
 - P08确认冻结模型没有OutputPolicy Aggregate Root、DB表或管理API；插件operation registry的trusted/enabled生产事实缺失。依据CR-OUT-007，P09只实现一条内置不可变策略：P07固定DOCX、RequirementVersion/APPROVED，字段title/statement/acceptance_criteria，最多4来源/8192 bytes。word.generate允许列表不能替代plugin信任或启用。
 - P08 PASS_SCOPE_LIMITED；本轮不新增Schema/API/Migration、不生成文件、不外发客户数据。
+
+
+## Unreleased · 2026-11-04（内置Output Policy代码候选）
+- P09新增只读固定ref内置OutputPolicyVersion Registry，严格限制P07 DOCX/REQUIREMENT_VERSION/APPROVED、字段title/statement/acceptance_criteria、4来源及8192字节Context；Resolver集成单测使用显式synthetic operation事实，不能视为生产Plugin信任。
+- A17新增随包Policy metadata marker；云端验证待本提交。无DB/API/Migration变化，不接生产Resolver、不生成文件或外发数据。

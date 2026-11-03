@@ -17,3 +17,8 @@
 ## 剩余编码前事项
 
 P08完成后按CR-OUT-007实施单一Policy Registry。
+
+## 实现记录（云端验收待完成，2026-11-04）
+
+- 固定ref策略仅允许DOCX/P07模板/RequirementVersion APPROVED；投影title、statement、acceptance_criteria，最大4来源/8192字节。Policy允许word.generate不构成Plugin operation启用/信任证明。
+- 新增immutable内置Registry、单测及Resolver合成最小Context集成测试；A17打包运行时要求P09 marker。hosted全量结果待本次。
