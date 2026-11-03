@@ -18,6 +18,7 @@ from plm_assistant.modules.plugin.application.manifest_parser import (
 )
 from plm_assistant.modules.plugin.application.package_archive_inspector import (
     MAX_ARCHIVE_ITEMS,
+    MAX_CENTRAL_DIRECTORY_BYTES,
     MAX_COMPRESSION_RATIO,
     MAX_MANIFEST_BYTES,
     MAX_PACKAGE_BYTES,
@@ -187,6 +188,35 @@ class PluginPackageArchiveInspectorTests(unittest.TestCase):
         encrypted[local_header + 6] |= 0x01
         encrypted[central_header + 8] |= 0x01
         self.reject_archive(bytes(encrypted))
+
+    def test_eocd_preflight_bounds_directory_and_rejects_zip64_multidisk_and_prefix(self) -> None:
+        valid = bytearray(self.package)
+        eocd = valid.rfind(b"PK\\x05\\x06")
+        self.assertGreaterEqual(eocd, 0)
+
+        too_many = bytearray(valid)
+        too_many[eocd + 10:eocd + 12] = (MAX_ARCHIVE_ITEMS + 1).to_bytes(2, "little")
+        self.reject_archive(bytes(too_many))
+
+        zip64 = bytearray(valid)
+        zip64[eocd + 10:eocd + 12] = (0xFFFF).to_bytes(2, "little")
+        self.reject_archive(bytes(zip64))
+
+        multidisk = bytearray(valid)
+        multidisk[eocd + 4:eocd + 6] = (1).to_bytes(2, "little")
+        self.reject_archive(bytes(multidisk))
+
+        bad_comment_length = bytearray(valid)
+        bad_comment_length[eocd + 20:eocd + 22] = (1).to_bytes(2, "little")
+        self.reject_archive(bytes(bad_comment_length))
+
+        self.reject_archive(b"stub" + bytes(valid))
+
+        with patch(
+            "plm_assistant.modules.plugin.application.package_archive_inspector.MAX_CENTRAL_DIRECTORY_BYTES",
+            1,
+        ):
+            self.reject_archive(bytes(valid))
 
     def test_member_count_size_ratio_and_package_bounds_fail_closed(self) -> None:
         small = _archive([("manifest.json", _manifest()), ("plugin/main.py", b"x")])

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import io
 import stat
+import struct
 import unicodedata
 import zipfile
 from dataclasses import dataclass
@@ -21,6 +22,7 @@ from plm_assistant.modules.plugin.application.signature_verifier import (
 
 MAX_PACKAGE_BYTES = 256 * 1024 * 1024
 MAX_ARCHIVE_ITEMS = 4096
+MAX_CENTRAL_DIRECTORY_BYTES = 8 * 1024 * 1024
 MAX_MANIFEST_BYTES = 65_536
 MAX_MEMBER_BYTES = 512 * 1024 * 1024
 MAX_TOTAL_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024
@@ -103,6 +105,63 @@ def _mode_type(info: zipfile.ZipInfo) -> int:
     return stat.S_IFMT(info.external_attr >> 16)
 
 
+def _preflight_central_directory(archive_bytes: bytes) -> int:
+    """Bound central-directory work before zipfile allocates one ZipInfo per member."""
+    tail_size = min(len(archive_bytes), 22 + 65_535)
+    tail_start = len(archive_bytes) - tail_size
+    tail = archive_bytes[tail_start:]
+    signature = b"PK\x05\x06"
+    cursor = len(tail)
+    eocd_offset: int | None = None
+    fields: tuple[object, ...] | None = None
+    while cursor >= 0:
+        candidate = tail.rfind(signature, 0, cursor)
+        if candidate < 0:
+            break
+        if candidate + 22 <= len(tail):
+            try:
+                unpacked = struct.unpack_from("<4s4H2LH", tail, candidate)
+            except struct.error:
+                unpacked = ()
+            if unpacked and candidate + 22 + unpacked[-1] == len(tail):
+                eocd_offset = candidate
+                fields = unpacked
+                break
+        cursor = candidate
+    if eocd_offset is None or fields is None:
+        raise PluginPackageInspectionError()
+
+    (
+        _signature,
+        disk_number,
+        central_directory_disk,
+        entries_on_disk,
+        entry_count,
+        central_directory_size,
+        central_directory_offset,
+        _comment_length,
+    ) = fields
+    eocd_absolute = tail_start + eocd_offset
+    if (
+        disk_number != 0
+        or central_directory_disk != 0
+        or entries_on_disk != entry_count
+        or entry_count == 0
+        or entry_count == 0xFFFF
+        or entry_count > MAX_ARCHIVE_ITEMS
+        or central_directory_size == 0xFFFFFFFF
+        or central_directory_offset == 0xFFFFFFFF
+        or central_directory_size > MAX_CENTRAL_DIRECTORY_BYTES
+        or central_directory_offset + central_directory_size != eocd_absolute
+    ):
+        raise PluginPackageInspectionError()
+    # ZIP64 locator immediately precedes the classic EOCD. ZIP64 is outside the
+    # bounded 256 MiB/4,096-member envelope and is rejected before ZipFile opens.
+    if eocd_absolute >= 20 and archive_bytes[eocd_absolute - 20:eocd_absolute - 16] == b"PK\x06\x07":
+        raise PluginPackageInspectionError()
+    return int(entry_count)
+
+
 def _read_bounded_manifest(
     archive: zipfile.ZipFile,
     info: zipfile.ZipInfo,
@@ -155,10 +214,11 @@ class PluginPackageArchiveInspector:
         ):
             raise PluginPackageInspectionError()
 
+        expected_item_count = _preflight_central_directory(archive_bytes)
         try:
             with zipfile.ZipFile(io.BytesIO(archive_bytes), "r") as archive:
                 infos = archive.infolist()
-                if not infos or len(infos) > MAX_ARCHIVE_ITEMS:
+                if not infos or len(infos) != expected_item_count or len(infos) > MAX_ARCHIVE_ITEMS:
                     raise PluginPackageInspectionError()
 
                 seen_casefolded: set[str] = set()
