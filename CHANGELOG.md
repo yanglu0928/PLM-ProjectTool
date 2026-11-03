@@ -311,3 +311,13 @@
 - P09首轮run 41692180197仅因新增测试对空目录错误文本断言不匹配而失败，偏差先记于CR-OUT-007；产品逻辑未改，后修正测试并重跑。
 - 修正提交 ac7cae27 的GitHub hosted run [41693364068](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41693364068) 13/13 jobs成功。后端全量/wheel、前端、PG18/pgvector、父包、A35、PG smoke、A17、A34成功；A17证据含 OUT_01_A01_P09_BUILTIN_POLICY_REGISTRY_PASS。
 - Policy仅允许固定DOCX/Template/RequirementVersion APPROVED及有限字段/来源/上下文大小；word.generate allowlist不意味着Operation installed/enabled/trusted。无Schema/API/Migration变更，不接生产Output Create。仅PASS_SCOPE_LIMITED，无Win11新设备/Pilot/Gate/正式发行结论。
+
+
+## Unreleased · 2026-11-04（PLG-02-A01内部云端验收，非发行版本）
+
+- 版本：内部候选；不是安装包或正式发行。
+- 变更：新增冻结PluginInstallation根及EnabledOperation/RuntimeValidation ORM与Migration 20261104_0225。初始Owner写入口保持关闭；不新增API、信任来源或插件执行。
+- 验证：GitHub hosted run [41711045048](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41711045048) 13/13 jobs成功。PG18.6隔离合成库验证全新/既有库升级、空库回退重升、复合FK与唯一索引、Owner写入及TRUNCATE拒绝、有安装历史降级拒绝和记录保留；后端全量/wheel、前端、父包、A17/A34通过。
+- 兼容性：PostgreSQL schema head推进至20261104_0225；父包候选限GitHub hosted Windows Server 2025验证。没有新的Windows 11实机/正式发行验证。
+- 升级说明：升级运行数据库至0225；不对用户现有安装执行升级。降级在PluginInstallation相关历史存在时会拒绝。
+- 已知问题：无正式插件安装Owner/API或可信Publisher来源，插件未运行；候选包不具备法律放行。Pilot、Gate、正式Release保持NOT_READY。

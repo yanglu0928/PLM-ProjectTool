@@ -73,3 +73,13 @@
 - Hosted run [41708851678](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41708851678) 后端、前端、wheel、运行时组装均成功；新增的PG18迁移反例在检查 `plg_installations` 单表TRUNCATE时收到PostgreSQL `FeatureNotSupported`（被 `plg_enabled_operations` 外键引用），未到达目标Owner触发器。此次失败是验证方法不正确，不是业务表可被清空的证据；A01尚未通过。
 - 修复计划：保持三表触发器及FK不变。对无子表引用的enabled/runtime history分别执行TRUNCATE负例；对安装根及其子表使用同一TRUNCATE语句，避免数据库FK预检查截断验证路径，并要求触发器RaiseException。之后重跑同一完整hosted workflow。
 - 偏差已先记录；运行仍仅使用GitHub hosted runner的D盘临时数据库。
+
+
+## PLG-02-A01最终云端验收（2026-11-04）
+
+- PLG-02-A01实现提交 `374fb1f619467e99590a622b5118c9c58c13b8da` 增加三张冻结安装持久化ORM表与Migration `20261104_0225`；PG18验证器最终修订提交 `75319ae2fd7584688c4317c9bbef1f5f46e4be7d`。
+- GitHub hosted workflow [41711045048](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41711045048) 完成13/13 jobs成功，含后端全量/wheel、前端构建、PG18/pgvector重建、Windows候选父包、PG18迁移、A17和A34。
+- PG18.6隔离临时库结果：全新升级/空库降级重升、既有PLG-01合成行升级保留均PASS；验证4个复合FK与操作唯一索引；三个Owner INSERT关闭；子表单独TRUNCATE及含父子三表的组TRUNCATE均由触发器拒绝；用受控的仅测试库Owner触发器旁路写入合成Installation/EnabledOperation/RuntimeValidation记录后，降级至0224被拒，revision及3表记录计数保持不变。数据库均为临时合成库，外部调用0，客户数据0。
+- 同run父包候选20161个文件，归档SHA-256 `5227ebdf41bca790a5af75ae68964b599059807ad5117ed6e9a88e8abcd01858`；不是发行包。A17与A34均成功，但它们不表示用户Windows 11新设备、正式插件信任、实际插件安装/执行通过。
+- 先前偏差与修复已按顺序留痕：ORM历史metadata清单漏排除三表；旧PG验证器期待0224；实库验收最初只检查元数据；首次TRUNCATE根表探测被FK预检查提前拒绝。对应偏差均先在本CR/进度文件记录再修正验证器或测试。
+- 结论：PLG-02-A01 `PASS_SCOPE_LIMITED`，范围仅为冻结持久化结构及迁移保护；安装事实Owner API、启用流程、正式信任、插件执行均未开放。Pilot、Gate、正式Release状态不变。下一项PLG-02-A02安装事实Owner编码前核查。
