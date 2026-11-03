@@ -15,7 +15,7 @@ class PluginPackageSchemaTests(unittest.TestCase):
                 "plg_manifest_dependencies",
                 "plg_package_verifications",
             },
-            {name for name in Base.metadata.tables if name.startswith("plm.plg_")},
+            {table.name for table in Base.metadata.tables.values() if table.name.startswith("plg_")},
         )
 
     def test_plugin_package_schema_excludes_plaintext_secret_fields(self):
