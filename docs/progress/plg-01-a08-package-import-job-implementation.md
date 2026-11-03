@@ -52,3 +52,9 @@ HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；sta
 
 
 - 幂等键hash前缀已按CR-PLG-006统一为固定ASCII冒号分隔；此前字符转义未命中并已记录修正。
+
+
+## 当前验证证据
+
+- Job/Outbox queue contract/repository及测试由run [41602717998](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41602717998)全13/13 jobs成功；未覆盖该新Owner的独立真实PG18写/重放集成。
+- 独立契约复核发现后台Worker需要detached signature/signer_key_ref；已先记录0224 append-only staging metadata迁移方案，再开展ORM/migration与原子入队集成。

@@ -41,3 +41,12 @@ undefined
 ## 幂等键域分隔实现核对（2026-11-03）
 
 - 代码审阅发现前一提交的替换未匹配实际转义文本，固定前缀仍保留反斜杠字符序列；已在本提交按CR计划改为固定ASCII冒号分隔。该值仅参与内部哈希输入，不改变键唯一性范围或持久合同。
+
+
+## 完整异步验证输入的持久化补充（编码前决定，2026-11-03）
+
+- 冻结API-03的签名包验证在后台Job中执行；A06 Inspector需要detached Ed25519 signature及signer_key_ref。仅把包字节暂存而不持久化这两项，会在请求结束后无法完成验证；把它们塞进Job payload又会扩大payload内容并让ref语义失真。
+- 选择增加内部append-only staging metadata表（新migration 20261103_0224）：opaque package_upload_id、SHA-256、大小、64-byte detached signature、受限signer_key_ref及创建时间。表不保存ZIP、路径、私钥或客户正文；Job payload仍只有upload ID、摘要和大小。
+- 该表是异步输入的技术暂存，不是正式PluginPackage/信任事实；由同UOW原子写入stage metadata、Job、Outbox和Audit。签名验证失败仍由后续Worker作为Job失败处理，不登记正式PluginPackage。
+- 新表append-only并拒绝TRUNCATE；降级时若存在任何行就拒绝丢弃，空表才允许down。无历史冻结基线改写；偏差范围、迁移/回滚和PG18验收已补充在A08 precheck。
+- Migration/ORM和集成测试实施前的本CR记录即为批准依据；执行由用户持续自主授权覆盖，无需等待逐项批准。
