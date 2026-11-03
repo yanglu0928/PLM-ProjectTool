@@ -1,27 +1,28 @@
 # OUT-01-A01-P10：Plugin Operation生产能力事实Owner编码前核查
 
 - 日期：2026-11-04
-- 状态：PRECHECK_IN_PROGRESS（源码盘点尚未完成；未开始编码）
+- 状态：PASS_SCOPE_LIMITED（只读源码盘点完成；确认真实安装/启用/信任Owner缺失）
 - WBS：OUT-01-A01-P10
-- 依据：CR-OUT-004/007、P09 PASS_SCOPE_LIMITED、冻结API-03/DM-04
+- 依据：CR-OUT-004/007、P09 PASS_SCOPE_LIMITED、冻结API-03、DATA-MODEL-CANDIDATE-V1、SC-01/02
 
-## 问题
+## 问题与结论
 
-OutputPolicy允许word.generate只是必要白名单，不能证明对应Plugin已安装、Operation已启用、签名/Publisher正式可信或运行条件满足。Output resolver要求operation registry返回enabled=true且trusted=true；缺失时必须失败关闭。
+OutputPolicy中的 word.generate 仅是策略允许标签，不能证明插件包已安装、操作已启用、发布者受正式信任或运行环境有效。P09 resolver仍要求显式enabled/trusted事实，否则失败关闭。
 
-## 编码前检查
+本次完成只读源码盘点。已证明当前没有可消费的生产Plugin Installation/Operation事实Owner；故本WBS不新增伪造适配器，不把Output创建标为可用，并转向实现冻结PLG-02安装根的持久化基础。
 
-- 检查PluginPackage、Manifest operation/dependency、PluginInstallation、enabled operation、签名验证及publisher key trust的实际ORM/Owner/API/应用服务/组合根挂载状态。
-- 区分VERIFIED、签名有效、已安装、安装有效、启用和正式publisher trust；确认任一状态是否有客户运行数据库可追溯事实，禁止从Manifest声明或开发者工作台资料推导客户启用/信任。
-- 检查Windows packaged Plugin目录与A08 Worker的职责边界：异步验签/登记是否真正创建安装/启用记录；不存在时不得适配出enabled=true。
-- 检查冻结Schema已有PLG-01/02/03字段能否满足固定operation lookup；若要增加安装状态或trust来源，识别是否触及冻结Data Model/DB Schema/License/安全架构，并先建立正式CR。
-- 确定单一下一实现WBS及失败关闭边界；无真实信任材料时，适配器必须返回None/拒绝，不构造测试信任或启用事实。
-- 不运行插件、不连接客户数据、不改状态/权限、不外发数据；源码盘点只读，代码和验证继续通过GitHub hosted runner。
+## 核查证据
 
-## 验收与风险
+- PLG-01当前仅有Package、Manifest operation/dependency、Verification和异步Import staging ORM；对应Migration到20261103_0224。没有PluginInstallation ORM、安装/启用业务Owner、Operation enabled事实读取Owner或公开安装/启用路由。
+- GitHub hosted Worker只校验签名包、解析Manifest、执行静态兼容评估并登记Package VERIFIED元数据；没有安装、启用或执行插件代码。VERIFIED不等于INSTALLED/ENABLED。
+- packaged_signer_resolver.py的正式publisher key清单目前为空；测试用内存密钥仅服务合成验收，不属于客户部署信任来源。
+- 冻结数据模型已定义PLG-02 PluginInstallation；SC-01已映射plg_installations、plg_enabled_operations、plg_runtime_validations。SC-02将PLG-02分配到M-DEP。
+- ADR-005要求开发者签名包、独立Python子进程与JSON-RPC stdio；其故障边界不代表任意代码沙箱。
 
-P10盘点阶段不改代码或数据库。通过条件是明确一个现有受控事实Owner与只读内部适配范围，或证明当前没有可消费的生产事实并转向不依赖插件运行的独立Output文件渲染/Artifact设计任务。不可把Output链局部完成写成可用生成。
+## 验收边界
+
+本WBS只验收“源码盘点完成，Owner事实缺失得到证实”。不改程序、DB、API或测试；不连接客户数据、不运行插件、不写安装/启用记录、不生成文件。Output Create仍失败关闭；Pilot、Gate、正式Release结论不变。
 
 ## 下一步
 
-完成Plugin安装/启用/正式信任源码盘点后，记录CR-OUT-008并选择一个可客观验收的单项任务。
+进入PLG-02-A01：按已冻结Schema实现Installation root和两个owned表的ORM/Alembic持久化基础。新CR-PLG-007及编码前检查先于代码提交。安装/启用Owner、信任源、插件执行和Output Operation resolver保持后续独立WBS。

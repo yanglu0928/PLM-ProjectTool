@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-04（内部云端开发，非发行版本）
+
+- OUT-01-A01-P10只读源码盘点完成（PASS_SCOPE_LIMITED）：PLG-01-A08只登记VERIFIED包，没有PluginInstallation/启用操作/正式运行信任事实Owner；Output Create继续失败关闭。
+- 已先登记CR-PLG-007并完成PLG-02-A01编码前检查。下一项按冻结PLG-02表映射新增Installation/启用操作/runtime validation ORM与受保护Migration 20261104_0225；只在GitHub hosted D盘运行验收，本机/C盘不运行。
+- 当前不实现安装/启用业务Owner或API，不执行插件，不创建信任或客户事实；云端全链验收后再更新本记录与STATUS。
+
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 - A08新增migration 20261103_0224和ORM staging metadata，保存package upload ID/hash/size、detached signature、signer key ref；新验证脚本覆盖append-only、TRUNCATE拒绝及有数据降级拦截，云端PG18验收待完成。
 - A08 Job/Outbox首段由run [41602717998](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41602717998)全13/13 jobs成功。编码前复核确认后台验签还需持久保存detached signature/signer key reference；已先记录CR-PLG-006新增append-only暂存元数据表和0224 migration，Job payload仍只存ID/hash/size。
