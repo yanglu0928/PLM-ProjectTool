@@ -30,6 +30,9 @@ class PluginPackageStagingStorage(Protocol):
     def verify_content(self, locator: str, *, expected_sha256: bytes,
                        expected_size: int, max_bytes: int) -> object: ...
 
+    def open_private_staging_snapshot(self, locator: str, *, expected_sha256: bytes,
+                                      expected_size: int, max_bytes: int) -> BinaryIO: ...
+
     def discard_new_staging(self, locator: str, *, device: int,
                             inode: int) -> None: ...
 

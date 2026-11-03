@@ -582,6 +582,23 @@ class LocalFileStorage:
         return self._open_verified_snapshot(locator,expected_sha256=expected_sha256,
             expected_size=expected_size,max_bytes=max_bytes)
 
+    def open_private_staging_snapshot(self, locator: str, *, expected_sha256: bytes,
+                                      expected_size: int, max_bytes: int) -> BinaryIO:
+        """Open one canonical GLOBAL staging object as a digest-bound bounded snapshot."""
+        if type(locator) is not str:
+            raise LocalStorageError()
+        parts = locator.split("/")
+        if (len(parts) != 5 or parts[:3] != ["temp", "global", "objects"]
+                or len(parts[3]) != 2 or any(c not in "0123456789abcdef" for c in parts[3])
+                or len(parts[4]) != 32 or any(c not in "0123456789abcdef" for c in parts[4])
+                or parts[3] != parts[4][:2]
+                or type(max_bytes) is not int or not 1 <= max_bytes <= 256 * 1024 * 1024):
+            raise LocalStorageError()
+        return self._open_verified_snapshot(
+            locator, expected_sha256=expected_sha256, expected_size=expected_size,
+            max_bytes=max_bytes, allow_staging=True,
+        )
+
     def open_audit_export_snapshot(self, locator: str, *, expected_sha256: bytes,
                                    expected_size: int) -> BinaryIO:
         if type(locator) is not str or not locator.startswith('generated/audit/'):
@@ -590,17 +607,20 @@ class LocalFileStorage:
             expected_size=expected_size,max_bytes=128*1024*1024)
 
     def _open_verified_snapshot(self, locator: str, *, expected_sha256: bytes,
-                               expected_size: int, max_bytes: int) -> BinaryIO:
+                               expected_size: int, max_bytes: int,
+                               allow_staging: bool = False) -> BinaryIO:
         """Return a private validated byte snapshot before any caller can stream it.
 
         The caller owns and must close the returned file. No source descriptor or
         storage path escapes. A failed copy always closes its temporary snapshot.
         """
-        if (type(locator) is not str or locator.startswith("temp/")
+        if (type(locator) is not str
+                or (locator.startswith("temp/") and not allow_staging)
                 or type(expected_sha256) is not bytes or len(expected_sha256) != 32
                 or type(expected_size) is not int or expected_size < 0
                 or type(max_bytes) is not int or not 0 <= expected_size <= max_bytes
-                or max_bytes > 128*1024*1024):
+                or max_bytes > 256 * 1024 * 1024
+                or type(allow_staging) is not bool):
             raise LocalStorageError()
         path = self._path(locator)
         before = _checked_file(path)

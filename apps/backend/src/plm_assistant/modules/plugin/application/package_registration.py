@@ -117,9 +117,12 @@ class PluginPackageRegistrationService:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def register(
-        self, command: RegisterPluginPackageCommand,
+        self, command: RegisterPluginPackageCommand, *,
+        commit_guard: Callable[[object], None] | None = None,
     ) -> PluginPackageIdentity:
         self._validate(command)
+        if commit_guard is not None and not callable(commit_guard):
+            raise PluginPackageRegistrationError("PLUGIN_PACKAGE_INVALID")
         try:
             inspected = self._inspector.inspect_and_verify(
                 command.archive_bytes,
@@ -138,6 +141,8 @@ class PluginPackageRegistrationService:
                 inspected, command.compatibility_policy_ref,
             )
             with self._uow() as transaction:
+                if commit_guard is not None:
+                    commit_guard(transaction)
                 self._repository.lock_identity(
                     transaction,
                     plugin_id=inspected.manifest.plugin_id,

@@ -255,6 +255,13 @@ class SqlAlchemyJobLeaseRepository:
             owner_filter=("rag", "RAG_RETRIEVAL"),
         )
 
+    def claim_next_plugin_package(self, transaction: object, *, worker_ref: str,
+                                  lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(
+            transaction, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            owner_filter=("plugin", "PLUGIN_PACKAGE_VERIFY"),
+        )
+
     def _claim_next_filtered(self, transaction: object, *, worker_ref: str,
                              lease_seconds: int,
                              owner_filter: tuple[str, str] | None) -> ClaimedJob | None:
@@ -286,6 +293,11 @@ class SqlAlchemyJobLeaseRepository:
                 conditions.append(or_(
                     JobRow.owner_module != "rag",
                     JobRow.job_type != "RAG_RETRIEVAL",
+                ))
+                # Package verification has its own trusted-input Worker.
+                conditions.append(or_(
+                    JobRow.owner_module != "plugin",
+                    JobRow.job_type != "PLUGIN_PACKAGE_VERIFY",
                 ))
             job = session.execute(select(JobRow).where(*conditions)
                 .order_by(JobRow.priority.desc(), JobRow.available_at, JobRow.job_id)
