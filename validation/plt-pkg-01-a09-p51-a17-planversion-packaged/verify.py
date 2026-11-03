@@ -358,7 +358,12 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
     import tempfile
 
     from sqlalchemy import func, select
+    from sqlalchemy.engine import URL
 
+    from plm_assistant.modules.audit.application.public import AuditService
+    from plm_assistant.modules.audit.infrastructure.audit_repository import (
+        SqlAlchemyAuditRepository,
+    )
     from plm_assistant.modules.audit.infrastructure.audit_orm import AuditEventRow
     from plm_assistant.modules.jobs.infrastructure.orm import JobRow, OutboxEventRow
     from plm_assistant.modules.platform.application.idempotency import IdempotencyScope
@@ -381,6 +386,9 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
         SqlAlchemyPluginPackageImportStagingRepository,
     )
     from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+    from plm_assistant.modules.platform.infrastructure.database import (
+        create_database_runtime,
+    )
 
     class SyntheticAdminAccess:
         def authorized_admin(self, transaction, *, session_token, now):
@@ -391,9 +399,20 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
         def append(self, transaction, draft):
             raise RuntimeError("synthetic audit sink failure")
 
-    runtime = context["runtime"]
-    audit = context["audit"]
-    license_guard = context["license_guard"]
+    fixture_db = context["fixture_db"]
+    runtime = create_database_runtime(URL.create(
+        "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
+        port=fixture_db.pg_port, database=fixture_db.database,
+    ))
+    audit = AuditService(SqlAlchemyAuditRepository())
+
+    class SyntheticLicenseGuard:
+        @staticmethod
+        def require_valid(*, trace_id):
+            assert isinstance(trace_id, uuid.UUID) and trace_id.int
+            return object()
+
+    license_guard = SyntheticLicenseGuard()
     test_root = Path(os.environ["PLM_P51_TEMP_ROOT"]).resolve()
     payload = b"PK" + bytes((3, 4)) + b" synthetic package import payload"
     signature = b"s" * 64
