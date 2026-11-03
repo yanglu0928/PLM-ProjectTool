@@ -96,3 +96,11 @@ undefined
 - **兼容策略：** 新增不可变策略标识 `host.platforms.v1`，只接受manifest声明的受支持产品目标OS集合（Windows 11、Windows Server 2025、Debian 13）、x86_64与Plugin API主版本1；它仅表示静态声明兼容，不表示安装或代码安全。无策略、无签名信任或撤销发布者均fail closed。
 - **影响/回滚：** 无冻结API、业务表或数据模型变化；无新增migration。Jobs内部新增精确claim方法及Plugin Worker组合入口。若Worker验收失败，保持HTTP入口关闭于默认组合并保留Job/staging数据，修正或回退Worker代码；不删除历史、不开启执行能力。
 - **验收：** hosted Windows runner D盘临时目录；定向测试 + 后端全量/wheel + PG18 claim/租约/重试/真实登记/重放与失败回滚烟测 + 父包构建及A17/A34全链路。Secret扫描通过后仅同步当前功能分支。
+
+
+## A08 Windows Worker 组合入口实现范围（2026-11-04，编码前边界记录）
+
+- 为让已验收的 Worker 可在 Windows 11 内部包中显式启动，新增仅 Windows 可用的受限 CLI 组合入口及进程诊断角色 `PLUGIN_PACKAGE_WORKER`。入口必须加载既有 Bootstrap、Windows 当前账户数据库凭据及 License 服务，检查当前 Alembic head 后才构造 Worker；支持一次处理或常驻轮询，退出时释放数据库连接。
+- 此入口不改变默认 API 组合、Service 自动安装策略、插件信任名单或数据库/API合同；不添加 migration。Worker 仍只验签、解析 manifest、检查静态兼容和登记元数据，禁止安装/执行插件。
+- 回滚只需恢复入口、角色枚举与对应测试；不涉及持久数据。验收包含定向/全后端云端测试、wheel、Windows 同提交父包与既有A17/A34链路；PG18 的领取/登记/租约/失败复验烟测仍需单独补齐后才可关闭A08。
+- 代码提交前已将此范围纳入CR-PLG-006；无新增Secret或客户数据。

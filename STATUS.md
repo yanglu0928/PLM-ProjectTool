@@ -1,10 +1,10 @@
-|Next WBS|PLG-01-A08：受控插件包导入流式暂存与异步验证作业接入（按CR-PLG-006实施）|
+|Next WBS|PLG-01-A08：完成Windows Worker CLI与PG18端到端验收，再按证据关闭A08|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
-|Execution Note|A50修正提交 ae1c0455f0fdb7c54d4f9fe6b7364c8a5ae37c12；hosted run 41391544470全12 jobs成功。A35 Windows11 Home build26300 D盘隔离父包复验仍为历史PASS_LIMITED；本轮不代表实机Windows11验收。正式信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|PLG-01-A08：受控插件包导入流式暂存与异步验证作业接入（实现进行中）|
-|Latest WBS Status|A08新增migration 0224 Plugin package import append-only metadata ORM；PG18 validator覆盖签名/摘要/大小约束、UPDATE/DELETE/TRUNCATE守卫及有数据降级拒绝。代码与迁移验证正在hosted验收；staging service、Job原子协调、Audit、HTTP、Worker仍待。|
+|Execution Note|A08 Worker CLI实现提交待本次hosted验证；用户要求不在本机运行，使用GitHub hosted runner。A35 Windows11 Home build26300 D盘隔离父包复验仍为历史PASS_LIMITED；本轮不代表实机Windows11验收。正式信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
+|Current WBS|PLG-01-A08：受控插件包导入流式暂存与异步验证作业接入（Worker CLI与PG18端到端验收进行中）|
+|Latest WBS Status|A08已实现受控暂存、append-only签名元数据、Job/Outbox、原子Audit、幂等冲突保护、HTTP上传入口及fenced Worker核心；新增Windows专用CLI组合入口与诊断角色。0224无数据变更。当前worker CLI/全链尚待本提交GitHub云端验收；PG18 Worker真实领取/租约/fencing/签名包登记与失败重试烟测仍待，A08继续IMPLEMENTATION_IN_PROGRESS。|
 |Current Status|PLG_01_A07_PASS_SCOPE_LIMITED / PLG_01_A08_IMPLEMENTATION_IN_PROGRESS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|

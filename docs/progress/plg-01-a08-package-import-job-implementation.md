@@ -64,3 +64,10 @@ HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；sta
 
 - 新增0224 append-only staging metadata ORM/migration，保存后续Inspector所需detached signature/signer key reference及包摘要/大小，不保存ZIP内容。
 - Hosted PostgreSQL 18 migration验证已扩展，包括空库升降级重升、有行阻止0224降级和守卫检查；结果待run完成。
+
+
+## Windows Worker CLI 组合入口（2026-11-04）
+
+- 新增显式 Windows Worker 入口：读取正式 Bootstrap 和当前账户数据库凭据，执行数据库 readiness、Migration head 与 License 检查后才创建 Worker；支持 `--once` 和有界休眠的常驻轮询。
+- Worker 进程登记角色扩展为 `PLUGIN_PACKAGE_WORKER`，用于既有诊断标记；无默认 API 挂载、无服务自动安装、无插件代码执行或新 migration。
+- 新增进程角色单测。当前只提交代码，云端验证仍待；A08不关闭。PG18 Worker领取、lease/fencing、真实签名包登记与错误重试/失败验收仍是剩余项。

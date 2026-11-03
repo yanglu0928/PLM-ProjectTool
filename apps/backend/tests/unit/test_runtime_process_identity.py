@@ -79,6 +79,27 @@ class RuntimeProcessIdentityTests(unittest.TestCase):
                     marker.write_text("tampered", encoding="utf-8")
             self.assertEqual(marker.read_text(encoding="utf-8"), "tampered")
 
+    def test_plugin_package_worker_role_is_supported(self):
+        identity = RuntimeProcessIdentity(
+            role="PLUGIN_PACKAGE_WORKER", pid=12345,
+            registered_at_utc="2026-11-04T00:00:00+00:00",
+            package_version="0.1.0.dev0", code_sha256="b" * 64,
+            owner_sid="S-1-5-21-100-200-300-400",
+            executable_path="C:\\PLMTool\\runtime\\python.exe", nonce="e" * 32,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("plm_assistant.modules.platform.infrastructure.runtime_process_identity.sys.platform", "win32"), patch(
+                "plm_assistant.modules.platform.infrastructure.runtime_process_identity._identity",
+                return_value=identity,
+            ):
+                root = Path(directory)
+                with register_runtime_process("PLUGIN_PACKAGE_WORKER", root) as registered:
+                    marker = next((root / ".plm-runtime-processes").glob("*.json"))
+                    record = json.loads(marker.read_text(encoding="utf-8"))
+                    self.assertEqual(registered.role, "PLUGIN_PACKAGE_WORKER")
+                    self.assertEqual(record["role"], "PLUGIN_PACKAGE_WORKER")
+                self.assertFalse(marker.exists())
+
     def test_invalid_role_fails_before_files(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -239,3 +239,9 @@
 - 兼容性：本次前端修复不要求数据库或API升级；hosted Windows Server 2025 验证不是 Windows 11 设备验收。
 - 升级说明：仅内部代码候选，不能作为正式安装包；后续同源候选应从该提交重新构建，不对既有安装执行升级。
 - 已知限制：manifest 保持 release_eligible=false/legal_clearance=false；正式License信任、服务账户凭据/TLS、离线安装升级和 Windows 11 实机验收仍未完成，Pilot/Gate 3/正式Release NOT_READY。
+
+
+## Unreleased · 2026-11-04（云端验证待完成，不是发行版本）
+- A08新增Windows Plugin package verification Worker CLI组合入口：显式读取Bootstrap/当前账户数据库凭据，检查数据库schema与License后执行一次处理或常驻轮询，并登记诊断进程角色。Worker不安装、不执行插件；未接默认API，也未自动安装服务。
+- 新增Worker诊断角色测试。该提交的后端/前端回归、wheel、Windows父包和集成验证待GitHub Actions；A08仍未关闭，Pilot与正式Release仍NOT_READY。
+- 所有代码与验证均计划在GitHub托管runner执行，不占用用户本机C盘。
