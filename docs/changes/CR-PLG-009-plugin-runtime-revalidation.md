@@ -30,3 +30,10 @@ PLG-02-A02只存首次兼容事实，A03激活要求最新兼容快照，但没�
 - 只有证据通过后结论为`PASS_SCOPE_LIMITED`；不等于设备兼容、正式信任、PluginExecution、Pilot/Gate/Release。
 
 按用户持续自主执行授权先行登记实施范围、风险、迁移、回滚和验证计划。
+
+
+## 托管验证偏差记录（2026-11-04）
+
+首次完整父包 PostgreSQL smoke 在校验“带 PLG-02 历史禁止降级”时失败关闭。迁移 0228 实际返回 `PluginInstallation runtime history prevents downgrade`；既有 migration verifier 仍期待 0225/0226 时的旧文案 `PluginInstallation history prevents downgrade`。这是验证器断言文本未随 0228 的错误信息更新，不是迁移放行或运行历史丢失。数据库 smoke 随后按失败路径停止；不记录本轮完整验收通过。
+
+处置：先保留迁移保护和当前错误文案，只修正 verifier 精确断言以对应 0228 的保护结果，随后重跑同一 hosted 全链。风险为验证语义误报；不会改数据库状态、数据、API 或插件运行行为。回滚方式为恢复旧 verifier 断言，Migration 0228 无需回滚。验证仍要求有历史时拒绝降级并保持 schema revision/history 完整。
