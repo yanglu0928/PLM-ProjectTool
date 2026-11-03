@@ -45,5 +45,5 @@ PLG-02-A02只建立经核验的初始Installation事实。冻结模型还要求�
 
 - GitHub hosted run 41726736924 的后端全量/wheel、前端/build、PG18/pgvector重建、父包组装、A35、A17均成功；父包 PostgreSQL smoke 在调用既有 PLG-01 schema verifier 时失败。该 verifier 的守卫数量仍按 0226 断言 17；A03 migration 0227 合法新增 3 个操作历史守卫，实际读回 20。
 - 分类：验证脚本与数据库增量计数未同步，未发现产品实现失败；当前 run 整体不得标记通过。影响仅为 A03 整包父包 PG18 smoke 证据缺失。
-- 修正：仅把 validation/plg-01-a01-package-schema/verify.py 的 0227 预期守卫总数更新为 20，保留三个 owner_closed 断言及其它约束，不放宽守卫检查。先登记本记录，再修改并提交验证代码。
+- 修正：仅把 validation/plg-01-a01-package-schema/verify.py 的 0227 预期守卫总数更新为 20，同时将 owner_closed 数量从 3 更新为 4，并保留其它约束，不放宽守卫检查。先登记本记录，再修改并提交验证代码。
 - 重验：在 GitHub hosted runner 上重新运行完整链，要求父包 PG smoke 和 A03 migration contract均成功；禁止本机运行。未完成前 A03 状态仍为待验收。
