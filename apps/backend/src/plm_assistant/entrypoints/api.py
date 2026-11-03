@@ -96,6 +96,7 @@ def create_app(
     project_department_deactivate_router: APIRouter | None = None,
     document_upload_create_router: APIRouter | None = None,
     document_upload_content_router: APIRouter | None = None,
+    plugin_package_import_router: APIRouter | None = None,
     document_upload_finalize_router: APIRouter | None = None,
     document_read_router: APIRouter | None = None,
     document_version_read_router: APIRouter | None = None,
@@ -349,6 +350,8 @@ def create_app(
         app.include_router(document_upload_create_router)
     if document_upload_content_router is not None:
         app.include_router(document_upload_content_router)
+    if plugin_package_import_router is not None:
+        app.include_router(plugin_package_import_router)
     if document_upload_finalize_router is not None:
         app.include_router(document_upload_finalize_router)
     if document_read_router is not None:
