@@ -53,3 +53,10 @@ A02已有完整归档字节Ed25519 detached verifier，A03已有有界Manifest p
 - 失败根因：EOCD测试bytes literal包含过度转义的反斜杠文本，查找真实PK签名返回-1；该测试的伪造EOCD字段断言未执行。其他EOCD相关正向路径由主验收样例运行，但故障注入矩阵尚不完整。
 - 目前证据未显示归档检查器绕过、路径逃逸或未授权执行；A06不标PASS。下一修正仅改测试夹具：对生成后的ZIP原始文件名字节将等长正斜杠替换为反斜杠（Manifest保留合法entry_point），并使用准确的PK\x05\x06 EOCD签名字节；然后重跑定向/全量hosted CI。
 - 回滚策略不变：无DB/API/持久化，保持插件导入/安装/运行关闭。
+
+
+## 第二轮hosted全量回归失败记录（2026-11-03，修复前）
+
+- 第二轮run [41581853457](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581853457) 中A06专项归档/EOCD用例未报失败；后端其余回归报1个既有测试失败（总计3,902项），导致wheel/父包/A17/A34跳过。
+- 失败用例 test_capability_proof_locks_current_item_and_global_review 使用uuid.uuid4()生成12个值，并断言repr不包含固定子串“cccc”。一个随机UUID恰含该子串，proof repr只包含正常字段而没有隐藏敏感数据，该断言仍误报。此为随机夹具与过宽子串断言的false positive，不是本WBS产品实现缺陷。
+- 预定修正仅限该单测：用确定性不含禁用标记的UUID集合替代随机UUID，让负向断言稳定且保留锁查询/返回结构验收。保留首轮两个A06 fixture根因记录。完成后重跑全量CI和集成链；在全量成功前A06保持未关闭。

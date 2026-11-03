@@ -42,3 +42,9 @@ Python zipfile在ZipFile初始化时解析中央目录，无法先靠后续infol
 - Run [41581198290](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581198290)：后端3,902项中1 error/1 failure；wheel及后续父包链跳过。失败已先追加CR-PLG-004与STATUS/CHANGELOG。
 - 反斜杠用例的Windows zipfile构造器将路径变成正斜杠，未形成预期原始ZIP路径；EOCD test literal多转义一层，未匹配真实头部。两项都是测试fixture问题，不能判产品行为通过或失败；未观察到检查器安全绕过。
 - 后续先只修正测试生成方式与签名字面量，保留生产检查逻辑，再跑云端全量验证。A06在复验前未关闭。
+
+
+## 第二轮回归状态（修复前记录）
+
+- Run [41581853457](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581853457)：A06归档/EOCD测试未报失败，后端总计3,902项仍有1个随机UUID单测误报（UUID包含测试禁用子串“cccc”）；wheel/后续集成跳过。
+- 已先记录于CR-PLG-004、STATUS与CHANGELOG。下一次只改该既有测试的随机UUID夹具为确定值，不改业务代码；其后完整云端回归验收。

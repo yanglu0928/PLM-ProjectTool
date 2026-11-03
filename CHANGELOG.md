@@ -1,5 +1,9 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A06 第二轮hosted run [41581853457](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581853457) 的A06定向归档/EOCD用例通过，但后端3,902项中1项既有capability source proof单测因随机UUID偶然包含“cccc”而误报敏感repr，导致wheel/父包/A17/A34跳过。根因与修正前记录见CR-PLG-004/A06检查；先固定测试fixture再跑全量链。A06尚未PASS。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A06 首轮hosted run [41581198290](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41581198290) 后端3,902项中1个测试错误、1个失败；根因为Windows ZIP测试写入器规范化反斜杠夹具与EOCD测试字面量转义错误，检查器的对应负向断言未按预期执行。失败与修正计划先记入CR-PLG-004/A06检查；没有证据显示产品安全绕过，后端失败后wheel/父包链被跳过。
 - 状态：A06未通过，正在先修正纯测试夹具后云端重跑。所有运行仍限GitHub hosted runner，不运行用户本机/C盘。
 
