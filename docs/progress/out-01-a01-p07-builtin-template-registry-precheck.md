@@ -17,3 +17,8 @@
 ## 剩余编码前事项
 
 按CR-OUT-006开始单一的Output内置只读固定版本Registry实现。
+
+## 实现记录（2026-11-04，云端验收待完成）
+
+- Output Owner新增内置metadata Registry，暂含一个固定DOCX模板版本ref及REQUIREMENT_VERSION来源类型；不含渲染数据/模板文件，不支持自定义，且不接生产Output resolver。
+- Unit测试覆盖固定ref、不可变性、未知/重复/畸形拒绝；A17 hosted package smoke新增P07 marker。云端定向/全量及父包/A17/A34结果待本次工作流；P07尚未关闭。

@@ -832,6 +832,20 @@ def packaged_planversion_probe(**context) -> None:
     source_runtime.dispose()
     print("OUT_01_A01_P05_REQUIREMENT_FIXED_SOURCE_PG_PASS: scoped/versioned/authorized",
           flush=True)
+
+    from plm_assistant.modules.output.infrastructure.builtin_template_registry import (
+        BUILTIN_REQUIREMENT_DOCX_TEMPLATE_VERSION_ID, BuiltinOutputTemplateRegistry,
+    )
+    packaged_template = BuiltinOutputTemplateRegistry().get_immutable_version(
+        None, template_version_ref=BUILTIN_REQUIREMENT_DOCX_TEMPLATE_VERSION_ID,
+    )
+    if (packaged_template is None or packaged_template.output_type != "DOCX"
+            or packaged_template.source_kinds != ("REQUIREMENT_VERSION",)
+            or packaged_template.immutable is not True
+            or packaged_template.published is not True):
+        raise AssertionError("OUT-01-A01-P07 packaged builtin template mismatch")
+    print("OUT_01_A01_P07_BUILTIN_TEMPLATE_REGISTRY_PASS: fixed-ref/immutable",
+          flush=True)
     with fixture_db() as db:
         approved = db.execute(
             "SELECT 1 FROM plm.sol_outlines WHERE project_id=%s "

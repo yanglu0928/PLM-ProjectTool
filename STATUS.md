@@ -1,4 +1,4 @@
-|Next WBS|OUT-01-A01-P07：内置Output文件模板固定版本Registry与契约验证|
+|Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P05_PASS_SCOPE_LIMITED / OUT_01_A01_P06_PASS_SCOPE_LIMITED / OUT_01_A01_P07_IMPLEMENTATION_IN_PROGRESS / PHASE_2_IN_PROGRESS|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
@@ -2801,3 +2801,6 @@
 
 
 - 2026-11-04 OUT-01-A01-P06：确认冻结Output仅Request/Artifact两Root；Prototype模板是原型布局/组件合约，不能复用为DOCX/PPT/Flow文件模板。按CR-OUT-006采用只读包内固定版本Output Template Registry，不新增客户DB Root/API/Migration。P06 PASS_SCOPE_LIMITED；P07编码中。真实Output Create仍失败关闭。
+
+
+- 2026-11-04 P07代码候选：新增不可变包内OutputTemplate metadata Registry，提供固定DOCX/RequirementVersion模板ref；未知/畸形/重复条目拒绝，模板仅为Resolver metadata，不含文档渲染器，不运行插件。A17增加打包运行时专项marker。云端验收待本提交，Pilot/Gate/正式Release不变。

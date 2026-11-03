@@ -271,3 +271,8 @@
 ## Unreleased · 2026-11-04（Output模板Owner编码前核查）
 - P06源码及冻结基线核查确认：OutputTemplate不属于冻结65个Aggregate Root；PrototypeTemplate是独立的原型布局/组件合约，不能冒充DOCX/PPT/Flow文件模板。决定在CR-OUT-006下实现只读、内置、固定版本OutputTemplate Registry，不加客户数据库表/API/Migration，不支持项目自定义模板。
 - P06结论PASS_SCOPE_LIMITED；P07仅实现内置模板Registry与严格契约验证。Output Policy、Plugin启用/信任及生成/Artifact链未完成，因此不开放真实Output Create。
+
+
+## Unreleased · 2026-11-04（内置Output模板Registry代码候选）
+- P07新增固定版本只读内置DOCX模板metadata Registry，限REQUIREMENT_VERSION来源；无客户DB/API/Migration、自定义模板或渲染逻辑。A17 packaged runtime新增专用标记；本提交GitHub hosted验证待完成。
+- Output Policy、Plugin enable/trust、文件生成与Artifact链仍缺；当前不支持真实Output Create。
