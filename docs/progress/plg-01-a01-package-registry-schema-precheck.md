@@ -32,3 +32,8 @@
 ## 约束
 
 任何已签名包导入和生产验证密钥来源另设WBS；本项的合成fixture只能证明Schema约束，不能证明插件信任。不能把 PluginPackage 记录写成 VERIFIED，不能让 Output Resolver 读取未验证包的操作。
+
+
+## 首轮云端验收失败记录（2026-11-02，修复前）
+
+Hosted run 41420708454 中，后端全量测试有2项元数据断言失败：既有ORM清单未预期新增4张PLG表；新测试按schema前缀筛选时与SQLAlchemy metadata实际table key形式不一致。前端/组件工作流通过。失败发生在单元测试元数据清单阶段，未进入PLG PostgreSQL迁移专项验收；不代表迁移/业务约束通过或失败。先记录后修正预期集合，再重跑全链。
