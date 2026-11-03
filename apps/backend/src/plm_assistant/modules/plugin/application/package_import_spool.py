@@ -48,6 +48,8 @@ class StagedPluginPackage:
     staging_locator: str = field(repr=False)
     sha256: bytes = field(repr=False)
     size_bytes: int
+    device: int = field(repr=False)
+    inode: int = field(repr=False)
 
 
 class PluginPackageImportSpool:
@@ -62,6 +64,18 @@ class PluginPackageImportSpool:
             raise ValueError("Invalid Plugin package spool policy")
         self._storage = storage
         self._max_bytes = max_bytes
+
+    def discard(self, staged: StagedPluginPackage) -> None:
+        """Remove exactly this spool's file after a surrounding DB transaction fails."""
+        if (type(staged) is not StagedPluginPackage
+                or type(staged.device) is not int or type(staged.inode) is not int):
+            raise PluginPackageStageError("VALIDATION_FAILED")
+        try:
+            self._storage.discard_new_staging(
+                staged.staging_locator, device=staged.device, inode=staged.inode,
+            )
+        except Exception:
+            raise PluginPackageStageError("PLUGIN_PACKAGE_STAGE_UNAVAILABLE") from None
 
     def receive(self, *, package_upload_id: uuid.UUID, chunks: Iterable[bytes],
                 declared_length: int, declared_sha256: bytes) -> StagedPluginPackage:
@@ -110,8 +124,11 @@ class PluginPackageImportSpool:
                 expected_size=total,
                 max_bytes=self._max_bytes,
             )
+            if identity is None:
+                raise PluginPackageStageError("PLUGIN_PACKAGE_STAGE_UNAVAILABLE")
             return StagedPluginPackage(
                 package_upload_id, staging_locator, actual_digest, total,
+                identity[0], identity[1],
             )
         except Exception as exc:
             if identity is not None:
@@ -119,7 +136,9 @@ class PluginPackageImportSpool:
                     self._storage.discard_new_staging(
                         staging_locator, device=identity[0], inode=identity[1],
                     )
-                except LocalStorageError:
+                except Exception:
+                    # Preserve the original staging failure; an orphan is handled
+                    # by the bounded recovery process rather than blind deletion.
                     pass
             if isinstance(exc, PluginPackageStageError):
                 raise
