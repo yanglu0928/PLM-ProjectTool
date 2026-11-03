@@ -90,7 +90,7 @@ class BuiltinOutputPolicyRegistryTests(unittest.TestCase):
             BuiltinOutputPolicyRegistry((valid, valid))
         with self.assertRaisesRegex(ValueError, "catalog is invalid"):
             BuiltinOutputPolicyRegistry((broadened,))
-        with self.assertRaisesRegex(ValueError, "catalog is invalid"):
+        with self.assertRaisesRegex(ValueError, "catalog is empty"):
             BuiltinOutputPolicyRegistry(())
 
     def test_resolver_projects_only_policy_allowed_requirement_fields(self):
