@@ -112,7 +112,7 @@ def _archive(private_key: Ed25519PrivateKey, *, version: str, extra: str = "") -
             archive_file.writestr("plugin/extra.txt", extra)
     payload = buffer.getvalue()
     key_bytes = _KEY_REF.encode("utf-8")
-    message = (b"PLM-PLUGIN-PACKAGE\\x00v1\\x00" + len(key_bytes).to_bytes(2, "big")
+    message = (b"PLM-PLUGIN-PACKAGE\x00v1\x00" + len(key_bytes).to_bytes(2, "big")
                + key_bytes + hashlib.sha256(payload).digest())
     return payload, private_key.sign(message)
 
@@ -220,7 +220,7 @@ def main() -> int:
             raise AssertionError("Audit failure left partial package/child/verification rows")
 
         invalid = RegisterPluginPackageCommand(
-            package_bytes, b"\\x00" * 64, _KEY_REF, "synthetic.win11.v1",
+            package_bytes, b"\x00" * 64, _KEY_REF, "synthetic.win11.v1",
             uuid.uuid4(), actor_id,
         )
         try:
