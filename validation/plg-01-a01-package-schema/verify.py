@@ -189,7 +189,7 @@ def _verify_import_staging_owner(admin_dsn: str, port: int, name: str) -> None:
                 "(package_upload_id,package_sha256,package_size_bytes,"
                 "detached_signature,signer_key_ref) "
                 "VALUES (%s,%s,7,%s,'synthetic-test-key')",
-                (upload_id, b"\\x31"*32, b"\\x41"*64),
+                (upload_id, bytes([0x31]) * 32, bytes([0x41]) * 64),
             )
         with psycopg.connect(dsn) as conn:
             for operation, statement, params in (
