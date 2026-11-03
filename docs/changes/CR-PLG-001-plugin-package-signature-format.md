@@ -59,3 +59,8 @@
 - 纯验签器绑定完整归档SHA-256、Ed25519 detached signature和外部trusted signer Port；8项合成单测覆盖有效签名、篡改、撤销/禁用、无效key和key-ref边界。未添加DB/API/Migration。
 - 结果：`PASS_SCOPE_LIMITED`。没有生产Trust adapter/公钥/撤销源，不能将包标记VERIFIED。完整证据见 `docs/progress/plg-01-a02-signature-verifier-result.md`。
 - 下一项：PLG-01-A03 生产发布者公钥信任源与撤销边界编码前检查。
+
+
+## 后续顺序记录（2026-11-03）
+
+真实发布者信任源缺少正式根公钥/撤销材料，按 `DEC-PLG-001` 先完成独立、只读的 `plm.plugin.manifest.v1` parser（PLG-01-A03 / CR-PLG-002）；生产 Trust adapter 顺延为后续WBS。此排序不扩展或降低签名要求。

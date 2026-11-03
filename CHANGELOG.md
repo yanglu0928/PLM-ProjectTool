@@ -1,5 +1,12 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG任务顺序已记录：正式Plugin发布者根公钥/撤销源尚不存在，不能将合成验签提升为生产信任；先做独立版本化Manifest parser和入口路径校验（PLG-01-A03），其格式已在 [CR-PLG-002](docs/changes/CR-PLG-002-plugin-manifest-v1.md) 固定。生产信任源后续单独建设。
+- 兼容性：开发分支文档/实现；Cloud runner D盘运行，用户本机未运行程序。没有Windows 11设备结论。
+- 升级说明：Manifest parser无Schema/API迁移；未安装产品。
+- 已知限制：A03不验签/解压/执行，不使Package进入VERIFIED；真实Trust root尚待。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A02 按 CR-PLG-001 增加纯Ed25519 detached插件包验签器：对完整包字节计算SHA-256并绑定签发者key-ref，密钥由独立Trust Port提供；8项定向单测及全链 hosted run [41569062762](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41569062762) 13/13成功。
 - 兼容性：GitHub hosted Windows Server 2025与合成密钥；未在用户本机/C盘运行，也无Windows 11新实机验证。
 - 升级说明：内部开发分支代码，无数据库/API变化；没有产品安装包或生产包升级。

@@ -11,3 +11,13 @@
 - 回滚：不改写已发布migration；只可追加down migration撤销空的包元数据表。若已有记录则禁止降级破坏，需先制定安全保留迁移。
 - 验证：GitHub hosted Windows Server 2025 / D盘runner temp；合成无签名业务夹具；校验升级、降级与再升级、不可变内容保护、跨版本唯一性和写入口关闭；无本机/C盘代码执行。
 - 后续：完成 PLG-01-A01 后，继续开发者包验证/Installation Owner，再回到 Output 的可信模板/策略/Source Owner 生产适配。禁止在这之前把P03合成Port当作生产注册或启用默认Output Create。
+
+
+### DEC-PLG-001：Plugin实施顺序先完成无需发布根密钥的Manifest校验
+
+- 日期：2026-11-03
+- 状态：已记录并执行
+- 决定：PLG-01-A02已完成合成信任Port上的纯Ed25519验签。当前仓库/开发工作台没有可核实的正式Plugin publisher root public key或撤销材料，故不能构造真实Package trust adapter，也不能用License信任锚或测试key冒充。按用户授权，先推进不依赖真实key的有界Manifest parser/入口路径校验（PLG-01-A03，CR-PLG-002）；发布者信任源另列后续WBS。
+- 依据：ADR-005、DM-04、API-03、PLG-01-A02 PASS_SCOPE_LIMITED与本轮代码树/工作台只读检查。
+- 影响：不改变Gate2冻结架构、安全要求或产品Scope；调整插件工作依赖排序。测试通过不构成发布者信任、包安装或可执行性。
+- 回滚/恢复：若A03无法在不解包/执行或改变基线下完成，包导入保持关闭并转向其他不受阻碍开发项。
