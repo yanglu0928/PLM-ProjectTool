@@ -34,3 +34,10 @@ Output resolver要求Policy固定允许的模板版本、输出类型、插件�
 - 新增固定ref策略Registry，边界固定为DOCX/P07模板/RequirementVersion APPROVED，字段title/statement/acceptance_criteria，最多4来源与8192字节。策略内word.generate只是allowlist标签；单测中的enabled/trusted operation为synthetic依赖，不表示真实信任。
 - 单测覆盖未知/扩大策略拒绝、Registry/字段映射不可变及Resolver最小字段投影；A17 packaged flow新增P09 marker。
 - 无Migration/API变化。定向/后端全量、wheel及hosted父包/A17/A34待本提交验收。
+
+
+## 首轮托管验收偏差（2026-11-04）
+
+- GitHub hosted run [41692180197](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41692180197) 在后端测试中1项失败，导致后续wheel/父包/A17/A34依赖job跳过。
+- 失败根因是新增测试对空Policy目录断言通用文本“catalog is invalid”，而实现对空目录返回更精确的“builtin output policy catalog is empty”；没有证据表明Registry接受非法数据或产品逻辑失效。
+- 修正方案：仅更正测试预期为目录为空错误；重复/扩大策略继续断言catalog invalid。然后在GitHub hosted runner重跑定向、后端全量/wheel及完整父包链。修改前不关闭P09，不降低验收项。

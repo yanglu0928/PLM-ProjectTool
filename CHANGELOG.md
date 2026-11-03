@@ -292,3 +292,7 @@
 ## Unreleased · 2026-11-04（内置Output Policy代码候选）
 - P09新增只读固定ref内置OutputPolicyVersion Registry，严格限制P07 DOCX/REQUIREMENT_VERSION/APPROVED、字段title/statement/acceptance_criteria、4来源及8192字节Context；Resolver集成单测使用显式synthetic operation事实，不能视为生产Plugin信任。
 - A17新增随包Policy metadata marker；云端验证待本提交。无DB/API/Migration变化，不接生产Resolver、不生成文件或外发数据。
+
+
+## Unreleased · 2026-11-04（P09首轮云端失败记录）
+- run [41692180197](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41692180197) 后端测试单项失败：测试误将空Policy目录的精确错误期待成通用目录无效消息。已先记录CR-OUT-007/P09进度文档，待修正测试断言后重跑全链；P09尚未通过，不是发布版本。

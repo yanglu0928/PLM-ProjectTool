@@ -22,3 +22,8 @@ P08完成后按CR-OUT-007实施单一Policy Registry。
 
 - 固定ref策略仅允许DOCX/P07模板/RequirementVersion APPROVED；投影title、statement、acceptance_criteria，最大4来源/8192字节。Policy允许word.generate不构成Plugin operation启用/信任证明。
 - 新增immutable内置Registry、单测及Resolver合成最小Context集成测试；A17打包运行时要求P09 marker。hosted全量结果待本次。
+
+
+## 首轮托管偏差记录（2026-11-04）
+
+Run [41692180197](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41692180197) 的后端全量测试有1项新增测试断言失败：空目录路径抛出“catalog is empty”，测试期待“catalog is invalid”。失败仅为错误消息预期不一致；上游PG18重建、前端、A17 harness边界、Python基础及A50成功，后续wheel/父包/A17/A34被依赖关系跳过。已先记录CR-OUT-007；下一提交只修正测试断言并重跑全链，当前P09未通过。
