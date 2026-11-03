@@ -15,6 +15,9 @@ class PluginPackageSchemaTests(unittest.TestCase):
                 "plg_manifest_dependencies",
                 "plg_package_verifications",
                 "plg_package_import_stagings",
+                "plg_installations",
+                "plg_enabled_operations",
+                "plg_runtime_validations",
             },
             {table.name for table in Base.metadata.tables.values() if table.name.startswith("plg_")},
         )
@@ -32,8 +35,28 @@ class PluginPackageSchemaTests(unittest.TestCase):
             plugin_orm.PluginManifestOperationRow.__table__,
             plugin_orm.PluginManifestDependencyRow.__table__,
             plugin_orm.PluginPackageVerificationRow.__table__,
+            plugin_orm.PluginPackageImportStagingRow.__table__,
+            plugin_orm.PluginInstallationRow.__table__,
+            plugin_orm.PluginEnabledOperationRow.__table__,
+            plugin_orm.PluginRuntimeValidationRow.__table__,
         ):
             self.assertTrue(forbidden.isdisjoint({column.name for column in table.columns}))
+
+    def test_installation_persistence_constraints(self):
+        installation = plugin_orm.PluginInstallationRow.__table__
+        operation = plugin_orm.PluginEnabledOperationRow.__table__
+        validation = plugin_orm.PluginRuntimeValidationRow.__table__
+        install_constraints = {item.name for item in installation.constraints if item.name}
+        self.assertIn("fk_plg_installations__package_plugin", install_constraints)
+        self.assertIn("ck_plg_installations__state", install_constraints)
+        self.assertIn("ck_plg_installations__enabled_state_actor", install_constraints)
+        op_constraints = {item.name for item in operation.constraints if item.name}
+        self.assertIn("fk_plg_enabled_operations__installation_package", op_constraints)
+        self.assertIn("fk_plg_enabled_operations__manifest_operation", op_constraints)
+        self.assertIn("uq_plg_enabled_operations__plugin_operation", {i.name for i in operation.indexes})
+        validation_constraints = {item.name for item in validation.constraints if item.name}
+        self.assertIn("fk_plg_runtime_validations__installation", validation_constraints)
+        self.assertIn("ck_plg_runtime_validations__state", validation_constraints)
 
     def test_package_has_version_identity_hash_and_closed_state_constraints(self):
         table = plugin_orm.PluginPackageRow.__table__

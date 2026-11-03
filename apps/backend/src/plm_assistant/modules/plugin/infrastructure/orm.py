@@ -278,3 +278,102 @@ class PluginPackageImportStagingRow(Base):
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"),
     )
+
+
+class PluginInstallationRow(Base):
+    """Deployment installation fact for one immutable developer package."""
+    __tablename__ = "plg_installations"
+    __table_args__ = (
+        UniqueConstraint("plugin_installation_id", "plugin_package_id", "plugin_id_normalized",
+                         name="uq_plg_installations__id_package_plugin"),
+        ForeignKeyConstraint(["plugin_package_id", "plugin_id_normalized"],
+            ["plm.plg_packages.plugin_package_id", "plm.plg_packages.plugin_id_normalized"],
+            name="fk_plg_installations__package_plugin", ondelete="NO ACTION"),
+        CheckConstraint("installation_state IN ('INSTALLED','ENABLED','DISABLED','INCOMPATIBLE','RETIRED')",
+                         name="ck_plg_installations__state"),
+        CheckConstraint("jsonb_typeof(validated_runtime_snapshot) = 'object'",
+                         name="ck_plg_installations__runtime_snapshot"),
+        CheckConstraint("(enabled_by IS NULL AND enabled_at IS NULL) OR "
+                        "(enabled_by IS NOT NULL AND enabled_at IS NOT NULL)",
+                        name="ck_plg_installations__enabled_actor_time"),
+        CheckConstraint("installation_state <> 'ENABLED' OR "
+                        "(enabled_by IS NOT NULL AND enabled_at IS NOT NULL)",
+                        name="ck_plg_installations__enabled_state_actor"),
+        CheckConstraint("lock_version >= 0 AND isfinite(created_at) AND isfinite(updated_at) "
+                        "AND isfinite(installed_at) AND (enabled_at IS NULL OR isfinite(enabled_at)) "
+                        "AND (retention_due_at IS NULL OR isfinite(retention_due_at))",
+                        name="ck_plg_installations__time_lock"),
+        Index("ix_plg_installations__state_created",
+              "installation_state", "created_at", "plugin_installation_id"),
+        {"schema": "plm"},
+    )
+    plugin_installation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plugin_package_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plugin_id_normalized: Mapped[str] = mapped_column(Text, nullable=False)
+    installation_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'INSTALLED'"))
+    validated_runtime_snapshot: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    installed_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    installed_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
+        nullable=False, server_default=text("statement_timestamp()"))
+    enabled_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    enabled_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
+        nullable=False, server_default=text("statement_timestamp()"))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
+        nullable=False, server_default=text("statement_timestamp()"))
+    updated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    retention_policy_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    retention_due_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+
+
+class PluginEnabledOperationRow(Base):
+    """An enabled operation selected from the installed package manifest."""
+    __tablename__ = "plg_enabled_operations"
+    __table_args__ = (
+        ForeignKeyConstraint(["plugin_installation_id", "plugin_package_id", "plugin_id_normalized"],
+            ["plm.plg_installations.plugin_installation_id", "plm.plg_installations.plugin_package_id",
+             "plm.plg_installations.plugin_id_normalized"],
+            name="fk_plg_enabled_operations__installation_package", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["plugin_package_id", "operation_id"],
+            ["plm.plg_manifest_operations.plugin_package_id", "plm.plg_manifest_operations.operation_id"],
+            name="fk_plg_enabled_operations__manifest_operation", ondelete="NO ACTION"),
+        CheckConstraint("char_length(operation_id) BETWEEN 1 AND 255 AND operation_id=btrim(operation_id)",
+                        name="ck_plg_enabled_operations__operation"),
+        Index("uq_plg_enabled_operations__plugin_operation", "plugin_id_normalized", "operation_id",
+              unique=True),
+        Index("ix_plg_enabled_operations__package", "plugin_package_id", "operation_id"),
+        {"schema": "plm"},
+    )
+    plugin_installation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    operation_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    plugin_package_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plugin_id_normalized: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class PluginRuntimeValidationRow(Base):
+    """Append-only host compatibility evidence for an installation."""
+    __tablename__ = "plg_runtime_validations"
+    __table_args__ = (
+        ForeignKeyConstraint(["plugin_installation_id"],
+            ["plm.plg_installations.plugin_installation_id"],
+            name="fk_plg_runtime_validations__installation", ondelete="NO ACTION"),
+        CheckConstraint("compatibility_state IN ('COMPATIBLE','INCOMPATIBLE')",
+                        name="ck_plg_runtime_validations__state"),
+        CheckConstraint("jsonb_typeof(runtime_snapshot) = 'object'",
+                        name="ck_plg_runtime_validations__snapshot"),
+        CheckConstraint("isfinite(validated_at)", name="ck_plg_runtime_validations__time"),
+        Index("ix_plg_runtime_validations__installation_time",
+              "plugin_installation_id", "validated_at", "runtime_validation_id"),
+        {"schema": "plm"},
+    )
+    runtime_validation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plugin_installation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    compatibility_state: Mapped[str] = mapped_column(Text, nullable=False)
+    runtime_snapshot: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    validated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    validated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
+        nullable=False, server_default=text("statement_timestamp()"))
