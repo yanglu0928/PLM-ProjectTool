@@ -1,5 +1,12 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
+- PLG-01-A01 已增加插件包不可变元数据持久层；GitHub hosted run [41566771430](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41566771430) 全13 jobs成功。当前转入 PLG-01-A02；由于ADR-005未指定签名算法，先登记 [CR-PLG-001](docs/changes/CR-PLG-001-plugin-package-signature-format.md)，冻结 Ed25519 与完整包摘要签名格式，再开始编码。
+- 兼容性：仅云端 Windows Server 2025 runner；无本机/C盘执行、无Windows11新实测。
+- 升级说明：仅开发分支规则/代码计划，不生成安装包。
+- 已知限制：真实发布者信任源/撤销源缺失；A02合成测试不能作为正式信任、Gate、Pilot或Release证据。
+
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
 - PLG-01-A01 新增 PluginPackage 不可变元数据 ORM 和 migration `20261102_0222`，包含 package、manifest operation/dependency 与追加式验证记录。Hosted run [41566771430](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41566771430) 13/13 jobs成功，后端/前端、PG18 schema、候选包、A35/A17/A34链路均通过。
 - 兼容性：仅 GitHub hosted Windows Server 2025 与隔离PG18合成数据；临时文件在runner D盘。没有在用户本机/C盘运行代码，也没有Win11实机验收。
 - 升级说明：仅开发分支数据库增量；尚未在用户或生产数据库安装，不是发行/安装包。
