@@ -1,7 +1,7 @@
 # CR-OUT-004：Output生产Registry接线顺序与编码前核查
 
 - 日期：2026-11-04
-- 状态：PRECHECK_IN_PROGRESS
+- 状态：PASS_SCOPE_LIMITED
 - 来源：CR-EXEC-002纵向链优先级；OUT-01-A01-P03受限验收结果；PLG-01-A08受限完成
 
 ## 背景与证据
@@ -25,3 +25,11 @@ OUT-01-A01-P03已实现Fail-Closed TrustedOutputContextResolver与四类Port，�
 ## 验收与下一步
 
 核对源码和冻结契约后，列明四类Port各自可信数据Owner、Project隔离/固定版本/审核检查、缺失事实与候选实现；选择一个单一WBS建立编码前CR，加入定向单测、isolated PG18、后端全量/wheel、Secret检查与托管包验证计划。此核查未完成前不编码，不把Output纵向链、Pilot、Gate或Release标为可用/通过。
+
+
+## P04盘点结论（2026-11-04）
+
+- 已检查Output resolver四类Port、Requirement/Prototype/Plugin真实Owner源码与项目授权路径。
+- Requirement固定版本数据可作为下一项唯一可实现的持久Source；需为仅提供ProjectId+VersionId的Output上下文新增Requirement Owner读取入口并在Owner侧重新核验REQ_VERSION_GET授权。
+- Prototype HTML模板与Output文件模板不兼容；Output Policy存储与Plugin install/enable状态均不存在。正式Plugin trust清单为空。不得用这些缺口推定请求可生成或代码可执行。
+- 结论：P04盘点PASS_SCOPE_LIMITED；下一项OUT-01-A01-P05，具体编码前约束见CR-OUT-005。无Schema/API改动。

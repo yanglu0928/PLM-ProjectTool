@@ -256,3 +256,7 @@
 ## Unreleased · 2026-11-04（PLG-01-A08受限完成）
 - A08 Worker CLI与PG18端到端smoke提交 e37e668e 已通过GitHub hosted workflow [41678551589](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41678551589) 13/13 jobs。任务结论PASS_SCOPE_LIMITED；无插件执行、真实publisher trust/Windows 11设备验收。Pilot/Gate/正式Release仍NOT_READY。
 - 下一项转为OUT-01-A01-P04前置核查，调查Output固定来源和模板/策略/插件Registry真实接线，不改变冻结API或Schema。
+
+
+## Unreleased · 2026-11-04（Output Source 生产接线前置）
+- OUT-01-A01-P04源码盘点完成；下一项P05为Requirement固定版本Source Owner读取与组合根映射。实现边界和验收计划已在CR-OUT-005先行记录，尚未修改代码。

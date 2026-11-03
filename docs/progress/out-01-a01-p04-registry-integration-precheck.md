@@ -1,7 +1,7 @@
 # OUT-01-A01-P04：Output 生产 Registry 接线编码前检查
 
 - 日期：2026-11-04
-- 状态：PRECHECK_IN_PROGRESS（本文件只登记问题与证据；尚未允许编码）
+- 状态：PASS_SCOPE_LIMITED（生产事实盘点完成；未修改代码）
 - 阶段：Phase 2 / Windows 11内部Pilot纵向链
 - 依据：CR-EXEC-002、冻结API-03/DM-04、OUT-01-A01-P01/P02/P03与当前STATUS
 
@@ -16,7 +16,7 @@
 - PLG-01-A08已PASS_SCOPE_LIMITED并可形成VERIFIED package与operation metadata，但正式包内publisher trust manifest为空；插件元数据验证不代表被启用、可执行或可供客户使用。
 - 本核查的目标是选择一个存在可核验生产数据源的最小Port，不新增Schema/API，不运行插件，也不连接客户数据。
 
-## 编码前必须完成
+## 源码盘点与下一步决定
 
 1. 读取各Owner真实ORM/authorization查询及冻结DTO；确定Source版本、Project隔离、review状态如何可信读取。
 2. 检查Template、Policy、Plugin Operation是否有已冻结持久事实与版本/信任/启用状态。缺少事实时不得从manifest或AI建议推定为正式配置。
