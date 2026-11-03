@@ -30,3 +30,8 @@
 - 新增 apps/backend/src/plm_assistant/modules/plugin/application/package_archive_inspector.py
 - 新增 apps/backend/tests/unit/test_plugin_package_archive_inspector.py
 - 新增 docs/changes/CR-PLG-004-plugin-zip-envelope.md（编码前先提交）
+
+
+## 中央目录预检补充（编码提交前）
+
+Python zipfile在ZipFile初始化时解析中央目录，无法先靠后续infolist()限制对象数。故实际实现必须先预检EOCD：最大尾窗65,557字节，最多4,096项，中央目录最多8MiB；拒绝ZIP64、多磁盘、自解压前缀及错位/注释长度不一致，再调用ZipFile并复核目录数量。该具体约束及原因已先追加到CR-PLG-004；新增对应恶意EOCD测试。

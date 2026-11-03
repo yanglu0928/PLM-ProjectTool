@@ -36,3 +36,11 @@ A02已有完整归档字节Ed25519 detached verifier，A03已有有界Manifest p
 - 合法包：根Manifest/真实EntryPoint/active合成签名通过；包字节或key-ref篡改失败；正式空keyring失败关闭。
 - 恶意输入：坏ZIP、中央目录/大小/项数边界、加密成员、绝对/drive/UNC/回退路径、重复/大小写冲突、symlink/device、目录与文件冲突、Manifest缺失/重复/超限/坏schema、入口不存在/非普通文件。
 - 后端全量、wheel、GitHub hosted PR集成链通过；A06仍为PASS_SCOPE_LIMITED，不外推安装/执行/Win11或Gate/Pilot/Release。
+
+
+## 中央目录内存风险复核（编码提交前补充）
+
+- 发现：Python zipfile 在创建 ZipFile 时会先解析并构造中央目录对象，之后调用 infolist() 才能检查数量。因此只在 infolist 后拒绝超过4,096项，无法阻止条目数量/额外字段驱动的前置内存消耗；256MiB归档字节上限不够约束条目对象开销。
+- 修正设计：在打开ZipFile前，从归档尾部最大65,557字节定位并校验EOCD；拒绝多磁盘、ZIP64 sentinel、前置自解压数据、偏移/长度/注释不一致；先将总项数限制为4,096、Central Directory限制为8MiB，再进入zipfile。打开后重复核对实际项数和目录元数据。
+- 选择该方案是为了保留Python标准库解析器，同时在对象创建前完成硬边界。备选“只依靠infolist后校验”未能限制前置解析成本，拒绝。ZIP64在当前256MiB/4,096项合同下无必要；未来若需支持必须由新CR放宽。
+- 该保护属于已记录合同的具体化，不增加持久格式/API；相应单测覆盖EOCD项数/中央目录/ZIP64/多磁盘和偏移伪造拒绝。此补充在实现提交前写入。
