@@ -13,3 +13,11 @@ undefined
 ## 分层偏差修复提交（2026-11-03，待验收）
 
 已将Plugin Application对Document.infrastructure的具体导入替换为Plugin-owned storage Protocol；组合根按结构接口注入已有私有存储实现。仅依赖方向/类型边界调整，无API、Schema、文件行为变化。A07关闭文件及本变更历史在修正提交中恢复。修正代码与归档材料进入hosted workflow复验后补录结果。
+
+
+## 分层偏差复验关闭（2026-11-03）
+
+- Protocol修正提交：8baaaf827bf6b7bbc1cf4b47e8a5606712e4b02e。
+- hosted run [41599893419](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41599893419) 全13/13 jobs成功；后端全量/wheel、前端、PG18/pgvector、父包、A35/A17/A34通过。
+- 复核确认Plugin Application不再导入Document模块；暂存端口由Plugin-owned Protocol表达，层间依赖由组合根负责。
+- 本修复只关闭依赖方向偏差，不关闭A08；HTTP、Job/Outbox/Audit、worker和完整导入链仍待实现。

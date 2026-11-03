@@ -29,3 +29,10 @@ HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；sta
 - 已按CR-PLG-006将Application的Document基础设施直接依赖改为Plugin-owned staging storage Protocol。
 - 本次提交同时恢复PLG-01-A07结果文档与CR-PLG-005关闭记录，避免早前Git Tree更新遗漏这些新增路径。
 - A08修正后hosted验证尚未完成。
+
+
+## Protocol修正云端验收
+
+- 修正提交 8baaaf827bf6b7bbc1cf4b47e8a5606712e4b02e；run [41599893419](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41599893419) 全13/13 jobs成功。
+- Plugin Application跨模块具体依赖已移除；本次仅验证暂存原语及全链路回归，A08导入API/Job/Worker仍未完成。
+- 此提交同时恢复A07结果文档和CR-PLG-005的最终PASS_SCOPE_LIMITED关闭证据。
