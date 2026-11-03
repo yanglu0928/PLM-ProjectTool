@@ -27,3 +27,11 @@
 ## 编码范围
 
 预计新增 `tools/developer-workbench/plugin_key_ceremony.py`、`apps/backend/src/plm_assistant/modules/plugin/trust/developer_keys.json`、工具单测和pyproject package-data一行；只含空清单schema，不含真实公钥。更新CR/STATUS/CHANGELOG/结果。
+
+
+## 首轮hosted实现后审查补充（修复前记录）
+
+- 首轮run [41575141107](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41575141107)全13 jobs成功，包括本WBS合成仪式单测、后端全量/wheel。
+- 复核发现异常回滚不完整：新公钥清单替换成功、后续pair核验失败时，工具会删私钥但未恢复已替换清单，可能留下ACTIVE孤立公钥。
+- 修复计划按CR-PLG-003：先留存旧空清单原始字节；任何失败均清理新私钥/暂存文件并原子恢复旧清单；新增发布后核验失败注入测试。提交该修复前，本问题已先记录于CR、STATUS与CHANGELOG。A04不得在修复与云端复验前标记完成。
+- 不涉及客户数据或真实key；所有测试继续只在GitHub hosted D盘runner temp生成合成key。

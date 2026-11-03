@@ -1,9 +1,10 @@
-## Unreleased · 2026-11-03（内部云端开发，不是发行版本）
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
-- PLG-01-A04 先建立Developer Workbench独立插件签名密钥仪式与公开key manifest格式；只编写工具和合成测试，本轮不会在本机/云端生成真实私钥。顺序记录见 DEC-PLG-002/CR-PLG-003。
-- 兼容性：开发分支、hosted Windows Server 2025；用户本机未运行。
-- 升级说明：私钥工具在客户runtime包外；空信任清单，无应用DB/API变化。
-- 已知限制：本项完成不代表真实key产生、离线备份或runtime trust已就绪。
+- PLG-01-A04 首轮实现已提交；hosted run [41575141107](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41575141107) 13/13 jobs成功，包括合成密钥仪式单测、后端全量/wheel、前端、PG18、父包与A17/A34链。
+- 编码后独立审查发现：首次创建在最终私钥/公钥清单发布后若pair核验失败，会删除私钥但留下ACTIVE公钥条目；未发现密钥泄露或签名绕过，但形成不可签发的残留信任记录。根因、风险和修复先行记录于CR-PLG-003，当前A04不关闭。
+- 兼容性：仅GitHub hosted Windows Server 2025 D盘runner环境；不在用户本机/C盘执行。
+- 升级说明：未新增DB/API/Migration；程序包结果为内部验证。
+- 已知限制：回滚修复和复验待完成；不代表真实key、离线备份、runtime trust、Win11设备、Gate、Pilot或Release通过。
 
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
