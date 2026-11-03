@@ -86,6 +86,42 @@ class _Compatibility:
         return PluginPackageCompatibilityAssessment(True)
 
 
+def _diagnostic(stage: str, call, *args: object, **kwargs: object):
+    try:
+        return call(*args, **kwargs)
+    except Exception as exc:
+        print("A07_DIAGNOSTIC " + json.dumps({
+            "stage": stage,
+            "exception_type": type(exc).__name__,
+            "sqlstate": getattr(exc, "sqlstate", None),
+        }, sort_keys=True), file=sys.stderr)
+        raise
+
+
+class _DiagnosticRepository:
+    def __init__(self, inner: SqlAlchemyPluginPackageRegistrationRepository) -> None:
+        self.inner = inner
+
+    def lock_identity(self, *args: object, **kwargs: object) -> None:
+        _diagnostic("repository.lock_identity", self.inner.lock_identity, *args, **kwargs)
+
+    def find_by_identity(self, *args: object, **kwargs: object):
+        return _diagnostic("repository.find_by_identity", self.inner.find_by_identity,
+                           *args, **kwargs)
+
+    def create_verified(self, *args: object, **kwargs: object):
+        return _diagnostic("repository.create_verified", self.inner.create_verified,
+                           *args, **kwargs)
+
+
+class _DiagnosticAudit:
+    def __init__(self, inner: AuditService) -> None:
+        self.inner = inner
+
+    def append(self, *args: object, **kwargs: object):
+        return _diagnostic("audit.append", self.inner.append, *args, **kwargs)
+
+
 class _FailingAudit:
     def append(self, _transaction: object, _event: AuditEventDraft) -> uuid.UUID:
         raise RuntimeError("synthetic A07 audit failure")
@@ -168,8 +204,8 @@ def main() -> int:
                 unit_of_work=runtime.unit_of_work,
                 inspector=inspector,
                 compatibility=_Compatibility(compatible),
-                repository=repository,
-                audit=audit or AuditService(SqlAlchemyAuditRepository()),
+                repository=_DiagnosticRepository(repository),
+                audit=audit or _DiagnosticAudit(AuditService(SqlAlchemyAuditRepository())),
             )
 
         trace_id = uuid.uuid4()
