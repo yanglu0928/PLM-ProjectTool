@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+
+- PLG-01-A01 新增 PluginPackage 不可变元数据 ORM 和 migration `20261102_0222`，包含 package、manifest operation/dependency 与追加式验证记录。Hosted run [41566771430](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41566771430) 13/13 jobs成功，后端/前端、PG18 schema、候选包、A35/A17/A34链路均通过。
+- 兼容性：仅 GitHub hosted Windows Server 2025 与隔离PG18合成数据；临时文件在runner D盘。没有在用户本机/C盘运行代码，也没有Win11实机验收。
+- 升级说明：仅开发分支数据库增量；尚未在用户或生产数据库安装，不是发行/安装包。
+- 已知限制：签名验证、正式发布者信任源、包导入/安装/执行和Output registry尚未实现；PLG-01-A01为PASS_SCOPE_LIMITED，Gate 3/Pilot/正式Release仍NOT_READY。详情见 `docs/progress/plg-01-a01-package-registry-schema-result.md`。
+
 ## Unreleased · 2026-11-02（内部云端验证，不是发行版本）
 
 - OUT-01-A01-P03 增加可信固定来源 Context resolver：通过显式 Source/Template/Policy/Plugin Operation Ports 校验精确版本、项目授权、审核态和类型关联，只按策略白名单输出受限Context及稳定fingerprint；缺定义/跨项目/未批准状态/不可信操作失败关闭。无Migration/API/Router/Plugin执行。

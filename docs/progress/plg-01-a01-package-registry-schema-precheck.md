@@ -1,7 +1,7 @@
 # PLG-01-A01：PluginPackage 不可变元数据持久层编码前检查
 
 - 日期：2026-11-02
-- 状态：PRECHECK_COMPLETE / READY_TO_IMPLEMENT
+- 状态：IMPLEMENTED / PASS_SCOPE_LIMITED
 - Phase/WBS：Phase 2 / PLG-01-A01
 - 依赖：Gate 2 冻结 SC-01～SC-03、DM-04、API-03；DEC-OUT-001；P03 resolver boundary PASS_SCOPE_LIMITED
 - 执行环境：GitHub hosted Windows Server 2025 runner；D盘runner temp；禁止用户本机/C盘运行
@@ -37,3 +37,12 @@
 ## 首轮云端验收失败记录（2026-11-02，修复前）
 
 Hosted run 41420708454 中，后端全量测试有2项元数据断言失败：既有ORM清单未预期新增4张PLG表；新测试按schema前缀筛选时与SQLAlchemy metadata实际table key形式不一致。前端/组件工作流通过。失败发生在单元测试元数据清单阶段，未进入PLG PostgreSQL迁移专项验收；不代表迁移/业务约束通过或失败。先记录后修正预期集合，再重跑全链。
+
+
+## 云端验收结果（2026-11-03）
+
+- 代码提交 `b310488d02322884a1b09f307040553b3d8f2fad`；GitHub hosted run [41566771430](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41566771430) 13/13 jobs成功。
+- 后端全量/wheel、前端测试/typecheck/build、PG18/pgvector smoke、PLG schema验证、同run父包、A35、A17和A34工作流成功。
+- 首轮 run 41420708454 的两项元数据测试失败及修正原因已如上记录；修正未更改冻结模型语义。
+- 结果为 `PASS_SCOPE_LIMITED`。真实签名验证、可信密钥来源、安装/执行/Output registry仍是后续边界；无Win11实机或Gate/Pilot/Release结论。
+- 下一项：`PLG-01-A02` 插件包签名验证与发布者信任源编码前检查。
