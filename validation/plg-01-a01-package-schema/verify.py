@@ -20,8 +20,8 @@ from plm_assistant.modules.platform.infrastructure.migration import (  # noqa: E
     upgrade_database,
 )
 
-HEAD = "20261103_0223"
-PARENT = "20261102_0222"
+HEAD = "20261103_0224"
+PARENT = "20261103_0223"
 _TABLES = (
     "plg_packages",
     "plg_manifest_operations",
@@ -75,8 +75,8 @@ def _assert_guards(dsn: str) -> None:
             "SELECT count(*) FROM pg_trigger "
             "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%'"
         ).fetchone()[0]
-    if actual != 8:
-        raise AssertionError(f"expected eight immutable/truncate guards, got {actual}")
+    if actual != 10:
+        raise AssertionError(f"expected ten immutable/truncate guards, got {actual}")
     with psycopg.connect(dsn) as conn:
         closed = conn.execute(
             "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
@@ -163,6 +163,68 @@ def _assert_immutability_and_insert_owner(dsn: str, package_id: uuid.UUID) -> No
             conn.execute("ROLLBACK TO SAVEPOINT insert_owner_probe")
 
 
+
+
+def _assert_import_staging_presence(dsn: str, expected: bool) -> None:
+    with psycopg.connect(dsn) as conn:
+        found = conn.execute(
+            "SELECT to_regclass('plm.plg_package_import_stagings')"
+        ).fetchone()[0] is not None
+    if found is not expected:
+        raise AssertionError(f"Plugin import staging table presence mismatch: {found!r}")
+
+
+def _verify_import_staging_owner(admin_dsn: str, port: int, name: str) -> None:
+    _create_database(admin_dsn, name)
+    dsn, url = _dsn(name, port), _url(name, port)
+    try:
+        upgrade_database(url, "head")
+        if _revision(dsn) != HEAD:
+            raise AssertionError("staging database did not reach current head")
+        _assert_import_staging_presence(dsn, True)
+        upload_id = uuid.uuid4()
+        with psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO plm.plg_package_import_stagings "
+                "(package_upload_id,package_sha256,package_size_bytes,"
+                "detached_signature,signer_key_ref) "
+                "VALUES (%s,%s,7,%s,'synthetic-test-key')",
+                (upload_id, b"\\x31"*32, b"\\x41"*64),
+            )
+        with psycopg.connect(dsn) as conn:
+            for operation, statement, params in (
+                ("UPDATE", "UPDATE plm.plg_package_import_stagings "
+                 "SET signer_key_ref='changed' WHERE package_upload_id=%s", (upload_id,)),
+                ("DELETE", "DELETE FROM plm.plg_package_import_stagings "
+                 "WHERE package_upload_id=%s", (upload_id,)),
+                ("TRUNCATE", "TRUNCATE plm.plg_package_import_stagings", ()),
+            ):
+                try:
+                    with conn.transaction():
+                        conn.execute(statement, params)
+                except errors.RaiseException:
+                    continue
+                raise AssertionError(f"staging history allowed {operation}")
+            retained = conn.execute(
+                "SELECT count(*),min(package_size_bytes) "
+                "FROM plm.plg_package_import_stagings WHERE package_upload_id=%s",
+                (upload_id,),
+            ).fetchone()
+        if retained != (1, 7):
+            raise AssertionError("append-only staging row changed")
+        try:
+            downgrade_database(url, PARENT)
+        except RuntimeError as exc:
+            if "staging history prevents downgrade" not in str(exc):
+                raise
+        else:
+            raise AssertionError("staging history did not prevent destructive downgrade")
+        if _revision(dsn) != HEAD:
+            raise AssertionError("blocked downgrade changed staging schema revision")
+    finally:
+        _drop_database(admin_dsn, name)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, required=True)
@@ -171,6 +233,7 @@ def main() -> int:
     if not 1 <= args.port <= 65535 or not re.fullmatch(r"[0-9]{1,12}", args.run_id):
         raise ValueError("PLG-01 validation requires a loopback port and numeric run id")
     suffix = args.run_id[-10:]
+    staging_db = f"plg01_{suffix}_staging"
     empty = f"plg01_{suffix}_empty"
     existing = f"plg01_{suffix}_existing"
     admin = _dsn("postgres", args.port)
@@ -189,6 +252,7 @@ def main() -> int:
         "production_database": False,
     }
     try:
+        _verify_import_staging_owner(admin, args.port, staging_db)
         _create_database(admin, empty)
         created.append(empty)
         empty_url, empty_dsn = _url(empty, args.port), _dsn(empty, args.port)
@@ -202,8 +266,9 @@ def main() -> int:
 
         downgrade_database(empty_url, PARENT)
         if _revision(empty_dsn) != PARENT:
-            raise AssertionError("empty PLG-01 owner downgrade did not stop at 0222")
+            raise AssertionError("empty PLG-01 import staging downgrade did not stop at 0223")
         _assert_presence(empty_dsn, True)
+        _assert_import_staging_presence(empty_dsn, False)
         _assert_guards_closed(empty_dsn)
         downgrade_database(empty_url, "20261102_0221")
         if _revision(empty_dsn) != "20261102_0221":
@@ -213,6 +278,7 @@ def main() -> int:
         if _revision(empty_dsn) != HEAD:
             raise AssertionError("empty PLG-01 re-upgrade failed")
         _assert_presence(empty_dsn, True)
+        _assert_import_staging_presence(empty_dsn, True)
         result["empty_downgrade_reupgrade"] = "PASS"
 
         package_id, verification_id = _seed_synthetic_history(empty_dsn)

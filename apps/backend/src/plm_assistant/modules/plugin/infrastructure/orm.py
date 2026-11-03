@@ -231,3 +231,50 @@ class PluginPackageVerificationRow(Base):
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"),
     )
+
+
+
+class PluginPackageImportStagingRow(Base):
+    """Append-only async verification input metadata; ZIP bytes stay in private storage."""
+
+    __tablename__ = "plg_package_import_stagings"
+    __table_args__ = (
+        CheckConstraint(
+            "package_upload_id <> '00000000-0000-0000-0000-000000000000'::uuid",
+            name="ck_plg_package_import_stagings__id",
+        ),
+        CheckConstraint(
+            "octet_length(package_sha256) = 32",
+            name="ck_plg_package_import_stagings__hash",
+        ),
+        CheckConstraint(
+            "package_size_bytes BETWEEN 1 AND 268435456",
+            name="ck_plg_package_import_stagings__size",
+        ),
+        CheckConstraint(
+            "octet_length(detached_signature) = 64",
+            name="ck_plg_package_import_stagings__signature",
+        ),
+        CheckConstraint(
+            "char_length(signer_key_ref) BETWEEN 1 AND 512 "
+            "AND signer_key_ref = btrim(signer_key_ref)",
+            name="ck_plg_package_import_stagings__signer_ref",
+        ),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_plg_package_import_stagings__created_at"),
+        Index("ix_plg_package_import_stagings__created",
+              "created_at", "package_upload_id"),
+        {"schema": "plm"},
+    )
+
+    package_upload_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True,
+    )
+    package_sha256: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    package_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    detached_signature: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    signer_key_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )

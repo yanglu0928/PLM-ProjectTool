@@ -58,3 +58,9 @@ HTTP Session/License/CSRF/DeploymentAdmin route；Idempotency回放/冲突；sta
 
 - Job/Outbox queue contract/repository及测试由run [41602717998](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41602717998)全13/13 jobs成功；未覆盖该新Owner的独立真实PG18写/重放集成。
 - 独立契约复核发现后台Worker需要detached signature/signer_key_ref；已先记录0224 append-only staging metadata迁移方案，再开展ORM/migration与原子入队集成。
+
+
+## 异步验证元数据Schema首段
+
+- 新增0224 append-only staging metadata ORM/migration，保存后续Inspector所需detached signature/signer key reference及包摘要/大小，不保存ZIP内容。
+- Hosted PostgreSQL 18 migration验证已扩展，包括空库升降级重升、有行阻止0224降级和守卫检查；结果待run完成。

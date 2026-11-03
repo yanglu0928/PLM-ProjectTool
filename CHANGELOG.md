@@ -1,4 +1,5 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
+- A08新增migration 20261103_0224和ORM staging metadata，保存package upload ID/hash/size、detached signature、signer key ref；新验证脚本覆盖append-only、TRUNCATE拒绝及有数据降级拦截，云端PG18验收待完成。
 - A08 Job/Outbox首段由run [41602717998](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41602717998)全13/13 jobs成功。编码前复核确认后台验签还需持久保存detached signature/signer key reference；已先记录CR-PLG-006新增append-only暂存元数据表和0224 migration，Job payload仍只存ID/hash/size。
 - 修正幂等键哈希域分隔符为固定ASCII冒号；前一替换未匹配转义文本，已记入CR-PLG-006。当前队列代码云端验收待本次提交。
 - A08 Job/Outbox测试夹具已修正：无效值在测试函数中构造，避免pytest collection时提前异常；幂等键域分隔符规范化。产品逻辑未改，等待本次hosted验证。

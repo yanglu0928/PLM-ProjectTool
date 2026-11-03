@@ -4,7 +4,7 @@
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|A50修正提交 ae1c0455f0fdb7c54d4f9fe6b7364c8a5ae37c12；hosted run 41391544470全12 jobs成功。A35 Windows11 Home build26300 D盘隔离父包复验仍为历史PASS_LIMITED；本轮不代表实机Windows11验收。正式信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
 |Current WBS|PLG-01-A08：受控插件包导入流式暂存与异步验证作业接入（实现进行中）|
-|Latest WBS Status|A08首段staging及Plugin-owned Job/Outbox queue code经run 41602717998全13/13 jobs成功。编码前复核确认后台验签还需持久保留detached signature/signer_key_ref；已先将新增append-only staging metadata表及migration 0224写入CR-PLG-006和precheck，再实施。A08仍进行中。|
+|Latest WBS Status|A08新增migration 0224 Plugin package import append-only metadata ORM；PG18 validator覆盖签名/摘要/大小约束、UPDATE/DELETE/TRUNCATE守卫及有数据降级拒绝。代码与迁移验证正在hosted验收；staging service、Job原子协调、Audit、HTTP、Worker仍待。|
 |Current Status|PLG_01_A07_PASS_SCOPE_LIMITED / PLG_01_A08_IMPLEMENTATION_IN_PROGRESS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -12,10 +12,10 @@
 |Pending User Decisions|无普通开发决策待确认。新客户材料/正文对外AI发送仍需当轮明确授权；付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
-|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；当前增量至`20261103_0223`（0220/0221为Output增量；0222新增PLG Package/manifest/verification元数据表；0223开放受限INSERT Owner并保持不可变/不可TRUNCATE；历史冻结内容未改写）|
+|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；当前增量至`20261103_0224`（0224新增Plugin package import append-only staging元数据，含签名与signer ref；Job/Outbox payload只存ID/hash/size）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|A07 run 41593955795全13/13 jobs成功。A08 bounded staging及Plugin-owned storage Protocol修正由run 41599893419全13/13 jobs成功验收：后端全量/wheel、前端/build、PG18/pgvector、父包、A35/A17/A34通过。仅内部合成/hosted证据，不构成Win11实机、正式信任、Gate/Pilot/Release结论。|
-|Latest Test Summary|A08 bounded staging/Plugin-owned queue首段由run [41602717998](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41602717998)全13/13 jobs成功；新migration 0224与PG真实入队集成尚未实施/验收。执行仅GitHub hosted D盘runner。|
+|Latest Test Summary|Job/Outbox首段run 41602717998全13/13 jobs通过。当前0224 schema/validator更新已触发hosted PG18迁移验收；此前migration head 0223，现推进至0224。|
 |Next WBS|PLG-01-A08：受控插件包导入流式暂存与异步验证作业接入（按CR-PLG-006实施）|
 |Latest Validation|A33 run 41008231772 在D盘hosted Windows Server 2025验证当前父包20,119项SHA、startup diagnostic六阻断码、缺脚本/损坏manifest回退、A29七类守门矩阵、A30四类诊断篡改、临时PG生命周期与A17 29 API PlanVersion流程；product API/service/listener未启动。无Windows11设备、正式License trust、安装升级、UAT、Gate或Release结论。|
 

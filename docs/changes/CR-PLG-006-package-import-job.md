@@ -50,3 +50,10 @@ undefined
 - 该表是异步输入的技术暂存，不是正式PluginPackage/信任事实；由同UOW原子写入stage metadata、Job、Outbox和Audit。签名验证失败仍由后续Worker作为Job失败处理，不登记正式PluginPackage。
 - 新表append-only并拒绝TRUNCATE；降级时若存在任何行就拒绝丢弃，空表才允许down。无历史冻结基线改写；偏差范围、迁移/回滚和PG18验收已补充在A08 precheck。
 - Migration/ORM和集成测试实施前的本CR记录即为批准依据；执行由用户持续自主授权覆盖，无需等待逐项批准。
+
+
+## Migration 0224编码结果（等待hosted验收）
+
+- 新增plm.plg_package_import_stagings ORM/table，保存异步验证必需的package ID、hash、size、detached signature和signer key reference；无ZIP正文/路径。
+- append-only UPDATE/DELETE和TRUNCATE守卫；降级若有记录拒绝删除并保持版本，空表允许down。
+- PLG schema verifier及迁移head contract已更新至20261103_0224，并新增隔离PG staging行写入/守卫/数据保留/降级阻断测试；本次云端运行待完成。
