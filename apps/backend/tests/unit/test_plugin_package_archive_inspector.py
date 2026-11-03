@@ -154,22 +154,30 @@ class PluginPackageArchiveInspectorTests(unittest.TestCase):
         ]))
 
     def test_traversal_windows_alias_links_devices_and_encryption_rejected(self) -> None:
+        backslash = chr(92)
         for name in (
             "../escape.py",
             "plugin/../../escape.py",
             "/absolute.py",
             "C:/drive.py",
-            "folder\\escape.py",
+            "folder" + backslash + "escape.py",
             "plugin/CON.txt",
             "plugin/CON .txt",
             "plugin/trailing.",
             "plugin/trailing ",
         ):
             with self.subTest(name=name):
-                self.reject_archive(_archive([
-                    ("manifest.json", _manifest(name)),
+                entries = [
+                    ("manifest.json", _manifest("plugin/main.py")),
                     (name, b"x"),
-                ]))
+                    ("plugin/main.py", b"entry"),
+                ]
+                candidate = bytearray(_archive(entries))
+                if backslash in name:
+                    normalized_name = name.replace(backslash, "/").encode("utf-8")
+                    self.assertIn(normalized_name, candidate)
+                    candidate = candidate.replace(normalized_name, name.encode("utf-8"))
+                self.reject_archive(bytes(candidate))
 
         symlink = zipfile.ZipInfo("plugin/link")
         symlink.create_system = 3
@@ -191,7 +199,7 @@ class PluginPackageArchiveInspectorTests(unittest.TestCase):
 
     def test_eocd_preflight_bounds_directory_and_rejects_zip64_multidisk_and_prefix(self) -> None:
         valid = bytearray(self.package)
-        eocd = valid.rfind(b"PK\\x05\\x06")
+        eocd = valid.rfind(b"PK\x05\x06")
         self.assertGreaterEqual(eocd, 0)
 
         too_many = bytearray(valid)
