@@ -32,6 +32,7 @@ A07实现单一问题：将成功完成A06安全检查及受注入兼容策略�
 - PLG 与共享 Output migration validators 已适配 0223；hosted run 41585611247 等待执行，尚无 A07 验收结论。
 - 偏差记录（run 41585754961，修复前）：后端全量3,909项有1项既有 `test_migration_contract` 仍将Alembic head固定断言为0222，实际脚本head已随本项迁移推进至0223。A07新增单测及产品代码无失败报告；父包链因后端失败按工作流规则跳过。根因为维护契约测试未随增量Schema head更新；修复仅更新该测试期望值为0223，随后以新的云端全量验收确认。
 - SQLAlchemy/PostgreSQL实际事务集成、审计同事务、迁移上/下行及全链路仍以云端run结果为准。
+- 验收范围补强（实施前记录）：run 41586377357全13 jobs成功，3,909后端项及0223 schema lifecycle通过；复核后确认现有集成链只验证Plugin migration guards，PackageRegistration SQLAlchemy repository 与真实 Audit 在PostgreSQL同事务的端到端断言尚缺。为满足本CR原定原子性验收，在临时PG18 smoke中增加合成包真实SQLAlchemy UOW + Audit验证（首次写入、幂等、版本冲突、审计异常回滚及不可变守卫），不改产品行为或冻结基线。A07在补强验收完成前保持未关闭。
 
 ## 影响、迁移、回滚和验证
 
