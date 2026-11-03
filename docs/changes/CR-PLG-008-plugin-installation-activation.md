@@ -47,3 +47,12 @@ PLG-02-A02只建立经核验的初始Installation事实。冻结模型还要求�
 - 分类：验证脚本与数据库增量计数未同步，未发现产品实现失败；当前 run 整体不得标记通过。影响仅为 A03 整包父包 PG18 smoke 证据缺失。
 - 修正：仅把 validation/plg-01-a01-package-schema/verify.py 的 0227 预期守卫总数更新为 20，同时将 owner_closed 数量从 3 更新为 4，并保留其它约束，不放宽守卫检查。先登记本记录，再修改并提交验证代码。
 - 重验：在 GitHub hosted runner 上重新运行完整链，要求父包 PG smoke 和 A03 migration contract均成功；禁止本机运行。未完成前 A03 状态仍为待验收。
+
+
+## PLG-02-A03最终托管验收记录（2026-11-04）
+
+- 最终GitHub hosted run [41728983860](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41728983860)，head `d37a9eb4fbeefc0ba3650238173a41c83dea1832`，13/13 jobs成功。完整后端3,937项、前端/build、backend wheel、PG18/pgvector sidecar、同run embedded backend和Windows父包、父包临时PG smoke、A35、A17、A34、A50均成功。
+- Migration 0227/operation history及更新后的PLG-01 0227总守卫20、owner_closed守卫4断言由父包PG18 smoke通过。父包PG smoke artifact 13277205559；A17 artifact 13277375572；A34 artifact 13277525431。
+- A17包内20,161项SHA-256 `754122bc7e6b3bfb695f8bee34f68e77c7aa1a15a4a106eb741f5d98965c9896`，status `PASS_LIMITED`，范围是hosted Windows Server 2025 runner而非Windows 11设备。A34 `PLT_PKG_01_A09_P51_A34_PASS_LIMITED`，old/current候选哈希 `f4d417998ba18bb340fb3d39d83a5c356ac73109a894c1f214852f6b72ed4d49` / `defcf10bd3e5774e168b3cb652ab7efa308953d7690d88ee02d4c33eb7782acd`，失败候选隔离和显式人工恢复均通过。
+- PLG-02-A03结论 `PASS_SCOPE_LIMITED`。没有客户数据、外部API、生产数据库、真实安装、正式License trust、产品API/listener或插件执行。Pilot/Gate/Release状态不变。
+- 首次run 41726736924的守卫计数断言滞后已按上文CR登记并修正；最终run的所有相关证据通过。

@@ -1,3 +1,5 @@
+- PLG-02-A03按CR-PLG-008以 `PASS_SCOPE_LIMITED` 完成：operation集合原子切换、历史安装状态维护、同事务Audit与逐operation不可变历史；migration 0227。GitHub hosted run [41728983860](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41728983860) 13/13 jobs成功，后端3,937项、父包PG18 smoke、A17、A34、A35、A50通过。首次PG verifier 17/3守卫计数偏差已先记CR，再更新为20/4并重验通过。无API/默认组合/物理安装/PluginExecution；Pilot/Release仍未就绪。详见 `docs/progress/plg-02-a03-installation-activation-result.md`。下一项PLG-02-A04编码前检查。
+
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
 - 已完成PLG-02-A03编码前检查并登记CR-PLG-008：实现Manifest operation子集按操作原子切换、旧/新Installation状态和同事务Audit；不接API/默认组合、不执行插件。计划revision 0227并用合成数据在GitHub hosted D盘验收。详见`docs/progress/plg-02-a03-installation-activation-precheck.md`。
