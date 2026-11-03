@@ -1,7 +1,7 @@
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
-- A08编码前检查完成：按冻结API-03 Plugin Package Import，参考Document bounded streaming/private storage及Jobs transactional Outbox，建立CR-PLG-006。目标为受控流式暂存及幂等verification Job/Outbox/Audit提交；设置256MiB上限并先记录跨文件/数据库恢复风险。
-- 实施/验收尚未开始；只在GitHub hosted runner D盘和合成数据执行，未在用户本机/C盘运行。Gate/Pilot/Release状态不变。
+- A08实现进行中：新增签名插件包的有界流式暂存原语，按1MiB块校验长度/SHA-256，使用共享私有opaque storage，超过256MiB拒绝，写失败按本轮文件身份补偿清理；加入合成定向用例。
+- 当前尚未接入HTTP、幂等Job/Outbox、Audit或Worker，不标记A08完成；完整验收等待GitHub hosted workflow。代码仅同步feature分支，runner使用D盘临时环境，不在用户本机/C盘运行。
 
 ## Unreleased · 2026-11-03（内部云端验证，不是发行版本）
 
