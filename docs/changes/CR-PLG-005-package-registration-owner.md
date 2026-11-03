@@ -30,6 +30,7 @@ A07实现单一问题：将成功完成A06安全检查及受注入兼容策略�
 
 - A07 application service、PostgreSQL metadata repository、migration `20261103_0223` 与 synthetic unit tests 已提交到本分支。
 - PLG 与共享 Output migration validators 已适配 0223；hosted run 41585611247 等待执行，尚无 A07 验收结论。
+- 偏差记录（run 41585754961，修复前）：后端全量3,909项有1项既有 `test_migration_contract` 仍将Alembic head固定断言为0222，实际脚本head已随本项迁移推进至0223。A07新增单测及产品代码无失败报告；父包链因后端失败按工作流规则跳过。根因为维护契约测试未随增量Schema head更新；修复仅更新该测试期望值为0223，随后以新的云端全量验收确认。
 - SQLAlchemy/PostgreSQL实际事务集成、审计同事务、迁移上/下行及全链路仍以云端run结果为准。
 
 ## 影响、迁移、回滚和验证
