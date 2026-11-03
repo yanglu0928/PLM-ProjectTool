@@ -58,3 +58,11 @@
 - 该偏差来自PLG-02新增head `20261104_0225` 后，PLG-01端到端迁移验证器未同步版本边界；不是PLG-02迁移建表失败证据。A17虽通过，但A34因父包PG smoke依赖失败而跳过；本轮整体不可判全通过。
 - 修复计划：将PLG-01 verifier的预期head更新为 `20261104_0225`，保留其 `0223` downgrade边界及原PLG-01存量保护断言；另在PG18脚本里核对PLG-02三张表、Owner关闭和TRUNCATE守卫，并覆盖空库升级/降级/重升。随后重跑GitHub hosted完整工作流。此变更只同步schema验证目标，不修改产品Schema/API/Owner。
 - 偏差在修复提交之前登记；所有运行只在GitHub hosted Windows runner的D盘临时区进行。
+
+
+## PLG-02完整数据库反例验收缺口（2026-11-04）
+
+- Hosted run [41705767222](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41705767222) 在版本头/表检查修正后13/13 jobs成功，含后端全量、父包PG18 migration smoke、A17与A34。A17/A34通过只证明各自既有业务流程。
+- 对照本CR原始验收清单复核 `validation/out-01-a01-p01-migration/verify.py` 后发现：PLG-02 smoke 已检查三表建表、三个Owner关闭触发器及空库降级/重升，但没有实际对三表逐项执行TRUNCATE拒绝，也没有对已含PluginInstallation合成记录的库执行0225降级拒绝；复合FK/唯一索引目前仅有ORM单元契约检查，尚缺PG18实库catalog断言。故run全绿仍不足以关闭PLG-02-A01。
+- 下一步先增加本缺口记录，再扩展PG18隔离验证：核对四个复合FK和操作唯一索引、对三表执行TRUNCATE拒绝、使用仅测试库的受控触发器旁路插入合成安装事实并验证降0225被拒且revision/记录保留；不连真实客户库，不创建生产安装/信任事实。完成后重新跑完整GitHub hosted工作流，再据证据判定A01。
+- 所有反例仅运行在GitHub hosted Windows runner D盘临时区；用户本机不运行代码或测试。
