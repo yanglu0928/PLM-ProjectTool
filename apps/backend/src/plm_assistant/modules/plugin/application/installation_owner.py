@@ -210,6 +210,7 @@ class PluginInstallationOwner:
     @staticmethod
     def _validate_evidence(
         package: InstallablePluginPackage, evidence: PluginInstallationEvidence,
+        *, require_compatible: bool = True,
     ) -> dict:
         if (type(evidence) is not PluginInstallationEvidence
                 or type(evidence.plugin_package_id) is not uuid.UUID
@@ -218,9 +219,10 @@ class PluginInstallationOwner:
                 or not __import__("hmac").compare_digest(
                     evidence.installed_package_sha256, package.package_sha256,
                 )
-                or evidence.installation_present is not True):
+                or evidence.installation_present is not True
+                or type(evidence.compatible) is not bool):
             raise PluginInstallationOwnerError("PLUGIN_INSTALLATION_EVIDENCE_INVALID")
-        if evidence.compatible is not True:
+        if require_compatible and evidence.compatible is not True:
             raise PluginInstallationOwnerError("PLUGIN_RUNTIME_INCOMPATIBLE")
         snapshot = evidence.runtime_snapshot
         required = {

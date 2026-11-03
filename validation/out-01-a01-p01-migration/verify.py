@@ -243,6 +243,40 @@ def _seed_plugin_installation_history(dsn: str, package_id: uuid.UUID) -> tuple[
                 "'{\"schema_version\":\"1\",\"source\":\"test-only\"}'::jsonb,%s)",
                 (installation_ids[0], actor_id),
             )
+        incompatible_snapshot = '{"schema_version":"1","source":"test-incompatible"}'
+        conn.execute(
+            "INSERT INTO plm.plg_runtime_validations "
+            "(plugin_installation_id,compatibility_state,runtime_snapshot,validated_by) "
+            "VALUES (%s,'INCOMPATIBLE',%s::jsonb,%s)",
+            (installation_ids[0], incompatible_snapshot, actor_id),
+        )
+        conn.execute(
+            "DELETE FROM plm.plg_enabled_operations "
+            "WHERE plugin_installation_id=%s AND operation_id='document.render'",
+            (installation_ids[0],),
+        )
+        disabled_audit_id = conn.execute(
+            "INSERT INTO plm.aud_events "
+            "(trace_id,event_scope,actor_type,actor_id,action,outcome,"
+            "target_owner_module,target_object_type,target_object_id,before_state,after_state) "
+            "VALUES (%s,'DEPLOYMENT','USER',%s,'PLUGIN_OPERATION_DISABLE','SUCCESS',"
+            "'plugin','PLG-02',%s,'ENABLED','INCOMPATIBLE') RETURNING audit_event_id",
+            (uuid.uuid4(), actor_id, installation_ids[0]),
+        ).fetchone()[0]
+        conn.execute(
+            "INSERT INTO plm.plg_enabled_operation_history "
+            "(plugin_installation_id,plugin_package_id,plugin_id_normalized,operation_id,"
+            "transition,actor_id,trace_id,audit_event_id) "
+            "VALUES (%s,%s,'synthetic.upgrade','document.render','DISABLED',%s,%s,%s)",
+            (installation_ids[0], package_id, actor_id, uuid.uuid4(), disabled_audit_id),
+        )
+        conn.execute(
+            "UPDATE plm.plg_installations SET installation_state='INCOMPATIBLE',"
+            "validated_runtime_snapshot=%s::jsonb,updated_by=%s,"
+            "updated_at=statement_timestamp(),lock_version=lock_version+1 "
+            "WHERE plugin_installation_id=%s",
+            (incompatible_snapshot, actor_id, installation_ids[0]),
+        )
     return installation_ids
 
 
@@ -282,7 +316,7 @@ def main() -> int:
         empty_url = _database_url(empty_db, args.port)
         empty_dsn = _dsn(empty_db, args.port)
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261104_0227":
+        if _revision(empty_dsn) != "20261104_0228":
             raise AssertionError("empty upgrade did not reach schema head")
         _assert_output_tables(empty_dsn, True)
         _assert_plugin_installation_tables(empty_dsn, True)
@@ -296,7 +330,7 @@ def main() -> int:
             job_fk = conn.execute("SELECT count(*) FROM pg_constraint WHERE conname='fk_out_output_requests__job'").fetchone()[0]
         if closed != 2 or job_fk != 0: raise AssertionError("0221 downgrade contract mismatch")
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261104_0227": raise AssertionError("owner re-upgrade failed")
+        if _revision(empty_dsn) != "20261104_0228": raise AssertionError("owner re-upgrade failed")
         with psycopg.connect(empty_dsn) as conn:
             closed = conn.execute("SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('trg_out_context_snapshots__owner_closed','trg_out_output_requests__owner_closed')").fetchone()[0]
             job_fk = conn.execute("SELECT count(*) FROM pg_constraint WHERE conname='fk_out_output_requests__job'").fetchone()[0]
@@ -308,7 +342,7 @@ def main() -> int:
         _assert_output_tables(empty_dsn, False)
         _assert_plugin_installation_tables(empty_dsn, False)
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261104_0227": raise AssertionError("full re-upgrade failed")
+        if _revision(empty_dsn) != "20261104_0228": raise AssertionError("full re-upgrade failed")
         _assert_output_tables(empty_dsn, True)
         _assert_plugin_installation_tables(empty_dsn, True)
         result["empty_database_downgrade_reupgrade"] = "PASS"
@@ -345,7 +379,7 @@ def main() -> int:
                 (package_id,),
             )
         upgrade_database(existing_url, "head")
-        if _revision(existing_dsn) != "20261104_0227":
+        if _revision(existing_dsn) != "20261104_0228":
             raise AssertionError("existing database upgrade did not reach schema head")
         _assert_output_tables(existing_dsn, True)
         _assert_plugin_installation_tables(existing_dsn, True)
@@ -374,7 +408,7 @@ def main() -> int:
                 raise
         else:
             raise AssertionError("PLG-02 migration allowed downgrade with installation history")
-        if _revision(existing_dsn) != "20261104_0227":
+        if _revision(existing_dsn) != "20261104_0228":
             raise AssertionError("blocked PluginInstallation downgrade changed migration revision")
         with psycopg.connect(existing_dsn) as conn:
             counts = conn.execute(
