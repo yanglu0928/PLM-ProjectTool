@@ -90,10 +90,14 @@ def _diagnostic(stage: str, call, *args: object, **kwargs: object):
     try:
         return call(*args, **kwargs)
     except Exception as exc:
+        original = getattr(exc, "orig", None)
+        diagnostic = getattr(original, "diag", None)
         print("A07_DIAGNOSTIC " + json.dumps({
             "stage": stage,
             "exception_type": type(exc).__name__,
-            "sqlstate": getattr(exc, "sqlstate", None),
+            "sqlstate": getattr(exc, "sqlstate", None)
+                or getattr(original, "sqlstate", None),
+            "constraint": getattr(diagnostic, "constraint_name", None),
         }, sort_keys=True), file=sys.stderr)
         raise
 
