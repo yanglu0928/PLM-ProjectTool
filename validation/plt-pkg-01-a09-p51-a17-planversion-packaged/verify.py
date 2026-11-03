@@ -352,6 +352,193 @@ _handover_review["browser_probe"] = types.FunctionType(
 )
 
 
+
+def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> None:
+    """Verify the A08 service against the same disposable PostgreSQL 18 database."""
+    import tempfile
+
+    from sqlalchemy import func, select
+
+    from plm_assistant.modules.audit.infrastructure.audit_orm import AuditEventRow
+    from plm_assistant.modules.jobs.infrastructure.orm import JobRow, OutboxEventRow
+    from plm_assistant.modules.platform.application.idempotency import IdempotencyScope
+    from plm_assistant.modules.plugin.application.package_import_job_queue import (
+        PluginPackageImportQueue,
+    )
+    from plm_assistant.modules.plugin.application.package_import_service import (
+        PluginPackageImportError, PluginPackageImportService, SubmitPluginPackageImport,
+    )
+    from plm_assistant.modules.plugin.application.package_import_spool import (
+        PluginPackageImportSpool,
+    )
+    from plm_assistant.modules.plugin.infrastructure.orm import (
+        PluginPackageImportStagingRow,
+    )
+    from plm_assistant.modules.plugin.infrastructure.package_import_job_queue_repository import (
+        SqlAlchemyPluginPackageImportQueueRepository,
+    )
+    from plm_assistant.modules.plugin.infrastructure.package_import_staging_repository import (
+        SqlAlchemyPluginPackageImportStagingRepository,
+    )
+    from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+
+    class SyntheticAdminAccess:
+        def authorized_admin(self, transaction, *, session_token, now):
+            assert len(session_token) == 32 and now.tzinfo is not None
+            return actor_id
+
+    class FailingAudit:
+        def append(self, transaction, draft):
+            raise RuntimeError("synthetic audit sink failure")
+
+    runtime = context["runtime"]
+    audit = context["audit"]
+    license_guard = context["license_guard"]
+    test_root = Path(os.environ["PLM_P51_TEMP_ROOT"]).resolve()
+    payload = b"PK" + bytes((3, 4)) + b" synthetic package import payload"
+    signature = b"s" * 64
+    signer_ref = "test-key:packaged-a08"
+    digest = __import__("hashlib").sha256(payload).digest()
+    with tempfile.TemporaryDirectory(prefix="a08-import-", dir=test_root) as storage_root:
+        spool = PluginPackageImportSpool(storage=LocalFileStorage(Path(storage_root)))
+        queue = PluginPackageImportQueue(SqlAlchemyPluginPackageImportQueueRepository())
+        staging = SqlAlchemyPluginPackageImportStagingRepository()
+
+        def make_service(*, audit_service=audit):
+            return PluginPackageImportService(
+                unit_of_work=runtime.unit_of_work,
+                spool=spool,
+                queue=queue,
+                staging_repository=staging,
+                admin_access=SyntheticAdminAccess(),
+                license_guard=license_guard,
+                audit=audit_service,
+            )
+
+        scope = IdempotencyScope.from_key(
+            actor_id=actor_id, project_id=None,
+            operation="V1_PLUGIN_PACKAGE_IMPORT",
+            key="a08-packaged-pg18-import-idempotency",
+        )
+
+        def command(*, content=payload, request_scope=scope):
+            return SubmitPluginPackageImport(
+                scope=request_scope, session_token=b"a" * 32,
+                trace_id=uuid.uuid4(), declared_length=len(content),
+                declared_sha256=__import__("hashlib").sha256(content).digest(),
+                detached_signature=signature, signer_key_ref=signer_ref,
+                chunks=(content[:5], content[5:]),
+            )
+
+        service = make_service()
+        first = service.submit(command())
+        replay = service.submit(command())
+        if replay != first:
+            raise AssertionError("A08 idempotent replay changed JobRef")
+        files = [item for item in Path(storage_root).rglob("*") if item.is_file()]
+        if len(files) != 1:
+            raise AssertionError("A08 replay did not discard its duplicate staged file")
+
+        with runtime.unit_of_work() as tx:
+            session = tx.session
+            job = session.execute(
+                select(JobRow).where(JobRow.job_id == first.job_id)
+            ).scalar_one()
+            event = session.execute(
+                select(OutboxEventRow).where(OutboxEventRow.event_id == first.event_id)
+            ).scalar_one()
+            metadata = session.execute(
+                select(PluginPackageImportStagingRow).where(
+                    PluginPackageImportStagingRow.package_upload_id == first.package_upload_id
+                )
+            ).scalar_one()
+            audit_count = session.execute(
+                select(func.count()).select_from(AuditEventRow).where(
+                    AuditEventRow.action == "PLUGIN_PACKAGE_IMPORT_SUBMIT",
+                    AuditEventRow.target_object_id == first.package_upload_id,
+                )
+            ).scalar_one()
+            if (set(job.payload_refs) != {"package_upload_id", "sha256", "size_bytes"}
+                    or job.payload_refs["sha256"] != digest.hex()
+                    or event.payload_refs != {
+                        "job_id": str(first.job_id),
+                        "package_upload_id": str(first.package_upload_id),
+                    }
+                    or metadata.package_sha256 != digest
+                    or metadata.package_size_bytes != len(payload)
+                    or metadata.detached_signature != signature
+                    or metadata.signer_key_ref != signer_ref
+                    or audit_count != 1):
+                raise AssertionError("A08 Job/Outbox/staging metadata/Audit facts diverged")
+            if any(value in str(job.payload_refs).encode("utf-8")
+                   for value in (payload, signature, signer_ref.encode("utf-8"))):
+                raise AssertionError("A08 Job payload contains package or signature content")
+            tx.commit()
+
+        conflicting = b"PK" + bytes((3, 4)) + b" different payload"
+        try:
+            service.submit(command(content=conflicting))
+        except PluginPackageImportError as exc:
+            if exc.code != "CONFLICT_IDEMPOTENCY":
+                raise
+        else:
+            raise AssertionError("A08 idempotency accepted different package content")
+
+        before = {}
+        with runtime.unit_of_work() as tx:
+            session = tx.session
+            for name, model in (
+                ("jobs", JobRow), ("outbox", OutboxEventRow),
+                ("staging", PluginPackageImportStagingRow),
+            ):
+                before[name] = session.execute(
+                    select(func.count()).select_from(model).where(
+                        model.owner_module == "plugin",
+                    ) if name in {"jobs", "outbox"} else
+                    select(func.count()).select_from(model)
+                ).scalar_one()
+            tx.commit()
+        failing_scope = IdempotencyScope.from_key(
+            actor_id=actor_id, project_id=None,
+            operation="V1_PLUGIN_PACKAGE_IMPORT",
+            key="a08-packaged-pg18-audit-rollback",
+        )
+        try:
+            make_service(audit_service=FailingAudit()).submit(
+                command(request_scope=failing_scope)
+            )
+        except PluginPackageImportError as exc:
+            if exc.code != "JOB_STORE_UNAVAILABLE":
+                raise
+        else:
+            raise AssertionError("A08 Audit failure did not abort import transaction")
+        with runtime.unit_of_work() as tx:
+            session = tx.session
+            after = {
+                "jobs": session.execute(
+                    select(func.count()).select_from(JobRow).where(
+                        JobRow.owner_module == "plugin",
+                    )
+                ).scalar_one(),
+                "outbox": session.execute(
+                    select(func.count()).select_from(OutboxEventRow).where(
+                        OutboxEventRow.owner_module == "plugin",
+                    )
+                ).scalar_one(),
+                "staging": session.execute(
+                    select(func.count()).select_from(PluginPackageImportStagingRow)
+                ).scalar_one(),
+            }
+            tx.commit()
+        if after != before:
+            raise AssertionError("A08 Audit rollback left partial PG import rows")
+        files = [item for item in Path(storage_root).rglob("*") if item.is_file()]
+        if len(files) != 1:
+            raise AssertionError("A08 failure compensation left an unowned staged file")
+    print("PLG_01_A08_PACKAGE_IMPORT_PG18_PASS: atomic Job/Outbox/staging/Audit; "
+          "idempotent replay; content conflict; Audit rollback; bounded staging cleanup",
+          flush=True)
+
 def packaged_planversion_probe(**context) -> None:
     # Reuse the P51 disposable project and account, but do not make PlanVersion
     # acceptance depend on the unrelated Prototype Package catalog UI.
@@ -608,6 +795,7 @@ def packaged_planversion_probe(**context) -> None:
     print(f"P51_A17_PACKAGED_PLANVERSION_PG_PASS: state={version[0]}; "
           f"WBS/requirement/validation={counts}; Review/Round={review[0]}/{round_state[0]}; decisions=0",
           flush=True)
+    _plugin_package_import_pg_smoke(context, actor_id=actor)
 
 
 a05["prototype_probe"].__globals__["prototype_probe"] = packaged_planversion_probe
