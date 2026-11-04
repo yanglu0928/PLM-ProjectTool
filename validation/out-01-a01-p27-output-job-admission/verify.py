@@ -101,6 +101,14 @@ def main() -> int:
         plugin_operation = "synthetic.doc.generate"
         context = {"synthetic": {"title": "P27 fixture"}}
         fingerprint = canonical_payload_fingerprint(context)
+        input_fingerprint = canonical_payload_fingerprint({
+            "project_id": str(project_id), "output_type": "DOCX",
+            "template_version_ref": str(template_id),
+            "source_version_refs": [str(source_id)],
+            "output_policy_ref": "synthetic-policy",
+            "plugin_operation": plugin_operation,
+            "context_fingerprint": fingerprint.hex(),
+        })
         capability = PluginOperationCapability(
             operation_id=plugin_operation, output_types=("DOCX",),
             enabled=True, trusted=True,
@@ -137,7 +145,7 @@ def main() -> int:
                 output_type="DOCX", template_version_ref=template_id,
                 source_version_refs=[str(source_id)], output_policy_ref="synthetic-policy",
                 plugin_operation=plugin_operation, context_snapshot_id=snapshot_id,
-                input_fingerprint=fingerprint, generation_no=1,
+                input_fingerprint=input_fingerprint, generation_no=1,
                 request_state="QUEUED", job_ref=job_id,
                 idempotency_key="p27-request-" + str(request_id),
                 trace_id=uuid.uuid4(), requested_by=actor_id,
@@ -163,6 +171,7 @@ def main() -> int:
         if (admission.job_id != job_id or admission.output_request_id != request_id
                 or admission.context_snapshot_id != snapshot_id
                 or admission.context_fingerprint != fingerprint
+                or admission.input_fingerprint != input_fingerprint
                 or hasattr(admission, "context_payload")):
             raise AssertionError("P27 valid admission facts do not match persisted binding")
 
