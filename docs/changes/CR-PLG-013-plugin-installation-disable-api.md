@@ -28,3 +28,7 @@
 ## 后续 Hosted 验收偏差（2026-11-04）
 
 修复后 hosted run [41765575181](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41765575181) 的 Backend tests and wheel、Frontend tests and production build、PG18 sidecar、Python embedded runtime、Windows parent candidate 与 A35 bounded handoff 均成功；A17 validation candidate 投影成功。`Clean extraction and temporary PostgreSQL lifecycle smoke` 失败，因为 `validation/out-01-a01-p01-migration/verify.py` 的空库/已有数据迁移断言仍把 schema head 固定为 `20261104_0229`，未随 CR 的 Migration 0230 前移；A34 因该前置失败而跳过。修复计划：只将该迁移验收器中表示当前 schema head 的断言同步到 `20261104_0230`，保留对历史迁移 down_revision 的原断言，然后重跑全量托管工作流。该失败不代表数据库迁移本身已通过，亦未降低验收范围。
+
+## Hosted migration fixture follow-up（2026-11-04）
+
+在 Migration 0230 当前 head 断言修正后，hosted run [41767093675](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41767093675) 的空库迁移继续执行，但同一验收器随后失败：已有PLG Owner夹具的 `TRUNCATE` 未包含新增的 `plg_disable_results`，PostgreSQL 外键保护拒绝单独清理被引用的安装表。该问题限于合成验收夹具清理清单。修复计划：将不可变结果表与其父/相关表加入同一事务内的TRUNCATE目标清单，然后重新跑完整 hosted 验收；不改业务表关系或触发器约束。
