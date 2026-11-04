@@ -1,3 +1,4 @@
+|Execution Note|P24 run 41886767805 前端2,093项及Edge受理/历史/固定POST/CSRF/幂等通过；模拟503后被“按钮必须消失”的过严断言阻断。日志显示仅发生一次503、无自动重试。先登记CR-OUT-020，再校准验收脚本。|
 |Execution Note|P24新增测试所有synthetic trace_id引用现统一为已有项目UUID；已检查该测试区块无未定义trace符号，等待hosted验证。|
 |Execution Note|P24测试trace fixture修复第一次只替换登录响应，漏了202回执响应中的第二处未定义引用；run 41885874291 前端仍2,092/2,093，Edge跳过。已先记CR-OUT-020，再统一替换该用例全部trace引用。|
 |Execution Note|P24 SessionClient用例已将未定义trace引用改为本文件已有的合成项目UUID；仅修复测试数据，等待hosted全链复验。|
