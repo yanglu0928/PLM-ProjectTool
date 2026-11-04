@@ -1,5 +1,9 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- PLG-02-A06按CR-PLG-011完成内部Installation操作停用Owner，PG18真实临时库验证多操作原子撤销、History/Audit、stale lock、失败回滚和精确重放。Hosted run [41755590662](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41755590662) 13/13 jobs、后端3,959 tests/wheel及完整父包/A17/A34/A35/A50通过；父包20,173文件SHA `cfe8f74d…a3d1072`。不接公开API/默认组合/插件执行。详见`docs/progress/plg-02-a06-installation-disable-result.md`。开始A07冻结Installation detail GET前置核查。
+
+## Unreleased · 2026-11-04（内部云端开发，非发行版本）
+
 - PLG-02-A06编码前核查已通过并登记CR-PLG-011：冻结API存在人工PLUGIN_DISABLE，但现有Owner缺少显式停用命令；本项实现同事务操作撤销、DISABLED History/Audit与状态版本更新。真实宿主安装适配器、公钥/License正式信任缺口保留为独立任务。详见`docs/progress/plg-02-a06-installation-disable-precheck.md`。后端实现及云端验收待完成。
 
 ## Unreleased · 2026-11-04（内部云端验证，非发行版本）
