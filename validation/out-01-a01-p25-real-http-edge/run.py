@@ -137,7 +137,7 @@ def start_pg(binary: Path, data: Path, log: Path, port: int) -> None:
         run_checked([str(binary / name), "--version"], timeout=30)
     run_checked([str(binary / "initdb.exe"), "-D", str(data), "-U", "postgres",
                  "--auth-local=trust", "--auth-host=trust", "--no-locale",
-                 "-E", "UTF8"], timeout=180)
+                 "-E", "UTF8", "--debug", "--no-clean"], timeout=180)
     result = subprocess.run([str(binary / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
                              "-o", f"-h 127.0.0.1 -p {port}", "-w", "start"],
                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,

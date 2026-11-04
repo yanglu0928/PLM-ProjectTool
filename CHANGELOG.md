@@ -1,6 +1,8 @@
-## Unreleased · 2026-11-05（P25编码前检查，非发行版本）
+## Unreleased · 2026-11-05（P25初始化故障诊断迭代，非发行版本）
 
-- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；第九轮 hosted run [41913332612](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41913332612) 前后端、PG sidecar、父包/A17/A34/A35/P24/A50通过；P25的initdb参数与stdin对齐后仍以0xC0000135退出，数据目录未创建，失败摘要上传。CR-OUT-021已登记下一轮只对照显式D盘TEMP/TMP与已通过父包smoke继承runner默认值；源码、数据库和验收数据仍固定在D盘runner temp，P25未通过。
+- OUT-01-A01-P25 hosted 第十轮 run [41916567299](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41916567299) 中，initdb 在创建数据目录前仍以 `0xC0000135` 失败；参数、stdin、TEMP/TMP 对照均未改变结果，真实HTTP/Edge未运行。前后端、PG sidecar、P24/A50及嵌入式Python作业通过；父包/A17/A34/A35下游因失败取消。偏差及后续方案已先记录CR-OUT-021。
+- 诊断候选仅为P25合成测试的 `initdb --debug --no-clean`；保持runner D盘临时数据与失败摘要边界，不上传数据库文件。产品API/Schema/Migration/生产行为未改变；本轮诊断尚待hosted验证。
+- 兼容性/升级：仅云端验收harness变化，无产品安装或升级。已知限制：P25未通过，真实HTTP/Edge及零数据库写入验收未执行；Pilot/Gate/正式Release不变。
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
