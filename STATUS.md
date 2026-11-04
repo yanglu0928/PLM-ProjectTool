@@ -1,12 +1,12 @@
-|Execution Note|OUT-01-A01-P11～P14已按各自CR完成并限制为PASS_SCOPE_LIMITED。P14授权矩阵首轮计数断言偏差已登记、仅修正断言后全量通过。所有项目程序与测试仅在GitHub hosted runner/托管沙箱执行，不在用户本机运行。真实产品信任、Windows 11实机和PG18 Output行集成仍有明确缺口。|
-|Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P15_PRECHECK_PASS / PLG_02_A08_PASS_SCOPE_LIMITED / PHASE_2_IN_PROGRESS|
+|Execution Note|OUT-01-A01-P11～P16按CR完成或限界完成；P16通过run 41793207115（13/13），后端4,006 tests/wheel与完整父包/A17/A34/A35/A50 hosted链通过。新Output取消Owner尚无专用PG18行事务测试，下一项P17补验。项目代码和测试仅在GitHub hosted runner执行，不在用户本机/C盘运行。|
+|Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P16_PASS_SCOPE_LIMITED / PLG_02_A08_PASS_SCOPE_LIMITED / PHASE_2_IN_PROGRESS|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|PLG-01-A08提交e37e668e通过hosted run 41678551589全13 jobs；PG18 Worker集成 smoke随A17执行成功。用户要求本机/C盘不运行项目代码与测试；后续只用GitHub hosted runner并尽量使用D盘临时工作区。A35仍为历史PASS_LIMITED，不代表Win11实机验收。正式插件信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|OUT-01-A01-P16：完成取消终态 Worker Owner/锁序复核后，实现冻结 OUTPUT_REQUEST_CANCEL 的同事务 opt-in Owner/API|
-|Current WBS Status|OUT-01-A01-P15按CR-OUT-012完成源码编码前检查（PASS_WITH_LIMITATION）；已证明通用Job dispatcher独立读写UOW不能原子更新OutputRequest+Job。P16编码前仍需复核终态Worker锁序；未运行代码/测试。|
-|Latest WBS Status|OUT-01-A01-P14按CR-OUT-011以 PASS_SCOPE_LIMITED 完成：GitHub hosted run [41789030529](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41789030529) 14/14 jobs成功；后端3,998项测试/wheel、前端、PG18/pgvector、非发行父包、A17/A34/A35/A50通过。新增 OUTPUT_REQUEST_LIST opt-in GET、冻结三角色授权、项目隔离SQL keyset与独立HMAC cursor family；覆盖游标伪造/跨scope重放、分页、拒绝/最小字段。正式路由和游标密钥来源未装配；无专用PG18输出行集成。详见docs/progress/out-01-a01-p14-output-request-list-result.md。|
+|Current WBS|OUT-01-A01-P17：为新OutputRequest取消Owner补充GitHub hosted PostgreSQL 18真实行/事务验收，覆盖正负scope、If-Match、幂等与Audit回滚|
+|Current WBS Status|OUT-01-A01-P16按CR-OUT-012以PASS_SCOPE_LIMITED完成；新增 opt-in cancel Owner/API及Jobs事务端口，backend 4,006 tests/wheel和hosted run 41793207115 13/13成功。新取消Repository专用PG18行事务、默认组合装配与Output Worker仍未验证。|
+|Latest WBS Status|OUT-01-A01-P16按CR-OUT-012以 PASS_SCOPE_LIMITED 完成：hosted run [41793207115](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41793207115) 13/13成功，后端4,006 tests/wheel；新增 opt-in OutputRequest cancel Owner/API与Jobs-owned同UOW取消端口。无专用PG18取消行事务测试、无默认组合装配、无Output完成Worker，故不宣称已接入可用产品路径。详见docs/progress/out-01-a01-p16-output-request-cancel-result.md。|
 |Latest WBS Status|PLG-02-A06 按 CR-PLG-011 完成并为 `PASS_SCOPE_LIMITED`：新增人工停用Owner，复用Installation写入guard，在同事务清除两项enabled operation、写4条History与2条Audit并更新DISABLED/lock_version。Hosted PG18 smoke验证陈旧版本拒绝、Audit失败回滚、精确重放无变化；完整run 41755590662 13/13成功。未接HTTP/默认组合/物理安装或插件执行。详见 docs/progress/plg-02-a06-installation-disable-result.md。
 |Latest WBS Status|PLG-02-A05 按 CR-PLG-010 完成并为 `PASS_SCOPE_LIMITED`：内部Installation退役命令按plugin锁和expected lock_version串行化；逐项关闭启用操作、追加不可变History/Audit并把Installation单向转为RETIRED。Hosted run [41743782405](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41743782405) 13/13 jobs成功，backend 3,955 tests，Migration head 0229；PG18验证退役必须有关联Audit且无活动操作，并拒绝从RETIRED恢复。未接API/默认组合/物理卸载/插件执行。详见 docs/progress/plg-02-a05-installation-retirement-result.md。|
 |Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P09_PASS_SCOPE_LIMITED / OUT_01_A01_P10_PASS_SCOPE_LIMITED / PLG_02_A01_PASS_SCOPE_LIMITED / PHASE_2_IN_PROGRESS|
@@ -24,7 +24,7 @@
 |Latest Test Summary|PLG-02-A05 GitHub hosted run [41743782405](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41743782405) 13/13 jobs成功：后端3,955 tests/wheel、前端/build、PG18.6/pgvector、父包清洁解包与0229空库升降重升/退役守卫/A17/A34/A35/A50通过。父包20173文件SHA-256为`81b1425c2ffa866f43b96ebc744bec0cbef8332b090c9d7cab746dc58e016515`；A17仅托管Windows Server 2025 synthetic flow；A34仍显示生产启动受正式信任/数据库/ACL/TLS阻断。无生产安装或插件执行。仅合成托管数据；Pilot/Gate/Release未通过。|
 |Latest WBS Status|PLG-02-A02 PASS_SCOPE_LIMITED：受控内部Owner仅原子记录适配器核验的初始INSTALLED、RuntimeValidation及Audit；hosted run 41721092729全13/13成功。无公开API、默认生产组合、真实安装适配器、启用或插件执行。详见docs/progress/plg-02-a02-installation-owner-result.md。|
 |Latest WBS Status|PLG-02-A02编码前检查PASS_WITH_LIMITATION：仅建设核验后记录INSTALLED事实的内部Owner，禁止把VERIFIED包当已安装；无公开API/默认组合/启用/执行。数据库最小INSERT开放、宿主安装适配器及真实服务身份均作为明确后续限制。详见docs/progress/plg-02-a02-installation-owner-precheck.md。|
-|Next WBS|OUT-01-A01-P16：检查Output终态Worker实际写入者/锁序并按CR-OUT-012实现创建者/ProjectManager取消；Output/Jobs状态、审计及幂等同事务，Router opt-in。|
+|Next WBS|OUT-01-A01-P17：在 hosted PG18 中直接执行 OutputRequest+OUTPUT_GENERATE Job 取消Owner，验证正负绑定、陈旧版本、并发重放和Audit失败回滚；不在本机运行。|
 |Latest Validation|A06 run 41755590662在GitHub hosted Windows Server 2025 D盘临时区完成disable owner真实PG18 smoke、clean parent解包及A17/A34/A35/A50流程；产品服务仍未启动，真实License/公钥/账户凭据/ACL/TLS仍阻断。未在Win11设备验证。
 |Latest Validation|A05 run 41743782405 在GitHub hosted Windows Server 2025 D盘验收0229退役守卫、PG18.6迁移和父包20173文件SHA；A17 29 API/PlanVersion与A34人工恢复演练完成。A34候选产品启动仍因正式公钥/License信任/数据库凭据/服务ACL/TLS阻断，服务未启动。无Windows11实机、正式信任、生产安装、UAT、Gate或Release结论。|
 
