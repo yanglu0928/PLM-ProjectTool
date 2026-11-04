@@ -417,8 +417,13 @@ from plm_assistant.modules.document.infrastructure.upload_abort_repository impor
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobQueue
 from plm_assistant.modules.jobs.infrastructure.parse_enqueue_repository import SqlAlchemyParseJobQueueRepository
 from plm_assistant.modules.plugin.api.installation_metadata import create_plugin_installation_metadata_router
+from plm_assistant.modules.plugin.api.installation_disable import create_plugin_installation_disable_router
 from plm_assistant.modules.plugin.application.installation_metadata import PluginInstallationMetadataService
+from plm_assistant.modules.plugin.application.activation_owner import PluginActivationOwner
+from plm_assistant.modules.plugin.application.installation_disable import PluginInstallationDisableService
 from plm_assistant.modules.plugin.infrastructure.installation_metadata_repository import SqlAlchemyPluginInstallationMetadataRepository
+from plm_assistant.modules.plugin.infrastructure.activation_owner_repository import SqlAlchemyPluginActivationRepository
+from plm_assistant.modules.plugin.infrastructure.installation_disable_result_repository import SqlAlchemyPluginDisableResultRepository
 from plm_assistant.modules.plugin.api.package_import import create_plugin_package_import_router
 from plm_assistant.modules.plugin.application.package_import_job_queue import PluginPackageImportQueue
 from plm_assistant.modules.plugin.application.package_import_service import PluginPackageImportService
@@ -682,6 +687,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         document_upload_create_router = None
         document_upload_content_router = None
         plugin_installation_metadata_router = None
+        plugin_installation_disable_router = None
         plugin_package_import_router = None
         document_upload_finalize_router = None
         document_read_router = None
@@ -1922,6 +1928,22 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     sessions=sessions, origins=origins, service_factory=content_service,
                 )
 
+                plugin_installation_disable_router = create_plugin_installation_disable_router(
+                    sessions=sessions, origins=origins,
+                    disables=PluginInstallationDisableService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyLicenseImportAccess(),
+                        owner=PluginActivationOwner(
+                            unit_of_work=runtime.unit_of_work,
+                            repository=SqlAlchemyPluginActivationRepository(),
+                            audit=audit,
+                        ),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        results=SqlAlchemyPluginDisableResultRepository(),
+                        license_guard=licenses.guard,
+                    ),
+                )
+
                 plugin_import_spool = PluginPackageImportSpool(
                     storage=LocalFileStorage(settings.data_root),
                 )
@@ -2050,6 +2072,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             document_upload_create_router=document_upload_create_router,
             document_upload_content_router=document_upload_content_router,
             plugin_installation_metadata_router=plugin_installation_metadata_router,
+            plugin_installation_disable_router=plugin_installation_disable_router,
             plugin_package_import_router=plugin_package_import_router,
             document_upload_finalize_router=document_upload_finalize_router,
             document_read_router=document_read_router,
