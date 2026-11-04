@@ -143,9 +143,12 @@ def main():
                 UserRow(user_id=manager,username_display="p18-synthetic-manager",
                     username_normalized="p18-synthetic-manager",state="DISABLED",deployment_role="NONE"),
                 UserRow(user_id=implementer,username_display="p18-synthetic-implementer",
-                    username_normalized="p18-synthetic-implementer",state="DISABLED",deployment_role="NONE"),
-                ProjectRow(project_id=project,project_code="P18-A",project_code_normalized="P18-A",
-                    name="Synthetic Output Cancel HTTP",created_by=creator),
+                    username_normalized="p18-synthetic-implementer",state="DISABLED",deployment_role="NONE")])
+            tx.session.flush()
+            tx.session.add(ProjectRow(project_id=project,project_code="P18-A",
+                project_code_normalized="P18-A",name="Synthetic Output Cancel HTTP",created_by=creator))
+            tx.session.flush()
+            tx.session.add_all([
                 DepartmentRow(department_id=department,project_id=project,
                     department_code="P18",department_code_normalized="P18",
                     name="Synthetic P18 Department",state="ACTIVE"),
@@ -183,7 +186,7 @@ def main():
             raise AssertionError("ImplementationMember HTTP rejection wrote persistent rows")
         default=create_app()
         cancel_path="/api/v1/projects/{project_id}/output-requests/{output_request_id}:cancel"
-        if any(getattr(route,"path","")==cancel_path for route in default.routes):
+        if cancel_path in default.openapi().get("paths", {}):
             raise AssertionError("default app unexpectedly mounted Output cancellation")
         result.update(status="PASS_SCOPE_LIMITED",
             creator_http_cancel_allowed=True,project_manager_http_cancel_allowed=True,
