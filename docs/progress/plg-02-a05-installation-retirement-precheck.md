@@ -29,3 +29,8 @@ Migration 0229仅扩充受控状态变更guard，不扩展数据库模型/API。
 按A04 CR已排除的“人工retire终态”独立建立A05；不改变冻结状态枚举，也不复用A04不兼容事件来代表人工退役。Migration 0229属于经用户持续授权、先记录后实施的DB guard增量；风险与可回滚条件已在CR-PLG-010中登记。
 
 本项通过后最高为`PASS_SCOPE_LIMITED`，不等于实际安装器、公开API、生产授权、插件执行或Windows 11实机验收。
+
+
+## 托管验收结论
+
+PLG-02-A05以`PASS_SCOPE_LIMITED`完成，证据详见`plg-02-a05-installation-retirement-result.md`。Migration 0229的真实PG18 guard、退役审计要求、RETIRED终态和有数据降级保护均通过同run smoke。该结论不覆盖物理卸载/API/默认组合/PluginExecution或Pilot/Gate/Release。

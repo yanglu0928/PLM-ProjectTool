@@ -1,7 +1,7 @@
 # CR-PLG-010：PluginInstallation受控退役终态Owner
 
 - 日期：2026-11-04
-- 状态：编码前已登记；按持续自主执行授权实施，须以GitHub托管证据验收
+- 状态：已完成；GitHub hosted run 41743782405 全13/13 jobs成功，结论 `PASS_SCOPE_LIMITED`
 - WBS：PLG-02-A05
 - 基线：冻结Data Model V1、DB Schema V1、API Contract V1，以及CR-PLG-007/008/009
 
@@ -29,3 +29,12 @@ PLG-02状态集合已包含`RETIRED`，但A03启用Owner和A04复验Owner均失�
 - 仅合成托管数据、GitHub hosted Windows runner D:临时目录与PG18；客户数据0、外部API0、生产数据库false。
 - 不进行真实安装/卸载、插件启动或执行，不开放API/默认组合，不代表Windows 11实机、正式信任、Pilot、Gate或Release通过。
 - 失败先在本CR记录偏差，再实施修复；结论不超出`PASS_SCOPE_LIMITED`。
+
+
+## 验收结果（2026-11-04）
+
+- 代码提交：`358483d626c88a1e9ef1ccfcdf3e99de7db7546c`；GitHub hosted run [41743782405](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41743782405) 与分支head一致，13/13 jobs成功。
+- 后端全量3,955 tests及wheel、前端测试/typecheck/build、PG18/pgvector sidecar、嵌入式后端/父包组装通过。PG smoke artifact 13283431324 报告PostgreSQL 18.6、schema head 0229、`installation_retirement_guard=PASS`、空库升级/降级重升和存在PLG-02事实时降级拒绝；退役要求关联INSTALLATION_RETIRED Audit且无活动操作，RETIRED后拒绝改回。
+- 同一run父包候选SHA-256 `81b1425c2ffa866f43b96ebc744bec0cbef8332b090c9d7cab746dc58e016515`，20,173 files，D盘托管临时区清洁解包验证通过。A17 artifact 13283911131：29个HTTP调用、PlanVersion审核状态IN_REVIEW、客户决定数0；仅synthetic Windows Server 2025 hosted runner。A34 artifact 13283696477：失败候选隔离、4个持久marker保留、显式人工恢复通过；升级后产品启动仍按正式公钥/License/数据库凭据/服务ACL/TLS阻断，产品服务没有启动。A35与A50成功。
+- 范围上限`PASS_SCOPE_LIMITED`。不接公开API/默认组合/真实安装适配器，不物理卸载，不启动或执行插件；不构成Windows 11实机、正式信任、Pilot/Gate/Release验收。
+- 下一项：PLG-02-A06 生命周期受控组合与宿主适配器编码前检查；按冻结API、真实安装身份及信任边界先行核对。
