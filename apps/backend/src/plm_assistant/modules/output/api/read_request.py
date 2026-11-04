@@ -18,6 +18,7 @@ from plm_assistant.modules.auth.application.session_service import (
 )
 from plm_assistant.modules.output.application.read_request import (
     OutputRequestReadError, OutputRequestReadQuery, OutputRequestReadService,
+    OutputRequestView,
 )
 from plm_assistant.modules.platform.application.errors import ApplicationError
 
@@ -28,7 +29,7 @@ _STATE = frozenset({
 
 
 def output_request_view_data(view: object) -> dict[str, object]:
-    if (type(view).__name__ != "OutputRequestView"
+    if (type(view) is not OutputRequestView
             or type(view.output_request_id) is not uuid.UUID
             or type(view.project_id) is not uuid.UUID
             or type(view.template_version_ref) is not uuid.UUID
@@ -70,7 +71,7 @@ def output_request_view_data(view: object) -> dict[str, object]:
 
 def _error(exc: OutputRequestReadError) -> ApplicationError:
     return ApplicationError({
-        "AUTH_ACCESS_DENIED": "RESOURCE_NOT_FOUND",
+        "AUTH_ACCESS_DENIED": "AUTH_SESSION_EXPIRED",
         "LICENSE_OPERATION_DENIED": "LICENSE_OPERATION_DENIED",
         "RESOURCE_NOT_FOUND": "RESOURCE_NOT_FOUND",
         "VALIDATION_FAILED": "VALIDATION_FAILED",
