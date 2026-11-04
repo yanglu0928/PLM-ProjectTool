@@ -112,4 +112,4 @@ class OptionalAppRouterTests(unittest.TestCase):
         self.assertTrue(any(
             getattr(route, "path", "") == path and "POST" in route.methods
             for route in explicit.routes
-        ))
+        ), f"explicit app did not include cancel route; paths={[getattr(route, 'path', None) for route in explicit.routes]!r}")

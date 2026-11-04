@@ -1009,7 +1009,10 @@ class ProductionLoginTests(unittest.TestCase):
                    return_value=runtime), patch(
                    "plm_assistant.entrypoints.production_login._schema_current",
                    return_value=True):
-            app = create_production_login_app(self.settings(("http://localhost",)))
+            try:
+                app = create_production_login_app(self.settings(("http://localhost",)))
+            except ProductionLoginStartupError as exc:
+                self.fail(f"unexpected production startup error: {exc.__context__!r}")
         with TestClient(create_app(), base_url="http://localhost") as bare:
             self.assertEqual(bare.post("/api/v1/auth/login").status_code, 404)
             self.assertEqual(bare.get("/api/v1/projects").status_code, 404)
