@@ -50,12 +50,19 @@ def fixtures():
     job_id, project_id, request_id, snapshot_id = (uuid.uuid4() for _ in range(4))
     source_ref, template_ref = uuid.uuid4(), uuid.uuid4()
     payload = {"source": {"title": "synthetic"}}
+    input_fingerprint = canonical_payload_fingerprint({
+        "project_id": str(project_id), "output_type": "DOCX",
+        "template_version_ref": str(template_ref),
+        "source_version_refs": [str(source_ref)],
+        "output_policy_ref": "POLICY-1", "plugin_operation": "doc.generate",
+        "context_fingerprint": canonical_payload_fingerprint(payload).hex(),
+    })
     facts = OutputJobAdmissionFacts(
         output_request_id=request_id, project_id=project_id, job_id=job_id,
         context_snapshot_id=snapshot_id, request_state="QUEUED", output_type="DOCX",
         template_version_ref=template_ref, source_version_refs=(source_ref,),
         output_policy_ref="POLICY-1", plugin_operation="doc.generate",
-        context_payload=payload,
+        input_fingerprint=input_fingerprint, context_payload=payload,
         context_fingerprint=canonical_payload_fingerprint(payload),
     )
     claim = ClaimedJob(
@@ -85,6 +92,7 @@ def test_output_job_admission_returns_only_minimal_request_facts() -> None:
     assert type(result) is OutputExecutionAdmission
     assert result.output_request_id == facts.output_request_id
     assert result.context_snapshot_id == facts.context_snapshot_id
+    assert result.input_fingerprint == facts.input_fingerprint
     assert not hasattr(result, "context_payload")
     assert repository.calls == capabilities.calls == 1
 
@@ -115,6 +123,7 @@ def test_output_job_admission_rejects_invalid_claim_before_read(mutation) -> Non
     ("job_id", uuid.uuid4()),
     ("context_snapshot_id", uuid.uuid4()),
     ("request_state", "CANCELLED"),
+    ("input_fingerprint", b"x" * 32),
     ("context_fingerprint", b"x" * 32),
 ])
 def test_output_job_admission_fails_closed_on_binding_or_snapshot_mismatch(field, value) -> None:
