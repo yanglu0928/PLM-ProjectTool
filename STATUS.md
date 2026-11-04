@@ -1,3 +1,4 @@
+|Execution Note|P25第七轮hosted run 41907221688：前后端、PG sidecar重建、父包/A17/A34/A35/P24/A50通过；P25 initdb仍以0xC0000135失败。Windows dumpbin递归依赖无缺项、关键VC运行库可见、无Application Error事件；同run独立父包PostgreSQL 18.6生命周期PASS_LIMITED。CR-OUT-021已登记下一步将P25 initdb命令和临时用户对齐此已通过smoke，P25仍未通过。|
 |Execution Note|P25第六轮hosted run 41903687738：前后端测试/build、同run PG18 sidecar、P24/A50 Edge通过；initdb以3221225781/0xC0000135在数据目录创建前退出，pg_ctl确认目录不存在，受限失败Artifact成功上传。包内静态DLL依赖清单未发现缺项，但未证明Windows系统/延迟加载依赖；P25未通过。CR-OUT-021已登记下一项仅增加Windows Server 2025原生装载诊断，再按证据修复。|
 |Execution Note|P25第五轮hosted run 41901521102：前后端、PG18 sidecar和P24 Edge通过；initdb仍以3221225781/0xC0000135退出，PG目录状态返回未知码，安全清理拒绝删除。CR-OUT-021已先记录，下一轮只增加受限hosted诊断JSON/Always上传，保留未知状态的D盘PG数据；P25未通过。|
 |Execution Note|P25第四轮hosted run 41899785899：全量前后端、PG18 sidecar、P24 Edge成功；P25 initdb仍以3221225781/0xC0000135退出。复查发现此前只部分对齐PG smoke，还显式传env副本并把数据嵌在工作根；已先记录CR-OUT-021，下一轮精确复用已验证的RUNNER_TEMP直系目录与继承环境。P25未通过。|
