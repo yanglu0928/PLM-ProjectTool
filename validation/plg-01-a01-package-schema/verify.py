@@ -122,8 +122,8 @@ def _assert_guards_closed(dsn: str) -> None:
             "SELECT count(*) FROM pg_trigger "
             "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%__owner_closed'"
         ).fetchone()[0]
-    if actual != 5:
-        raise AssertionError(f"expected five closed INSERT owner guards through 0230, got {actual}")
+    if actual != 4:
+        raise AssertionError(f"expected four closed PLG owner guards at historical 0222 downgrade, got {actual}")
 
 
 def _seed_synthetic_history(dsn: str) -> tuple[uuid.UUID, uuid.UUID]:
