@@ -24,7 +24,9 @@ from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.user_orm import UserRow
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
-from plm_assistant.modules.platform.infrastructure.migration import upgrade_database
+from plm_assistant.modules.platform.infrastructure.migration import (
+    downgrade_database, upgrade_database,
+)
 from plm_assistant.modules.plugin.application.activation_owner import (
     DisablePluginInstallationCommand,
     EnablePluginOperationsCommand,
@@ -438,6 +440,17 @@ def main() -> int:
                 conn.rollback()
             else:
                 raise AssertionError("A08 immutable result row accepted direct UPDATE")
+        try:
+            downgrade_database(database_url, "20261104_0229")
+        except Exception:
+            with psycopg.connect(_dsn(database, args.port)) as conn:
+                current_revision = conn.execute(
+                    "SELECT version_num FROM plm.alembic_version"
+                ).fetchone()[0]
+            if current_revision != "20261104_0230":
+                raise AssertionError("A08 downgrade refusal changed migration head")
+        else:
+            raise AssertionError("A08 result-bearing downgrade was not refused")
         result["plugin_installation_disable_api_validation"] = {
             "status": "PASS_LIMITED",
             "changed": first_response.changed,
@@ -447,6 +460,8 @@ def main() -> int:
             "immutable_result_rows": result_rows,
             "completed_receipts": receipt_rows,
             "operation_audit_rows": api_disable_audits,
+            "result_row_blocks_downgrade": True,
+            "immutable_after_later_transition": later_replay == first_response,
             "customer_data": False,
             "external_calls": 0,
             "production_database": False,

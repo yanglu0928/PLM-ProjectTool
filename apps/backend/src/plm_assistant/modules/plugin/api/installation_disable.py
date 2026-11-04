@@ -39,7 +39,6 @@ def _public(result: PluginInstallationDisableResult) -> dict[str, object]:
         "installation_state": result.installation_state,
         "enabled_operations": [],
         "lock_version": result.result_lock_version,
-        "changed": result.changed,
         "etag": f'"v{result.result_lock_version}"',
     }
 
