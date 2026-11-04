@@ -77,3 +77,10 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - 新增Windows诊断有效运行：Microsoft `dumpbin /dependents` 递归检查initdb及其8个相关模块；输出内的全部系统/sidecar DLL定位均为present，缺失依赖列表为空；关键VC运行库位于System32；Application Error/Windows Error Reporting无initdb匹配事件。故当前证据不支持“静态缺DLL”或“缺VC Redist”结论，仍不能解释initdb初始化失败。
 - 同一workflow的独立 `smoke-parent-postgresql` 作业在Windows Server 2025完成PostgreSQL 18.6/pgvector 0.8.6临时生命周期，状态 `PARENT_PG18_TEMP_LIFECYCLE_PASS_LIMITED`；同run A17、A34与A35作业也成功。该证据来自另一runner作业及父包中的PG组件，不可直接替代P25新sidecar实际调用验收。
 - 下一项仅调整P25测试harness的PG初始化命令，使其精确采用已通过 `tools/smoke_windows_parent_package_pg_cloud.py` 的形式：`initdb -D <temp> -U postgres --auth-local=trust --auth-host=trust --no-locale -E UTF8`；PostgreSQL临时超级用户连接也对齐为 `postgres`。原因是这是现有Windows hosted通过证据的实际命令，可直接隔离本次P25调用差异。改动不触碰产品代码、schema、认证/License/Publisher信任或数据迁移；如失败，现有Windows依赖诊断仍随失败摘要上传。PostgreSQL临时目录只在D盘runner temp，不上传数据库文件。然后执行P25及完整hosted回归；仅真实HTTP 422、Edge安全提示且数据库计数不变方可PASS_SCOPE_LIMITED。
+
+
+## 第八轮 hosted 结果与标准输入对齐检查（2026-11-05）
+
+- Run [41910278934](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41910278934)：前端、后端、PG18 sidecar rebuild、父包/A17/A34/A35、P24/A50均通过；P25仍在initdb阶段以 `3221225781 / 0xC0000135` 退出，PG数据目录未创建，失败Artifact成功上传，HTTP/Edge未运行。将临时用户名和initdb参数对齐到通过smoke的调用后，结果未变。
+- 对照同run成功的 `tools/smoke_windows_parent_package_pg_cloud.py`，现存主要进程启动差异是：其 `subprocess.run(..., capture_output=True)` 继承标准输入；P25的 `run_checked` 显式传 `stdin=DEVNULL`。`initdb` 的其他选项/用户已精确对齐；工作目录均继承runner当前目录，临时路径均位于D盘runner temp。此差异尚不能证明根因，但可作为下一项最小对照。
+- 下一项编码前检查：仅移除P25命令包装器对标准输入的DEVNULL重定向，使PG18版本探测、initdb与psql均按当前已通过smoke的继承方式运行；不改产品代码、数据库合同或认证/License/Publisher信任。现有诊断保持。若initdb仍失败，不再猜测CLI/PATH，转为在同一P25 Windows进程中调用官方PostgreSQL初始化调试(`--debug --no-clean`)并仅上传截断、去敏错误尾与文件名/大小；禁止上传DB文件。通过后进入真实HTTP/Edge验证。
