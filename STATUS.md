@@ -1,3 +1,4 @@
+|Execution Note|P24 SessionClient用例已将未定义trace引用改为本文件已有的合成项目UUID；仅修复测试数据，等待hosted全链复验。|
 |Execution Note|P24定向用例第二轮仅因测试Response使用未定义trace常量失败，2,092/2,093通过；产品路径未执行到202解析。偏差已先登记CR-OUT-020，再修fixture并全链重跑。|
 |Execution Note|P24新增测试夹具已修复：改为显式构造带data/trace_id的合成登录Response；保留真实SessionClient异步POST断言。产品逻辑未因该夹具错误再改动；云端全链复验等待中。|
 |Execution Note|P24产品修复后的hosted前端仅新增用例失败：引用未定义response helper，2,092/2,093通过，P24 Edge被跳过。先记录于CR-OUT-020，再修纯测试fixture并全链重验。|

@@ -46,7 +46,7 @@ describe("OutputRequestCreateAction", () => {
       password_change_required: false,
       authorized_projects: [{ project_id: project, name: "合成项目", role: "PROJECT_MANAGER" }],
       absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
-      csrf_token: "a".repeat(64) }, trace_id: trace }), { headers: { "Content-Type": "application/json" } });
+      csrf_token: "a".repeat(64) }, trace_id: project }), { headers: { "Content-Type": "application/json" } });
     const transport = vi.fn()
       .mockResolvedValueOnce(loginResponse)
       .mockImplementationOnce(() => new Promise<Response>(resolve => { resolvePost = resolve; }));
