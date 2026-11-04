@@ -1,7 +1,7 @@
 # CR-OUT-019：基于已批准需求版本的 Output DOCX 请求入口
 
 - 日期：2026-11-05
-- 状态：编码前检查 PASS_WITH_LIMITATION；前端实现已提交，GitHub hosted 验收待完成
+- 状态：PASS_SCOPE_LIMITED；hosted run 41869866457 13/13 jobs成功
 - 来源：CR-EXEC-002 Windows 11 Pilot 纵向链、冻结 API-03 OUTPUT_REQUEST_CREATE、CR-OUT-009/P12、CR-OUT-015/P19、CR-OUT-018/P22
 - 基线：冻结 API Contract V1、现有 OutputRequest Owner；不改 API、Schema 或 Migration
 
@@ -35,3 +35,11 @@ Output Create client合同/错误测试、Approved/非Approved版本与角色显
 
 - Hosted run [41868957522](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41868957522) 前端 job 因 OutputRequestCreateAction.spec.ts 第34行 TypeScript 对象字面量 `as unknown as` 跨行写法被Vite/OXC拒绝，测试套件未能加载；其余2,089项前端测试通过。该错误限于测试文件语法，不涉及生产组件/API/数据，尚不能据此关闭P23。
 - 修复方案：将该测试对象类型断言改成解析器接受的单行表达式，按GitHub hosted全量 workflow 重跑前端、后端、PG18及父包/A17/A34/A35/A50。不得在本机/C盘运行项目代码或测试。
+
+
+## 最终 hosted 验收（2026-11-04）
+
+- GitHub Actions run [41869866457](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41869866457)，13/13 jobs success。Frontend job：204/204 test files通过，typecheck/build成功；Backend job：4,022 tests通过、wheel构建成功。PG18/pgvector sidecar、embedded runtime、父包候选、清洁解包与临时PostgreSQL生命周期、A17/A34/A35/A50全部通过。
+- 首轮run 41868957522的TypeScript断言解析错误已先记录并修复；最终复验通过。该为测试夹具语法问题，不改产品逻辑。
+- 结论仅限P23：通过已有固定DOCX请求入口和兼容性矩阵验证；不生成DOCX、不执行插件，不证明Publisher正式信任、Windows 11实机、Gate、Pilot或Release。测试只在GitHub hosted runner运行。
+- 后续：P24在hosted Edge中验证当前已批准需求版本详情、请求操作、固定请求负载、幂等/错误状态及历史导航的浏览器层集成；以拦截/合成API隔离，严禁伪装成真实信任/文件生成。
