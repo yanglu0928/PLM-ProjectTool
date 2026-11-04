@@ -1,6 +1,6 @@
 ## Unreleased · 2026-11-05（P25编码前检查，非发行版本）
 
-- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；第八轮 hosted run [41910278934](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41910278934) 前后端、PG sidecar、父包/A17/A34/A35/P24/A50通过；P25 initdb在CLI参数对齐后仍返回0xC0000135，数据库目录未创建，失败摘要已上传。CR-OUT-021已记录P25与已通过smoke的标准输入继承差异，下一轮仅做该最小对照；真实HTTP/Edge尚未运行，P25未通过。
+- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；第九轮 hosted run [41913332612](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41913332612) 前后端、PG sidecar、父包/A17/A34/A35/P24/A50通过；P25的initdb参数与stdin对齐后仍以0xC0000135退出，数据目录未创建，失败摘要上传。CR-OUT-021已登记下一轮只对照显式D盘TEMP/TMP与已通过父包smoke继承runner默认值；源码、数据库和验收数据仍固定在D盘runner temp，P25未通过。
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
