@@ -1,5 +1,9 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- OUT-01-A01-P12编码前检查通过并登记CR-OUT-009：仅接入冻结API-03的OUTPUT_REQUEST_CREATE单端点，复用既有Owner，router默认不挂载。详见docs/progress/out-01-a01-p12-output-request-create-http-precheck.md。
+
+- OUT-01-A01-P11按CR-OUT-008以 PASS_SCOPE_LIMITED 完成。Hosted run [41777943851](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41777943851) 14/14 jobs成功；Plugin Owner-backed Output capability只读投影、正式publisher缺失/最新不兼容/歧义失败关闭已由PG18.6合成库验证。后端3,975 tests/wheel、前端与完整父包/A17/A34/A35/A50通过。无Win11实机、产品API启动、正式信任或插件执行。详见docs/progress/out-01-a01-p11-plugin-operation-capability-result.md。下一项P12为冻结OUTPUT_REQUEST_CREATE的可选HTTP adapter。
+
 - OUT-01-A01-P11按CR-OUT-008编码中：新增Plugin owner-backed能力只读端口与Output adapter；Output能力默认改为关闭，只有明确的enabled/trusted证据才可通过。托管PG18验证与全链结果待完成，不构成正式publisher信任或Pilot结论。
 
 - PLG-02-A08按CR-PLG-013完成并以 `PASS_SCOPE_LIMITED` 关闭。Hosted run [41770188317](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41770188317) 13/13 jobs成功：后端3970 tests/wheel、前端测试/typecheck/build、PG18 Migration 0230与插件停用HTTP幂等/Audit回滚验收、20,180项非发行父包及A17/A34/A35/A50通过。父包SHA-256 `a49af407…b61dfae`。三轮失败及修复先记CR后处理。未在Win11设备实测、未启动正式产品API；Pilot/Gate 3/正式Release仍未通过。详见`docs/progress/plg-02-a08-installation-disable-result.md`。

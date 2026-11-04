@@ -1,7 +1,7 @@
 # CR-OUT-008：Plugin OperationCapability 只读Owner适配
 
 - 日期：2026-11-04
-- 状态：已按持续授权登记；OUT-01-A01-P11编码中
+- 状态：PASS_SCOPE_LIMITED；OUT-01-A01-P11 已由 hosted run 41777943851 验收关闭
 - 来源：CR-EXEC-002 Windows Pilot纵向链优先；OUT-01-A01-P10遗留阻断复核
 - 相关冻结合同：API-03/DM-04/DB Schema V1；不修改冻结基线
 
@@ -28,3 +28,10 @@ OUT-01-A01-P03建立了Fail-Closed Resolver，P09建立固定Policy，但Plugin 
 - 决定：仅将单测调整为验证负向事实被保留，并由 Resolver 做最终拒绝；不修改生产适配器行为、Schema/API或数据。
 - 风险/回滚：无持久化变化；若修正后验收失败，仍保持 resolver 默认拒绝并按后续证据记录。
 - 验证计划：托管后端全量、PG18 owner projection、Resolver拒绝路径及完整父包链复验；本机不运行。
+
+## 最终验收（2026-11-04）
+
+- 最终 hosted run：41777943851，14/14 jobs成功。后端3,975 tests/wheel，前端构建、PG18.6能力查询合成正反例、父包、A17/A34/A35/A50均通过。
+- P11 capability query 通过合成完整Owner正例、正式publisher registry空时trusted=false、最新RuntimeValidation不兼容和重复Manifest operation歧义失败关闭。
+- 初次单测断言失败在 41775475116：测试错误要求adapter隐藏 trusted=false。按“先记录后修复”先追加本CR偏差记录，再只修正测试期望；最终代码按计划保持 Fail-Closed。
+- 结论 PASS_SCOPE_LIMITED。无正式publisher key、产品API启动或插件执行，因此不表示生产信任、Pilot/Gate 3/Release已通过。
