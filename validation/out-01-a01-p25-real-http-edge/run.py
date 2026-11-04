@@ -137,7 +137,7 @@ def run_checked(args: list[str], *, env: dict[str, str] | None = None, timeout: 
 def start_pg(binary: Path, data: Path, log: Path, port: int, env: dict[str, str]) -> None:
     for name in ("pg_config.exe", "postgres.exe", "initdb.exe"):
         run_checked([str(binary / name), "--version"], env=env, timeout=30)
-    run_checked([str(binary / "initdb.exe"), f"--pgdata={data}", "--username=postgres",
+    run_checked([str(binary / "initdb.exe"), f"--pgdata={data}", "--username=poc_admin",
                  "--auth=trust", "--encoding=UTF8", "--locale=C"], env=env, timeout=180)
     result = subprocess.run([str(binary / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
                              "-o", f"-h 127.0.0.1 -p {port}", "-w", "start"],
@@ -275,7 +275,6 @@ async def main() -> int:
         pg_root = verify_and_extract_sidecar(args.sidecar, args.sidecar_sha, work / "pg-runtime")
         binary = pg_root / "bin"
         pg_env = os.environ.copy()
-        pg_env["PATH"] = str(binary) + os.pathsep + str(binary.parent / "lib") + os.pathsep + pg_env.get("PATH", "")
         pg_port = free_port()
         start_pg(binary, pg_data, pg_log, pg_port, pg_env)
         pg_started = True
@@ -359,7 +358,6 @@ async def main() -> int:
         ACTOR_BY_TOKEN.clear()
         if pg_started and pg_root is not None:
             env = os.environ.copy()
-            env["PATH"] = str(pg_root / "bin") + os.pathsep + str(pg_root / "lib") + os.pathsep + env.get("PATH", "")
             run_checked([str(pg_root / "bin" / "pg_ctl.exe"), "-D", str(pg_data),
                          "-m", "fast", "-w", "stop"], env=env, timeout=90)
         if work.exists():
