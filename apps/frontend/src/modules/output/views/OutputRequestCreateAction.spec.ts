@@ -60,7 +60,7 @@ describe("OutputRequestCreateAction", () => {
     expect(wrapper.find(".output-create").exists()).toBe(true);
     expect(wrapper.get("button").element.disabled).toBe(true);
     resolvePost(new Response(JSON.stringify({ data: { output_request_id: requestId,
-      job_id: "51234567-89ab-4cde-8123-456789abcdef", state: "QUEUED" }, trace_id: trace }),
+      job_id: "51234567-89ab-4cde-8123-456789abcdef", state: "QUEUED" }, trace_id: project }),
       { status: 202, headers: { "Content-Type": "application/json" } }));
     await flushPromises();
     expect(wrapper.text()).toContain("请求已受理");

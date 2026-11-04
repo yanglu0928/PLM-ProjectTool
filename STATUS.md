@@ -1,3 +1,4 @@
+|Execution Note|P24新增测试所有synthetic trace_id引用现统一为已有项目UUID；已检查该测试区块无未定义trace符号，等待hosted验证。|
 |Execution Note|P24测试trace fixture修复第一次只替换登录响应，漏了202回执响应中的第二处未定义引用；run 41885874291 前端仍2,092/2,093，Edge跳过。已先记CR-OUT-020，再统一替换该用例全部trace引用。|
 |Execution Note|P24 SessionClient用例已将未定义trace引用改为本文件已有的合成项目UUID；仅修复测试数据，等待hosted全链复验。|
 |Execution Note|P24定向用例第二轮仅因测试Response使用未定义trace常量失败，2,092/2,093通过；产品路径未执行到202解析。偏差已先登记CR-OUT-020，再修fixture并全链重跑。|

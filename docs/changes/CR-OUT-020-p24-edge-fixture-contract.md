@@ -89,3 +89,8 @@ P24新增用例的trace_id现复用本测试文件已有的synthetic Project UUI
 
 - Run 41885874291 新增用例仍失败，ReferenceError定位到202 Response的另一处 `trace` 引用；前一提交只替换了登录Response中的引用，漏掉回执Response。测试依旧2,092/2,093通过，P24 Edge跳过，产品逻辑未被判失败。
 - 修正：在本测试内为所有Response统一使用已定义的项目UUID作为synthetic trace_id；提交前检查该测试代码无未定义trace符号，然后重跑 hosted 全链。
+
+
+## Trace fixture 全量修正已实施
+
+登录和202回执响应现在统一使用已定义的项目UUID作为synthetic trace_id；新增测试区块经静态文本检查没有剩余的裸trace变量。仅改测试fixture。
