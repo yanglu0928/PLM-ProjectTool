@@ -1,3 +1,4 @@
+|Execution Note|P24产品修复后的hosted前端仅新增用例失败：引用未定义response helper，2,092/2,093通过，P24 Edge被跳过。先记录于CR-OUT-020，再修纯测试fixture并全链重验。|
 |Execution Note|P24发现的回执卸载缺陷已修复：显示资格与提交资格分离，SessionClient busy时保留回执区域并禁用按钮；新增真实SessionClient待完成POST单测。等待全链Hosted Edge复验。|
 |Execution Note|P24 Edge揭示真实回执UI缺陷：SessionClient POST期间canSubmit=false使整个Output Create区域卸载，202回执被丢弃。证据、最小修复和回滚计划已先记入CR-OUT-020；修复待实施。|
 |Execution Note|P24 Edge回执超时诊断已提交：失败快照仅记录输出组件可见文本、role=status/alert及按钮文本，不输出请求正文、Cookie、CSRF或幂等键。根因已先登记CR-OUT-020，等Hosted复验。|

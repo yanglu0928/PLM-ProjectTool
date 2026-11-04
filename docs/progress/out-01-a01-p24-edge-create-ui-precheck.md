@@ -77,3 +77,9 @@ P24失败快照现记录输出操作区域文本、role=status/alert及可见按
 ## 产品缺陷修复已实施（2026-11-05）
 
 按CR-OUT-020将版本/角色/授权决定的区域显示资格（canRender）与SessionClient可提交资格分开。写请求忙时操作区保持挂载，按钮禁用；SessionClient返回后可显示回执/错误。新增真实SessionClient异步POST定向用例，覆盖忙态期间组件仍挂载和202收据展示。当前只完成源码实施；hosted full run未过前不得关闭P24。
+
+
+## 定向测试夹具偏差（修复前登记，2026-11-05）
+
+- 产品门控拆分提交后，hosted run 41883970738 前端测试为2,092/2,093通过；唯一失败是新增用例引用当前测试文件未定义的 `response` helper，ReferenceError发生于测试构造Session阶段。产品缺陷验证未执行，P24 Edge因依赖前端job而跳过。
+- 修正：在用例内显式创建synthetic login及202 Response，不增加不必要的全局helper；保留真实SessionClient忙态、区域保持挂载和回执展示断言。只修纯测试夹具，产品代码不改。之后重跑hosted全链。
