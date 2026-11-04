@@ -64,3 +64,11 @@ P24首轮hosted run 41875807078在合成登录后读取需求详情/版本列表
 ## 回执UI诊断已实施
 
 P24失败快照现记录输出操作区域文本、role=status/alert及可见按钮标签，并继续排除Cookie、CSRF、幂等Key和请求正文。该诊断用于区分后端mock响应、OutputRequestCreateClient解析与Vue状态呈现，不调整产品逻辑。Hosted复验待完成。
+
+
+## 第三轮 hosted 偏差与产品根因（修复前登记，2026-11-05）
+
+- Hosted run 41882240312 已完成合成认证、当前批准版本读取，并对固定输出路径提交一次HTTP 202；CSRF与幂等头存在、请求负载符合预期，但界面未显示请求回执，P24失败。
+- 对照源码确认真实产品原因：`SessionClient.#postCommand` 在请求进行中把 `canSubmit` 置为false；`OutputRequestCreateAction.vue` 又用包含 `session.canSubmit` 的 `canCreate()` 作为整个 `<section>` 的条件。按钮点击后组件因此卸载，异步结果因mounted检查被丢弃。Edge证据与单测未覆盖该真实状态交互。
+- 实施前修正方案：拆分只决定操作区可见性的 `canRender()` 与提交可用性的 `canSubmit()`；区域在受控请求进行中保持挂载，按钮在busy/SessionClient busy时禁用。增加真实SessionClient+待完成POST的前端定向测试，并由P24 Edge复验202回执、503安全错误、幂等不重试与未批准版本隐藏。无API/Schema/Migration改动。
+- 风险/回滚：请求期间必须仍尊重项目/角色/当前批准版本；props变化仍取消旧代次结果。回滚为恢复原组件门控和删除该测试。仅影响批准版本Output请求交互。
