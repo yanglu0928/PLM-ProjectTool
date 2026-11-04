@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -119,7 +120,16 @@ def run_checked(args: list[str], *, env: dict[str, str] | None = None, timeout: 
                        text=True, encoding="utf-8", errors="replace", timeout=timeout,
                        check=False, env=env)
     if p.returncode:
-        raise RuntimeError("hosted P25 command failed: " + Path(args[0]).name)
+        def safe_tail(value: str) -> str:
+            runner_temp = os.environ.get("RUNNER_TEMP", "")
+            if runner_temp:
+                value = value.replace(runner_temp, "<runner-temp>")
+            value = re.sub(r"[\x00-\x1f]+", " ", value)
+            value = re.sub(r"[\\x00-\\x1f]+", " ", value)
+            return value[-1200:]
+        raise RuntimeError("hosted P25 command failed: " + Path(args[0]).name
+                           + " stdout=" + safe_tail(p.stdout)
+                           + " stderr=" + safe_tail(p.stderr))
     return p.stdout.strip()
 
 
