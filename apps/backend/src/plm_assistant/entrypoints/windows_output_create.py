@@ -73,6 +73,7 @@ class ProductionOutputCreateStartupError(RuntimeError):
 
 def create_windows_output_request_create_router(
     *, runtime, sessions, origins, license_guard, audit,
+    session_access: object | None = None,
 ) -> APIRouter:
     if any(value is None for value in
            (runtime, sessions, origins, license_guard, audit)):
@@ -103,7 +104,7 @@ def create_windows_output_request_create_router(
         service = OutputRequestService(
             unit_of_work=runtime.unit_of_work,
             access=SqlAlchemyOutputRequestCreateAccess(
-                authorization=authorization,
+                authorization=authorization, session_access=session_access,
             ),
             license_guard=license_guard,
             resolver=resolver,

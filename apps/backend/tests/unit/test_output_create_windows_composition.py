@@ -71,7 +71,7 @@ class AccessTests(unittest.TestCase):
 class CompositionTests(unittest.TestCase):
     def test_factory_mounts_actual_create_adapter_with_fail_closed_packaged_trust(self):
         runtime = Mock()
-        sessions, origins, guard, audit = object(), object(), object(), object()
+        sessions, origins, guard, audit, session_access = (object(), object(), object(), object(), object())
         expected = APIRouter()
         with patch(
             "plm_assistant.entrypoints.windows_output_create.create_output_request_create_router",
@@ -79,12 +79,13 @@ class CompositionTests(unittest.TestCase):
         ) as create_router:
             result = create_windows_output_request_create_router(
                 runtime=runtime, sessions=sessions, origins=origins,
-                license_guard=guard, audit=audit,
+                license_guard=guard, audit=audit, session_access=session_access,
             )
         self.assertIs(result, expected)
         service = create_router.call_args.kwargs["service"]
         self.assertIs(service._uow, runtime.unit_of_work)
         self.assertIs(service._license, guard)
+        self.assertIs(service._access._session_access, session_access)
         self.assertIs(service._audit, audit)
         self.assertIsNotNone(service._resolver)
 
