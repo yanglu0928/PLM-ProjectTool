@@ -92,8 +92,7 @@ describe("OutputRequestListView", () => {
     const { wrapper } = await view(await session(), "/projects/" + project + "/output-requests", reader);
     expect(wrapper.text()).toContain("没有可见的输出请求");
     wrapper.unmount();
-    const failing = { list: vi.fn().mockRejectedValue(new Error("safe client message")) }
-      as unknown as OutputRequestListClient;
+    const failing = { list: vi.fn().mockRejectedValue(new Error("safe client message")) } as unknown as OutputRequestListClient;
     const failed = await view(await session(), "/projects/" + project + "/output-requests", failing);
     expect(failed.wrapper.get('[role="alert"]').text()).toContain("safe client message");
     failed.wrapper.unmount();
