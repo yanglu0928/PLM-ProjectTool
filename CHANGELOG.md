@@ -1,8 +1,8 @@
-## Unreleased · 2026-11-05（P25延迟导入诊断候选，非发行版本）
+## Unreleased · 2026-11-05（P25运行环境对照候选，非发行版本）
 
-- hosted run [41918283038](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41918283038) 与重复复验 [41919589855](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41919589855) 表明 `initdb --debug --no-clean` 仍以 `0xC0000135` 在创建数据目录前退出；仅输出debug/no-clean提示，常规导入文件可定位、initdb应用事件为空。真实HTTP/Edge未运行，P25未通过。
-- 新增P25限定诊断：递归扫描initdb、postgres及常规依赖的 `DUMPBIN /IMPORTS` 延迟导入，并同时检查二者的Windows应用错误摘要；只保留DLL名称、定位类别和去路径短摘要。无业务API、Schema、Migration或发行行为变化；定向hosted验证待执行。
-- 兼容性/升级：仅非发行验收脚本变化，无产品安装升级。Pilot/Gate/Release保持未通过。
+- hosted run [41921391921](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41921391921) 完成全链：除P25外的后端/前端、PG sidecar、P24/A50、父包/A17/A34/A35均通过。P25增加的15模块延迟导入探测无缺项、Application Error/WER无记录，initdb仍以 `0xC0000135` 在创建数据目录前退出；HTTP/Edge未执行。
+- 同run父包候选的PG18.6/pgvector0.8.6生命周期smoke通过。新一轮只给initdb/pg_ctl/psql子进程临时移除Node可执行目录的PATH副本；Node/Edge进程与全局PATH保持不变。代码和测试仅托管执行于GitHub Windows runner，项目数据在D盘。
+- 兼容性/升级：仅非发行验收harness变更；无产品API/Schema/Migration/安装变更。P25仍未通过，Pilot/Gate/Release状态不变；本诊断结果待hosted验证。
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
