@@ -128,12 +128,15 @@ def run_checked(args: list[str], *, env: dict[str, str] | None = None, timeout: 
             value = re.sub(r"[\\x00-\\x1f]+", " ", value)
             return value[-1200:]
         raise RuntimeError("hosted P25 command failed: " + Path(args[0]).name
+                           + " exit_code=" + str(p.returncode)
                            + " stdout=" + safe_tail(p.stdout)
                            + " stderr=" + safe_tail(p.stderr))
     return p.stdout.strip()
 
 
 def start_pg(binary: Path, data: Path, log: Path, port: int, env: dict[str, str]) -> None:
+    for name in ("pg_config.exe", "postgres.exe", "initdb.exe"):
+        run_checked([str(binary / name), "--version"], env=env, timeout=30)
     run_checked([str(binary / "initdb.exe"), f"--pgdata={data}", "--username=postgres",
                  "--auth=trust", "--encoding=UTF8", "--locale=C"], env=env, timeout=180)
     result = subprocess.run([str(binary / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
