@@ -13,7 +13,7 @@ from pathlib import Path
 
 import psycopg
 from psycopg import sql
-from sqlalchemy import URL, text
+from sqlalchemy import URL
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
@@ -137,7 +137,7 @@ def _signed_package(private_key: Ed25519PrivateKey) -> tuple[bytes, bytes]:
         archive.writestr("plugin/main.py", "synthetic inert fixture")
     payload = buffer.getvalue()
     key_bytes = _KEY_REF.encode("utf-8")
-    signed = (b"PLM-PLUGIN-PACKAGE\\x00v1\\x00" + len(key_bytes).to_bytes(2, "big")
+    signed = (b"PLM-PLUGIN-PACKAGE\x00v1\x00" + len(key_bytes).to_bytes(2, "big")
               + key_bytes + hashlib.sha256(payload).digest())
     return payload, private_key.sign(signed)
 
