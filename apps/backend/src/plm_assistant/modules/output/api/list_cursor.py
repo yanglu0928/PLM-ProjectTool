@@ -79,6 +79,9 @@ class OutputRequestListCursorCodec:
                     or payload["session"] != hashlib.sha256(session_token).hexdigest()
                     or payload["query"] != _query_fingerprint(page_size)):
                 raise ValueError()
+            if (type(payload["requested_at"]) is not str
+                    or type(payload["request_id"]) is not str):
+                raise ValueError()
             requested_at = datetime.fromisoformat(
                 payload["requested_at"].replace("Z", "+00:00"),
             )

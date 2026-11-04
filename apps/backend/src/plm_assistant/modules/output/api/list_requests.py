@@ -16,9 +16,7 @@ from plm_assistant.modules.auth.application.session_service import (
     SessionError, SessionService,
 )
 from plm_assistant.modules.output.api.list_cursor import OutputRequestListCursorCodec
-from plm_assistant.modules.output.api.read_request import (
-    _error as _single_error, output_request_view_data,
-)
+from plm_assistant.modules.output.api.read_request import output_request_view_data
 from plm_assistant.modules.output.application.list_requests import (
     OutputRequestListError, OutputRequestListQuery, OutputRequestListService,
 )
@@ -78,12 +76,13 @@ def create_output_request_list_router(
         try:
             page = await run_in_threadpool(service.list_page, query)
         except OutputRequestListError as exc:
-            raise _single_error(
-                __import__(
-                    "plm_assistant.modules.output.application.read_request",
-                    fromlist=["OutputRequestReadError"],
-                ).OutputRequestReadError(exc.code),
-            ) from None
+            code = {
+                "AUTH_ACCESS_DENIED": "AUTH_SESSION_EXPIRED",
+                "LICENSE_OPERATION_DENIED": "LICENSE_OPERATION_DENIED",
+                "RESOURCE_NOT_FOUND": "RESOURCE_NOT_FOUND",
+                "VALIDATION_FAILED": "VALIDATION_FAILED",
+            }.get(exc.code, "SYSTEM_UNAVAILABLE")
+            raise ApplicationError(code) from None
         except Exception:
             raise ApplicationError("SYSTEM_UNAVAILABLE") from None
         if (type(page.items) is not tuple or type(page.has_more) is not bool
