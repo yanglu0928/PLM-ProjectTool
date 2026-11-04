@@ -416,6 +416,9 @@ from plm_assistant.modules.document.infrastructure.upload_commit_repository impo
 from plm_assistant.modules.document.infrastructure.upload_abort_repository import SqlAlchemyUploadAbortRepository
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobQueue
 from plm_assistant.modules.jobs.infrastructure.parse_enqueue_repository import SqlAlchemyParseJobQueueRepository
+from plm_assistant.modules.plugin.api.installation_metadata import create_plugin_installation_metadata_router
+from plm_assistant.modules.plugin.application.installation_metadata import PluginInstallationMetadataService
+from plm_assistant.modules.plugin.infrastructure.installation_metadata_repository import SqlAlchemyPluginInstallationMetadataRepository
 from plm_assistant.modules.plugin.api.package_import import create_plugin_package_import_router
 from plm_assistant.modules.plugin.application.package_import_job_queue import PluginPackageImportQueue
 from plm_assistant.modules.plugin.application.package_import_service import PluginPackageImportService
@@ -678,6 +681,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_department_deactivate_router = None
         document_upload_create_router = None
         document_upload_content_router = None
+        plugin_installation_metadata_router = None
         plugin_package_import_router = None
         document_upload_finalize_router = None
         document_read_router = None
@@ -1343,6 +1347,15 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             )
             secret_list_router = create_secret_metadata_list_router(
                 sessions=sessions, metadata=metadata, origins=origins, cursors=cursors,
+            )
+            plugin_installation_metadata_router = create_plugin_installation_metadata_router(
+                sessions=sessions, origins=origins,
+                installations=PluginInstallationMetadataService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyDeploymentReadAccess(),
+                    license_guard=licenses.guard,
+                    repository=SqlAlchemyPluginInstallationMetadataRepository(),
+                ),
             )
             ai_provider_read_router = create_ai_provider_read_router(
                 sessions=sessions, origins=origins,
@@ -2036,6 +2049,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_department_deactivate_router=project_department_deactivate_router,
             document_upload_create_router=document_upload_create_router,
             document_upload_content_router=document_upload_content_router,
+            plugin_installation_metadata_router=plugin_installation_metadata_router,
             plugin_package_import_router=plugin_package_import_router,
             document_upload_finalize_router=document_upload_finalize_router,
             document_read_router=document_read_router,

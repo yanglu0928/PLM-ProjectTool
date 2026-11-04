@@ -22,6 +22,26 @@ class AppFactoryTests(unittest.TestCase):
         self.assertIsNone(app.redoc_url)
         self.assertIsNone(app.openapi_url)
 
+    def test_optional_plugin_installation_read_router_is_mounted_only_when_supplied(self) -> None:
+        from fastapi import APIRouter
+
+        router = APIRouter()
+
+        @router.get("/api/v1/admin/plugins/installations/{installation_id}")
+        def get_installation(installation_id: str):
+            return {"data": {"plugin_installation_id": installation_id}}
+
+        app = create_app(plugin_installation_metadata_router=router)
+        self.assertIn(
+            "/api/v1/admin/plugins/installations/{installation_id}",
+            {route.path for route in app.routes},
+        )
+        default = create_app()
+        self.assertNotIn(
+            "/api/v1/admin/plugins/installations/{installation_id}",
+            {route.path for route in default.routes},
+        )
+
     def test_health_service_fails_closed_before_startup(self) -> None:
         app = create_app()
 
