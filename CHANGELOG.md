@@ -1,6 +1,6 @@
 ## Unreleased · 2026-11-05（P25编码前检查，非发行版本）
 
-- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；第七轮 hosted run [41907221688](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41907221688) 前后端、PG sidecar、父包/A17/A34/A35/P24/A50通过；P25 initdb仍返回0xC0000135。Windows递归PE依赖均有解析、系统运行库可见、无Application Error事件；独立父包PG18 lifecycle smoke通过。P25尚未运行真实HTTP/Edge；CR-OUT-021已登记将initdb调用和临时用户精确对齐已通过Windows smoke命令后复验。
+- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；第八轮 hosted run [41910278934](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41910278934) 前后端、PG sidecar、父包/A17/A34/A35/P24/A50通过；P25 initdb在CLI参数对齐后仍返回0xC0000135，数据库目录未创建，失败摘要已上传。CR-OUT-021已记录P25与已通过smoke的标准输入继承差异，下一轮仅做该最小对照；真实HTTP/Edge尚未运行，P25未通过。
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
