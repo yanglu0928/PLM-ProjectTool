@@ -84,3 +84,10 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - Run [41910278934](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41910278934)：前端、后端、PG18 sidecar rebuild、父包/A17/A34/A35、P24/A50均通过；P25仍在initdb阶段以 `3221225781 / 0xC0000135` 退出，PG数据目录未创建，失败Artifact成功上传，HTTP/Edge未运行。将临时用户名和initdb参数对齐到通过smoke的调用后，结果未变。
 - 对照同run成功的 `tools/smoke_windows_parent_package_pg_cloud.py`，现存主要进程启动差异是：其 `subprocess.run(..., capture_output=True)` 继承标准输入；P25的 `run_checked` 显式传 `stdin=DEVNULL`。`initdb` 的其他选项/用户已精确对齐；工作目录均继承runner当前目录，临时路径均位于D盘runner temp。此差异尚不能证明根因，但可作为下一项最小对照。
 - 下一项编码前检查：仅移除P25命令包装器对标准输入的DEVNULL重定向，使PG18版本探测、initdb与psql均按当前已通过smoke的继承方式运行；不改产品代码、数据库合同或认证/License/Publisher信任。现有诊断保持。若initdb仍失败，不再猜测CLI/PATH，转为在同一P25 Windows进程中调用官方PostgreSQL初始化调试(`--debug --no-clean`)并仅上传截断、去敏错误尾与文件名/大小；禁止上传DB文件。通过后进入真实HTTP/Edge验证。
+
+
+## 第九轮 hosted 结果与 TEMP/TMP 对照计划（2026-11-05）
+
+- Run [41913332612](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41913332612)：前端、后端全量测试/wheel、PG sidecar rebuild、父包/A17/A34/A35、P24/A50通过；P25在 `initdb` 阶段仍以 `0xC0000135` 退出、未创建数据目录，诊断摘要上传成功。initdb参数已与通过smoke完全一致，P25命令包装器也取消了 `stdin=DEVNULL`；两项对照均未改变结果。
+- 与同run成功的父包PG生命周期smoke继续对照后，剩余可见环境差异之一是workflow为P25显式设置 `TEMP/TMP=RUNNER_TEMP(D:)`，而父包smoke继承runner默认 `TEMP/TMP`。这仍是待验证的执行环境差异，不能宣称为根因。
+- 下一项编码前检查：只移除P25 Python运行步骤对TEMP/TMP的显式D盘覆盖，令initdb/PG命令继承Windows hosted runner默认临时目录；所有源码检出、前端/sidecar输入、P25工作根、PG数据目录、数据库及summary仍通过 `RUNNER_TEMP` 显式固定在D盘。Python调用Edge Node子进程时显式恢复 `TEMP/TMP=RUNNER_TEMP`，避免浏览器/Node临时文件落出D盘。无数据外发或产品/Schema变化。若结果变化，记录并复查PG数据目录确在D；如仍失败，再用 `initdb --debug --no-clean` 限定诊断。
