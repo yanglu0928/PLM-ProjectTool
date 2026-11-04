@@ -54,3 +54,9 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - Run [41899785899](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41899785899) 的前后端/PG18 sidecar/P24 Edge均通过；将数据库用户改为poc_admin并取消PATH改写后，initdb仍以3221225781/0xC0000135退出，stdout/stderr为空。真实API和Edge未运行。
 - 复核发现上次“与既有PG smoke相同”的描述不准确：P25虽改用poc_admin和原PATH，但仍显式向子进程传入os.environ副本，且data目录在harness工作根中；已知成功的tools/smoke_windows_pg18_sidecar.py由subprocess继承环境，并在RUNNER_TEMP直接创建独立ASCII临时子目录。
 - 修正前计划：精确复用已验证的执行形状——Sidecar提取留在P25工作根；PG数据使用新的、受控前缀RUNNER_TEMP直接子目录；initdb/pg_ctl/psql不传env副本，让子进程原样继承runner环境；poc_admin及已知参数保持。PG停止后只删除两个经resolve验证且名称前缀匹配的自有临时目录；失败退出码/临时路径仍去敏。若再次失败则暂存受限PG initdb诊断Artifact，而非删除未审阅日志后继续猜改。
+
+
+## 第五轮 hosted 偏差及诊断方案（修复前登记，2026-11-05）
+
+- Run [41901521102](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41901521102) 在P25前端/后端/PG18 sidecar/P24 Edge均通过后，P25仍于initdb返回3221225781/0xC0000135退出。`pg_ctl status`对部分初始化目录返回了非预期代码，安全清理逻辑拒绝删除；临时目录保留在该GitHub runner的D盘工作区。未运行真实HTTP/Edge请求，产品代码未触及。
+- 这证实之前对环境/PATH/目录形状的推断不成立。暂停猜测式参数修复。实施前计划为：失败时写一个受限P25诊断JSON，包含命令名/退出码/去runner路径的末尾stdout/stderr、pg_ctl状态码、PG临时目录内的相对文件名及大小、存在时日志去路径后的短尾；禁止提交或上传数据库文件/sidecar内容/API请求数据。workflow的证据上传step改为always运行，仅上传该摘要；未知PG进程状态时继续保留PG和runtime目录，不强行删除。取得下一轮hosted证据后再选修复。
