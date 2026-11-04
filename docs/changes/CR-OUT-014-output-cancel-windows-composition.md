@@ -1,7 +1,7 @@
 # CR-OUT-014：OutputRequest取消HTTP接入显式Windows write composition
 
 - 日期：2026-11-04
-- 状态：P18编码前检查 PASS_WITH_LIMITATION；实施中
+- 状态：P18 PASS_SCOPE_LIMITED；P19转CR-OUT-015
 - 来源：CR-OUT-012/P16 opt-in取消HTTP、CR-OUT-013/P17 PostgreSQL 18事务验收
 - 基线：遵守冻结API Contract V1的OUTPUT_REQUEST_CANCEL路径、角色、请求与响应；不改架构、Schema、Migration或API合同
 
@@ -50,3 +50,11 @@ PASS_WITH_LIMITATION。证据已确认API router与默认App均解耦，Windows�
 - 原因：仅为验证器合成夹具的一次 `session.add_all(Project, Department, Members)` 没有建立 ORM 依赖关系排序；PG18 实际先插部门并触发项目外键。失败发生在请求/取消业务逻辑前，不是应用授权、取消或 Audit 结果。
 - 另检查发现该验证器的默认路由缺失断言依赖 FastAPI 延迟 `app.routes` 包装，可能产生假阴性；本次一并加强为公开 OpenAPI 路径断言。
 - 处理：夹具显式先 flush 项目，再插部门/成员；保留合成数据隔离和事务；推送后重跑完整 hosted workflow。P18 仍未通过，未产生客户数据或生产副作用。
+
+## 最终验收（P18）
+
+- 最终提交72a81f749ee5e4788d7b6933f6e34d5f8508920b；hosted run 41809547922 13/13 jobs成功，backend 4,013 tests/wheel、前端测试构建、PG18/pgvector、A17/A34/A35/A50成功。
+- PG18.6隔离合成HTTP：creator与ProjectManager取消通过；ImplementationMember 404且Output/Job/Audit/receipt无持久变化；成功动作有Audit和receipt。默认App OpenAPI无取消路由。
+- 非发行父包20,199项，内部归档SHA-256 076c3d844a771d5d63100cab51f15c72f2a99fa569e41b4fe377cea5ca08d947；D盘runner临时区清洁解包PG18生命周期、A17、A34通过；无客户数据/产品服务。
+- 两轮失败与修复均留在本CR；最终完整回归成功。限制：取消仅显式write composition，RUNNING只登记取消请求，Worker未实现；正式publisher/License信任/Win11实机未验证。仅PASS_SCOPE_LIMITED，不改变Gate/Pilot/Release。
+- 下一项P19按CR-OUT-015核查OUTPUT_REQUEST_CREATE显式组合。
