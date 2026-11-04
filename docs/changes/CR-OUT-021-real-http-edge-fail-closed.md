@@ -111,3 +111,11 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 
 - 同一 \`--debug --no-clean\` 候选在 hosted run [41919589855](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41919589855) 重复复验，P25仍以 \`0xC0000135\` 在数据目录创建前失败；debug输出仍只有模式提示，普通依赖扫描无缺项，Application Error/WER摘要为空。后端/前端、PG sidecar、P24/A50和嵌入式运行时作业通过；P25未通过，不构成额外产品验收。
 - 延迟导入诊断依据 Microsoft Learn 的[\`DUMPBIN /IMPORTS\`](https://learn.microsoft.com/en-us/cpp/build/reference/imports-dumpbin?view=msvc-170)（列出静态及延迟加载导入）：只解析标记为delay-load的DLL名和本机可定位状态，并把initdb、postgres及递归依赖纳入探测；Application Error/WER过滤扩展到initdb/postgres进程。摘要不保存完整工具输出或系统事件文本。
+
+
+## 第十二轮 hosted 结果与 Node PATH 对照计划（2026-11-05）
+
+- Run [41921391921](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41921391921) 的 P25 延迟导入检查探测 initdb/postgres 及常规依赖共15个模块，`DUMPBIN /IMPORTS` 未发现延迟DLL，普通及延迟依赖缺失项均为空，Application Error/WER摘要为空。添加 `--debug --no-clean` 后仍仅输出模式提示；initdb以 `0xC0000135` 退出，pg_ctl返回4，D盘数据目录和文件清单为空，真实HTTP/Edge未执行。
+- 同run前后端全量/wheel、PG18 sidecar rebuild、P24/A50、嵌入式Python/Windows父包组装、父包PG生命周期smoke、A17、A34、A35均通过；父包PG smoke报告PostgreSQL 18.6/pgvector 0.8.6，P25为唯一失败job。该对照说明同run父包中的PG生命周期可运行，但尚未比较P25 initdb进程的完整PATH与父包smoke环境；不据此推断根因。
+- 延迟加载/静态依赖和TEMP/TMP、stdin、命令参数对照均未解释错误。下一项只为P25 PostgreSQL子进程构造临时PATH副本，过滤由本job额外安装的Node可执行目录，同时保留系统/Python/PG路径和全局环境；对initdb、pg_ctl、psql使用该副本，Edge/Node继续使用原环境。证据摘要只记录Node目录是否找到/过滤及条目数，不输出原始PATH。PG数据和其他项目临时文件仍在D盘。
+- 若该对照仍不改变initdb结果，停止反复调整环境变量；根据同run父包PG smoke成功证据，转为用已验证的父包PG目录进行二进制哈希及执行路径对照，或暂停P25并推进独立WBS。P25关闭条件仍为真实HTTP安全拒绝、Edge安全提示和数据库相关表计数不变。
