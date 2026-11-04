@@ -1,6 +1,6 @@
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
-- P24第二轮run 41878499626已越过Requirement详情与固定POST验证，但Edge未观察到成功回执UI状态。根因仍需区分Vue状态、响应解析与浏览器观察；先记入CR-OUT-020，补去敏组件状态诊断后重验，不改产品逻辑。
+- P24第二轮run 41878499626确认固定POST返回202但Edge未观察到回执状态。去敏诊断已按CR-OUT-020加入hosted harness，包含输出区域、status/alert和按钮文本；不改业务代码，等待云端定位。
 
 - P24 首轮hosted run [41875807078](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41875807078) 的P24 Edge步骤因合成RequirementVersion响应被前端冻结解析器拒绝而失败；尚未触发输出请求。根因调查与纯fixture修复/诊断计划已先登记 CR-OUT-020，待修复后全链复验。
 

@@ -133,7 +133,7 @@ function send(method,params={}){const id=++nextId;socket.send(JSON.stringify({id
 async function evaluate(expression){const out=await send("Runtime.evaluate",{expression,awaitPromise:true,returnByValue:true});
  if(out.exceptionDetails)throw new Error(out.exceptionDetails.text);return out.result.value}
 async function waitFor(expression,label){for(let i=0;i<300;i++){try{if(await evaluate("Boolean("+expression+")"))return}catch{}await pause(100)}
- throw new Error("timeout "+label+": "+JSON.stringify(await evaluate("({url:location.href,text:document.body.innerText.slice(0,1800)})")))}
+ throw new Error("timeout "+label+": "+JSON.stringify(await evaluate("({url:location.href,text:document.body.innerText.slice(0,1800),outputCreate:document.querySelector('.output-create')?.innerText||null,statusText:[...document.querySelectorAll('[role=status]')].map(x=>x.innerText),alertText:[...document.querySelectorAll('[role=alert]')].map(x=>x.innerText),buttons:[...document.querySelectorAll('button')].map(x=>x.innerText.trim()).filter(Boolean)})")))}
 async function click(label){
  const ok=await evaluate("(()=>{const e=[...document.querySelectorAll('button,a')].find(x=>x.textContent.trim()==="+JSON.stringify(label)+");if(!e)return false;e.click();return true})()");
  if(!ok)throw new Error("missing browser action: "+label);
