@@ -34,3 +34,9 @@
 
 - 在首次P27 hosted验证完成前的代码对照中，发现初版准入Owner仅校验ContextSnapshot自身fingerprint，未重算OutputRequest在创建时使用的总input_fingerprint（该指纹还覆盖Project、Output类型、模板、来源、策略与Plugin operation）。若不补此项，持久化请求内容与其总输入指纹之间仍存在未验证绑定。
 - 修复方案：按OutputRequestService创建时的canonical payload结构重算总指纹，并与OutputRequest.input_fingerprint逐字节比较；把错配加入单测和D盘hosted PostgreSQL拒绝用例。先登记本偏差再修，不更改Schema/API/业务状态或数据。
+
+
+## 单测发现配置偏差（修复前记录）
+
+- 第一次P27全链候选run [41935554958](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41935554958) 的后端job仍显示原4,023 tests。检查workflow后确认后端使用 `python -m unittest discover -s tests -p "test_*.py"`；新增文件最初使用pytest函数，虽被发现文件名匹配，但没有TestCase类，因此其函数用例未实际执行。
+- 修正计划：将同一边界用例改写为 `unittest.TestCase` 并使用 subTest；新的hosted run必须显示后端测试数上升，且PG专项summary通过，之后才可评估P27。该轮不视为P27单测验收。
