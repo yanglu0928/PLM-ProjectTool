@@ -47,3 +47,10 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - Run [41898332690](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41898332690) 的二进制版本探测均成功，但initdb正式初始化退出码为3221225781（0xC0000135，Windows STATUS_DLL_NOT_FOUND），stdout/stderr为空。证据指向初始化阶段的原生动态库加载失败；API/Edge尚未运行。
 - 仓库现有PG18 hosted smoke采用同一重建sidecar、临时D盘数据目录、auth=trust/UTF8/locale=C，以poc_admin初始化，且不改写全局PATH。P25与该可复用路径的差异是使用postgres用户名并额外重写PATH。
 - 最小修正：P25按已有PG smoke采用poc_admin及继承runner原PATH，保留版本探测和受限退出码/错误尾部；把D盘PG runtime/bin加入PATH只供该child process需要时再定位。该调整不改业务数据、Schema、License/Publisher信任或API。下轮若仍失败，先检查并输出隔离PG日志末尾的去路径摘要，再选后续修复。
+
+
+## 第四轮 hosted 偏差与精确执行差异（修复前登记，2026-11-05）
+
+- Run [41899785899](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41899785899) 的前后端/PG18 sidecar/P24 Edge均通过；将数据库用户改为poc_admin并取消PATH改写后，initdb仍以3221225781/0xC0000135退出，stdout/stderr为空。真实API和Edge未运行。
+- 复核发现上次“与既有PG smoke相同”的描述不准确：P25虽改用poc_admin和原PATH，但仍显式向子进程传入os.environ副本，且data目录在harness工作根中；已知成功的tools/smoke_windows_pg18_sidecar.py由subprocess继承环境，并在RUNNER_TEMP直接创建独立ASCII临时子目录。
+- 修正前计划：精确复用已验证的执行形状——Sidecar提取留在P25工作根；PG数据使用新的、受控前缀RUNNER_TEMP直接子目录；initdb/pg_ctl/psql不传env副本，让子进程原样继承runner环境；poc_admin及已知参数保持。PG停止后只删除两个经resolve验证且名称前缀匹配的自有临时目录；失败退出码/临时路径仍去敏。若再次失败则暂存受限PG initdb诊断Artifact，而非删除未审阅日志后继续猜改。

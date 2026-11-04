@@ -1,6 +1,6 @@
 ## Unreleased · 2026-11-05（P25编码前检查，非发行版本）
 
-- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；P25首两轮hosted run暴露initdb诊断不足；第三轮run [41898332690](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41898332690)前后端、PG18 sidecar、P24 Edge通过，版本探测成功但initdb返回0xC0000135。已在CR-OUT-021记录原生DLL加载失败证据及复用既有PG smoke启动约定的修正；P25未通过。
+- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；P25前四轮均在隔离PG initdb启动阶段失败；第四轮 [41899785899](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41899785899) 前后端、PG18 sidecar和P24 Edge通过，initdb返回0xC0000135。已在CR-OUT-021记录并发现与既有PG smoke的环境传递/临时目录仍有差别；下一轮精确复用已验证临时目录和继承环境，P25未通过。
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 

@@ -1,3 +1,4 @@
+|Execution Note|P25第四轮hosted run 41899785899：全量前后端、PG18 sidecar、P24 Edge成功；P25 initdb仍以3221225781/0xC0000135退出。复查发现此前只部分对齐PG smoke，还显式传env副本并把数据嵌在工作根；已先记录CR-OUT-021，下一轮精确复用已验证的RUNNER_TEMP直系目录与继承环境。P25未通过。|
 |Execution Note|P25第三轮hosted run 41898332690：前后端、PG18 sidecar及P24 Edge成功；PG版本探测通过，但initdb初始化返回3221225781/0xC0000135（Windows STATUS_DLL_NOT_FOUND），API/Edge未启动。已按现有PG smoke约定记录CR-OUT-021并计划以poc_admin+原PATH复验。P25未通过。|
 |Execution Note|P25第二轮hosted run 41897161326前端/后端、PG18 sidecar、P24 Edge通过；P25仍在initdb.exe启动前退出，stdout/stderr为空且缺少进程退出码。根因未知；先记录CR-OUT-021，计划云端增加退出码与PG二进制探测后再判断。P25仍未通过。|
 |Execution Note|P25首次hosted run 41895767137：前端/后端全量回归及PG18 sidecar构建通过，Edge job在initdb.exe非零退出；当前包装器没有保留安全错误摘要，原因待查。偏差与受限日志诊断计划已先记录CR-OUT-021，P25未通过，待再次Hosted复验。|
