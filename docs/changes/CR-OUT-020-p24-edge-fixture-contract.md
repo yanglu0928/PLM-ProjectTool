@@ -67,3 +67,8 @@ P24失败快照现记录输出操作区域文本、role=status/alert及可见按
 
 - 产品门控拆分提交后，hosted run 41883970738 前端测试为2,092/2,093通过；唯一失败是新增用例引用当前测试文件未定义的 `response` helper，ReferenceError发生于测试构造Session阶段。产品缺陷验证未执行，P24 Edge因依赖前端job而跳过。
 - 修正：在用例内显式创建synthetic login及202 Response，不增加不必要的全局helper；保留真实SessionClient忙态、区域保持挂载和回执展示断言。只修纯测试夹具，产品代码不改。之后重跑hosted全链。
+
+
+## 测试夹具修正已实施
+
+新增测试现显式构造包含 data/trace_id 的合成登录Response；pending POST仍返回严格的HTTP 202 Output receipt。只改测试夹具，不改产品代码。等待GitHub hosted验证。

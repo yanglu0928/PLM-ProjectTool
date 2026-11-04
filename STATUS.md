@@ -1,3 +1,4 @@
+|Execution Note|P24新增测试夹具已修复：改为显式构造带data/trace_id的合成登录Response；保留真实SessionClient异步POST断言。产品逻辑未因该夹具错误再改动；云端全链复验等待中。|
 |Execution Note|P24产品修复后的hosted前端仅新增用例失败：引用未定义response helper，2,092/2,093通过，P24 Edge被跳过。先记录于CR-OUT-020，再修纯测试fixture并全链重验。|
 |Execution Note|P24发现的回执卸载缺陷已修复：显示资格与提交资格分离，SessionClient busy时保留回执区域并禁用按钮；新增真实SessionClient待完成POST单测。等待全链Hosted Edge复验。|
 |Execution Note|P24 Edge揭示真实回执UI缺陷：SessionClient POST期间canSubmit=false使整个Output Create区域卸载，202回执被丢弃。证据、最小修复和回滚计划已先记入CR-OUT-020；修复待实施。|

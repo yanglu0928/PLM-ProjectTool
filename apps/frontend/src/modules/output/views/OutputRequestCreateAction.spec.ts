@@ -41,11 +41,14 @@ describe("OutputRequestCreateAction", () => {
   });
   it("keeps the receipt area mounted while SessionClient is busy posting", async () => {
     let resolvePost!: (value: Response) => void;
+    const loginResponse = new Response(JSON.stringify({ data: {
+      user: { user_id: project, username_display: "合成用户" }, deployment_role: "NONE",
+      password_change_required: false,
+      authorized_projects: [{ project_id: project, name: "合成项目", role: "PROJECT_MANAGER" }],
+      absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
+      csrf_token: "a".repeat(64) }, trace_id: trace }), { headers: { "Content-Type": "application/json" } });
     const transport = vi.fn()
-      .mockResolvedValueOnce(response({ user: { user_id: project, username_display: "合成用户" },
-        deployment_role: "NONE", password_change_required: false,
-        authorized_projects: [{ project_id: project, name: "合成项目", role: "PROJECT_MANAGER" }],
-        absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z", csrf_token: "a".repeat(64) }))
+      .mockResolvedValueOnce(loginResponse)
       .mockImplementationOnce(() => new Promise<Response>(resolve => { resolvePost = resolve; }));
     const auth = new SessionClient(transport as typeof fetch);
     await auth.login("user", "synthetic-only");
