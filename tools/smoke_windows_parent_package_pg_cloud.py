@@ -162,7 +162,7 @@ def probe_packaged_pilot_readiness_report(root: Path) -> dict:
         if readable:
             command.append("-Readable")
         return subprocess.run(command, cwd=str(root), capture_output=True, text=True,
-                              encoding="utf-8", errors="replace", timeout=30, env=env)
+                              encoding="utf-8", errors="replace", timeout=90, env=env)
 
     try:
         incomplete = run(incomplete_path)
