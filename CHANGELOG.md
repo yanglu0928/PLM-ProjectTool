@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-05（P25编码前检查，非发行版本）
+
+- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；P25实现和完整hosted验证待执行。
+
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
 - OUT-01-A01-P24按CR-OUT-020以PASS_SCOPE_LIMITED完成。GitHub hosted run [41888874127](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41888874127) 14/14 jobs成功：前端2,093项测试/typecheck/build、后端4,022 tests/wheel、PG18/pgvector、父包及A17/A34/A35/A50通过。Windows Server 2025 hosted Edge验证DOCX请求UI固定合同、CSRF/幂等、202回执/历史导航、503无自动重试与未批准版本隐藏入口。仅合成API与数据，无DOCX生成、插件执行、客户数据或外部调用。详情见 docs/progress/out-01-a01-p24-edge-create-ui-result.md。真实Publisher信任、Win11实机、Gate/Pilot/Release仍未通过。下一项P25先做真实HTTP+Edge集成编码前检查。
