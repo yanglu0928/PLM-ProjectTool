@@ -25,3 +25,10 @@
 ## 验证计划
 
 GitHub hosted Windows runner D:临时目录中运行定向测试、后端全量测试/wheel、PG18真实Migration guard以及既有包构建验收链。检查提交中不存在Secret、客户数据、日志和本地配置。无本机或C盘程序执行。结论不超过`PASS_SCOPE_LIMITED`；不代表真实签名信任、实机安装、Pilot、Gate或Release通过。
+
+
+## 编码阶段偏差记录（2026-11-04）
+
+- 初始实现的关闭校验误把“当前已DISABLED且无活动操作”拒绝，和本CR声明的精确版本无变化重放行为相反。
+- 发现于代码提交后的静态复核，尚无hosted验收结论；不是测试通过或客户/生产事实。
+- 处理计划：先修正校验只拒绝ENABLED但无操作、或非ENABLED仍有操作的矛盾状态；保留DISABLED/空操作且expected lock_version精确匹配的无变化返回。用定向单测覆盖后在GitHub hosted runner复验。无数据迁移或业务数据写入。
