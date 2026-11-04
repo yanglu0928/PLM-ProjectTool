@@ -28,11 +28,19 @@ from plm_assistant.modules.output.api.list_cursor import OutputRequestListCursor
 from plm_assistant.modules.output.application.create_request import (
     CreateOutputRequest, OutputRequestService, ResolvedOutputContext,
 )
+from plm_assistant.modules.output.application.list_requests import (
+    OutputRequestListError, OutputRequestListQuery, OutputRequestListService,
+)
+from plm_assistant.modules.output.infrastructure.list_requests_repository import (
+    SqlAlchemyOutputRequestListRepository,
+)
 from plm_assistant.modules.output.infrastructure.create_request_repository import SqlAlchemyOutputRequestRepository
 from plm_assistant.modules.platform.application.idempotency import canonical_payload_fingerprint
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.platform.infrastructure.migration import upgrade_database
+from plm_assistant.modules.project.application.authorization import ProjectAuthorizationError, ProjectAuthorizationService
+from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.project.infrastructure.orm import DepartmentRow, ProjectMemberRow, ProjectRow
 
 TOKEN = b"r" * 32
@@ -252,6 +260,33 @@ def main() -> int:
 
         for ordinal in range(3):
             create_request(runtime, creator, project, ordinal)
+        authz = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=SqlAlchemyProjectAuthorizationRepository(),
+        )
+        try:
+            with runtime.unit_of_work() as tx:
+                authz.require_in_transaction(
+                    tx, user_id=manager, project_id=project,
+                    operation="OUTPUT_REQUEST_LIST",
+                )
+                tx.commit()
+        except ProjectAuthorizationError as exc:
+            raise AssertionError("synthetic manager membership preflight failed: " + exc.code) from None
+        direct = OutputRequestListService(
+            unit_of_work=runtime.unit_of_work,
+            access=SyntheticReadAccess(manager),
+            license_guard=SyntheticLicense(), authorization=authz,
+            repository=SqlAlchemyOutputRequestListRepository(),
+        )
+        try:
+            preflight_page = direct.list_page(OutputRequestListQuery(
+                TOKEN, uuid.uuid4(), project, 1,
+            ))
+        except OutputRequestListError as exc:
+            raise AssertionError("direct list service preflight failed: " + exc.code) from None
+        if not preflight_page.items or not preflight_page.has_more:
+            raise AssertionError("synthetic OutputRequest fixture did not create pageable rows")
         app = read_app(runtime, manager)
         before = row_counts(database, args.port)
         status, body = asyncio.run(asgi_get(

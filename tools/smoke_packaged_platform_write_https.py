@@ -95,6 +95,7 @@ KEY_REFS = (
     "evidence-list-cursor-v1", "global-reference-list-cursor-v1",
     "project-global-reference-candidate-list-cursor-v1",
     "project-outline-list-cursor-v1", "project-outline-version-list-cursor-v1",
+    "output-request-list-cursor-v1",
     "project-plan-list-cursor-v1", "project-reference-list-cursor-v1",
     "project-section-list-cursor-v1", "project-section-version-list-cursor-v1",
     "project-structured-spec-version-list-cursor-v1",
