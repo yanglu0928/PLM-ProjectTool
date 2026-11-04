@@ -1,5 +1,8 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- OUT-01-A01-P14按CR-OUT-011以PASS_SCOPE_LIMITED完成。Hosted run [41789030529](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41789030529) 14/14 jobs成功：后端3,998 tests/wheel、前端、PG18/pgvector、非发行父包、A17/A34/A35/A50通过。新增 OUTPUT_REQUEST_LIST 分页GET、三类冻结角色策略、Project/Session/page_size绑定的Output独立HMAC cursor及投影测试。首轮仅旧授权矩阵计数断言未更新，已先记录CR并修正，复验通过。router未挂载、正式cursor密钥未接线、没有专门PG18输出行测试。详见`docs/progress/out-01-a01-p14-output-request-list-result.md`。下一项P15核查OutputRequest Cancel Owner。
+
+
 - OUT-01-A01-P14编码前检查通过并登记CR-OUT-011：实现冻结OUTPUT_REQUEST_LIST的项目内只读keyset分页，严格应用ProjectManager/ImplementationMember/CustomerManager授权及独立HMAC cursor family；仅依赖注入密钥、默认路由不挂载。详见`docs/progress/out-01-a01-p14-output-request-list-precheck.md`。
 
 

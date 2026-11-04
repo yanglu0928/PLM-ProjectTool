@@ -1,7 +1,7 @@
 # CR-OUT-011：OutputRequest 项目列表只读查询
 
 - 日期：2026-11-04
-- 状态：已登记；OUT-01-A01-P14 编码前检查通过
+- 状态：PASS_SCOPE_LIMITED；OUT-01-A01-P14已完成
 - 来源：冻结 API-03 的 OUTPUT_REQUEST_LIST；P13 已完成单记录固定版本详情
 - 基线：API Contract V1 / OUTPUT_REQUEST_LIST；不修改 API、数据模型或 DB Schema
 
@@ -31,3 +31,12 @@
 - 证据表明失败来自冻结策略数量的旧测试断言，不是功能行为测试；本次Policy按API-03规定的三个读取角色，write=false、lock_reads=true。
 - 处理：在实施任何修复前登记该偏差；随后只将矩阵预期数改为186，并增加该Operation角色/只读属性断言。Production policy保持冻结契约范围，不删减权限，也不放宽角色。
 - 验证计划：重跑托管全量后端、wheel及PR完整父包验证；若其他断言失败再单独记录。
+
+
+## 实施及验收结果（2026-11-04）
+
+- 增加 OUTPUT_REQUEST_LIST ProjectAuthorization policy，只允许冻结的 PROJECT_MANAGER、IMPLEMENTATION_MEMBER、CUSTOMER_MANAGER；只读并锁定当前成员授权事实。
+- 新增 OutputRequest 列表 Application Service、项目隔离 SQL keyset Repository、独立 HMAC cursor Codec 及 opt-in GET。Cursor绑定family/Project/Session摘要/page_size/最后请求时间与ID；输出复用固定版本安全projection，不返回Context正文或存储内部字段。
+- 首轮 hosted run [41788380578](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41788380578) 暴露已有策略矩阵测试仍期望185项、实际新增一项后为186。按V1.1先登记偏差，再仅更新测试计数并新增OUTPUT_REQUEST_LIST角色/只读断言；未改变产品授权范围。最终 run [41789030529](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41789030529) 14/14 jobs成功，后端3,998项/wheel及全父包链通过。
+- 全流程含PG18父包生命周期smoke，但没有直接对新的OutputRequest list SQL运行PG18正/负数据行；SQL PostgreSQL方言、project过滤、keyset顺序由隔离单测验证。此限制保留，后续集成不得描述为已通过。
+- 不新增Migration/API合同变化，不调用客户数据/AI/插件，不挂默认/正式router。Cursor签名 key 仅经注入，正式受控来源未连接。
