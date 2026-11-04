@@ -1,6 +1,6 @@
 ## Unreleased · 2026-11-05（P25编码前检查，非发行版本）
 
-- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；第六轮 hosted run [41903687738](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41903687738) 的前后端测试/build、同run PG18 sidecar、P24/A50 Edge均通过；initdb以0xC0000135在创建数据目录前退出，受限诊断Artifact已成功上传。P25未通过；CR-OUT-021已记录下一步收集Windows Server 2025 loader/系统运行库证据，暂不猜测修复。
+- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；第七轮 hosted run [41907221688](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41907221688) 前后端、PG sidecar、父包/A17/A34/A35/P24/A50通过；P25 initdb仍返回0xC0000135。Windows递归PE依赖均有解析、系统运行库可见、无Application Error事件；独立父包PG18 lifecycle smoke通过。P25尚未运行真实HTTP/Edge；CR-OUT-021已登记将initdb调用和临时用户精确对齐已通过Windows smoke命令后复验。
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
