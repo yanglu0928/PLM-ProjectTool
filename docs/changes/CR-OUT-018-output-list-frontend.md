@@ -17,3 +17,12 @@
 - 分页：page_size固定50；校验响应字段、project_id、UUID、时间、state、分页游标与页间DESC顺序，拒绝重复cursor/重复请求ID；不渲染服务器未允许的额外内容。
 - 验收：client解析/错误/分页合同测试；view角色/空态/分页/项目切换用例；Vue全量测试/typecheck/build；GitHub hosted workflow，并沿用PG18/A17/A34/A35/A50。所有运行仅在GitHub hosted runner D盘临时目录。
 - 风险限制：仅新增只读UI，不创建请求、不提供撤销/重试、不代表真实插件生成文件；Pilot/Release与真实信任状态不变。
+
+
+## 首次云端验收偏差与修复前记录
+
+- 证据：GitHub hosted run [41857700593](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41857700593)，前端测试 job 失败；2,079/2,080 项测试通过，后端与其它云端工作仍在执行。
+- 偏差 1：`OutputRequestListView.spec.ts` 中对象字面量断言类型跨行写法被 Vite/OXC 解析器拒绝（第 96 行），导致该测试套件无法加载。修复：调整为解析器接受的 TypeScript 断言格式，并由同一 GitHub hosted workflow 重跑。
+- 偏差 2：`ProjectDetailView.spec.ts` 的直接 URL 用例使用没有授权项目的合成 Session，却断言应只对项目经理/实施成员/客户经理显示的入口。修复：将该用例改用合成项目经理 Session；另补充无权限角色不显示入口的断言，服务端授权仍为最终边界。
+- 影响与风险：均为前端测试代码/入口呈现的验收偏差；未修改API、数据库、持久化数据或安全边界，不影响P21已通过结果。修复后要求全量前端测试、类型检查、生产构建及完整 hosted workflow 通过；失败则继续记录并修正。
+- 限制：本次只记录hosted证据，不在开发者本机或C盘运行项目代码/测试；不据此宣称Pilot、Gate或Release通过。

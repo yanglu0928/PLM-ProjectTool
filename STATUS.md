@@ -1,3 +1,4 @@
+|Execution Note|P22 首次 hosted run [41857700593](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41857700593)：前端 2,079/2,080 测试通过；OutputRequestListView 测试有OXC跨行断言解析错误，ProjectDetail用例使用无成员权限的合成Session却断言成员入口。偏差与修复、全量云端重验要求先记入CR-OUT-018；当前P22未通过，未影响P21。|
 |Execution Note|P21 run 41841051553: backend full suite/wheel, frontend, assembly与A35通过；PG18合成PM列表首请求404，A17父包组合因缺少Output cursor合成Vault key启动失败。证据/根因调查及修正计划已先记入CR-OUT-017；P21未完成，生产缺钥仍失败关闭。|
 |Execution Note|P21首次云端回归 run 41839890577 后端4021 tests，31 failures/6 errors；既有production_login测试未注入新Output cursor合成密钥，触发runner空Vault。问题与修复计划已按CR-OUT-017记录；生产路径保持缺钥失败关闭，P21未完成。|
 |Execution Note|OUT-01-A01-P18按CR-OUT-014以PASS_SCOPE_LIMITED完成；run 41809547922为13/13 jobs success，后端4,013 tests/wheel、PG18.6合成HTTP/授权及父包A17/A34/A35/A50验收通过。代码与测试仅在GitHub hosted runner执行，不在本机/C盘运行；runner临时目录D盘。当前转P19 Output Create HTTP显式写组合。|
