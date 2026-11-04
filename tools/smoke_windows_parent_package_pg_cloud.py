@@ -969,6 +969,15 @@ def main() -> int:
             create_http_run.stdout.strip().splitlines()[-1])
         if create_http_validation.get("status") != "PASS_SCOPE_LIMITED":
             raise RuntimeError("OutputRequest create HTTP composition validation failed")
+        read_http_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p20-read-http/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        read_http_validation = json.loads(
+            read_http_run.stdout.strip().splitlines()[-1])
+        if read_http_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("OutputRequest read HTTP composition validation failed")
         if version != "18.6" or vector_version != "0.8.6":
             raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
                              + version + "/" + vector_version)
@@ -981,6 +990,7 @@ def main() -> int:
             "output_cancel_owner_validation": cancel_validation,
             "output_cancel_http_validation": cancel_http_validation,
             "output_create_http_validation": create_http_validation,
+            "output_read_http_validation": read_http_validation,
             "plugin_package_schema_validation": plugin_validation,
             "plugin_package_registration_validation": registration_validation,
             "plugin_operation_disable_validation": plugin_disable_validation,
