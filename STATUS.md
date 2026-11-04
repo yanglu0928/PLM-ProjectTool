@@ -1,3 +1,4 @@
+|Execution Note|P24已过受理与模拟503/无自动重试；run 41887798979最后在未批准版本路径超时，因Edge helper仍等待应当不存在的创建区域。修正方案先记录CR-OUT-020，再分场景等待/断言。|
 |Execution Note|P24 Edge修正“手动重试按钮必须消失”的过严断言为：模拟503错误可见，并在500ms窗口内确认无自动第二次POST。脚本变更等待Hosted复验。|
 |Execution Note|P24 run 41886767805 前端2,093项及Edge受理/历史/固定POST/CSRF/幂等通过；模拟503后被“按钮必须消失”的过严断言阻断。日志显示仅发生一次503、无自动重试。先登记CR-OUT-020，再校准验收脚本。|
 |Execution Note|P24新增测试所有synthetic trace_id引用现统一为已有项目UUID；已检查该测试区块无未定义trace符号，等待hosted验证。|

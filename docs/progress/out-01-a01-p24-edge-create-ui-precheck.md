@@ -122,3 +122,10 @@ P24新增用例的trace_id现复用本测试文件已有的synthetic Project UUI
 ## Retry assertion 校准已实施
 
 Edge harness不再要求错误后手动重试按钮消失；保留对role=alert服务不可用提示的断言，并在500ms窗口确认没有自动发出第二个POST。只改验收harness，产品实现未改。
+
+
+## 未批准版本场景的测试路由断言偏差（修复前登记，2026-11-05）
+
+- Run 41887798979已通过P24请求受理和模拟SYSTEM_UNAVAILABLE 503路径，验证正确CSRF/幂等/固定负载、可见错误提示及500ms内没有自动重发。随后测试未批准版本时超时。
+- 根因：公共 `openRequirement()` helper无条件等待 `#output-create-title`，但未批准版本的正确产品行为是根本不渲染Output Create区域，所以helper在进入负向断言前等待了不存在的元素。
+- 修正：给helper增加是否预期创建区域的参数；未批准场景等待需求详情加载/固定版本状态后直接断言请求按钮与创建区域均不存在。仅调整浏览器验收脚本，不改产品组件。
