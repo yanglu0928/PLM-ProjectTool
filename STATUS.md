@@ -1,3 +1,4 @@
+|Execution Note|P21首次云端回归 run 41839890577 后端4021 tests，31 failures/6 errors；既有production_login测试未注入新Output cursor合成密钥，触发runner空Vault。问题与修复计划已按CR-OUT-017记录；生产路径保持缺钥失败关闭，P21未完成。|
 |Execution Note|OUT-01-A01-P18按CR-OUT-014以PASS_SCOPE_LIMITED完成；run 41809547922为13/13 jobs success，后端4,013 tests/wheel、PG18.6合成HTTP/授权及父包A17/A34/A35/A50验收通过。代码与测试仅在GitHub hosted runner执行，不在本机/C盘运行；runner临时目录D盘。当前转P19 Output Create HTTP显式写组合。|
 |Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P20_PASS_SCOPE_LIMITED / PLG_02_A08_PASS_SCOPE_LIMITED / PHASE_2_IN_PROGRESS|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|

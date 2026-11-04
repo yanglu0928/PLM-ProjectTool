@@ -19,3 +19,12 @@ OutputRequest keyset分页Service、SQL Repository、opt-in GET adapter及独立
 ## 验收计划
 
 定向Vault key resolver与路由默认/显式测试；PG18.6合成HTTP验证PM/IM/CustomerManager分页、cursor续页及隔离；完整GitHub hosted后端/前端/父包/A17/A34/A35/A50回归。仅runner D盘临时环境执行。真实vault provisioning与Win11实机不因合成验证标记通过。
+
+
+## Hosted run 41839890577 finding — 2026-11-04
+
+- Result: backend full suite failed before the PG parent-package jobs. 4,021 tests ran; 31 failures and 6 errors.
+- Evidence: newly added read-mode composition resolves the dedicated Output cursor key during platform factory tests. Existing test_production_login.py fixtures injected synthetic cursor sources for prior modules but not the new Output source, so those tests reached the runner's empty Windows credential store and aborted the composed app. The new focused Output cursor tests were not the root issue.
+- Scope: validation-fixture omission; production remains fail-closed when the Output key is unavailable. No credential was created or changed.
+- Correction plan: add a synthetic OutputRequestListCursorCodec factory patch to the shared production-login test setup, and add an explicit missing-key disposal assertion. Re-run the full hosted workflow and PG18 parent smoke; keep the P21 result incomplete until it passes.
+- Recovery: no production migration or data recovery required. Revert the test fixture patch if it changes unrelated expectations; production rollback remains removal of P21 list composition and its dedicated key factory.
