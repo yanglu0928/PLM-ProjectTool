@@ -34,3 +34,7 @@ P16后端全量4,006项、wheel及Parent/A17/A34流程成功，但新 `SqlAlchem
 ## 托管首轮偏差（修复前登记，2026-11-04）
 
 Hosted run [41796636992](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41796636992) 在P17验证器的旧If-Match无写入断言失败。初查失败点是测试helper把 `clock_timestamp()` 当前读数混入完整快照相等比较；每次读取都自然变化，故即便业务行没有变化仍会误报。该日志尚未证明生产Repository错误，也未证明业务行写入。处置仅让验证器比较Output/Job/Audit/receipt持久行事实，并继续单独验证完成时间不晚于PG18当前时钟；保留所有真实负例。修复前已登记，不放宽业务断言。
+
+## 托管第二轮偏差（修复前登记，2026-11-04）
+
+Hosted run [41798124112](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41798124112) 已通过无权角色的业务拒绝码断言，但“无权角色未改变行”断言再次因把 state helper 的 `clock_timestamp()` 纳入完整快照比较而误报。持久表行及审计/收据计数应按前四项比较；当前时刻仅用于完成时间边界检查。该失败尚未证明生产行被修改。修复仅调整验证器快照断言，保留无权拒绝、持久无写入和时间边界断言，不放宽业务条件。
