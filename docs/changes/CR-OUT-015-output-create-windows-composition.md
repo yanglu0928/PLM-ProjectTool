@@ -34,3 +34,10 @@ P19只接入冻结Create router到显式Windows include_secret_write组合：新
 ## 编码前检查结论
 
 PASS_WITH_LIMITATION：依赖Owner/adapter可复用；缺少的仅为Create策略、Access和显式组合。trusted publisher manifest空且Worker尚无正式执行，必须保持Create fail closed/no-write边界。可按以上单一范围编码。
+
+
+## 执行偏差记录（首次Hosted验收）
+
+- Run [41813995345](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41813995345)：P51-A32 projection、前端、PG18/pgvector、Python embed、A50通过；后端全量在4,018项中1项失败，导致后续依赖父包/A17/A34/A35作业跳过。
+- 失败：新组合单元测试断言了不存在的 `OutputRequestService._guard`；实现实际将依赖保存为 `_license`。这是测试字段名错误，非运行时实现异常。
+- 修复：仅将组合测试断言改为检查 `_license`；再跑完整云端工作流（含4,000+后端测试、PostgreSQL父包smoke、A17/A34/A35/A50）。本失败及重验完成前不关闭P19。
