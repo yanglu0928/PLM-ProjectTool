@@ -24,3 +24,7 @@
 ## 验收计划与限制
 
 在GitHub hosted Windows runner 的D盘临时区执行后端全量/wheel、前端/build、Migration空库/有数据升降、PG18合成真实身份/License/HTTP/幂等首调与重放/同键异载荷/缺If-Match/CSRF/锁冲突/Audit失败回滚、clean parent、A17/A34/A35/A50全链。源代码和项目测试不得在用户本机/C盘运行。最高为`PASS_SCOPE_LIMITED`；不表示Windows 11实机、正式安装信任、Pilot、Gate或Release通过。正式公钥/License、服务账户凭据、ACL/TLS及真实安装器仍是独立阻断项。
+
+## 后续 Hosted 验收偏差（2026-11-04）
+
+修复后 hosted run [41765575181](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41765575181) 的 Backend tests and wheel、Frontend tests and production build、PG18 sidecar、Python embedded runtime、Windows parent candidate 与 A35 bounded handoff 均成功；A17 validation candidate 投影成功。`Clean extraction and temporary PostgreSQL lifecycle smoke` 失败，因为 `validation/out-01-a01-p01-migration/verify.py` 的空库/已有数据迁移断言仍把 schema head 固定为 `20261104_0229`，未随 CR 的 Migration 0230 前移；A34 因该前置失败而跳过。修复计划：只将该迁移验收器中表示当前 schema head 的断言同步到 `20261104_0230`，保留对历史迁移 down_revision 的原断言，然后重跑全量托管工作流。该失败不代表数据库迁移本身已通过，亦未降低验收范围。
