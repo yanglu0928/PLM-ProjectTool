@@ -147,11 +147,12 @@ async def asgi_get(app, path: str):
     async def send(message):
         messages.append(message)
 
+    route_path, _, query = path.partition("?")
     await app(
         {"type": "http", "asgi": {"version": "3.0", "spec_version": "2.3"},
          "http_version": "1.1", "method": "GET", "scheme": "http",
-         "path": path, "raw_path": path.split("?", 1)[0].encode("ascii"),
-         "query_string": path.split("?", 1)[1].encode("ascii") if "?" in path else b"",
+         "path": route_path, "raw_path": route_path.encode("ascii"),
+         "query_string": query.encode("ascii"),
          "headers": ((b"host", b"localhost"),
                      (b"cookie", b"plm_session=" + TOKEN.hex().encode("ascii"))),
          "client": ("127.0.0.1", 43000), "server": ("localhost", 80)},
