@@ -67,6 +67,7 @@ describe("ProjectDetailView", () => {
     expect(wrapper.get('dl[aria-label="当前授权项目详情"]')).toBeTruthy();
     expect(wrapper.get('a[href="/projects/' + id + '/members"]').text()).toContain("成员历史");
     expect(wrapper.get('a[href="/projects/' + id + '/ai"]').text()).toContain("AI任务");
+    expect(wrapper.get('a[href="/projects/' + id + '/output-requests"]').text()).toContain("输出请求历史");
     expect(wrapper.get('a[href="/projects/' + id + '/handover"]').text()).toContain("交接分析");
     expect(wrapper.get('a[href="/projects/' + id + '/handover-actions"]').text()).toContain("交接待办");
     expect(wrapper.get('a[href="/projects/' + id + '/surveys"]').text()).toContain("调研定义");
