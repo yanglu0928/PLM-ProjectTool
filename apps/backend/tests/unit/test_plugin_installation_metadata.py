@@ -118,7 +118,7 @@ class PluginInstallationMetadataTests(unittest.TestCase):
         self.license.fail = True
         with self.assertRaises(PluginInstallationMetadataError) as caught:
             self.service.get(self.query, self.installation_id)
-        self.assertEqual(caught.exception.code, "SYSTEM_UNAVAILABLE")
+        self.assertEqual(caught.exception.code, "PLUGIN_INSTALLATION_UNAVAILABLE")
 
 
 if __name__ == "__main__":
