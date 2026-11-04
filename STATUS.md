@@ -1,3 +1,4 @@
+|Execution Note|P25第九轮hosted run 41913332612：initdb参数和stdin均与通过smoke对齐后仍0xC0000135，D盘数据目录未创建；失败摘要上传。前后端/PG sidecar/父包/A17/A34/A35/P24/A50通过。观察到P25显式TEMP/TMP=D盘runner temp而父包smoke继承runner默认，已在CR-OUT-021登记该最小环境对照；P25未通过。|
 |Execution Note|P25第八轮hosted run 41910278934：initdb参数和临时用户与Windows PG smoke对齐后仍以0xC0000135退出，目录未创建；失败摘要上传。前后端、PG重建、父包/A17/A34/A35/P24/A50通过。对比发现P25 run_checked强制stdin=DEVNULL，而通过smoke继承runner stdin；已在CR-OUT-021登记下一项最小对照。P25仍未通过。|
 |Execution Note|P25第七轮hosted run 41907221688：前后端、PG sidecar重建、父包/A17/A34/A35/P24/A50通过；P25 initdb仍以0xC0000135失败。Windows dumpbin递归依赖无缺项、关键VC运行库可见、无Application Error事件；同run独立父包PostgreSQL 18.6生命周期PASS_LIMITED。CR-OUT-021已登记下一步将P25 initdb命令和临时用户对齐此已通过smoke，P25仍未通过。|
 |Execution Note|P25第六轮hosted run 41903687738：前后端测试/build、同run PG18 sidecar、P24/A50 Edge通过；initdb以3221225781/0xC0000135在数据目录创建前退出，pg_ctl确认目录不存在，受限失败Artifact成功上传。包内静态DLL依赖清单未发现缺项，但未证明Windows系统/延迟加载依赖；P25未通过。CR-OUT-021已登记下一项仅增加Windows Server 2025原生装载诊断，再按证据修复。|
