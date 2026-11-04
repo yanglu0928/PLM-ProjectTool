@@ -29,3 +29,8 @@ P16后端全量4,006项、wheel及Parent/A17/A34流程成功，但新 `SqlAlchem
 ## 编码前结论
 
 现有PG smoke已先建临时数据库、升级迁移并运行真实Output Create Owner validator，且已有失败Audit回滚校验模式；可将P17验证器加入同一D盘Runner临时生命周期。此动作仅验收新Owner专有数据库边界，不表示默认生产应用组合、真实Output Worker或正式Pilot已就绪。
+
+
+## 托管首轮偏差（修复前登记，2026-11-04）
+
+Hosted run [41796636992](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41796636992) 在P17验证器的旧If-Match无写入断言失败。初查失败点是测试helper把 `clock_timestamp()` 当前读数混入完整快照相等比较；每次读取都自然变化，故即便业务行没有变化仍会误报。该日志尚未证明生产Repository错误，也未证明业务行写入。处置仅让验证器比较Output/Job/Audit/receipt持久行事实，并继续单独验证完成时间不晚于PG18当前时钟；保留所有真实负例。修复前已登记，不放宽业务断言。
