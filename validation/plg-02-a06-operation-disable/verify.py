@@ -60,6 +60,13 @@ from plm_assistant.modules.plugin.infrastructure.activation_owner_repository imp
 from plm_assistant.modules.plugin.infrastructure.installation_owner_repository import (
     SqlAlchemyPluginInstallationRepository,
 )
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
+from plm_assistant.modules.plugin.application.installation_disable import (
+    PluginInstallationDisableError, PluginInstallationDisableService,
+)
+from plm_assistant.modules.plugin.infrastructure.installation_disable_result_repository import (
+    SqlAlchemyPluginDisableResultRepository,
+)
 from plm_assistant.modules.plugin.infrastructure.package_registration_repository import (
     SqlAlchemyPluginPackageRegistrationRepository,
 )
@@ -120,8 +127,10 @@ class _InstalledEvidence:
 class _ReadAccess:
     def __init__(self, actor_id: uuid.UUID) -> None:
         self.actor_id = actor_id
-    def authorized_admin(self, _transaction: object, *, session_token: bytes, now: object):
-        if type(session_token) is not bytes or len(session_token) != 32:
+    def authorized_admin(self, _transaction: object, *, session_token: bytes,
+                         csrf_token: bytes, now: object):
+        if (type(session_token) is not bytes or len(session_token) != 32
+                or type(csrf_token) is not bytes or len(csrf_token) != 32):
             return None
         return self.actor_id
 
@@ -331,6 +340,101 @@ def main() -> int:
             ).fetchone()[0]
         if disable_audits != 2:
             raise AssertionError("per-operation disable Audit events are incomplete")
+
+        api_installation_id = uuid.uuid4()
+        api_recorded = installer.record(RecordPluginInstallationCommand(
+            api_installation_id, package.plugin_package_id, actor_id, uuid.uuid4(),
+        ))
+        if api_recorded.installation_state != "INSTALLED":
+            raise AssertionError("A08 synthetic Installation did not start installed")
+        api_enabled = activation.enable(EnablePluginOperationsCommand(
+            api_installation_id, ("document.render", "document.export"), 0,
+            actor_id, uuid.uuid4(),
+        ))
+        if api_enabled.installation_state != "ENABLED":
+            raise AssertionError("A08 synthetic Installation did not enable")
+        disable_service = PluginInstallationDisableService(
+            unit_of_work=runtime.unit_of_work,
+            access=_ReadAccess(actor_id),
+            owner=activation,
+            receipts=SqlAlchemyIdempotencyReceipts(),
+            results=SqlAlchemyPluginDisableResultRepository(),
+            license_guard=_ReadLicense(),
+        )
+        request_key = "a08-plugin-disable-stable-key"
+        disable_command = DisablePluginInstallationCommand(
+            api_installation_id, 1, actor_id, uuid.uuid4(),
+        )
+        first_response = disable_service.disable(
+            disable_command, session_token=b"m" * 32, csrf_token=b"c" * 32,
+            idempotency_key=request_key,
+        )
+        replay_response = disable_service.disable(
+            DisablePluginInstallationCommand(
+                api_installation_id, 1, actor_id, uuid.uuid4(),
+            ),
+            session_token=b"m" * 32, csrf_token=b"c" * 32,
+            idempotency_key=request_key,
+        )
+        if (first_response != replay_response
+                or not first_response.changed
+                or first_response.result_lock_version != 2
+                or _state(_dsn(database, args.port), api_installation_id)
+                != ("DISABLED", 2, 0, 4)):
+            raise AssertionError("A08 exact idempotent disable replay was not immutable")
+        try:
+            disable_service.disable(
+                DisablePluginInstallationCommand(
+                    api_installation_id, 2, actor_id, uuid.uuid4(),
+                ),
+                session_token=b"m" * 32, csrf_token=b"c" * 32,
+                idempotency_key=request_key,
+            )
+        except PluginInstallationDisableError as exc:
+            if exc.code != "CONFLICT_IDEMPOTENCY":
+                raise
+        else:
+            raise AssertionError("A08 same key with a different payload was accepted")
+        with psycopg.connect(_dsn(database, args.port)) as conn:
+            result_rows = conn.execute(
+                "SELECT count(*) FROM plm.plg_disable_results "
+                "WHERE plugin_installation_id=%s", (api_installation_id,),
+            ).fetchone()[0]
+            receipt_rows = conn.execute(
+                "SELECT count(*) FROM plm.plt_idempotency_receipts "
+                "WHERE actor_id=%s AND operation='V1_PLUGIN_DISABLE' "
+                "AND state='COMPLETED'", (actor_id,),
+            ).fetchone()[0]
+            api_disable_audits = conn.execute(
+                "SELECT count(*) FROM plm.aud_events "
+                "WHERE action='PLUGIN_OPERATION_DISABLE' AND target_object_id=%s",
+                (api_installation_id,),
+            ).fetchone()[0]
+        if result_rows != 1 or receipt_rows != 1 or api_disable_audits != 2:
+            raise AssertionError("A08 result/receipt/audit transaction was not atomic")
+        with psycopg.connect(_dsn(database, args.port)) as conn:
+            try:
+                conn.execute(
+                    "UPDATE plm.plg_disable_results SET changed=false "
+                    "WHERE plugin_installation_id=%s", (api_installation_id,),
+                )
+            except psycopg.Error:
+                conn.rollback()
+            else:
+                raise AssertionError("A08 immutable result row accepted direct UPDATE")
+        result["plugin_installation_disable_api_validation"] = {
+            "status": "PASS_LIMITED",
+            "changed": first_response.changed,
+            "result_lock_version": first_response.result_lock_version,
+            "idempotent_replay_exact": first_response == replay_response,
+            "different_payload_conflict": True,
+            "immutable_result_rows": result_rows,
+            "completed_receipts": receipt_rows,
+            "operation_audit_rows": api_disable_audits,
+            "customer_data": False,
+            "external_calls": 0,
+            "production_database": False,
+        }
 
         result.update(
             status="PASS_LIMITED",

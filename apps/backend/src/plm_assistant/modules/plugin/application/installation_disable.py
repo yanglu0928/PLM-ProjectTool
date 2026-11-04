@@ -193,6 +193,8 @@ class PluginInstallationDisableService:
             raise
         except RuntimeLicenseError:
             raise PluginInstallationDisableError("LICENSE_OPERATION_DENIED") from None
+        except PluginActivationOwnerError as exc:
+            raise PluginInstallationDisableError(self._map_owner_error(exc.code)) from None
         except Exception:
             raise PluginInstallationDisableError("PLUGIN_DISABLE_UNAVAILABLE") from None
 
@@ -217,7 +219,9 @@ class PluginInstallationDisableService:
         try:
             self._guard.require_valid(trace_id=trace_id)
         except RuntimeLicenseError:
-            raise
+            raise PluginActivationOwnerError(
+                "PLUGIN_DISABLE_LICENSE_OPERATION_DENIED"
+            ) from None
         except Exception:
             raise PluginActivationOwnerError("PLUGIN_DISABLE_UNAVAILABLE") from None
 

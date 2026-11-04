@@ -20,7 +20,7 @@ from plm_assistant.modules.platform.infrastructure.migration import (  # noqa: E
     upgrade_database,
 )
 
-HEAD = "20261104_0229"
+HEAD = "20261104_0230"
 PARENT = "20261103_0223"
 _TABLES = (
     "plg_packages",
@@ -73,6 +73,7 @@ _INSTALLATION_TABLES = (
     "plg_installations",
     "plg_enabled_operations",
     "plg_runtime_validations",
+    "plg_disable_results",
 )
 
 
@@ -92,15 +93,15 @@ def _assert_guards(dsn: str) -> None:
             "SELECT count(*) FROM pg_trigger "
             "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%'"
         ).fetchone()[0]
-    if actual != 20:
-        raise AssertionError(f"expected 20 PLG immutable/truncate/owner guards through 0229 (0227/0228), got {actual}")
+    if actual != 21:
+        raise AssertionError(f"expected 21 PLG immutable/truncate/owner guards through 0230, got {actual}")
     with psycopg.connect(dsn) as conn:
         closed = conn.execute(
             "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
             "AND tgname LIKE 'trg_plg_%__owner_closed'"
         ).fetchone()[0]
-    if closed != 4:
-        raise AssertionError(f"expected four closed PLG-02 Owner guards at 0227, found {closed}")
+    if closed != 5:
+        raise AssertionError(f"expected five closed PLG-02 Owner guards through 0230, found {closed}")
 
 
 def _assert_guards_open_parent(dsn: str) -> None:
@@ -121,8 +122,8 @@ def _assert_guards_closed(dsn: str) -> None:
             "SELECT count(*) FROM pg_trigger "
             "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%__owner_closed'"
         ).fetchone()[0]
-    if actual != 4:
-        raise AssertionError(f"expected four closed INSERT owner guards, got {actual}")
+    if actual != 5:
+        raise AssertionError(f"expected five closed INSERT owner guards through 0230, got {actual}")
 
 
 def _seed_synthetic_history(dsn: str) -> tuple[uuid.UUID, uuid.UUID]:
