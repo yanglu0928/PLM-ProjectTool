@@ -1,6 +1,6 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
-- PLG-02-A08编码前检查通过，登记CR-PLG-013：复用A06原子停用Owner、A07 ETag读取，新增强CSRF/If-Match/幂等HTTP命令；为保留精确首次响应，在冻结Schema基础上追加不可变结果快照表和Migration 0230。只在显式Production Write装配，托管验收待完成。详见`docs/progress/plg-02-a08-installation-disable-precheck.md`。
+- PLG-02-A08按CR-PLG-013完成并以 `PASS_SCOPE_LIMITED` 关闭。Hosted run [41770188317](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41770188317) 13/13 jobs成功：后端3970 tests/wheel、前端测试/typecheck/build、PG18 Migration 0230与插件停用HTTP幂等/Audit回滚验收、20,180项非发行父包及A17/A34/A35/A50通过。父包SHA-256 `a49af407…b61dfae`。三轮失败及修复先记CR后处理。未在Win11设备实测、未启动正式产品API；Pilot/Gate 3/正式Release仍未通过。详见`docs/progress/plg-02-a08-installation-disable-result.md`。
 
 ## Unreleased · 2026-11-04（内部云端验证，非发行版本）
 

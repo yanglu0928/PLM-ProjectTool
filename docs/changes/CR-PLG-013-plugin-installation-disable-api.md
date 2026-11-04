@@ -1,7 +1,7 @@
 # CR-PLG-013：PLUGIN_DISABLE受控HTTP命令
 
 - 日期：2026-11-04
-- 状态：已批准，PLG-02-A08编码中
+- 状态：已完成，结果 `PASS_SCOPE_LIMITED`（GitHub hosted run 41770188317）
 - WBS：PLG-02-A08
 - 依据：API Contract V1 的 `PLUGIN_DISABLE`；PLG-02-A06 Owner；PLG-02-A07 Installation GET
 - 优先级：在安装读取之后提供一个受控、可审计的管理停用入口
@@ -39,3 +39,7 @@ hosted run [41768655588](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 
 
 Inspection confirmed the trigger inventory is correct at the current head: `_assert_guards` checks all 21 PLG triggers and 5 closed-owner guards at `head` (0230). The reported count of 4 occurs later, after the fixture explicitly downgrades the database to `20261102_0222`, where the A08 trigger is correctly absent. The fix is to assert the historically correct count of 4 only at that 0222 point; the 0230 head still retains the strict count of 5. This is a test-stage expectation correction, not a weakened current-schema check.
+
+## 最终验收结果（2026-11-04）
+
+PLG-02-A08按上述范围完成。最终 run [41770188317](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41770188317) 13/13 jobs成功：后端3970项/wheel、前端测试/typecheck/build、PG18 Migration 0230及PLUGIN_DISABLE幂等/Audit/回滚/降级保护、非发行父包、A17/A34/A35/A50均通过。父包20,180文件，SHA-256 `a49af40701da8f5d118ead1873c8d755e7663252750fde330dc01b21ab61dfae`。三轮 hosted 失败和修复均已在本CR上文记录；最终状态仅 `PASS_SCOPE_LIMITED`。没有本机/Win11实测或正式API/服务启动，Pilot、Gate 3、正式 Release 仍未就绪。详见 `docs/progress/plg-02-a08-installation-disable-result.md`。
