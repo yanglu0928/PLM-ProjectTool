@@ -179,7 +179,7 @@ def main() -> int:
         return 0
     finally:
         if runtime is not None:
-            runtime.engine.dispose()
+            runtime.dispose()
         if created:
             drop_database(args.port, database)
 
