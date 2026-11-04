@@ -1,8 +1,10 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
-- OUT-01-A01-P15按CR-OUT-012完成源码编码前检查（PASS_WITH_LIMITATION）。确认冻结取消需以OutputRequest为资源且使用其lock_version；现有Job取消dispatcher在独立读写UOW间分派，不能原子更新OutputRequest和OUTPUT_GENERATE Job。已记录由Output协调Jobs-owned事务端口的方案，未改代码/测试/Schema/API合同。详见`docs/progress/out-01-a01-p15-output-request-cancel-precheck.md`。下一项P16核查Output终态Worker写入Owner/锁序后实现opt-in取消。
+- OUT-01-A01-P16按CR-OUT-012以PASS_SCOPE_LIMITED完成：新增 opt-in OutputRequest取消HTTP/Owner及Jobs-owned同事务取消端口。Hosted run [41793207115](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41793207115) 13/13 jobs成功，后端4,006 tests/wheel；前端、PG18 sidecar/父包、A17/A34/A35/A50通过。新Owner无专用PG18行事务验收、无默认组合装配、无Output终态Worker，保持限界结论。详见`docs/progress/out-01-a01-p16-output-request-cancel-result.md`。下一项P17直接补Hosted PG18正负行/事务、版本竞争与Audit回滚测试。
 
-- OUT-01-A01-P14按CR-OUT-011以PASS_SCOPE_LIMITED完成。Hosted run [41789030529](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41789030529) 14/14 jobs成功：后端3,998 tests/wheel、前端、PG18/pgvector、非发行父包、A17/A34/A35/A50通过。新增 OUTPUT_REQUEST_LIST 分页GET、三类冻结角色策略、Project/Session/page_size绑定的Output独立HMAC cursor及投影测试。首轮仅旧授权矩阵计数断言未更新，已先记录CR并修正，复验通过。router未挂载、正式cursor密钥未接线、没有专门PG18输出行测试。详见`docs/progress/out-01-a01-p14-output-request-list-result.md`。下一项P16核查Output终态Worker的实际写入Owner与锁序，再实现OutputRequest取消。
+- OUT-01-A01-P15按CR-OUT-012完成源码编码前检查（PASS_WITH_LIMITATION）。确认冻结取消需以OutputRequest为资源且使用其lock_version；现有Job取消dispatcher在独立读写UOW间分派，不能原子更新OutputRequest和OUTPUT_GENERATE Job。已记录由Output协调Jobs-owned事务端口的方案，未改代码/测试/Schema/API合同。详见`docs/progress/out-01-a01-p15-output-request-cancel-precheck.md`。下一项P16实现opt-in取消Owner与HTTP，专属PG18事务验收另列。
+
+- OUT-01-A01-P14按CR-OUT-011以PASS_SCOPE_LIMITED完成。Hosted run [41789030529](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41789030529) 14/14 jobs成功：后端3,998 tests/wheel、前端、PG18/pgvector、非发行父包、A17/A34/A35/A50通过。新增 OUTPUT_REQUEST_LIST 分页GET、三类冻结角色策略、Project/Session/page_size绑定的Output独立HMAC cursor及投影测试。首轮仅旧授权矩阵计数断言未更新，已先记录CR并修正，复验通过。router未挂载、正式cursor密钥未接线、没有专门PG18输出行测试。详见`docs/progress/out-01-a01-p14-output-request-list-result.md`。P16完成；下一项P17直接补新Owner的hosted PG18事务验证。
 
 
 - OUT-01-A01-P14编码前检查通过并登记CR-OUT-011：实现冻结OUTPUT_REQUEST_LIST的项目内只读keyset分页，严格应用ProjectManager/ImplementationMember/CustomerManager授权及独立HMAC cursor family；仅依赖注入密钥、默认路由不挂载。详见`docs/progress/out-01-a01-p14-output-request-list-precheck.md`。
