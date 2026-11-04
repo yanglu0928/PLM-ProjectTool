@@ -99,3 +99,11 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - 移除P25运行步骤对TEMP/TMP的覆盖、并为Edge Node子进程显式指定D盘runner temp后，initdb结果未变化。此前对齐initdb参数、stdin及已知DLL静态依赖探测也未消除错误；静态依赖存在不能排除动态装载或初始化内部原因。根因仍未知，不能宣称为数据库/API/Edge行为。
 - 下一项按第八/九轮已登记的条件方案，仅给P25合成PG `initdb` 增加官方诊断参数 `--debug --no-clean`，保留D盘runner temp边界；失败Artifact继续只包含去敏、截断输出、相对文件名/大小和状态码，不上传数据库文件、sidecar内容或完整日志。先采集初始化内部阶段证据，再决定是否调整runner环境或测试夹具。若故障导致PG状态无法确认，维持现有保留临时数据的失败关闭规则。
 - 此为hosted测试诊断，不改产品代码、API、Schema、Migration、认证/License/Publisher信任或业务数据。验证门槛仍为真实HTTP安全拒绝、Edge安全提示及相关数据库计数前后不变；未满足前P25保持未通过。
+
+
+## 第十一轮 hosted 诊断结果与延迟导入检查方案（2026-11-05）
+
+- Run [41918283038](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41918283038) 的P25定向步骤加入 `initdb --debug --no-clean` 后仍以 `3221225781 (0xC0000135)` 退出。debug stdout仅报告进入debug/no-clean模式，没有初始化阶段内部说明；`pg_ctl status` 返回4，数据目录不存在、部分文件清单为空，Application Error/WER未记录initdb匹配事件。该命令未达到真实PG启动、HTTP或Edge请求，P25失败关闭。
+- 同run递归静态依赖探测的9个模块均无缺失项；该检查只证明普通导入表的文件可定位，不覆盖延迟加载/按需载入。run中的前后端、PG sidecar重建、P24/A50、A17语法边界等独立作业通过，父包组装当时仍运行。没有客户数据、外部API、插件、文件发布或产品DB写入。
+- 第十一轮代码仅增加受限initdb调试开关；输出与临时目录仍受现有截断、去路径/文件清单和D盘生命周期规则控制。此诊断无产品/API/Schema/Migration变更，P25仍未通过。
+- 下一项编码前检查：保留普通导入扫描，追加同一hosted runner的 `dumpbin /imports` 延迟导入名称探测，覆盖initdb及当前递归依赖模块；只记录DLL名称和可定位状态，并把Application Error/WER查询扩展为initdb及postgres进程名。不得上传完整dumpbin输出、数据库文件、sidecar内容或系统日志。若没有发现可解释的差异，停止基于猜测反复改参数，转用已通过的同run父包PG二进制作哈希/版本对照或调整任务拆分，让不受阻WBS继续推进。
