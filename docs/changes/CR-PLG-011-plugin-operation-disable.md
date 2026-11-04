@@ -39,3 +39,10 @@ GitHub hosted Windows runner D:临时目录中运行定向测试、后端全量�
 - 新增PG18集成验证脚本后静态复核发现合成签名消息中的Python字节转义多了一层反斜杠，会让签名夹具与包验签规范不匹配。
 - 尚未执行该集成脚本；现有A06 Owner单元测试及其所在的全量云端测试已通过，该签名夹具问题不影响产品代码。
 - 处理计划：将字节分隔符修复为与已有PLG-01合成验证一致的NUL字节，并由同一PG18 hosted smoke执行实际登记、安装事实、两操作启用/停用、并发版本拒绝、审计回滚和精确重放。
+
+
+## 首轮PG18 hosted smoke超时记录（2026-11-04）
+
+- Hosted run [41754111643](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41754111643) 的后端3,959项测试、前端、PG sidecar、embedded runtime和父包组装成功；A35交接也成功。
+- 父包PG smoke在运行新A06验证前，于既有Pilot readiness PowerShell探针等待30秒后触发`subprocess.TimeoutExpired`。因此本轮没有执行到A06 PG owner集成脚本；不得把本轮解释为A06 PG用例失败或通过。
+- 修正计划：把该隔离诊断探针的执行上限从30秒提高到90秒，保持输入/断言/产品行为不变，然后完整重跑 hosted 链，确认A06验证确实执行。
