@@ -60,3 +60,12 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 
 - Run [41901521102](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41901521102) 在P25前端/后端/PG18 sidecar/P24 Edge均通过后，P25仍于initdb返回3221225781/0xC0000135退出。`pg_ctl status`对部分初始化目录返回了非预期代码，安全清理逻辑拒绝删除；临时目录保留在该GitHub runner的D盘工作区。未运行真实HTTP/Edge请求，产品代码未触及。
 - 这证实之前对环境/PATH/目录形状的推断不成立。暂停猜测式参数修复。实施前计划为：失败时写一个受限P25诊断JSON，包含命令名/退出码/去runner路径的末尾stdout/stderr、pg_ctl状态码、PG临时目录内的相对文件名及大小、存在时日志去路径后的短尾；禁止提交或上传数据库文件/sidecar内容/API请求数据。workflow的证据上传step改为always运行，仅上传该摘要；未知PG进程状态时继续保留PG和runtime目录，不强行删除。取得下一轮hosted证据后再选修复。
+
+
+## 第六轮 hosted 诊断结果与后续编码前检查（2026-11-05）
+
+- Run [41903687738](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41903687738) 的前端全量测试/生产构建、后端全量测试/wheel、同run PG18/pgvector sidecar、P24 Edge 与 A50 Edge 均通过；P25 语法/输入校验通过，真实HTTP/Edge阶段仍未执行到。
+- 受限摘要 Artifact 上传成功：`initdb.exe` 退出码 `3221225781 (0xC0000135)`，stdout/stderr为空；`pg_ctl status` 返回码4并指出数据目录不存在，PG临时目录为空且没有服务日志。说明初始化进程在创建数据目录前就异常退出，不能解释为数据库迁移、API拒绝或浏览器问题。无真实HTTP、Edge POST、业务表写入、插件、文件生成、客户数据或外部调用。
+- 对同run完整性已校验的非发行 sidecar 做了限界静态依赖清单复核：`initdb.exe` 的直接 PostgreSQL/ICU DLL及其包内递归导入均能在包内找到；这不是 Windows 装载器实测，也无法排除系统运行库、延迟加载或运行时装载差异，根因仍为待证。
+- 诊断修复本身已按前次计划实施并通过hosted语法检查，失败摘要在P25失败后成功上传。此轮P25未通过，不得关闭验收。
+- 下一次编码前检查：只增强Windows Server 2025 hosted诊断，不改产品行为/API/Schema/DB数据；用runner上的Microsoft PE工具（存在时）获取`initdb.exe`依赖名称，并检查其非系统依赖/VC运行库在runner及sidecar位置的存在性；记录受限Application Error事件字段或明确“无事件”，同时保留退出码。所有输出仅DLL名称、布尔存在性、截断错误码/短事件字段并去D盘runner绝对路径；不上传runner环境变量、数据库/sidecar文件或完整系统日志。恢复状态未知时继续保留D盘临时目录。取得这一轮真实Windows装载证据后再决定是否修PATH/运行库/包选择；不得先推断并静默改包或系统。
