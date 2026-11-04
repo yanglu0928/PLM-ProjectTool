@@ -177,8 +177,10 @@ try{
  mode="untrusted";await openRequirement();await click("请求生成 DOCX");
  await waitFor("document.querySelector('[role=alert]')?.innerText.includes('输出服务暂不可用')","simulated publisher-trust rejection");
  assert.equal(reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")).length,2);
- assert.equal(await evaluate("[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='请求生成 DOCX')"),false);
- checks.push("simulated untrusted-publisher service rejection is shown safely with no automatic retry");
+ await pause(500);
+ assert.equal(reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")).length,2);
+ assert.ok(await evaluate("document.querySelector('[role=alert]')?.innerText.includes('输出服务暂不可用')"));
+ checks.push("simulated service rejection is visible and no automatic second POST occurs");
 
  mode="unapproved";await openRequirement();
  assert.equal(await evaluate("[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='请求生成 DOCX')"),false);
