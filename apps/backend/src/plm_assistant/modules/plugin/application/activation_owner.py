@@ -90,7 +90,8 @@ class PluginActivationOwner:
     def enable(self, command: EnablePluginOperationsCommand, *,
                commit_guard: Callable[[object], None] | None = None) -> PluginActivationResult:
         self._validate_command(command)
-        if commit_guard is not None and not callable(commit_guard):
+        if ((commit_guard is not None and not callable(commit_guard))
+                or (result_guard is not None and not callable(result_guard))):
             raise PluginActivationOwnerError("PLUGIN_ACTIVATION_INVALID")
         try:
             with self._uow() as transaction:
@@ -199,6 +200,7 @@ class PluginActivationOwner:
     def disable(
         self, command: DisablePluginInstallationCommand, *,
         commit_guard: Callable[[object], None] | None = None,
+        result_guard: Callable[[object, PluginActivationResult], None] | None = None,
     ) -> PluginActivationResult:
         """Disable every operation on one Installation as one audited transition."""
         if (type(command) is not DisablePluginInstallationCommand
@@ -228,9 +230,12 @@ class PluginActivationOwner:
                     raise PluginActivationOwnerError("PLUGIN_LOCK_VERSION_CONFLICT")
                 current = context.enabled_operations.get(target_id, frozenset())
                 if context.target_state == "DISABLED":
-                    transaction.commit()
-                    return PluginActivationResult(
+                    result = PluginActivationResult(
                         target_id, "DISABLED", context.target_lock_version, (), False)
+                    if result_guard is not None:
+                        result_guard(transaction, result)
+                    transaction.commit()
+                    return result
                 if not current:
                     raise PluginActivationOwnerError("PLUGIN_ACTIVATION_STATE_CONFLICT")
                 changed_at = self._clock()
@@ -260,9 +265,12 @@ class PluginActivationOwner:
                     self._repository.append_operation_history(
                         transaction, transition=transition, actor_id=command.actor_id,
                         trace_id=command.trace_id, audit_event_id=audit_id)
-                transaction.commit()
-                return PluginActivationResult(
+                result = PluginActivationResult(
                     target_id, "DISABLED", context.target_lock_version + 1, (), True)
+                if result_guard is not None:
+                    result_guard(transaction, result)
+                transaction.commit()
+                return result
         except PluginActivationOwnerError:
             raise
         except Exception as exc:

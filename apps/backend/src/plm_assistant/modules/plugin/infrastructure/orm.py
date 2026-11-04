@@ -6,6 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     ForeignKeyConstraint,
     Index,
@@ -417,5 +418,42 @@ class PluginEnabledOperationHistoryRow(Base):
     trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     audit_event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     changed_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+
+
+
+class PluginInstallationDisableResultRow(Base):
+    """Immutable first response snapshot for an idempotent disable command."""
+    __tablename__ = "plg_disable_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["plugin_installation_id"],
+            ["plm.plg_installations.plugin_installation_id"],
+            name="fk_plg_disable_results__installation", ondelete="NO ACTION",
+        ),
+        CheckConstraint("expected_lock_version >= 0",
+                        name="ck_plg_disable_results__expected_version"),
+        CheckConstraint(
+            "(changed AND result_lock_version = expected_lock_version + 1) OR "
+            "(NOT changed AND result_lock_version = expected_lock_version)",
+            name="ck_plg_disable_results__result_version",
+        ),
+        CheckConstraint("installation_state = 'DISABLED'",
+                        name="ck_plg_disable_results__state"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_plg_disable_results__created_at"),
+        {"schema": "plm"},
+    )
+    disable_result_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plugin_installation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    expected_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    result_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    installation_state: Mapped[str] = mapped_column(Text, nullable=False)
+    changed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"))
