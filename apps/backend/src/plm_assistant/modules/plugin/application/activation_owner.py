@@ -16,6 +16,14 @@ class EnablePluginOperationsCommand:
     trace_id: uuid.UUID
 
 @dataclass(frozen=True, slots=True)
+class DisablePluginInstallationCommand:
+    plugin_installation_id: uuid.UUID
+    expected_lock_version: int
+    actor_id: uuid.UUID
+    trace_id: uuid.UUID
+
+
+@dataclass(frozen=True, slots=True)
 class PluginActivationContext:
     plugin_id_normalized: str
     target_installation_id: uuid.UUID
@@ -187,6 +195,111 @@ class PluginActivationOwner:
             if type(code) is str and code.startswith("PLUGIN_"):
                 raise PluginActivationOwnerError(code) from None
             raise PluginActivationOwnerError("PLUGIN_ACTIVATION_STORE_UNAVAILABLE") from None
+
+    def disable(
+        self, command: DisablePluginInstallationCommand, *,
+        commit_guard: Callable[[object], None] | None = None,
+    ) -> PluginActivationResult:
+        """Disable every operation on one Installation as one audited transition."""
+        if (type(command) is not DisablePluginInstallationCommand
+                or any(type(value) is not uuid.UUID or value.int == 0 for value in (
+                    command.plugin_installation_id, command.actor_id, command.trace_id))
+                or type(command.expected_lock_version) is not int
+                or command.expected_lock_version < 0):
+            raise PluginActivationOwnerError("PLUGIN_ACTIVATION_INVALID")
+        if commit_guard is not None and not callable(commit_guard):
+            raise PluginActivationOwnerError("PLUGIN_ACTIVATION_INVALID")
+        try:
+            with self._uow() as transaction:
+                if commit_guard is not None:
+                    commit_guard(transaction)
+                target_id = command.plugin_installation_id
+                plugin_id = self._repository.identify_plugin(
+                    transaction, installation_id=target_id)
+                if plugin_id is None:
+                    raise PluginActivationOwnerError("PLUGIN_INSTALLATION_NOT_FOUND")
+                self._repository.lock_plugin(transaction, plugin_id=plugin_id)
+                context = self._repository.load_activation_context(
+                    transaction, installation_id=target_id)
+                if context is None:
+                    raise PluginActivationOwnerError("PLUGIN_INSTALLATION_NOT_FOUND")
+                self._validate_disable_context(context, command)
+                if command.expected_lock_version != context.target_lock_version:
+                    raise PluginActivationOwnerError("PLUGIN_LOCK_VERSION_CONFLICT")
+                current = context.enabled_operations.get(target_id, frozenset())
+                if context.target_state == "DISABLED":
+                    transaction.commit()
+                    return PluginActivationResult(
+                        target_id, "DISABLED", context.target_lock_version, (), False)
+                if not current:
+                    raise PluginActivationOwnerError("PLUGIN_ACTIVATION_STATE_CONFLICT")
+                changed_at = self._clock()
+                if changed_at.tzinfo is None or changed_at.utcoffset() is None:
+                    raise PluginActivationOwnerError("PLUGIN_ACTIVATION_INVALID")
+                self._repository.authorize_owner_writes(transaction)
+                self._repository.apply_activation(
+                    transaction, context=context, desired_operations=frozenset(),
+                    new_states={target_id: "DISABLED"}, actor_id=command.actor_id,
+                    changed_at=changed_at)
+                for operation_id in sorted(current):
+                    transition = PluginOperationTransition(
+                        target_id, context.target_package_id, operation_id,
+                        "DISABLED", "ENABLED", "DISABLED")
+                    audit_id = self._audit.append(
+                        transaction,
+                        AuditEventDraft(
+                            trace_id=command.trace_id, event_scope="DEPLOYMENT",
+                            target_project_id=None, actor_type="USER",
+                            actor_id=command.actor_id, original_actor_id=None,
+                            actor_hint_digest=None, action="PLUGIN_OPERATION_DISABLE",
+                            outcome="SUCCESS", target_owner_module="plugin",
+                            target_object_type="PLG-02",
+                            target_object_id=target_id,
+                            reason_code="ADMIN_DISABLED",
+                            before_state="ENABLED", after_state="DISABLED"))
+                    self._repository.append_operation_history(
+                        transaction, transition=transition, actor_id=command.actor_id,
+                        trace_id=command.trace_id, audit_event_id=audit_id)
+                transaction.commit()
+                return PluginActivationResult(
+                    target_id, "DISABLED", context.target_lock_version + 1, (), True)
+        except PluginActivationOwnerError:
+            raise
+        except Exception as exc:
+            code = getattr(exc, "code", None)
+            if type(code) is str and code.startswith("PLUGIN_"):
+                raise PluginActivationOwnerError(code) from None
+            raise PluginActivationOwnerError("PLUGIN_ACTIVATION_STORE_UNAVAILABLE") from None
+
+    @staticmethod
+    def _validate_disable_context(
+        context: PluginActivationContext, command: DisablePluginInstallationCommand,
+    ) -> None:
+        target_id = command.plugin_installation_id
+        if (type(context) is not PluginActivationContext
+                or context.target_installation_id != target_id
+                or context.target_package_state != "VERIFIED"
+                or context.target_state not in ("ENABLED", "DISABLED")
+                or context.latest_validation_state != "COMPATIBLE"
+                or context.latest_runtime_snapshot != context.target_runtime_snapshot
+                or type(context.target_lock_version) is not int
+                or context.target_lock_version < 0
+                or context.installation_states.get(target_id) != context.target_state
+                or context.installation_lock_versions.get(target_id) != context.target_lock_version):
+            raise PluginActivationOwnerError("PLUGIN_ACTIVATION_NOT_ALLOWED")
+        current = context.enabled_operations.get(target_id, frozenset())
+        if (not current and context.target_state == "ENABLED"
+                or current and context.target_state != "ENABLED"
+                or not current and context.target_state == "DISABLED"):
+            raise PluginActivationOwnerError("PLUGIN_ACTIVATION_STATE_CONFLICT")
+        if not current.issubset(context.declared_operations):
+            raise PluginActivationOwnerError("PLUGIN_OPERATION_NOT_DECLARED")
+        for installation_id, operations in context.enabled_operations.items():
+            if operations and context.installation_states.get(installation_id) != "ENABLED":
+                raise PluginActivationOwnerError("PLUGIN_ACTIVATION_STATE_CONFLICT")
+        if any(type(v) is not int or v < 0
+               for v in context.installation_lock_versions.values()):
+            raise PluginActivationOwnerError("PLUGIN_ACTIVATION_STATE_CONFLICT")
 
     @staticmethod
     def _validate_command(command: object) -> None:

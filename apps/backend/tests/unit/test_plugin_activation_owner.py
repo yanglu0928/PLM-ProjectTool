@@ -4,7 +4,7 @@ import unittest
 import uuid
 from datetime import datetime, timezone
 from plm_assistant.modules.plugin.application.activation_owner import (
-    EnablePluginOperationsCommand, PluginActivationContext, PluginActivationOwner,
+    DisablePluginInstallationCommand, EnablePluginOperationsCommand, PluginActivationContext, PluginActivationOwner,
     PluginActivationOwnerError,
 )
 
@@ -72,6 +72,58 @@ class PluginActivationOwnerTests(unittest.TestCase):
         self.assertEqual(len(self.repo.history),2)
         self.assertEqual(len(self.audit.events),2)
         self.assertTrue(self.repo.authorized)
+    def test_disable_removes_all_target_operations_and_records_audit_history(self):
+        self.repo.states[self.repo.target]="ENABLED"
+        self.repo.ops[self.repo.target]=frozenset({"document.render","document.export"})
+        command=DisablePluginInstallationCommand(
+            self.repo.target,self.repo.versions[self.repo.target],uuid.uuid4(),uuid.uuid4())
+        result=self.owner.disable(command)
+        self.assertEqual(result.installation_state,"DISABLED")
+        self.assertEqual(result.enabled_operations,())
+        self.assertTrue(result.changed)
+        self.assertEqual(self.repo.states[self.repo.target],"DISABLED")
+        self.assertEqual(self.repo.ops[self.repo.target],frozenset())
+        self.assertEqual(len(self.repo.history),2)
+        self.assertEqual({x.transition for x in self.repo.history},{"DISABLED"})
+        self.assertEqual(len(self.audit.events),2)
+        self.assertTrue(self.repo.authorized)
+
+    def test_disable_replay_is_noop_when_exact_disabled_state_matches(self):
+        self.repo.states[self.repo.target]="DISABLED"
+        command=DisablePluginInstallationCommand(
+            self.repo.target,self.repo.versions[self.repo.target],uuid.uuid4(),uuid.uuid4())
+        result=self.owner.disable(command)
+        self.assertFalse(result.changed)
+        self.assertEqual(result.installation_state,"DISABLED")
+        self.assertEqual(self.repo.history,[])
+        self.assertEqual(self.audit.events,[])
+
+    def test_disable_rejects_stale_version_and_inconsistent_state(self):
+        self.repo.states[self.repo.target]="ENABLED"
+        self.repo.ops[self.repo.target]=frozenset({"document.render"})
+        stale=DisablePluginInstallationCommand(
+            self.repo.target,1,uuid.uuid4(),uuid.uuid4())
+        with self.assertRaisesRegex(PluginActivationOwnerError,"PLUGIN_LOCK_VERSION_CONFLICT"):
+            self.owner.disable(stale)
+        self.repo.ops[self.repo.target]=frozenset()
+        current=DisablePluginInstallationCommand(
+            self.repo.target,self.repo.versions[self.repo.target],uuid.uuid4(),uuid.uuid4())
+        with self.assertRaisesRegex(PluginActivationOwnerError,"PLUGIN_ACTIVATION_STATE_CONFLICT"):
+            self.owner.disable(current)
+
+    def test_disable_audit_failure_rolls_back_all_changes(self):
+        self.repo.states[self.repo.target]="ENABLED"
+        self.repo.ops[self.repo.target]=frozenset({"document.render","document.export"})
+        self.audit.fail=True
+        command=DisablePluginInstallationCommand(
+            self.repo.target,self.repo.versions[self.repo.target],uuid.uuid4(),uuid.uuid4())
+        with self.assertRaisesRegex(PluginActivationOwnerError,"PLUGIN_ACTIVATION_STORE_UNAVAILABLE"):
+            self.owner.disable(command)
+        self.assertEqual(self.repo.states[self.repo.target],"ENABLED")
+        self.assertEqual(self.repo.ops[self.repo.target],
+                         frozenset({"document.render","document.export"}))
+        self.assertEqual(self.repo.history,[])
+
     def test_undeclared_operation_is_rejected_without_writes(self):
         cmd=EnablePluginOperationsCommand(self.cmd.plugin_installation_id,("admin.shell",),
             self.cmd.expected_lock_version,self.cmd.actor_id,self.cmd.trace_id)
