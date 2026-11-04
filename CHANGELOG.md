@@ -1,5 +1,7 @@
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
+- P24 首轮hosted run [41875807078](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41875807078) 的P24 Edge步骤因合成RequirementVersion响应被前端冻结解析器拒绝而失败；尚未触发输出请求。根因调查与纯fixture修复/诊断计划已先登记 CR-OUT-020，待修复后全链复验。
+
 - OUT-01-A01-P23按CR-OUT-019以PASS_SCOPE_LIMITED完成。GitHub hosted run [41869866457](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41869866457) 13/13 jobs成功：前端204测试文件/typecheck/build、后端4,022项/wheel、PG18、父包及A17/A34/A35/A50通过。首轮前端测试解析错误已记录后修复；不代表DOCX生成、正式Publisher信任、Win11实机、Gate/Pilot/Release。详见docs/progress/out-01-a01-p23-output-request-create-ui-result.md。下一项P24为hosted Edge UI/API契约集成验证。
 
 - OUT-01-A01-P20按CR-OUT-016以PASS_SCOPE_LIMITED完成：OutputRequest详情GET接入Windows显式read组合。Hosted run [41835015557](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41835015557) 13/13通过，后端4,021 tests/wheel、PG18.6授权/404隔离/最小投影/只读验证、前端、20,202文件父包和A17/A34/A35/A50通过。无默认路由，Session/License为合成；Pilot/Gate/Release不变。见docs/progress/out-01-a01-p20-output-read-composition-result.md。

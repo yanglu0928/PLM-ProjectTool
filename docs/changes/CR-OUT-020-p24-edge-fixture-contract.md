@@ -1,0 +1,23 @@
+# CR-OUT-020：P24 Edge 合成版本 fixture 解析失败修正
+
+- 日期：2026-11-04
+- 状态：偏差已记录；fixture修正与hosted全链复验待执行
+- 来源：OUT-01-A01-P24 首次 hosted run 41875807078
+- 基线：冻结Requirement Read Contract、CR-OUT-019、P24编码前检查
+- 影响面：仅validation harness与云端验收证据；无产品代码、API、Schema或Migration变化
+
+## 观察到的偏差
+
+P24 Edge浏览器成功完成合成登录，并请求了项目Requirement及Version列表；页面显示“暂时无法读取项目需求”，因此没有走到请求按钮或POST步骤。首次失败日志没有记录响应状态和被解析对象的字段集合，当前不能断言是具体哪个字段导致拒绝，也不能把它归因于产品逻辑缺陷。
+
+## 修正决定（实施前）
+
+将测试数据构造改为按冻结Summary字段逐项显式组装，避免从Detail对象散播字段；为P24本地合成服务器记录每个API响应的HTTP状态与安全字段形状（不记录Cookie、CSRF、幂等Key或敏感正文）。失败报告仅保留必要诊断。重新执行 hosted Edge、前后端回归、父包/A17/A34/A35/A50全链。
+
+不改RequirementReadClient或业务页面，不放宽解析器，不接入真实信任源，不生成DOCX。
+
+## 风险、回滚与验收
+
+- 风险：修复 fixture 后若仍有拒绝，需依据新状态/字段诊断继续定位；不得以放宽生产解析规则绕过。
+- 回滚：撤销P24 harness内的fixture/诊断改动与对应专用job。
+- 验收：Edge加载批准版本详情、精确POST payload和CSRF/Idempotency、受理/历史导航、合成SYSTEM_UNAVAILABLE失败关闭且无自动重试、未批准版本隐藏入口；合成数据且external API=0。
