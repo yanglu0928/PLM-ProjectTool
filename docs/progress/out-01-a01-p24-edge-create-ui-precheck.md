@@ -42,3 +42,8 @@
 ## 首轮偏差及已实施修正
 
 P24首轮hosted run 41875807078在合成登录后读取需求详情/版本列表时落入通用读取失败，未提交Output请求。具体拒绝字段未由首轮日志保存，因此未推定为产品缺陷。偏差、风险和修正计划预先登记于CR-OUT-020。随后将Summary fixture改为冻结解析器所要求的字段白名单，并加入仅记录HTTP状态/安全字段形状的诊断；不输出Session cookie、CSRF、幂等Key或客户正文，不改业务代码。完整重验待hosted run。
+
+
+## 根因进一步定位（实施前记录，2026-11-04）
+
+对照RequirementReadClient后确认：合成项目需求响应只返回JSON正文中的etag字段，遗漏了真实GET合同要求的HTTP ETag响应头；客户端明确要求该响应头与正文etag相等，因此拒绝详情。该为P24合成HTTP fixture缺少冻结合同头字段，不是产品读取逻辑缺陷。此前已实施的Summary显式字段修正保留为防御性fixture对齐；下一步仅给合成Root GET补齐匹配的ETag header，然后重跑Hosted全链。

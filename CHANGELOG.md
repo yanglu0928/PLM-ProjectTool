@@ -1,6 +1,6 @@
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
-- P24 fixture修正已实施并提交hosted复验：RequirementVersion列表对象按冻结字段显式构造；失败诊断记录HTTP状态及字段存在性，不记录Cookie、CSRF、幂等Key。首轮偏差见CR-OUT-020，最终验收待后续run。
+- P24 hosted Edge首轮根因进一步定位为合成Requirement GET缺少与正文一致的HTTP ETag响应头；客户端按冻结契约正确拒绝。该合成fixture修正计划先追加至CR-OUT-020，后补齐并全链重验。
 
 - P24 首轮hosted run [41875807078](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41875807078) 的P24 Edge步骤因合成RequirementVersion响应被前端冻结解析器拒绝而失败；尚未触发输出请求。根因调查与纯fixture修复/诊断计划已先登记 CR-OUT-020，待修复后全链复验。
 

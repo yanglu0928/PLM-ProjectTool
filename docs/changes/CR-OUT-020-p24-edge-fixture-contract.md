@@ -26,3 +26,8 @@ P24 Edge浏览器成功完成合成登录，并请求了项目Requirement及Vers
 ## 修正已实施（2026-11-04）
 
 测试harness已将RequirementVersion Summary改为显式字段对象，并为失败日志增加HTTP状态/字段存在性记录；不记录Cookie、CSRF值、幂等Key或请求正文。产品解析器和业务组件未修改。通过GitHub hosted全链工作流重新验证，结果待回填。
+
+
+## 根因进一步定位（实施前记录，2026-11-04）
+
+对照RequirementReadClient后确认：合成项目需求响应只返回JSON正文中的etag字段，遗漏了真实GET合同要求的HTTP ETag响应头；客户端明确要求该响应头与正文etag相等，因此拒绝详情。该为P24合成HTTP fixture缺少冻结合同头字段，不是产品读取逻辑缺陷。此前已实施的Summary显式字段修正保留为防御性fixture对齐；下一步仅给合成Root GET补齐匹配的ETag header，然后重跑Hosted全链。
