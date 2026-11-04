@@ -24,3 +24,9 @@
 ## 验收计划与限制
 
 在GitHub hosted Windows runner 的D盘临时区执行后端全量/wheel、前端/build、Migration空库/有数据升降、PG18合成真实身份/License/HTTP/幂等首调与重放/同键异载荷/缺If-Match/CSRF/锁冲突/Audit失败回滚、clean parent、A17/A34/A35/A50全链。源代码和项目测试不得在用户本机/C盘运行。最高为`PASS_SCOPE_LIMITED`；不表示Windows 11实机、正式安装信任、Pilot、Gate或Release通过。正式公钥/License、服务账户凭据、ACL/TLS及真实安装器仍是独立阻断项。
+
+## Hosted 验收偏差记录（2026-11-04）
+
+首次完整 hosted 验收 run [41764475466](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41764475466) 未通过：Backend tests and wheel 失败，前端、PG18 sidecar、Python embedded runtime、A17 temp-boundary 与 A50 Edge job 成功；下游父包/A17/A34因后端前置失败跳过。后端报告 6 个 Owner 单测错误、1 个 migration contract 失败、1 个 offline migration 错误及 2 个失败断言（具体以该 job 报告为准）。
+
+偏差原因包括：A06 enable() 校验误引用 A08 专用 result_guard；Migration 0230 使用 SQLAlchemy 不支持的 TIMESTAMP(precision=6) 参数，离线 SQL 生成因此异常；迁移 head 与 ORM 历史表清单测试未同步至 0230；另有两个断言在本轮 A08变更后的校验路径上失败，需按完整日志核实并修复。修复计划：恢复 enable 原行为、仅在 disable 校验可选 result_guard；改用 PostgreSQL 方言的时区时间戳精度类型或等价兼容定义；更新迁移/ORM清单；依据 hosted 完整失败报告逐项修复剩余断言。随后重新执行完整云端工作流，不降低既定验收范围。未宣称本次验收通过。
