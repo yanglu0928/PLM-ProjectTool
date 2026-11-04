@@ -363,3 +363,7 @@
 - 兼容性：PostgreSQL schema head推进至20261104_0225；父包候选限GitHub hosted Windows Server 2025验证。没有新的Windows 11实机/正式发行验证。
 - 升级说明：升级运行数据库至0225；不对用户现有安装执行升级。降级在PluginInstallation相关历史存在时会拒绝。
 - 已知问题：无正式插件安装Owner/API或可信Publisher来源，插件未运行；候选包不具备法律放行。Pilot、Gate、正式Release保持NOT_READY。
+
+## Unreleased · 2026-11-04（内部云端开发，非发行版本）
+
+- 完成OUT-01-A01-P11编码前检查，登记CR-OUT-008：下一项实现只读PluginOperationCapability投影，依据PLG-02持久Owner事实校验安装、启用与最新运行兼容状态；无正式publisher key时trusted始终为false，不修改API/Schema、不执行插件。详见`docs/progress/out-01-a01-p11-plugin-operation-capability-precheck.md`。

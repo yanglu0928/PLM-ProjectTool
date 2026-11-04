@@ -26,3 +26,8 @@ OutputPolicy中的 word.generate 仅是策略允许标签，不能证明插件�
 ## 下一步
 
 进入PLG-02-A01：按已冻结Schema实现Installation root和两个owned表的ORM/Alembic持久化基础。新CR-PLG-007及编码前检查先于代码提交。安装/启用Owner、信任源、插件执行和Output Operation resolver保持后续独立WBS。
+
+
+## 2026-11-04 后续证据复核
+
+本文件原结论“安装/启用事实Owner缺失”描述的是PLG-02施工前状态。PLG-02-A01～A08现已完成，包含Package、Installation、EnabledOperation、RuntimeValidation与审计停用Owner；该条件已不再阻断只读能力适配。正式publisher公钥/信任注册仍缺，适配器必须在缺少可验证签名信任时返回trusted=false，不能从VERIFIED/manifest字段单独推定。具体Port映射与验收边界见`out-01-a01-p11-plugin-operation-capability-precheck.md`及CR-OUT-008。
