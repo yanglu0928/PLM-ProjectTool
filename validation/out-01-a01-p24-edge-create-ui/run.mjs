@@ -57,7 +57,7 @@ function api(req,url){
  }
  if(path.startsWith("/api/")&&!hasSession(req))return envelope("AUTH_SESSION_EXPIRED",401);
  const base="/api/v1/projects/"+ids.project;
- if(path===base+"/requirements/"+ids.requirement&&method==="GET")return envelope(root);
+ if(path===base+"/requirements/"+ids.requirement&&method==="GET"){const out=envelope(root);out.headers.ETag=root.etag;return out;}
  if(path===base+"/requirements/"+ids.requirement+"/versions"&&method==="GET"){
   return envelope({items:[summary(mode==="unapproved"?"DRAFT":"APPROVED")],next_cursor:null,has_more:false});
  }

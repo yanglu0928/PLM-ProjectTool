@@ -47,3 +47,8 @@ P24首轮hosted run 41875807078在合成登录后读取需求详情/版本列表
 ## 根因进一步定位（实施前记录，2026-11-04）
 
 对照RequirementReadClient后确认：合成项目需求响应只返回JSON正文中的etag字段，遗漏了真实GET合同要求的HTTP ETag响应头；客户端明确要求该响应头与正文etag相等，因此拒绝详情。该为P24合成HTTP fixture缺少冻结合同头字段，不是产品读取逻辑缺陷。此前已实施的Summary显式字段修正保留为防御性fixture对齐；下一步仅给合成Root GET补齐匹配的ETag header，然后重跑Hosted全链。
+
+
+## ETag fixture 修正已实施
+
+合成Requirement GET现返回HTTP ETag，值与JSON正文etag完全一致，满足前端冻结RequirementReadClient合同。保留先前显式Summary和去敏诊断。产品API/解析器没有修改；Hosted复验等待中。

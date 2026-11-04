@@ -31,3 +31,8 @@ P24 Edge浏览器成功完成合成登录，并请求了项目Requirement及Vers
 ## 根因进一步定位（实施前记录，2026-11-04）
 
 对照RequirementReadClient后确认：合成项目需求响应只返回JSON正文中的etag字段，遗漏了真实GET合同要求的HTTP ETag响应头；客户端明确要求该响应头与正文etag相等，因此拒绝详情。该为P24合成HTTP fixture缺少冻结合同头字段，不是产品读取逻辑缺陷。此前已实施的Summary显式字段修正保留为防御性fixture对齐；下一步仅给合成Root GET补齐匹配的ETag header，然后重跑Hosted全链。
+
+
+## ETag fixture 修正（2026-11-04）
+
+已在P24合成HTTP服务中为Requirement GET响应附加与JSON正文etag相同的HTTP ETag。显式Summary对象和去敏HTTP状态诊断一并保留。未改产品逻辑。下一步依赖GitHub hosted Edge及完整流水线复验。
