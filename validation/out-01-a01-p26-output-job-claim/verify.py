@@ -71,29 +71,20 @@ def main() -> int:
         runtime = create_database_runtime(database_url(database, args.port))
         actor_id, project_id = uuid.uuid4(), uuid.uuid4()
 
-        output_ids = {
-            uuid.uuid4(),
-            uuid.uuid4(),
-        }
-        non_output_ids = {
-            uuid.uuid4(),
-            uuid.uuid4(),
-            uuid.uuid4(),
-        }
-        queued = (
-            ("output", "OUTPUT_GENERATE", next(iter(output_ids))),
-            ("output", "OUTPUT_GENERATE", next(iter(output_ids - {next(iter(output_ids))}))),
-            ("output", "OTHER_JOB", next(iter(non_output_ids))),
-            ("audit", "OUTPUT_GENERATE", next(iter(non_output_ids - {next(iter(non_output_ids))}))),
-            ("audit", "AUDIT_EXPORT", next(iter(non_output_ids - set(sorted(non_output_ids)[:2])))),
+        output_one, output_two, output_other, other_owner, general_job = (
+            uuid.uuid4() for _ in range(5)
         )
-        # Build deterministic sets from records after construction to keep assertions clear.
-        output_ids = {job_id for owner, kind, job_id in queued
-                      if owner == "output" and kind == "OUTPUT_GENERATE"}
-        non_output_ids = {job_id for owner, kind, job_id in queued
-                          if not (owner == "output" and kind == "OUTPUT_GENERATE")}
-        if len(output_ids) != 2 or len(non_output_ids) != 3:
+        output_ids = {output_one, output_two}
+        non_output_ids = {output_other, other_owner, general_job}
+        if len(output_ids | non_output_ids) != 5:
             raise AssertionError("synthetic claim fixture identity collision")
+        queued = (
+            ("output", "OUTPUT_GENERATE", output_one),
+            ("output", "OUTPUT_GENERATE", output_two),
+            ("output", "OTHER_JOB", output_other),
+            ("audit", "OUTPUT_GENERATE", other_owner),
+            ("audit", "AUDIT_EXPORT", general_job),
+        )
 
         with runtime.unit_of_work() as uow:
             uow.session.add(UserRow(
