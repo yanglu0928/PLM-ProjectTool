@@ -72,3 +72,9 @@ P24失败快照现记录输出操作区域文本、role=status/alert及可见按
 ## 测试夹具修正已实施
 
 新增测试现显式构造包含 data/trace_id 的合成登录Response；pending POST仍返回严格的HTTP 202 Output receipt。只改测试夹具，不改产品代码。等待GitHub hosted验证。
+
+
+## 第二次定向测试夹具偏差（修复前登记，2026-11-05）
+
+- Run 41884900898 的前端回归仍为2,092/2,093通过；新增pending POST测试中的合成Response引用了未定义的 `trace` 常量，ReferenceError发生在构造响应阶段。产品代码与前一项 canRender/canSubmit 修正未触发失败；P24 Edge因前端job失败被跳过。
+- 修正：使用测试文件内已有的项目UUID作为合成trace_id，或在本测试内显式定义。仍只修纯测试数据构造，不更改业务逻辑；再次运行完整GitHub hosted链。
