@@ -1,7 +1,7 @@
 # CR-OUT-021：真实 Output Create HTTP 与 hosted Edge 失败关闭集成
 
 - 日期：2026-11-05
-- 状态：编码前检查PASS_WITH_LIMITATION；hosted实现与复验待执行
+- 状态：编码前检查PASS_WITH_LIMITATION；hosted桥接代码已实现，P25真实HTTP/Edge验收仍被PG初始化阻断
 - 来源：CR-OUT-015/P19真实PG18 API失败关闭证据、CR-OUT-020/P24 Edge模拟API证据
 - 基线：冻结 API Contract V1 OUTPUT_REQUEST_CREATE、已批准Windows显式write组合；不改冻结合同/Schema/Migration/默认挂载
 
@@ -91,3 +91,11 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - Run [41913332612](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41913332612)：前端、后端全量测试/wheel、PG sidecar rebuild、父包/A17/A34/A35、P24/A50通过；P25在 `initdb` 阶段仍以 `0xC0000135` 退出、未创建数据目录，诊断摘要上传成功。initdb参数已与通过smoke完全一致，P25命令包装器也取消了 `stdin=DEVNULL`；两项对照均未改变结果。
 - 与同run成功的父包PG生命周期smoke继续对照后，剩余可见环境差异之一是workflow为P25显式设置 `TEMP/TMP=RUNNER_TEMP(D:)`，而父包smoke继承runner默认 `TEMP/TMP`。这仍是待验证的执行环境差异，不能宣称为根因。
 - 下一项编码前检查：只移除P25 Python运行步骤对TEMP/TMP的显式D盘覆盖，令initdb/PG命令继承Windows hosted runner默认临时目录；所有源码检出、前端/sidecar输入、P25工作根、PG数据目录、数据库及summary仍通过 `RUNNER_TEMP` 显式固定在D盘。Python调用Edge Node子进程时显式恢复 `TEMP/TMP=RUNNER_TEMP`，避免浏览器/Node临时文件落出D盘。无数据外发或产品/Schema变化。若结果变化，记录并复查PG数据目录确在D；如仍失败，再用 `initdb --debug --no-clean` 限定诊断。
+
+
+## 第十轮 hosted 结果与初始化调试方案（2026-11-05）
+
+- Run [41916567299](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41916567299)：TEMP/TMP对照后P25仍在initdb阶段以Windows退出码 `3221225781 (0xC0000135)` 失败；摘要Artifact成功上传，未启动PG、真实HTTP或Edge POST，数据库计数验证未运行。前后端全量测试/wheel、PG18 sidecar重建、P24 hosted Edge、A50 Edge、嵌入式Python组装通过；父包组装作业在本记录时仍运行中。
+- 移除P25运行步骤对TEMP/TMP的覆盖、并为Edge Node子进程显式指定D盘runner temp后，initdb结果未变化。此前对齐initdb参数、stdin及已知DLL静态依赖探测也未消除错误；静态依赖存在不能排除动态装载或初始化内部原因。根因仍未知，不能宣称为数据库/API/Edge行为。
+- 下一项按第八/九轮已登记的条件方案，仅给P25合成PG `initdb` 增加官方诊断参数 `--debug --no-clean`，保留D盘runner temp边界；失败Artifact继续只包含去敏、截断输出、相对文件名/大小和状态码，不上传数据库文件、sidecar内容或完整日志。先采集初始化内部阶段证据，再决定是否调整runner环境或测试夹具。若故障导致PG状态无法确认，维持现有保留临时数据的失败关闭规则。
+- 此为hosted测试诊断，不改产品代码、API、Schema、Migration、认证/License/Publisher信任或业务数据。验证门槛仍为真实HTTP安全拒绝、Edge安全提示及相关数据库计数前后不变；未满足前P25保持未通过。
