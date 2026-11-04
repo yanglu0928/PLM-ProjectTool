@@ -36,3 +36,10 @@ OutputRequest keyset分页Service、SQL Repository、opt-in GET adapter及独立
 - A17 packaged flow also failed at production startup because the newly required Output list cursor key was absent from its synthetic package test credentials. No customer or production data was used. See job 126618290597. This is a test-fixture compatibility gap; do not weaken the missing-key fail-closed behavior.
 - Next: isolate why the seeded authorized Project Manager resolves to 404 (membership/project/department state versus fixture); add the dedicated synthetic cursor key to the hosted A17 fixture only, preserving the read-only current-account Vault contract; rerun full hosted workflow and parent PG smoke. A17 stays unverified until it passes.
 - No migration or database recovery needed. P21 rollback still removes only list composition and its key resolver.
+
+
+## Diagnosis of run 41844332846 — 2026-11-04
+
+- The synthetic Project Manager membership authorization and direct OutputRequestListService page preflight both passed against PostgreSQL 18.6. This localizes the 404 to the ASGI HTTP test adapter.
+- Root cause: the verifier supplied the entire URL (including ?page_size=1) as ASGI scope.path while also populating scope.query_string. Starlette therefore routed a path that does not match the frozen route and correctly returned 404.
+- Planned correction: split route_path and query_string in the hosted adapter; pass only route_path in scope.path/raw_path. No production route, authorization or contract change.
