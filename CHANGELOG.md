@@ -1,5 +1,7 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- OUT-01-A01-P17按CR-OUT-013以PASS_SCOPE_LIMITED完成。Hosted run [41799812913](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41799812913) 13/13 jobs成功：后端4,006 tests/wheel、PG18.6取消Owner真实事务、前端、非发行父包、A17/A34/A35/A50均通过。取消事务正/负scope、If-Match、同Key并发幂等、Audit失败全回滚、运行态仅请求取消、PG数据库完成时间均通过；父包20,197项SHA-256 1377ca1ab3b6404fbc7d53447ea906d7440cd3c6ad33e475ce33165d4a00f9b5。验证器两次时钟快照假失败均修复并记录CR。无默认composition/真实Output Worker或Win11实机证据，Pilot/Gate/Release不变。详见docs/progress/out-01-a01-p17-cancel-postgres-result.md。下一项P18按CR-OUT-014接入显式Windows write composition。
+
 - OUT-01-A01-P16按CR-OUT-012以PASS_SCOPE_LIMITED完成：新增 opt-in OutputRequest取消HTTP/Owner及Jobs-owned同事务取消端口。Hosted run [41793207115](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41793207115) 13/13 jobs成功，后端4,006 tests/wheel；前端、PG18 sidecar/父包、A17/A34/A35/A50通过。新Owner无专用PG18行事务验收、无默认组合装配、无Output终态Worker，保持限界结论。详见`docs/progress/out-01-a01-p16-output-request-cancel-result.md`。下一项P17直接补Hosted PG18正负行/事务、版本竞争与Audit回滚测试。
 
 - OUT-01-A01-P15按CR-OUT-012完成源码编码前检查（PASS_WITH_LIMITATION）。确认冻结取消需以OutputRequest为资源且使用其lock_version；现有Job取消dispatcher在独立读写UOW间分派，不能原子更新OutputRequest和OUTPUT_GENERATE Job。已记录由Output协调Jobs-owned事务端口的方案，未改代码/测试/Schema/API合同。详见`docs/progress/out-01-a01-p15-output-request-cancel-precheck.md`。下一项P16实现opt-in取消Owner与HTTP，专属PG18事务验收另列。

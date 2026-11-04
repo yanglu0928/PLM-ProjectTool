@@ -1,7 +1,7 @@
 # CR-OUT-012：冻结 OutputRequest 取消的原子 Owner 与可选 HTTP 接入
 
 - 日期：2026-11-04
-- 状态：P16 PASS_SCOPE_LIMITED；P17专用PG18事务验收待完成
+- 状态：P16、P17均 PASS_SCOPE_LIMITED；P18显式Windows write composition前置核查通过，实施中
 - 来源：冻结 API Contract V1 / API-03 的 `OUTPUT_REQUEST_CANCEL`
 - 基线：不修改 API 路径、角色、数据模型、DB Schema 或现有 Migration；沿用持续授权，实施与验收证据按提交追溯
 
@@ -45,3 +45,10 @@ P16新增OutputRequest取消Application/Repository/opt-in HTTP与Jobs-owned Outp
 `PASS_SCOPE_LIMITED`。该标准Cloud workflow没有把新取消Owner正负行/事务测试直接连到PG18；父包PG lifecycle仅证明旧迁移/启动，而不证明此Owner。此验收差距按CR记录，不宣称本CR完整通过：P17新增专用隔离PG18正向、跨项目/错误绑定/旧If-Match负向、并发重放与Audit失败回滚测试。P16使用的应用时钟提供CANCELLED输出完成时间，P17将核查并改为数据库一致时间以避免主机时钟偏差。
 
 未接默认/正式组合、未提供真实Output Worker、无输出生成进程取消确认；Router仍opt-in。详见 `docs/progress/out-01-a01-p16-output-request-cancel-result.md`。Pilot/Gate/Release状态不变。
+
+
+## P17 PG18事务验收结果（2026-11-04）
+
+P17按CR-OUT-013完成。Hosted run [41799812913](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41799812913) 13/13成功，backend 4,006 tests/wheel及父包/A17/A34/A35/A50全链通过。隔离合成PG18.6直接执行取消Owner，正向pending原子取消、running取消请求未伪报Worker确认；跨Project、错误Job绑定、旧If-Match、无权角色均无持久写入；同Key并发只生成一份Audit/receipt；Audit注入失败完整回滚；CANCELLED时间读取数据库时钟。
+
+P17为PASS_SCOPE_LIMITED。取消router仍未装入Windows显式write composition，默认app未挂载；无Output生成/终态Worker，RUNNING只表示请求登记。下一项P18在CR-OUT-014下接入显式Windows write composition并验证真实HTTP/Session/Project授权组合，不声称生产信任或Pilot就绪。

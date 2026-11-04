@@ -1,7 +1,7 @@
 # CR-OUT-013：OutputRequest Cancel Owner 的 PostgreSQL 18事务验收
 
 - 日期：2026-11-04
-- 状态：编码前检查通过，P17实施中
+- 状态：P17 PASS_SCOPE_LIMITED，验收完成
 - 来源：CR-OUT-012 P16结果及Output取消Owner真实数据库验收缺口
 - 基线：不改变冻结API、Schema、Migration、权限或取消状态语义；所有行只使用新建的合成Hosted临时数据库
 
@@ -38,3 +38,10 @@ Hosted run [41796636992](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## 托管第二轮偏差（修复前登记，2026-11-04）
 
 Hosted run [41798124112](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41798124112) 已通过无权角色的业务拒绝码断言，但“无权角色未改变行”断言再次因把 state helper 的 `clock_timestamp()` 纳入完整快照比较而误报。持久表行及审计/收据计数应按前四项比较；当前时刻仅用于完成时间边界检查。该失败尚未证明生产行被修改。修复仅调整验证器快照断言，保留无权拒绝、持久无写入和时间边界断言，不放宽业务条件。
+
+
+## 托管验收结果（2026-11-04）
+
+最终 hosted run [41799812913](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41799812913) 为13/13成功：backend 4,006 tests/wheel、前端、PG18/pgvector、同run Windows父包与清洁解包/A17/A34/A35/A50通过。PG18.6临时合成库结果：pending_cancel_atomic、running_cancel_unacknowledged、stale_if_match_no_writes、cross_project_no_writes、wrong_job_binding_no_writes、denied_role_no_writes、same_key_concurrency_one_audit_and_receipt、audit_failure_full_rollback、cancelled_at_database_clock均为true。Customer data=false，external API calls=0，product API未启动。父包20,197文件，SHA-256 1377ca1ab3b6404fbc7d53447ea906d7440cd3c6ad33e475ce33165d4a00f9b5。
+
+首轮及第二轮断言失败均定位为验证器快照中混入独立变化的PG时钟采样，不是持久行；修复前逐轮写入CR记录后只调整比较范围，完成时间边界仍独立验证，业务拒绝/回滚覆盖未降级。最终P17为PASS_SCOPE_LIMITED。剩余限制：未装入显式Windows生产组合，未验证真实Output Worker/取消确认，Win11实机、正式信任、Gate/Pilot/Release仍不通过。
