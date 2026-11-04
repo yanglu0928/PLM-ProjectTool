@@ -105,11 +105,9 @@ class OptionalAppRouterTests(unittest.TestCase):
     def test_default_app_does_not_mount_cancel_router_and_explicit_app_can(self):
         path = "/api/v1/projects/{project_id}/output-requests/{output_request_id}:cancel"
         default = create_app()
-        self.assertFalse(any(getattr(route, "path", "") == path for route in default.routes))
+        self.assertNotIn(path, default.openapi().get("paths", {}))
         router = APIRouter()
         router.add_api_route(path, lambda: None, methods=["POST"])
         explicit = create_app(output_request_cancel_router=router)
-        self.assertTrue(any(
-            getattr(route, "path", "") == path and "POST" in route.methods
-            for route in explicit.routes
-        ), f"explicit app did not include cancel route; paths={[getattr(route, 'path', None) for route in explicit.routes]!r}")
+        operation = explicit.openapi().get("paths", {}).get(path, {})
+        self.assertIn("post", operation)

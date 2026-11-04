@@ -687,6 +687,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_department_create_router = None
         project_department_patch_router = None
         project_department_deactivate_router = None
+        output_request_cancel_router = None
         document_upload_create_router = None
         document_upload_content_router = None
         plugin_installation_metadata_router = None
@@ -1593,7 +1594,6 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_department_deactivate_router = create_project_department_deactivate_router(
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
-            output_request_cancel_router = None
             if include_secret_write:
                 output_request_cancel_router = create_windows_output_cancel_router(
                     runtime=runtime, sessions=sessions, origins=origins,
