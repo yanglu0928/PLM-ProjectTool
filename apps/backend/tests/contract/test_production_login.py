@@ -525,6 +525,12 @@ class ProductionLoginTests(unittest.TestCase):
                 runtime.dispose.assert_called_once()
 
     def setUp(self) -> None:
+        from plm_assistant.modules.output.api.list_cursor import OutputRequestListCursorCodec
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_output_request_list_cursor_codec",
+            return_value=OutputRequestListCursorCodec(b"o" * 32),
+        ))
         self.maintenance_engine = Mock()
         self.enterContext(patch(
             'plm_assistant.entrypoints.production_login.create_engine',
@@ -1937,6 +1943,38 @@ class ProductionLoginTests(unittest.TestCase):
             settings, credential_target="PLMProjectTool/Database",
             include_secret_read=True, include_secret_write=True,
             include_trace_graph=True)
+
+
+    def test_missing_output_request_list_cursor_key_disposes_read_modes(self):
+        for factory in (create_production_platform_app,
+                        create_production_platform_write_app):
+            with self.subTest(factory=factory.__name__):
+                runtime = Mock()
+                runtime.is_ready.return_value = True
+                with patch(
+                    "plm_assistant.entrypoints.production_login.read_database_url",
+                    return_value="postgresql+psycopg://localhost/test",
+                ), patch(
+                    "plm_assistant.entrypoints.production_login.create_database_runtime",
+                    return_value=runtime,
+                ), patch(
+                    "plm_assistant.entrypoints.production_login._schema_current",
+                    return_value=True,
+                ), patch(
+                    "plm_assistant.entrypoints.windows_license_runtime."
+                    "create_windows_license_services",
+                    return_value=Mock(guard=Mock()),
+                ), patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_output_request_list_cursor_codec",
+                    side_effect=RuntimeError("private Output cursor key missing"),
+                ) as failed:
+                    with self.assertRaises(ProductionLoginStartupError) as caught:
+                        factory(self.settings(("http://localhost",)))
+                failed.assert_called_once()
+                self.assertNotIn("private", str(caught.exception))
+                runtime.dispose.assert_called_once()
+
 
 
 if __name__ == "__main__":
