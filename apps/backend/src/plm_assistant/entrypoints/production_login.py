@@ -114,6 +114,12 @@ from plm_assistant.entrypoints.windows_output_create import (
 from plm_assistant.entrypoints.windows_output_read import (
     create_windows_output_request_read_router,
 )
+from plm_assistant.entrypoints.windows_output_list import (
+    create_windows_output_request_list_router,
+)
+from plm_assistant.entrypoints.windows_output_list_cursor import (
+    create_windows_output_request_list_cursor_codec,
+)
 from plm_assistant.entrypoints.windows_plan_version import (
     create_windows_plan_version_validation_composition,
     create_windows_plan_version_review_submission_router,
@@ -791,6 +797,11 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             output_request_read_router = create_windows_output_request_read_router(
                 runtime=runtime, sessions=sessions, origins=origins,
                 license_guard=licenses.guard,
+            )
+            output_request_list_router = create_windows_output_request_list_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+                cursors=create_windows_output_request_list_cursor_codec(),
             )
             if include_trace_graph:
                 trace_graph_router = create_windows_trace_graph_router(
@@ -2036,6 +2047,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             output_request_cancel_router=output_request_cancel_router,
             output_request_create_router=output_request_create_router,
             output_request_read_router=output_request_read_router,
+            output_request_list_router=output_request_list_router,
             login_router=router,
             session_router=session_router,
             session_renew_router=renew_router,
