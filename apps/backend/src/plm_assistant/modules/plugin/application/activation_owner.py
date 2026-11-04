@@ -90,8 +90,7 @@ class PluginActivationOwner:
     def enable(self, command: EnablePluginOperationsCommand, *,
                commit_guard: Callable[[object], None] | None = None) -> PluginActivationResult:
         self._validate_command(command)
-        if ((commit_guard is not None and not callable(commit_guard))
-                or (result_guard is not None and not callable(result_guard))):
+        if commit_guard is not None and not callable(commit_guard):
             raise PluginActivationOwnerError("PLUGIN_ACTIVATION_INVALID")
         try:
             with self._uow() as transaction:
@@ -209,7 +208,8 @@ class PluginActivationOwner:
                 or type(command.expected_lock_version) is not int
                 or command.expected_lock_version < 0):
             raise PluginActivationOwnerError("PLUGIN_ACTIVATION_INVALID")
-        if commit_guard is not None and not callable(commit_guard):
+        if ((commit_guard is not None and not callable(commit_guard))
+                or (result_guard is not None and not callable(result_guard))):
             raise PluginActivationOwnerError("PLUGIN_ACTIVATION_INVALID")
         try:
             with self._uow() as transaction:

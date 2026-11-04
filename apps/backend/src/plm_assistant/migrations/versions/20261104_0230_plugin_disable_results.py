@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from alembic import context, op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 revision = "20261104_0230"
 down_revision = "20261104_0229"
@@ -22,7 +23,7 @@ def upgrade() -> None:
         sa.Column("result_lock_version", sa.BigInteger(), nullable=False),
         sa.Column("installation_state", sa.Text(), nullable=False),
         sa.Column("changed", sa.Boolean(), nullable=False),
-        sa.Column("created_at", sa.TIMESTAMP(timezone=True, precision=6),
+        sa.Column("created_at", postgresql.TIMESTAMP(timezone=True, precision=6),
                   server_default=sa.text("statement_timestamp()"), nullable=False),
         sa.CheckConstraint("expected_lock_version >= 0",
                            name="ck_plg_disable_results__expected_version"),
