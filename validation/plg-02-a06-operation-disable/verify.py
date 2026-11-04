@@ -31,6 +31,13 @@ from plm_assistant.modules.plugin.application.activation_owner import (
     PluginActivationOwner,
     PluginActivationOwnerError,
 )
+from plm_assistant.modules.plugin.application.installation_metadata import (
+    PluginInstallationMetadataQuery,
+    PluginInstallationMetadataService,
+)
+from plm_assistant.modules.plugin.infrastructure.installation_metadata_repository import (
+    SqlAlchemyPluginInstallationMetadataRepository,
+)
 from plm_assistant.modules.plugin.application.installation_owner import (
     PluginInstallationEvidence,
     PluginInstallationOwner,
@@ -108,6 +115,21 @@ class _InstalledEvidence:
         return PluginInstallationEvidence(
             package.plugin_package_id, package.package_sha256, True, True, dict(_RUNTIME),
         )
+
+
+class _ReadAccess:
+    def __init__(self, actor_id: uuid.UUID) -> None:
+        self.actor_id = actor_id
+    def authorized_admin(self, _transaction: object, *, session_token: bytes, now: object):
+        if type(session_token) is not bytes or len(session_token) != 32:
+            return None
+        return self.actor_id
+
+
+class _ReadLicense:
+    def require_valid(self, *, trace_id: uuid.UUID) -> None:
+        if type(trace_id) is not uuid.UUID or trace_id.int == 0:
+            raise RuntimeError("synthetic A06 License denied")
 
 
 class _FailingAudit:
@@ -237,6 +259,25 @@ def main() -> int:
             raise AssertionError("activation setup did not enable the expected operation set")
         if _state(_dsn(database, args.port), installation_id) != ("ENABLED", 1, 2, 2):
             raise AssertionError("enabled state was not persisted atomically")
+
+        metadata = PluginInstallationMetadataService(
+            unit_of_work=runtime.unit_of_work,
+            access=_ReadAccess(actor_id),
+            license_guard=_ReadLicense(),
+            repository=SqlAlchemyPluginInstallationMetadataRepository(),
+        )
+        detail = metadata.get(
+            PluginInstallationMetadataQuery(b"m" * 32, uuid.uuid4()),
+            installation_id,
+        )
+        if (detail.installation_state != "ENABLED"
+                or detail.lock_version != 1
+                or detail.etag != '"v1"'
+                or detail.enabled_operations != ("document.export", "document.render")
+                or len(detail.operations) != 2
+                or detail.package_sha256 != package.package_sha256.hex()
+                or "signature" in detail.runtime_snapshot):
+            raise AssertionError("Installation detail projection or ETag was invalid")
 
         stale = DisablePluginInstallationCommand(
             installation_id, 0, actor_id, uuid.uuid4(),
