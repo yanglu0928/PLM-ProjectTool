@@ -43,3 +43,15 @@ OutputRequest keyset分页Service、SQL Repository、opt-in GET adapter及独立
 - The synthetic Project Manager membership authorization and direct OutputRequestListService page preflight both passed against PostgreSQL 18.6. This localizes the 404 to the ASGI HTTP test adapter.
 - Root cause: the verifier supplied the entire URL (including ?page_size=1) as ASGI scope.path while also populating scope.query_string. Starlette therefore routed a path that does not match the frozen route and correctly returned 404.
 - Planned correction: split route_path and query_string in the hosted adapter; pass only route_path in scope.path/raw_path. No production route, authorization or contract change.
+
+
+## Outcome — 2026-11-04
+
+- Status: PASS_SCOPE_LIMITED.
+- Final hosted run: [41846611865](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41846611865), 13/13 jobs successful; backend 4,022 tests and wheel, frontend tests/typecheck/build, A17/A34/A35/A50, clean parent extraction and temporary PG18.6 lifecycle all passed.
+- P21 PostgreSQL HTTP checks: OUTPUT_REQUEST_LIST access for Project Manager, Implementation Member, Customer Manager; Customer Member, nonmember and cross-project denial; first/next keyset pages; project/page-size/session-bound HMAC cursor and tamper rejection; read-only table counts; default app route absent. No customer data, external API calls or product API startup.
+- Parent candidate: 20,204 payload files; archive SHA-256 ab296298508a7030262cb5494b584249fc54f0ffee6b5b209bc81eb4af24c1f1; temporary runner drive D:.
+- No Schema, Migration or API contract changes. Output cursor key source is read-only current-account Windows Vault ref output-request-list-cursor-v1; no key creation or reuse. Missing key still fails closed.
+- Hosted harness deviations and corrections are retained above: shared test injection, synthetic A17 key fixture, and valid ASGI path/query split. No production authorization relaxation.
+- Limitation: synthetic Hosted environment only. No Win11 device test, real service-account Vault provision, production trust, UAT, Gate 3, Pilot or Release approval.
+- Next: separate WBS precheck for exposing existing OutputRequest list to the frontend.

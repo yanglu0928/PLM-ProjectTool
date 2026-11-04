@@ -2,7 +2,7 @@
 
 - OUT-01-A01-P20按CR-OUT-016以PASS_SCOPE_LIMITED完成：OutputRequest详情GET接入Windows显式read组合。Hosted run [41835015557](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41835015557) 13/13通过，后端4,021 tests/wheel、PG18.6授权/404隔离/最小投影/只读验证、前端、20,202文件父包和A17/A34/A35/A50通过。无默认路由，Session/License为合成；Pilot/Gate/Release不变。见docs/progress/out-01-a01-p20-output-read-composition-result.md。
 
-- OUT-01-A01-P21编码前检查完成：接入OutputRequest keyset列表GET到Windows只读组合，使用独立当前账户Vault HMAC key并缺失失败关闭。见CR-OUT-017与docs/progress/out-01-a01-p21-output-list-composition-precheck.md。
+- OUT-01-A01-P21按CR-OUT-017以PASS_SCOPE_LIMITED完成：OutputRequest列表GET接入Windows显式只读组合，专用当前账户Vault HMAC key缺失时失败关闭。Hosted run [41846611865](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41846611865) 13/13通过；后端4,022 tests/wheel、前端/build、PG18.6授权/分页/游标篡改/只读、20,204项父包与A17/A34/A35/A50通过。候选ZIP SHA-256 ab296298508a7030262cb5494b584249fc54f0ffee6b5b209bc81eb4af24c1f1。无Schema/API变化；仅托管合成验证，不代表Win11或生产信任。见docs/progress/out-01-a01-p21-output-list-composition-result.md。
 
 ## Unreleased · 2026-11-04（内部云端验证，非发行版本）
 
