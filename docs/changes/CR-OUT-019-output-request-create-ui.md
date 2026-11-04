@@ -1,7 +1,7 @@
 # CR-OUT-019：基于已批准需求版本的 Output DOCX 请求入口
 
 - 日期：2026-11-05
-- 状态：编码前检查 PASS_WITH_LIMITATION；按持续自主执行授权进入实现
+- 状态：编码前检查 PASS_WITH_LIMITATION；前端实现已提交，GitHub hosted 验收待完成
 - 来源：CR-EXEC-002 Windows 11 Pilot 纵向链、冻结 API-03 OUTPUT_REQUEST_CREATE、CR-OUT-009/P12、CR-OUT-015/P19、CR-OUT-018/P22
 - 基线：冻结 API Contract V1、现有 OutputRequest Owner；不改 API、Schema 或 Migration
 
@@ -25,3 +25,7 @@
 ## 验收计划
 
 Output Create client合同/错误测试、Approved/非Approved版本与角色显示测试、幂等不确定结果提示、Requirement detail导航；GitHub hosted 全量前端与后端测试/typecheck/build、PG18及父包/A17/A34/A35/A50。所有程序/测试仅在GitHub hosted runner或非C盘沙箱执行；不使用本机C盘。
+
+## 实施提交（2026-11-05）
+
+已实现SessionClient固定POST路径、Output DOCX请求client与需求固定版本入口；UI只向当前已批准版本/PM或IM开放。幂等key在同一组件尝试中保留；提交状态不确定时禁止自动重试并提供历史核对入口。后端Owner仍复核Session/CSRF/Project/License/版本/插件签名信任。未改API、Schema、默认路由或密钥来源；没有执行插件或生成文件。本提交云端全量验收进行中，完成前不标记P23通过。

@@ -1,8 +1,10 @@
-## Unreleased · 2026-11-04（内部云端验证，非发行版本）
+## Unreleased · 2026-11-05（内部云端验证，非发行版本）
+
+- OUT-01-A01-P23编码已提交：在当前已批准RequirementVersion详情提供内置DOCX请求入口；固定使用产品template/policy/operation，SessionClient保留CSRF/Idempotency，不确定结果只提示查历史。插件Publisher信任缺失时服务器仍失败关闭；该操作不等同文件生成。CR-OUT-019；hosted全量验收待完成。
 
 - OUT-01-A01-P20按CR-OUT-016以PASS_SCOPE_LIMITED完成：OutputRequest详情GET接入Windows显式read组合。Hosted run [41835015557](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41835015557) 13/13通过，后端4,021 tests/wheel、PG18.6授权/404隔离/最小投影/只读验证、前端、20,202文件父包和A17/A34/A35/A50通过。无默认路由，Session/License为合成；Pilot/Gate/Release不变。见docs/progress/out-01-a01-p20-output-read-composition-result.md。
 
-- OUT-01-A01-P22编码前检查PASS_WITH_LIMITATION：消费P21列表API新增只读Vue列表/分页；Session角色只用于UI呈现、服务端授权不变，不展示上下文/插件敏感投影。详见CR-OUT-018与docs/progress/out-01-a01-p22-output-list-ui-precheck.md。
+- OUT-01-A01-P22按CR-OUT-018以PASS_SCOPE_LIMITED完成只读历史列表UI。Hosted run [41859511797](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41859511797) 13/13成功，前端2,084 tests/typecheck/build、后端4,022 tests/wheel、PG18、父包及A17/A34/A35/A50通过。未改API/Schema/默认后端挂载，合成验证不代表Win11/正式信任/Gate/Pilot/Release。见docs/progress/out-01-a01-p22-output-list-ui-result.md。
 
 - OUT-01-A01-P21按CR-OUT-017以PASS_SCOPE_LIMITED完成：OutputRequest列表GET接入Windows显式只读组合，专用当前账户Vault HMAC key缺失时失败关闭。Hosted run [41846611865](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41846611865) 13/13通过；后端4,022 tests/wheel、前端/build、PG18.6授权/分页/游标篡改/只读、20,204项父包与A17/A34/A35/A50通过。候选ZIP SHA-256 ab296298508a7030262cb5494b584249fc54f0ffee6b5b209bc81eb4af24c1f1。无Schema/API变化；仅托管合成验证，不代表Win11或生产信任。见docs/progress/out-01-a01-p21-output-list-composition-result.md。
 

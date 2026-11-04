@@ -5,6 +5,7 @@ import { RouterLink, useRoute } from "vue-router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import { EvidenceViewerClient, EvidenceViewerClientError, type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
+import OutputRequestCreateAction from "@/modules/output/views/OutputRequestCreateAction.vue";
 import { RequirementReadClient, RequirementReadError, type RequirementSourceView,
   type RequirementVersionCursor, type RequirementVersionSummary, type RequirementVersionView,
   type RequirementView } from "@/modules/requirement/api/requirementReadClient";
@@ -125,7 +126,7 @@ onUnmounted(() => { mounted = false; generation += 1; detailGeneration += 1; evi
         <button v-if="versionCursor" type="button" :disabled="versionBusy" @click="loadMoreVersions">加载更多版本</button>
         <p v-if="detailError" role="alert">{{ detailError }}</p>
       </section>
-      <article v-if="selected" aria-labelledby="selected-title"><h2 id="selected-title">版本 {{ selected.version_no }} · {{ selected.title ?? selected.domain_name }}</h2>
+      <article v-if="selected" aria-labelledby="selected-title"><h2 id="selected-title"><OutputRequestCreateAction :session="session" :project-id="ids().projectId" :version="selected" :approved-version-ref="requirement?.current_approved_version_ref ?? null" />版本 {{ selected.version_no }} · {{ selected.title ?? selected.domain_name }}</h2>
         <p v-if="selected.classification === 'PENDING_CONFIRMATION'" class="fact-warning"><strong>该版本属于待确认项。</strong>确认完成前不得作为正式业务事实或提交正式评审。</p>
         <h3>需求陈述</h3><p>{{ selected.statement }}</p><h3>理由</h3><p>{{ selected.rationale }}</p>
         <section><h3>来源与原文入口</h3><p>页面仅显示固定标识；不会把来源正文复制进表格。</p>

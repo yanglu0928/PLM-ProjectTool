@@ -1,7 +1,7 @@
 # CR-OUT-018：OutputRequest 列表前端只读接入
 
 - 日期：2026-11-04
-- 状态：编码前检查 PASS_WITH_LIMITATION；实施已由持续授权覆盖
+- 状态：PASS_SCOPE_LIMITED；OutputRequest列表只读前端接入完成
 - 来源：CR-OUT-017/P21冻结列表HTTP、API-03 OUTPUT_REQUEST_LIST、CR-EXEC-002 Windows 11 Pilot纵向链
 - 基线：冻结 API Contract V1；只消费现有GET列表，不增加服务端接口、Schema或Migration
 
@@ -35,3 +35,12 @@
 - P22 代码及前端测试已修正；最新 hosted run [41859511797](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41859511797) 的前端测试/typecheck/build、后端全量测试/wheel、PG18/pgvector、基础运行时、父包装配、clean extraction、A35、A17 与 A34 的全部步骤均返回 success；2,084/2,084 前端测试通过，13 个 job 中 11 个 job 已 completed/success。
 - GitHub API 截至本记录时仍将 A17 与 A34 两个 Windows job 和整体 run 标为 in_progress，虽然两个 job 的所有步骤（含 Complete job）均为 success，且对应 bounded evidence artifacts 已上传。没有最终 aggregate conclusion，因此P22仅记为“实现与步骤级验证成功、汇总待终结”，不将完整WBS/Gate/Pilot/Release报为通过。
 - 为遵循“客观阻塞转向独立任务”，下一项转入已批准Output Create契约的前端入口编码前检查；P23不修改A17/A34流程或依赖其最终状态。
+
+
+## 最终实施与验收（2026-11-05）
+
+- 最终 Hosted run [41859511797](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41859511797) 于 2026-11-04T16:16:08Z 完成，13/13 jobs success。前端 2,084 项测试、typecheck与生产构建成功；后端4,022项测试与wheel成功；PG18/pgvector、Python基础运行时、嵌入式后端、Windows非发行父包、clean extraction/PostgreSQL、A17、A34、A35、A50全成功。
+- P22两次首次前端失败按本文先记录后修复，最终全量重跑成功；A17和A34曾在所有步骤成功后短暂保持in_progress，最终由GitHub完成并返回success，故汇总悬挂已解除。
+- Windows非发行父包候选Artifact digest为sha256:7f09a2eca7d12d456cfb1e348d89f5ff4dbc34f0b9235b2b25117c92dc572ec4；仅云端临时候选，不是用户安装包或Release。
+- 结论PASS_SCOPE_LIMITED：列表UI只展示请求ID/类型/状态/请求与完成时间，读取P21分页GET；没有Schema/API迁移。服务端列表路由仍限Windows显式只读组合，默认应用未挂载。
+- 测试仅使用hosted合成账户/数据，未外发客户数据。未在用户本机/C盘运行代码。此结果不代表Win11实机、正式Vault/插件信任、Gate、UAT、Pilot或Release通过。
