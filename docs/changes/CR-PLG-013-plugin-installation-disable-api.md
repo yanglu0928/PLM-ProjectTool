@@ -32,3 +32,7 @@
 ## Hosted migration fixture follow-up（2026-11-04）
 
 在 Migration 0230 当前 head 断言修正后，hosted run [41767093675](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41767093675) 的空库迁移继续执行，但同一验收器随后失败：已有PLG Owner夹具的 `TRUNCATE` 未包含新增的 `plg_disable_results`，PostgreSQL 外键保护拒绝单独清理被引用的安装表。该问题限于合成验收夹具清理清单。修复计划：将不可变结果表与其父/相关表加入同一事务内的TRUNCATE目标清单，然后重新跑完整 hosted 验收；不改业务表关系或触发器约束。
+
+## Hosted guard inventory follow-up（2026-11-04）
+
+hosted run [41768655588](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41768655588) 中，Backend/Frontend、嵌入式运行时、父包、A35与A17候选投影均通过；clean extraction PG18 smoke 已越过 Migration 0230 head 与外键清理，随后 `validation/plg-01-a01-package-schema/verify.py` 的 `_assert_guards_closed` 失败：数据库实际有4个 `trg_plg_%__owner_closed`，当前断言预期5个。0230迁移源中定义了 `plg_disable_results` 的 owner_closed INSERT/UPDATE/DELETE触发器，因此须继续查明触发器是否未装入实际父包迁移链，或验收运行库的触发器命名/过滤口径是否遗漏该项。修复计划：对照运行库触发器清单、0230升级和parent package迁移脚本，修正真实缺失或最小化统计查询；保留闭合写入与审计约束，并重跑PG18及全量托管验收。不得仅通过降低预期数量来关闭检查。
