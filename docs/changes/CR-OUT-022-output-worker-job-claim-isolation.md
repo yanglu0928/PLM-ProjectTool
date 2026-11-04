@@ -29,3 +29,9 @@
 ## P25 路线处理
 
 已停止对initdb做猜测式环境变量微调。P25后续只在有新的直接根因证据时恢复；当前先推进此不依赖P25 initdb差异的Jobs/Output安全边界任务。
+
+## 第一轮 hosted 验证偏差（修复前登记，2026-11-05）
+
+- Run [41929416448](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41929416448) 中后端全量4,023项/wheel、前端、P24/A50通过；父包PG smoke执行至新P26验证器清理阶段失败，原因是验证器调用不存在的 `DatabaseRuntime.engine` 属性。已核对真实运行时有公开 `dispose()` 资源关闭方法。
+- 专项claim断言此前已全部执行至finally清理，初步路径证据符合预期，但父包PG smoke以非零退出且P26没有正式Summary，故本轮不能作为PASS验收。无生产代码、Schema或Migration故障；未运行HTTP、插件或文件生成。
+- 父PG smoke finally停止了D盘runner temp中的临时服务并删除本轮专用根目录；合成子库没有打包/上传。仅修正验证器以调用 `DatabaseRuntime.dispose()` 后，由同一父包PG hosted job重跑。禁止在本机/C盘复现。
