@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-04（内部云端验证，非发行版本）
+
+- OUT-01-A01-P19按CR-OUT-015以PASS_SCOPE_LIMITED完成：Output Create仅在Windows显式write组合挂载，冻结角色权限及同事务Session/CSRF接线完成。Hosted run [41830014604](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41830014604) 13/13通过，后端4,018 tests/wheel、PG18.6组合实际HTTP和信任缺失无写入、前端、20,201项父包及A17/A34/A35/A50通过。Publisher清单为空，真实请求失败关闭；未执行插件或生成文件。Pilot/Gate/Release不变。详情见docs/progress/out-01-a01-p19-output-create-composition-result.md。
+
+- OUT-01-A01-P20开始前置检查：下一项接入冻结OutputRequest详情GET至Windows显式read组合，具体见CR-OUT-016与docs/progress/out-01-a01-p20-output-read-composition-precheck.md。
+
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
 - OUT-01-A01-P18按CR-OUT-014以PASS_SCOPE_LIMITED完成，GitHub hosted run 41809547922 13/13 jobs成功。后端4,013 tests/wheel、前端测试/typecheck/build、PG18.6合成HTTP/权限/Audit/幂等、20,199文件父包、A17/A34/A35/A50通过；父包内部SHA-256 076c3d844a771d5d63100cab51f15c72f2a99fa569e41b4fe377cea5ca08d947。creator/ProjectManager取消成功，ImplementationMember拒绝且无写入，默认App无路由。两轮偏差均先记录并修复后全量重验。兼容性限hosted synthetic，非Win11实机/发行；无数据库/API升级。已知限制：write opt-in、运行中取消待Worker确认、正式publisher/License trust/DB凭据/ACL/TLS缺失；Pilot/Gate/Release不变。详见docs/progress/out-01-a01-p18-output-cancel-composition-result.md。下一项P19核查Output Create composition。

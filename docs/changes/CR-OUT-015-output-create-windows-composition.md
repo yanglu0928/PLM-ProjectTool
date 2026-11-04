@@ -1,7 +1,7 @@
 # CR-OUT-015：OutputRequest Create HTTP接入显式Windows write composition
 
 - 日期：2026-11-04
-- 状态：P19编码前检查 PASS_WITH_LIMITATION；实施前置已记录
+- 状态：P19 PASS_SCOPE_LIMITED；P20为下一项
 - 来源：CR-OUT-014/P18、CR-OUT-009/P12、CR-OUT-005固定Requirement source、CR-OUT-006/007 Template与Policy、CR-OUT-008/PLG-02 Plugin capability
 - 基线：冻结API Contract V1 OUTPUT_REQUEST_CREATE；不改路由/DTO、架构、Schema或Migration
 
@@ -41,3 +41,13 @@ PASS_WITH_LIMITATION：依赖Owner/adapter可复用；缺少的仅为Create策�
 - Run [41813995345](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41813995345)：P51-A32 projection、前端、PG18/pgvector、Python embed、A50通过；后端全量在4,018项中1项失败，导致后续依赖父包/A17/A34/A35作业跳过。
 - 失败：新组合单元测试断言了不存在的 `OutputRequestService._guard`；实现实际将依赖保存为 `_license`。这是测试字段名错误，非运行时实现异常。
 - 修复：仅将组合测试断言改为检查 `_license`；再跑完整云端工作流（含4,000+后端测试、PostgreSQL父包smoke、A17/A34/A35/A50）。本失败及重验完成前不关闭P19。
+
+
+## P19执行与验收结果
+
+- 实施：新增 `OUTPUT_REQUEST_CREATE` 项目权限策略与同事务Session/CSRF Access；将既有Create router、Requirement固定版本读取、内置Template/Policy、Plugin capability/signature trust、Output/Job/Outbox、Audit/幂等组合为显式Windows write router。默认/login/只读App未挂载。无API/Schema/Migration改动。
+- 定向授权与组合测试通过；首次全量run中的单一错误断言已按上文记录修正。
+- Run [41830014604](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41830014604)：13/13 jobs成功；backend 4,018 tests/wheel、frontend tests/typecheck/build、PG18.6/pgvector、父包、A17/A34/A35/A50通过。
+- PG18.6合成HTTP验证通过：ProjectManager与ImplementationMember因包内发布者manifest为空而得到失败关闭响应；CustomerManager被拒绝。对Output、Job、Outbox、Audit、幂等表的请求前后计数完全一致。默认应用无Create route。宿主数据库/Session/License为合成，未联系外部API/插件，未生成文件。
+- 非发行父包20,201项；内部SHA-256 `7197e04bb47982c20f9c8988f12a1186a0f5e11b8bd1a6e80c093f12803fd7bd`。未进行Windows 11本机安装/实测。
+- 结论：`PASS_SCOPE_LIMITED`。正式publisher信任、Output Worker、License信任、Win11实机及Gate/Pilot/Release不由本项通过。
