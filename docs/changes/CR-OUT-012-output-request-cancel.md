@@ -1,7 +1,7 @@
 # CR-OUT-012：冻结 OutputRequest 取消的原子 Owner 与可选 HTTP 接入
 
 - 日期：2026-11-04
-- 状态：P15/P16编码前核查通过；P16实现可开始
+- 状态：P16 PASS_SCOPE_LIMITED；P17专用PG18事务验收待完成
 - 来源：冻结 API Contract V1 / API-03 的 `OUTPUT_REQUEST_CANCEL`
 - 基线：不修改 API 路径、角色、数据模型、DB Schema 或现有 Migration；沿用持续授权，实施与验收证据按提交追溯
 
@@ -36,3 +36,12 @@ P15 证实必须以 OutputRequest lock_version 为公开并发版本，由 Outpu
 - 这是对原计划“核查现有终态Owner锁序”的证据性偏差：被核查Owner当前不存在，故锁序改为本CR显式规定的前向兼容约束。实施前先记本节，不涉及冻结架构/契约/Schema或生产事实改变。
 - 诚实限制：当前无Output执行/终态Owner意味着本轮可以验收取消请求存储与状态同步，不能验证实际生成进程终止或RUNNING取消确认。Hosted PG18并发和事务测试只证明数据库边界，不代表真实Worker执行。
 
+
+
+## P16 托管结果（2026-11-04）
+
+P16新增OutputRequest取消Application/Repository/opt-in HTTP与Jobs-owned OutputGenerate transaction port/repository，代码提交 `f0fefa6434d5362d00ce9c5a26f129bdf954ae6d`。Hosted run [41793207115](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41793207115) 13/13 jobs成功；后端4,006 tests/wheel、前端、PG18 sidecar/父包、PG lifecycle、A17/A34/A35/A50均成功。新增Owner单测5项、HTTP测试3项纳入后端全量。
+
+`PASS_SCOPE_LIMITED`。该标准Cloud workflow没有把新取消Owner正负行/事务测试直接连到PG18；父包PG lifecycle仅证明旧迁移/启动，而不证明此Owner。此验收差距按CR记录，不宣称本CR完整通过：P17新增专用隔离PG18正向、跨项目/错误绑定/旧If-Match负向、并发重放与Audit失败回滚测试。P16使用的应用时钟提供CANCELLED输出完成时间，P17将核查并改为数据库一致时间以避免主机时钟偏差。
+
+未接默认/正式组合、未提供真实Output Worker、无输出生成进程取消确认；Router仍opt-in。详见 `docs/progress/out-01-a01-p16-output-request-cancel-result.md`。Pilot/Gate/Release状态不变。
