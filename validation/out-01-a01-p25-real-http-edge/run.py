@@ -241,6 +241,125 @@ def seed_synthetic_project(runtime) -> None:
         tx.commit()
 
 
+
+def windows_loader_diagnostics(pg_root: Path) -> dict[str, object]:
+    result: dict[str, object] = {"platform": sys.platform, "pe_tool_available": False}
+    if os.name != "nt":
+        result["status"] = "NOT_WINDOWS"
+        return result
+
+    def category(name: str) -> str:
+        binary = pg_root / "bin" / name
+        library = pg_root / "lib" / name
+        if binary.is_file():
+            return "sidecar_bin"
+        if library.is_file():
+            return "sidecar_lib"
+        system_root = Path(os.environ.get("SystemRoot", ""))
+        if system_root and (system_root / "System32" / name).is_file():
+            return "system32"
+        if system_root and (system_root / name).is_file():
+            return "windows_root"
+        for raw in os.environ.get("PATH", "").split(os.pathsep):
+            entry = raw.strip().strip('"')
+            if entry and (Path(entry) / name).is_file():
+                return "path"
+        if name.lower().startswith(("api-ms-win-", "ext-ms-win-")):
+            return "api_set"
+        return "missing"
+
+    result["runtime_presence"] = {
+        name: category(name) for name in (
+            "VCRUNTIME140.dll", "VCRUNTIME140_1.dll", "MSVCP140.dll",
+            "MSVCP140_1.dll", "ucrtbase.dll", "libwinpthread-1.dll",
+            "libintl-9.dll", "icuuc77.dll", "icudt77.dll")
+    }
+    try:
+        program_files_x86 = Path(os.environ.get("ProgramFiles(x86)", "C:/Program Files (x86)"))
+        vswhere = program_files_x86 / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
+        dumpbin = None
+        if vswhere.is_file():
+            located = subprocess.run(
+                [str(vswhere), "-latest", "-products", "*", "-property", "installationPath"],
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, encoding="utf-8", errors="replace", timeout=15, check=False)
+            if located.returncode == 0 and located.stdout.strip():
+                tool_root = Path(located.stdout.strip().splitlines()[0])
+                tools_root = tool_root / "VC" / "Tools" / "MSVC"
+                candidates = sorted(tools_root.glob("*/bin/Hostx64/x64/dumpbin.exe"))
+                if candidates:
+                    dumpbin = candidates[-1]
+        result["pe_tool_available"] = dumpbin is not None
+        dependency_rows: list[dict[str, str]] = []
+        missing: set[str] = set()
+        queue = [pg_root / "bin" / "initdb.exe"]
+        visited: set[Path] = set()
+        while dumpbin is not None and queue and len(visited) < 48:
+            image = queue.pop(0)
+            resolved_image = image.resolve()
+            if resolved_image in visited:
+                continue
+            visited.add(resolved_image)
+            probe = subprocess.run(
+                [str(dumpbin), "/nologo", "/dependents", str(image)],
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, encoding="utf-8", errors="replace", timeout=20, check=False)
+            if probe.returncode != 0:
+                dependency_rows.append({"image": image.name, "probe": "FAILED"})
+                continue
+            names = []
+            for line in probe.stdout.splitlines():
+                match = re.fullmatch(r"\s*([A-Za-z0-9_.+-]+\.dll)\s*", line, flags=re.IGNORECASE)
+                if match:
+                    names.append(match.group(1))
+            for name in sorted(set(names), key=str.lower):
+                where = category(name)
+                dependency_rows.append({"image": image.name[:120], "name": name[:160], "resolved": where})
+                if where == "missing":
+                    missing.add(name.lower())
+                elif where == "sidecar_bin":
+                    queue.append(pg_root / "bin" / name)
+                elif where == "sidecar_lib":
+                    queue.append(pg_root / "lib" / name)
+        result["dependency_probe_count"] = len(visited)
+        result["dependencies"] = dependency_rows[:120]
+        result["missing_dependencies"] = sorted(missing)[:80]
+        result["dependency_probe_truncated"] = bool(queue) or len(dependency_rows) > 120
+    except Exception as probe_failure:
+        result["pe_probe_error_type"] = type(probe_failure).__name__[:120]
+
+    try:
+        powershell = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
+        if not powershell:
+            result["application_error_events"] = {"status": "POWERSHELL_UNAVAILABLE"}
+        else:
+            command = (
+                "$e=Get-WinEvent -FilterHashtable @{LogName='Application';StartTime=(Get-Date).AddMinutes(-30)} "
+                "-ErrorAction SilentlyContinue | Where-Object { "
+                "$_.ProviderName -in @('Application Error','Windows Error Reporting') -and $_.Message -match '(?i)initdb\\.exe' } "
+                "| Select-Object -First 3; if(-not $e){ '[]' } else { "
+                "$e | ForEach-Object { [ordered]@{ id=$_.Id; provider=$_.ProviderName; "
+                "message=$_.Message.Substring(0,[Math]::Min(1200,$_.Message.Length)) } } | ConvertTo-Json -Compress }"
+            )
+            events = subprocess.run(
+                [powershell, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command],
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, encoding="utf-8", errors="replace", timeout=25, check=False)
+            raw = events.stdout.strip()
+            if events.returncode == 0:
+                raw = raw.replace(str(Path(os.environ.get("RUNNER_TEMP", "")).resolve()), "<runner-temp>")
+                raw = re.sub(r'[A-Za-z]:[^ \r\n,;]+', '<absolute-path>', raw)
+                raw = re.sub(r"[\x00-\x1f]+", " ", raw)
+                result["application_error_events"] = {
+                    "status": "CAPTURED", "data": raw[:3000] if raw else "[]"}
+            else:
+                result["application_error_events"] = {"status": "QUERY_FAILED"}
+    except Exception as event_failure:
+        result["application_error_events"] = {
+            "status": "QUERY_FAILED", "error_type": type(event_failure).__name__[:120]}
+    return result
+
+
 async def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dist", type=Path, required=True)
@@ -366,6 +485,12 @@ async def main() -> int:
             "plugin_executed": False,
             "database_files_included": False,
         }
+        if pg_root is not None:
+            try:
+                diagnostic["windows_loader"] = windows_loader_diagnostics(pg_root)
+            except Exception as loader_failure:
+                diagnostic["windows_loader"] = {"status": "PROBE_FAILED",
+                                                "error_type": type(loader_failure).__name__[:120]}
         if pg_root is not None and pg_data is not None:
             try:
                 status_probe = subprocess.run(
