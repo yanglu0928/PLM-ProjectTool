@@ -1,7 +1,7 @@
 # OUT-01-A01-P11：Plugin OperationCapability Owner-backed 只读适配（编码前检查）
 
 - 日期：2026-11-04
-- 状态：编码前检查通过；CR-OUT-008已登记，准备实现
+- 状态：编码前检查通过；CR-OUT-008已登记；实现已提交至托管CI验收
 - Phase/WBS：Phase 2 Platform Core / OUT-01-A01-P11
 - 依据：冻结API-03/DM-04/DB Schema V1；CR-OUT-004/007；OUT-01-A01-P03/P09/P10；CR-PLG-013及PLG-02-A01～A08验收
 - 执行环境：GitHub hosted runner；临时数据库/文件均在runner临时目录；用户本机/C盘不运行代码

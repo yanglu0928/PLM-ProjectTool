@@ -58,8 +58,8 @@ class OutputPolicyVersion:
 class PluginOperationCapability:
     operation_id: str
     output_types: tuple[str, ...]
-    enabled: bool = True
-    trusted: bool = True
+    enabled: bool = False
+    trusted: bool = False
 
 
 class FixedOutputSourcePort(Protocol):

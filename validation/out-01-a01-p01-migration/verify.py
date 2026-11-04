@@ -11,7 +11,7 @@ from pathlib import Path
 
 import psycopg
 from psycopg import errors, sql
-from sqlalchemy import URL
+from sqlalchemy import URL, create_engine
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps" / "backend" / "src"))
@@ -19,6 +19,22 @@ sys.path.insert(0, str(ROOT / "apps" / "backend" / "src"))
 from plm_assistant.modules.platform.infrastructure.migration import (  # noqa: E402
     downgrade_database,
     upgrade_database,
+)
+from plm_assistant.modules.platform.infrastructure.database import DatabaseRuntime  # noqa: E402
+from plm_assistant.modules.plugin.application.operation_capability import (  # noqa: E402
+    PluginOperationCapabilityReader,
+)
+from plm_assistant.modules.plugin.application.signature_verifier import (  # noqa: E402
+    TrustedPluginSigner,
+)
+from plm_assistant.modules.plugin.infrastructure.operation_capability_repository import (  # noqa: E402
+    SqlAlchemyPluginOperationCapabilityRepository,
+)
+from plm_assistant.modules.plugin.infrastructure.packaged_signer_resolver import (  # noqa: E402
+    PackagedPluginSignerResolver,
+)
+from plm_assistant.modules.output.infrastructure.plugin_operation_registry_adapter import (  # noqa: E402
+    PluginOperationRegistryAdapter,
 )
 
 
@@ -282,6 +298,141 @@ def _seed_plugin_installation_history(dsn: str, package_id: uuid.UUID) -> tuple[
 
 
 
+
+def _seed_plugin_operation_capability(dsn: str, package_id: uuid.UUID) -> uuid.UUID:
+    """Create synthetic current Plugin facts for the hosted P11 read-only query."""
+    installation_id = uuid.uuid4()
+    actor_id = uuid.uuid4()
+    snapshot = {
+        "schema_version": "1",
+        "os": "windows-11",
+        "architecture": "x86_64",
+        "python_version": "3.13.15",
+        "dependency_versions": {},
+    }
+    with psycopg.connect(dsn) as conn:
+        conn.execute(
+            "SELECT set_config('plm.plugin_installation_owner_write', 'on', true)"
+        )
+        conn.execute(
+            "INSERT INTO plm.plg_package_verifications "
+            "(plugin_package_id,verification_state,check_code,summary) "
+            "VALUES (%s,'PASSED','SIGNED_PACKAGE_VALID',"
+            "'synthetic hosted P11 fixture only')",
+            (package_id,),
+        )
+        conn.execute(
+            "INSERT INTO plm.plg_installations "
+            "(plugin_installation_id,plugin_package_id,plugin_id_normalized,"
+            "installation_state,validated_runtime_snapshot,installed_by,"
+            "created_by,updated_by,enabled_by,enabled_at,lock_version) "
+            "VALUES (%s,%s,'synthetic.upgrade','ENABLED',%s::jsonb,%s,%s,%s,%s,"
+            "statement_timestamp(),0)",
+            (installation_id, package_id, json.dumps(snapshot), actor_id,
+             actor_id, actor_id, actor_id),
+        )
+        conn.execute(
+            "INSERT INTO plm.plg_enabled_operations "
+            "(plugin_installation_id,operation_id,plugin_package_id,plugin_id_normalized) "
+            "VALUES (%s,'document.render',%s,'synthetic.upgrade')",
+            (installation_id, package_id),
+        )
+        conn.execute(
+            "INSERT INTO plm.plg_runtime_validations "
+            "(plugin_installation_id,compatibility_state,runtime_snapshot,validated_by) "
+            "VALUES (%s,'COMPATIBLE',%s::jsonb,%s)",
+            (installation_id, json.dumps(snapshot), actor_id),
+        )
+    return installation_id
+
+
+class _SyntheticP11SignerResolver:
+    def resolve_trusted_signer(self, signer_key_ref: str):
+        if signer_key_ref != "synthetic-upgrade-key":
+            return None
+        return TrustedPluginSigner(
+            signer_key_ref=signer_key_ref,
+            public_key_raw=bytes([0x42]) * 32,
+            state="ACTIVE",
+        )
+
+
+def _verify_plugin_operation_capability(
+    database_url: URL, dsn: str, installation_id: uuid.UUID,
+) -> None:
+    synthetic_runtime = DatabaseRuntime(create_engine(database_url))
+    try:
+        adapter = PluginOperationRegistryAdapter(
+            PluginOperationCapabilityReader(
+                SqlAlchemyPluginOperationCapabilityRepository(
+                    _SyntheticP11SignerResolver(),
+                ),
+            ),
+        )
+        with synthetic_runtime.unit_of_work() as transaction:
+            capability = adapter.get_operation(
+                transaction, operation_id="document.render",
+            )
+        if (capability is None or capability.output_types != ("DOCX",)
+                or capability.enabled is not True or capability.trusted is not True):
+            raise AssertionError("P11 complete synthetic capability did not resolve")
+    finally:
+        synthetic_runtime.dispose()
+
+    production_runtime = DatabaseRuntime(create_engine(database_url))
+    try:
+        production_adapter = PluginOperationRegistryAdapter(
+            PluginOperationCapabilityReader(
+                SqlAlchemyPluginOperationCapabilityRepository(
+                    PackagedPluginSignerResolver(),
+                ),
+            ),
+        )
+        with production_runtime.unit_of_work() as transaction:
+            production_capability = production_adapter.get_operation(
+                transaction, operation_id="document.render",
+            )
+        if (production_capability is None or production_capability.enabled is not True
+                or production_capability.trusted is not False):
+            raise AssertionError(
+                "P11 empty packaged publisher registry did not fail closed"
+            )
+    finally:
+        production_runtime.dispose()
+
+    incompatible = {
+        "schema_version": "1",
+        "os": "windows-11",
+        "architecture": "x86_64",
+        "python_version": "3.13.15",
+        "dependency_versions": {},
+    }
+    with psycopg.connect(dsn) as conn:
+        conn.execute(
+            "SELECT set_config('plm.plugin_installation_owner_write', 'on', true)"
+        )
+        conn.execute(
+            "INSERT INTO plm.plg_runtime_validations "
+            "(plugin_installation_id,compatibility_state,runtime_snapshot,validated_by) "
+            "VALUES (%s,'INCOMPATIBLE',%s::jsonb,%s)",
+            (installation_id, json.dumps(incompatible), uuid.uuid4()),
+        )
+    runtime = DatabaseRuntime(create_engine(database_url))
+    try:
+        reader = PluginOperationCapabilityReader(
+            SqlAlchemyPluginOperationCapabilityRepository(
+                _SyntheticP11SignerResolver(),
+            ),
+        )
+        with runtime.unit_of_work() as transaction:
+            stale = reader.get_operation(
+                transaction, operation_id="document.render",
+            )
+        if stale is None or stale.enabled is not False or stale.trusted is not True:
+            raise AssertionError("P11 latest incompatible RuntimeValidation was ignored")
+    finally:
+        runtime.dispose()
+
 def _verify_plugin_retirement_guard(dsn: str, installation_id: uuid.UUID) -> None:
     actor_id = uuid.uuid4()
     with psycopg.connect(dsn) as conn:
@@ -499,6 +650,13 @@ def main() -> int:
                 f"before={history_before!r}; after={history_after!r}"
             )
         result["installation_history_blocks_downgrade"] = "PASS"
+        capability_installation = _seed_plugin_operation_capability(
+            existing_dsn, package_id,
+        )
+        _verify_plugin_operation_capability(
+            existing_url, existing_dsn, capability_installation,
+        )
+        result["plugin_operation_capability"] = "PASS_LIMITED"
     finally:
         for name in reversed(created):
             _drop_database(admin_dsn, name)

@@ -78,7 +78,7 @@ class TrustedOutputContextResolverTests(unittest.TestCase):
             max_sources=4, max_context_bytes=8192,
         ))
         self.operations = Operations(PluginOperationCapability(
-            "word.generate", ("DOCX",)))
+            "word.generate", ("DOCX",), enabled=True, trusted=True))
         self.resolver = TrustedOutputContextResolver(
             sources=self.sources, templates=self.templates,
             policies=self.policies, operations=self.operations)
@@ -137,6 +137,12 @@ class TrustedOutputContextResolverTests(unittest.TestCase):
     def test_rejects_incompatible_output_type_and_operation(self):
         self.templates.value = OutputTemplateVersion(
             self.template_ref, "PPTX", ("PLAN_VERSION",))
+        with self.assertRaisesRegex(OutputRequestError, "VALIDATION_FAILED"):
+            self.resolver.resolve(object(), actor_id=self.actor, command=self.command)
+
+    def test_operation_capability_defaults_fail_closed(self):
+        self.operations.value = PluginOperationCapability(
+            "word.generate", ("DOCX",))
         with self.assertRaisesRegex(OutputRequestError, "VALIDATION_FAILED"):
             self.resolver.resolve(object(), actor_id=self.actor, command=self.command)
 
