@@ -16,3 +16,10 @@
 风险为敏感Manifest/宿主信息过度暴露、绕过管理员/License检查及读取过程中状态混合。逐字段投影、只读事务/单条快照、会话再验证、无Store变更测试、ETag版本及安全投影审查缓解。回滚删除新增读取入口/模块，不需迁移；不会改动已有Installation数据。
 
 真实宿主安装、公钥/License正式信任仍未具备；HTTP只读取数据库已有事实，不创建安装、不连接文件系统或执行插件。只在明确的Production Platform Read/Write组合中挂载，默认模式仍404。
+
+
+## 编码阶段静态复核记录（2026-11-04）
+
+- 单元测试初稿对License模拟异常的预期错误码写成`SYSTEM_UNAVAILABLE`，与当前Service的稳定内部错误映射`PLUGIN_INSTALLATION_UNAVAILABLE`不一致。
+- 发现于云端执行前；尚无A07测试验收结果，产品逻辑与API错误合同没有修改。
+- 处理计划：只修正测试断言以匹配Service稳定错误映射，再交由GitHub hosted全量测试确认。
