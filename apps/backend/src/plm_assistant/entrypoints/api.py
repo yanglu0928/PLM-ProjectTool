@@ -179,6 +179,7 @@ def create_app(
     review_list_router: APIRouter | None = None,
     review_read_router: APIRouter | None = None,
     review_command_router: APIRouter | None = None,
+    output_request_cancel_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
@@ -324,6 +325,8 @@ def create_app(
         app.include_router(job_cancel_router)
     if job_retry_router is not None:
         app.include_router(job_retry_router)
+    if output_request_cancel_router is not None:
+        app.include_router(output_request_cancel_router)
     if project_create_router is not None:
         app.include_router(project_create_router)
     if project_patch_router is not None:

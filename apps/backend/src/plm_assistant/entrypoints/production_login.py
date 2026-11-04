@@ -105,6 +105,9 @@ from plm_assistant.entrypoints.windows_solution_outline_cursor import (
 from plm_assistant.entrypoints.windows_plan import (
     create_windows_plan_create_router, create_windows_plan_read_routers,
 )
+from plm_assistant.entrypoints.windows_output import (
+    create_windows_output_cancel_router,
+)
 from plm_assistant.entrypoints.windows_plan_version import (
     create_windows_plan_version_validation_composition,
     create_windows_plan_version_review_submission_router,
@@ -1590,7 +1593,12 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_department_deactivate_router = create_project_department_deactivate_router(
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
+            output_request_cancel_router = None
             if include_secret_write:
+                output_request_cancel_router = create_windows_output_cancel_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                )
                 if settings.rag_retrieval_policies:
                     rag_api = create_windows_rag_retrieval_api(
                         runtime, sessions=sessions, origins=origins,
@@ -2009,6 +2017,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
 
         return create_app(
             readiness_checks=(runtime.is_ready,),
+            output_request_cancel_router=output_request_cancel_router,
             login_router=router,
             session_router=session_router,
             session_renew_router=renew_router,

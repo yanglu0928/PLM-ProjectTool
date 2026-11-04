@@ -1482,6 +1482,11 @@ class ProductionLoginTests(unittest.TestCase):
         plan_version_create_router.add_api_route(
             "/api/v1/projects/{project_id}/plans/{plan_id}/versions",
             lambda: None, methods=["POST"])
+        output_cancel_router = APIRouter()
+        output_cancel_router.add_api_route(
+            "/api/v1/projects/{project_id}/output-requests/"
+            "{output_request_id}:cancel",
+            lambda: None, methods=["POST"])
         plan_submit_router = APIRouter()
         plan_submit_router.add_api_route(
             "/api/v1/projects/{project_id}/plans/{plan_id}/versions/"
@@ -1543,6 +1548,10 @@ class ProductionLoginTests(unittest.TestCase):
                         cancellation_owner=retrieval_cancel_owner,
                     )) as retrieval_factory, patch(
                     "plm_assistant.entrypoints.production_login."
+                    "create_windows_output_cancel_router",
+                    return_value=output_cancel_router,
+                    ) as output_cancel_factory, patch(
+                    "plm_assistant.entrypoints.production_login."
                     "create_windows_plan_version_validation_composition",
                     return_value=(validation_router, validation_service),
                     ) as validation_factory, patch(
@@ -1560,6 +1569,17 @@ class ProductionLoginTests(unittest.TestCase):
         upload_issuer_factory.assert_called_once()
         egress_factory.assert_called_once()
         retrieval_factory.assert_called_once()
+        output_cancel_factory.assert_called_once()
+        for name in ("runtime", "sessions", "origins", "license_guard", "audit"):
+            self.assertIsNotNone(output_cancel_factory.call_args.kwargs[name])
+        self.assertTrue(any(
+            getattr(route, "path", "") ==
+            "/api/v1/projects/{project_id}/output-requests/{output_request_id}:cancel"
+            and "POST" in getattr(route, "methods", ())
+            for included in app.routes
+            for route in getattr(
+                getattr(included, "original_router", None), "routes", ())
+        ))
         validation_factory.assert_called_once()
         for name in ("runtime", "sessions", "origins", "license_guard", "audit",
                      "documents", "downloads", "parse_results"):
