@@ -119,3 +119,11 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - 同run前后端全量/wheel、PG18 sidecar rebuild、P24/A50、嵌入式Python/Windows父包组装、父包PG生命周期smoke、A17、A34、A35均通过；父包PG smoke报告PostgreSQL 18.6/pgvector 0.8.6，P25为唯一失败job。该对照说明同run父包中的PG生命周期可运行，但尚未比较P25 initdb进程的完整PATH与父包smoke环境；不据此推断根因。
 - 延迟加载/静态依赖和TEMP/TMP、stdin、命令参数对照均未解释错误。下一项只为P25 PostgreSQL子进程构造临时PATH副本，过滤由本job额外安装的Node可执行目录，同时保留系统/Python/PG路径和全局环境；对initdb、pg_ctl、psql使用该副本，Edge/Node继续使用原环境。证据摘要只记录Node目录是否找到/过滤及条目数，不输出原始PATH。PG数据和其他项目临时文件仍在D盘。
 - 若该对照仍不改变initdb结果，停止反复调整环境变量；根据同run父包PG smoke成功证据，转为用已验证的父包PG目录进行二进制哈希及执行路径对照，或暂停P25并推进独立WBS。P25关闭条件仍为真实HTTP安全拒绝、Edge安全提示和数据库相关表计数不变。
+
+
+## 第十三轮 hosted 结果与路线切换（2026-11-05）
+
+- Run [41925875768](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41925875768) 的 P25 job 仍在 PostgreSQL 初始化前失败关闭：`initdb.exe` 返回 `3221225781 / 0xC0000135`；数据目录未创建，`pg_ctl status` 返回4。受限摘要确认 Node 目录被找到并只从 PostgreSQL 子进程 PATH 副本移除（1项），但错误未变；未启动PostgreSQL、真实HTTP、Edge请求或数据库计数核对，P25未通过。
+- 同run后端测试/wheel、前端测试/构建、PG18/pgvector sidecar重建、嵌入式后端组装、父包候选、父包PG18.6/pgvector0.8.6生命周期、A35、A17和A34均成功。此处仅作独立作业结果，不能替代P25真实HTTP/Edge验收。
+- PATH对照未改变结果，依既有止猜测条件不再改动P25环境变量。按STATUS已登记的下一步，对剩余Output/Worker trust boundary进行独立盘点：当前Jobs generic claim可覆盖`OUTPUT_GENERATE`，而现有明确的Plugin Worker只做包验证且不执行插件；因此先为Output生成作业建立严格Owner专属claim边界，不接通或执行插件。该路线切换与接受范围见`OUT-01-A01-P26`编码前检查。
+- 所有运行均在GitHub hosted Windows Server 2025 runner的D盘临时区；用户本机/C盘未运行项目程序、代码或测试。没有客户数据、外部API调用、插件执行或输出文件生成。
