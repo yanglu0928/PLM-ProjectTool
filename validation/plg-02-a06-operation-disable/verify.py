@@ -365,6 +365,45 @@ def main() -> int:
             license_guard=_ReadLicense(),
         )
         request_key = "a08-plugin-disable-stable-key"
+        failing_disable_service = PluginInstallationDisableService(
+            unit_of_work=runtime.unit_of_work,
+            access=_ReadAccess(actor_id),
+            owner=PluginActivationOwner(
+                unit_of_work=runtime.unit_of_work,
+                repository=activation_repo,
+                audit=_FailingAudit(),
+            ),
+            receipts=SqlAlchemyIdempotencyReceipts(),
+            results=SqlAlchemyPluginDisableResultRepository(),
+            license_guard=_ReadLicense(),
+        )
+        try:
+            failing_disable_service.disable(
+                DisablePluginInstallationCommand(
+                    api_installation_id, 1, actor_id, uuid.uuid4(),
+                ),
+                session_token=b"m" * 32, csrf_token=b"c" * 32,
+                idempotency_key=request_key,
+            )
+        except PluginInstallationDisableError as exc:
+            if exc.code != "PLUGIN_DISABLE_UNAVAILABLE":
+                raise
+        else:
+            raise AssertionError("A08 Audit failure did not reject HTTP disable")
+        if _state(_dsn(database, args.port), api_installation_id) != ("ENABLED", 1, 2, 2):
+            raise AssertionError("A08 Audit failure left partial installation facts")
+        with psycopg.connect(_dsn(database, args.port)) as conn:
+            if conn.execute(
+                "SELECT count(*) FROM plm.plg_disable_results "
+                "WHERE plugin_installation_id=%s", (api_installation_id,),
+            ).fetchone()[0] != 0:
+                raise AssertionError("A08 failed disable left a response result")
+            if conn.execute(
+                "SELECT count(*) FROM plm.plt_idempotency_receipts "
+                "WHERE actor_id=%s AND operation='V1_PLUGIN_DISABLE'",
+                (actor_id,),
+            ).fetchone()[0] != 0:
+                raise AssertionError("A08 failed disable left an idempotency receipt")
         disable_command = DisablePluginInstallationCommand(
             api_installation_id, 1, actor_id, uuid.uuid4(),
         )
@@ -457,6 +496,7 @@ def main() -> int:
             "result_lock_version": first_response.result_lock_version,
             "idempotent_replay_exact": first_response == replay_response,
             "different_payload_conflict": True,
+            "audit_failure_rolls_back_receipt_and_result": True,
             "immutable_result_rows": result_rows,
             "completed_receipts": receipt_rows,
             "operation_audit_rows": api_disable_audits,
