@@ -67,7 +67,7 @@ describe("OutputRequestListView", () => {
       "/projects/" + project + "/output-requests", reader);
     expect(unrelated.wrapper.text()).toContain("无权查看");
     unrelated.wrapper.unmount();
-    const restricted = await view(await session("PROJECT_MANAGER", true),
+    const restricted = await view(await session(null, true),
       "/projects/" + project + "/output-requests", reader);
     expect(restricted.wrapper.text()).toContain("须先修改密码");
     expect(reader.list).not.toHaveBeenCalled();
