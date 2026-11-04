@@ -987,6 +987,15 @@ def main() -> int:
             list_http_run.stdout.strip().splitlines()[-1])
         if list_http_validation.get("status") != "PASS_SCOPE_LIMITED":
             raise RuntimeError("OutputRequest list HTTP composition validation failed")
+        output_claim_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p26-output-job-claim/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_job_claim_validation = json.loads(
+            output_claim_run.stdout.strip().splitlines()[-1])
+        if output_job_claim_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output Job claim isolation validation failed")
         if version != "18.6" or vector_version != "0.8.6":
             raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
                              + version + "/" + vector_version)
@@ -1001,6 +1010,7 @@ def main() -> int:
             "output_create_http_validation": create_http_validation,
             "output_read_http_validation": read_http_validation,
             "output_list_http_validation": list_http_validation,
+            "output_job_claim_validation": output_job_claim_validation,
             "plugin_package_schema_validation": plugin_validation,
             "plugin_package_registration_validation": registration_validation,
             "plugin_operation_disable_validation": plugin_disable_validation,
