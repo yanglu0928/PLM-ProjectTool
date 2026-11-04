@@ -2,7 +2,7 @@
 from __future__ import annotations
 import uuid
 from datetime import datetime
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from plm_assistant.modules.output.application.cancel_request import (
     OutputRequestCancelError, OutputRequestCancelFacts,
@@ -38,9 +38,11 @@ class SqlAlchemyOutputRequestCancelRepository:
                 or (state=="CANCELLED")!=(completed_at is not None)):
             raise OutputRequestCancelError("CONFLICT_STATE")
         row.request_state=state
-        row.completed_at=completed_at
+        row.completed_at=func.clock_timestamp() if state=="CANCELLED" else None
         row.lock_version+=1
-        self._session(transaction).flush()
+        session=self._session(transaction)
+        session.flush()
+        session.refresh(row,attribute_names=["request_state","lock_version","completed_at"])
         return row.lock_version
     @staticmethod
     def _session(transaction:object)->Session:

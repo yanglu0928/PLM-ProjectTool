@@ -943,6 +943,14 @@ def main() -> int:
         owner_validation = json.loads(owner_run.stdout.strip().splitlines()[-1])
         if owner_validation.get("status") != "PASS_LIMITED":
             raise RuntimeError("OutputRequest transactional owner validation failed")
+        cancel_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p17-cancel-owner/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        cancel_validation = json.loads(cancel_run.stdout.strip().splitlines()[-1])
+        if cancel_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("OutputRequest cancel Owner validation failed")
         if version != "18.6" or vector_version != "0.8.6":
             raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
                              + version + "/" + vector_version)
@@ -952,6 +960,7 @@ def main() -> int:
             "parent_archive_sha256": parent["archive_sha256"],
             "postgresql_version": version, "pgvector_version": vector_version,
             "output_owner_validation": owner_validation,
+            "output_cancel_owner_validation": cancel_validation,
             "plugin_package_schema_validation": plugin_validation,
             "plugin_package_registration_validation": registration_validation,
             "plugin_operation_disable_validation": plugin_disable_validation,
