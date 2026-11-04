@@ -289,8 +289,7 @@ class PluginActivationOwner:
             raise PluginActivationOwnerError("PLUGIN_ACTIVATION_NOT_ALLOWED")
         current = context.enabled_operations.get(target_id, frozenset())
         if (not current and context.target_state == "ENABLED"
-                or current and context.target_state != "ENABLED"
-                or not current and context.target_state == "DISABLED"):
+                or current and context.target_state != "ENABLED"):
             raise PluginActivationOwnerError("PLUGIN_ACTIVATION_STATE_CONFLICT")
         if not current.issubset(context.declared_operations):
             raise PluginActivationOwnerError("PLUGIN_OPERATION_NOT_DECLARED")
