@@ -28,3 +28,9 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - 回滚：移除P25 runner job、Node/Python bridge和临时HTTP fixture；若客户端错误映射变化则恢复对应映射。保留P19/P24各自既有证据。
 - 验证：P25定向检查之后执行GitHub hosted全链（前后端、PG18/pgvector、wheel、父包/A17/A34/A35/A50、Edge），仅以PASS_SCOPE_LIMITED关闭。
 - 隐私：无客户数据、外部API、厂商AI、正式秘密、真实Publisher key、插件执行或文件生成；runner temp必须D盘，用户本机及C盘不运行项目代码/测试。
+
+## 首轮 hosted 偏差（修复前登记，2026-11-05）
+
+- Run [41895767137](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41895767137) 中P25专用job在D盘runner temp完成前端与sidecar provenance、Node/Python语法检查和依赖安装后，sidecar包哈希/文件清单校验通过；随后Windows initdb.exe非零退出，未启动PostgreSQL、API或浏览器。P25 job失败，其他独立hosted作业继续中；无产品API修改、插件执行或数据写入。
+- 首轮包装器为避免日志泄漏只报告命令名，未保留initdb标准错误，因此目前无法确定真实根因；不得假设为locale、路径或sidecar文件问题。
+- 修复前方案：仅让P25 harness在命令失败时输出截断的initdb标准输出/错误尾部，并过滤临时绝对路径、用户名和控制字符；成功时保持静默。复核PG配置文件/共享库、初始化参数与D盘路径；保持密码/Secret不进入命令参数或日志。之后重跑P25及完整hosted链。此为测试诊断变更，不调整产品服务信任。

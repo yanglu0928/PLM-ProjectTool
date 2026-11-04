@@ -1,3 +1,4 @@
+|Execution Note|P25首次hosted run 41895767137：前端/后端全量回归及PG18 sidecar构建通过，Edge job在initdb.exe非零退出；当前包装器没有保留安全错误摘要，原因待查。偏差与受限日志诊断计划已先记录CR-OUT-021，P25未通过，待再次Hosted复验。|
 |Execution Note|OUT-01-A01-P25专用hosted集成代码已准备：真实Windows Create HTTP、Edge合成登录/Requirement、同runPG18隔离库；期望VALIDATION_FAILED/422由用户安全提示呈现且数据库相关表无写入。代码仅在D盘GitHub runner执行，等待全链验证。|
 |Execution Note|OUT-01-A01-P25编码前检查已完成并PASS_WITH_LIMITATION：P19真实PG18 Create失败关闭与P24 Edge mock API分别已有证据；CR-OUT-021计划在hosted Edge中将同源POST桥接至真实显式Windows write HTTP组合和隔离PG18，空Publisher信任源下断言UI拒绝提示及数据库无写入。尚未编码。|
 |Execution Note|OUT-01-A01-P24于2026-11-05按CR-OUT-020完成限界验收；hosted run 41888874127 14/14成功，Windows Server 2025/D盘runner temp Edge、合成API。细节见结果记录；未生成DOCX、不代表正式信任或Pilot。用户要求禁止本机/C盘运行代码/测试，继续只使用GitHub hosted/云端沙箱。|
