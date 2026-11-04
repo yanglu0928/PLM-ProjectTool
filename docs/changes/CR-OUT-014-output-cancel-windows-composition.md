@@ -34,3 +34,10 @@ P18仅接入既有单个取消端点：添加Output Cancel生产Access/Windows c
 ## 编码前检查结论
 
 PASS_WITH_LIMITATION。证据已确认API router与默认App均解耦，Windows显式write模式具备Session/Origin/License/Audit/UOW/幂等基础依赖，Output/Jobs P17 repository已通过PG18.6合成事务验收。缺口是取消Access生产实现、ProjectManager policy和Router组合。可按上方案编码；无Schema/Migration和冻结合同变更。
+
+## 实施偏差记录（hosted run 41805787695，首次验收）
+
+- 2026-11-04，代码提交 `7e540bfd3433a1df431dc37d32e8d059c3e7528a` 的 hosted run [41805787695](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41805787695) 未通过：后端全量测试执行 4,013 项，其中 1 项新路由装配单测失败、1 项既有 ProductionLogin 组合合同测试错误；随后 key ceremony、wheel 与依赖的父包验收被工作流跳过。Frontend/build、Python/PG sidecar rebuild、A17 harness syntax 与 A50 Edge job均成功。
+- 当前根因尚在定位；日志定位到显式 App 路由断言未找到 POST，以及基线 ProductionLogin 无写模式启动抛出 `ProductionLoginStartupError`。在定位前不判定为产品代码缺陷或单纯测试误报。
+- 影响：P18仍未通过；没有 Gate/Pilot/Release 状态变化。未产生客户数据或生产副作用。
+- 处理：先基于失败栈检查App挂载方式与显式/默认组合初始化，再作最小修复；保持默认路由关闭、显式写组合才开放。修复后重跑完整 hosted workflow；若失败再次记录后再改。
