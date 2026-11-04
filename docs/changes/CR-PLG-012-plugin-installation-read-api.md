@@ -1,7 +1,7 @@
 # CR-PLG-012：PluginInstallation只读详情API
 
 - 日期：2026-11-04
-- 状态：已登记；PLG-02-A07编码及托管验收待完成
+- 状态：已完成，`PASS_SCOPE_LIMITED`
 - WBS：PLG-02-A07
 - 基线：Gate 2冻结Data Model V1、DB Schema V1、API Contract V1；CR-PLG-007～011
 
@@ -38,3 +38,12 @@
 - 原因是测试用例直接读取 `app.routes[*].path`；当前FastAPI版本将包含的路由以内部 `_IncludedRouter` 包装对象暴露，该对象没有公开 `path` 属性。A07业务测试的前置预检及前端测试/构建成功；因后端失败，依赖作业跳过，不能视为A07通过。
 - 影响范围限于路由挂载断言测试，不是产品路由逻辑或API行为失败。
 - 修复计划：断言FastAPI公开生成的OpenAPI路径集合包含显式提供的路由、且默认工厂路径集合不包含它；不改变工厂或生产装配。随后重新执行GitHub hosted全量验证，保留失败run链接和新run结果。
+
+
+## 托管实现与验收结果（2026-11-04）
+
+- A07完成：新增只读Installation metadata Service、PostgreSQL repository和冻结HTTP GET；响应投影只输出允许字段，DeploymentAdmin/Session/License检查、强ETag `"v<lock_version>"` 与`Cache-Control: no-store`通过测试。路由仅由显式Production Platform Read/Write装配，默认工厂不挂载。
+- Hosted run [41759878694](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41759878694) 13/13 jobs成功；后端3967 tests/wheel，前端测试/build，PG18.6 detail snapshot与包装验证、A17/A34/A35/A50通过。PG18真实SQL断言状态、版本、允许操作、包Hash、ETag且不返回signature；中文Manifest显示名兼容。
+- 首次run [41759144508](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41759144508) 的FastAPI内部路由包装断言失败，已在本CR先记偏差后改用TestClient对显式挂载和默认404作行为断言，修订run全量通过。
+- 限制：仅合成数据；hosted Windows Server 2025 runner，不是Win11设备。生产API未启动；正式公钥/License、数据库账户凭据、服务ACL/TLS缺失。真实安装器、生产信任、Pilot/Gate/正式Release均未由本项验证。
+- 不涉及Schema/API合同变更；回滚移除新增read Service/Repository/Router及显式组装，保留既有安装事实。

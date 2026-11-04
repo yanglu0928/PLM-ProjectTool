@@ -1,7 +1,7 @@
 # PLG-02-A07：PluginInstallation只读详情API编码前检查
 
 - 日期：2026-11-04
-- 状态：`PASS_WITH_LIMITATION`（范围已定；尚未编码/验收）
+- 状态：`PASS_SCOPE_LIMITED`（实现及托管验收完成）
 - WBS：PLG-02-A07
 - 变更记录：`docs/changes/CR-PLG-012-plugin-installation-read-api.md`
 - 前置：PLG-02-A01～A06均为`PASS_SCOPE_LIMITED`
@@ -26,3 +26,6 @@ HTTP按现有只读边界校验trusted host与Session，不要求CSRF；应用�
 - 后端定向与全量测试、wheel；PG18真实SQL与response contract。Hosted D盘临时工作区；不在本机/C盘执行。
 - 只在显式Production Platform Read/Write组合中挂载；默认应用继续无此路由。正式License信任未供给时，应用启动失败关闭，合成测试不能代表产品运行。
 - 最高为`PASS_SCOPE_LIMITED`，不等于真实安装适配器、Win11实机、Pilot、Gate或Release通过。
+
+
+实现结果：`docs/progress/plg-02-a07-installation-read-result.md`。

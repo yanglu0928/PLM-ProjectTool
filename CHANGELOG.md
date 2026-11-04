@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-04（内部云端验证，非发行版本）
+
+- PLG-02-A07按CR-PLG-012完成并以`PASS_SCOPE_LIMITED`关闭。Hosted run [41759878694](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41759878694) 13/13 jobs成功：后端3967 tests/wheel、前端/build、PG18.6 Installation详情读取、父包20,176项、A17/A34/A35/A50通过。父包SHA-256 `cd54f676…d9a6a7`。首次FastAPI测试断言失败已先登记CR、改成公开HTTP行为校验后全量通过。未启动产品API、未做Win11实机验证，Pilot/Gate/正式Release未通过。详见`docs/progress/plg-02-a07-installation-read-result.md`。下一项PLG-02-A08冻结PLUGIN_DISABLE HTTP入口编码前检查。
+
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
 - PLG-02-A06按CR-PLG-011完成内部Installation操作停用Owner，PG18真实临时库验证多操作原子撤销、History/Audit、stale lock、失败回滚和精确重放。Hosted run [41755590662](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41755590662) 13/13 jobs、后端3,959 tests/wheel及完整父包/A17/A34/A35/A50通过；父包20,173文件SHA `cfe8f74d…a3d1072`。不接公开API/默认组合/插件执行。详见`docs/progress/plg-02-a06-installation-disable-result.md`。开始A07冻结Installation detail GET前置核查。

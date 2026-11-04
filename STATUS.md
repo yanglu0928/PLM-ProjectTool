@@ -1,10 +1,10 @@
 |Execution Note|PLG-02-A06按CR-PLG-011完成内部停用Owner和PG18临时库验证；全量托管链41755590662 13/13成功。真实宿主安装/签名信任缺口继续独立跟踪。项目代码及测试只在GitHub hosted runner执行，不在用户本机/C盘运行。|
-|Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P09_PASS_SCOPE_LIMITED / OUT_01_A01_P10_PASS_SCOPE_LIMITED / PLG_02_A05_PASS_SCOPE_LIMITED / PHASE_2_IN_PROGRESS|
+|Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P09_PASS_SCOPE_LIMITED / OUT_01_A01_P10_PASS_SCOPE_LIMITED / PLG_02_A07_PASS_SCOPE_LIMITED / PHASE_2_IN_PROGRESS|
 |Delivery Strategy|`CR-EXEC-002`：先 Windows 11 受控内部试用包，再正式三平台 Release；不降低 Gate/安全/Scope|
 |Pilot Status|NOT_READY：纵向完整业务链、真实信任装配、离线安装/升级及实际验收尚未齐全|
 |Formal Release Status|NOT_READY：Gate 3～7、Windows Server 2025/Debian 13 及正式发行验收未通过|
 |Execution Note|PLG-01-A08提交e37e668e通过hosted run 41678551589全13 jobs；PG18 Worker集成 smoke随A17执行成功。用户要求本机/C盘不运行项目代码与测试；后续只用GitHub hosted runner并尽量使用D盘临时工作区。A35仍为历史PASS_LIMITED，不代表Win11实机验收。正式插件信任、DB身份、ACL、TLS及法律放行仍缺，Pilot/Gate/Release NOT_READY。|
-|Current WBS|PLG-02-A07：PluginInstallation只读详情API编码前检查|
+|Current WBS|PLG-02-A08：PLUGIN_DISABLE受控HTTP入口编码前检查|
 |Latest WBS Status|PLG-02-A06 按 CR-PLG-011 完成并为 `PASS_SCOPE_LIMITED`：新增人工停用Owner，复用Installation写入guard，在同事务清除两项enabled operation、写4条History与2条Audit并更新DISABLED/lock_version。Hosted PG18 smoke验证陈旧版本拒绝、Audit失败回滚、精确重放无变化；完整run 41755590662 13/13成功。未接HTTP/默认组合/物理安装或插件执行。详见 docs/progress/plg-02-a06-installation-disable-result.md。
 |Latest WBS Status|PLG-02-A05 按 CR-PLG-010 完成并为 `PASS_SCOPE_LIMITED`：内部Installation退役命令按plugin锁和expected lock_version串行化；逐项关闭启用操作、追加不可变History/Audit并把Installation单向转为RETIRED。Hosted run [41743782405](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41743782405) 13/13 jobs成功，backend 3,955 tests，Migration head 0229；PG18验证退役必须有关联Audit且无活动操作，并拒绝从RETIRED恢复。未接API/默认组合/物理卸载/插件执行。详见 docs/progress/plg-02-a05-installation-retirement-result.md。|
 |Current Status|PLG_01_A08_PASS_SCOPE_LIMITED / OUT_01_A01_P09_PASS_SCOPE_LIMITED / OUT_01_A01_P10_PASS_SCOPE_LIMITED / PLG_02_A01_PASS_SCOPE_LIMITED / PHASE_2_IN_PROGRESS|
@@ -21,7 +21,7 @@
 |Latest Test Summary|PLG-02-A05 GitHub hosted run [41743782405](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41743782405) 13/13 jobs成功：后端3,955 tests/wheel、前端/build、PG18.6/pgvector、父包清洁解包与0229空库升降重升/退役守卫/A17/A34/A35/A50通过。父包20173文件SHA-256为`81b1425c2ffa866f43b96ebc744bec0cbef8332b090c9d7cab746dc58e016515`；A17仅托管Windows Server 2025 synthetic flow；A34仍显示生产启动受正式信任/数据库/ACL/TLS阻断。无生产安装或插件执行。仅合成托管数据；Pilot/Gate/Release未通过。|
 |Latest WBS Status|PLG-02-A02 PASS_SCOPE_LIMITED：受控内部Owner仅原子记录适配器核验的初始INSTALLED、RuntimeValidation及Audit；hosted run 41721092729全13/13成功。无公开API、默认生产组合、真实安装适配器、启用或插件执行。详见docs/progress/plg-02-a02-installation-owner-result.md。|
 |Latest WBS Status|PLG-02-A02编码前检查PASS_WITH_LIMITATION：仅建设核验后记录INSTALLED事实的内部Owner，禁止把VERIFIED包当已安装；无公开API/默认组合/启用/执行。数据库最小INSERT开放、宿主安装适配器及真实服务身份均作为明确后续限制。详见docs/progress/plg-02-a02-installation-owner-precheck.md。|
-|Next WBS|PLG-02-A07：PLUGIN_INSTALLATION_GET安全投影与ETag；仅复用真实Session/DeploymentAdmin/License只读边界。|
+|Next WBS|PLG-02-A08：按冻结API实现PLUGIN_DISABLE显式受控HTTP入口，复用A06 disable Owner和A07 ETag读取；编码前先复核授权、CSRF、If-Match、幂等性与生产组合。|
 |Latest Validation|A06 run 41755590662在GitHub hosted Windows Server 2025 D盘临时区完成disable owner真实PG18 smoke、clean parent解包及A17/A34/A35/A50流程；产品服务仍未启动，真实License/公钥/账户凭据/ACL/TLS仍阻断。未在Win11设备验证。
 |Latest Validation|A05 run 41743782405 在GitHub hosted Windows Server 2025 D盘验收0229退役守卫、PG18.6迁移和父包20173文件SHA；A17 29 API/PlanVersion与A34人工恢复演练完成。A34候选产品启动仍因正式公钥/License信任/数据库凭据/服务ACL/TLS阻断，服务未启动。无Windows11实机、正式信任、生产安装、UAT、Gate或Release结论。|
 
