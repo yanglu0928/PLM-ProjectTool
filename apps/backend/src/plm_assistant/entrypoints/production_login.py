@@ -111,6 +111,9 @@ from plm_assistant.entrypoints.windows_output import (
 from plm_assistant.entrypoints.windows_output_create import (
     create_windows_output_request_create_router,
 )
+from plm_assistant.entrypoints.windows_output_read import (
+    create_windows_output_request_read_router,
+)
 from plm_assistant.entrypoints.windows_plan_version import (
     create_windows_plan_version_validation_composition,
     create_windows_plan_version_review_submission_router,
@@ -692,6 +695,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_department_deactivate_router = None
         output_request_cancel_router = None
         output_request_create_router = None
+        output_request_read_router = None
         document_upload_create_router = None
         document_upload_content_router = None
         plugin_installation_metadata_router = None
@@ -784,6 +788,10 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 create_windows_license_services,
             )
             licenses = create_windows_license_services(runtime, settings)
+            output_request_read_router = create_windows_output_request_read_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+            )
             if include_trace_graph:
                 trace_graph_router = create_windows_trace_graph_router(
                     runtime=runtime, sessions=sessions, origins=origins,
@@ -2027,6 +2035,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             readiness_checks=(runtime.is_ready,),
             output_request_cancel_router=output_request_cancel_router,
             output_request_create_router=output_request_create_router,
+            output_request_read_router=output_request_read_router,
             login_router=router,
             session_router=session_router,
             session_renew_router=renew_router,
