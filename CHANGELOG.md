@@ -1,5 +1,8 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- OUT-01-A01-P14编码前检查通过并登记CR-OUT-011：实现冻结OUTPUT_REQUEST_LIST的项目内只读keyset分页，严格应用ProjectManager/ImplementationMember/CustomerManager授权及独立HMAC cursor family；仅依赖注入密钥、默认路由不挂载。详见`docs/progress/out-01-a01-p14-output-request-list-precheck.md`。
+
+
 - OUT-01-A01-P13按CR-OUT-010以PASS_SCOPE_LIMITED完成。Hosted run [41785576480](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41785576480) 14/14 jobs成功：后端3,988 tests/wheel、前端、PG18/pgvector、非发行父包、A17/A34/A35/A50全通过。新增固定版本OutputRequest read service、project隔离SQL projection与opt-in GET，HTTP/授权/SQL安全投影测试通过。该运行没有针对该Repository的PG18正向数据测试；正式路由未挂载、无插件/文件输出。详见`docs/progress/out-01-a01-p13-output-request-read-result.md`。下一项P14核查OUTPUT_REQUEST_LIST的角色和分页游标。
 
 
