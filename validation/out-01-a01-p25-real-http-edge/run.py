@@ -116,7 +116,7 @@ def verify_and_extract_sidecar(archive: Path, digest_file: Path, root: Path) -> 
 
 
 def run_checked(args: list[str], *, timeout: int = 180) -> str:
-    p = subprocess.run(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    p = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                        text=True, encoding="utf-8", errors="replace", timeout=timeout, check=False)
     if p.returncode:
         def safe_tail(value: str) -> str:
