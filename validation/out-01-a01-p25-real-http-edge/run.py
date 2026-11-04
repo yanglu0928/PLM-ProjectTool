@@ -440,8 +440,11 @@ async def main() -> int:
         command = ["node", str(ROOT / "validation/out-01-a01-p25-real-http-edge/run.mjs"),
                    "--dist", str(args.dist), "--summary-out", str(node_summary),
                    "--backend-origin", f"http://127.0.0.1:{api_port}", "--port", str(ui_port)]
+        node_env = os.environ.copy()
+        node_env["TEMP"] = str(runner_temp)
+        node_env["TMP"] = str(runner_temp)
         node = await asyncio.create_subprocess_exec(*command, cwd=str(ROOT),
-                                                    env=os.environ.copy(),
+                                                    env=node_env,
                                                     stdout=asyncio.subprocess.PIPE,
                                                     stderr=asyncio.subprocess.STDOUT)
         output, _ = await asyncio.wait_for(node.communicate(), timeout=240)
