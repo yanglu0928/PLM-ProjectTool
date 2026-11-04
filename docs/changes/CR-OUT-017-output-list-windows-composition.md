@@ -28,3 +28,11 @@ OutputRequest keyset分页Service、SQL Repository、opt-in GET adapter及独立
 - Scope: validation-fixture omission; production remains fail-closed when the Output key is unavailable. No credential was created or changed.
 - Correction plan: add a synthetic OutputRequestListCursorCodec factory patch to the shared production-login test setup, and add an explicit missing-key disposal assertion. Re-run the full hosted workflow and PG18 parent smoke; keep the P21 result incomplete until it passes.
 - Recovery: no production migration or data recovery required. Revert the test fixture patch if it changes unrelated expectations; production rollback remains removal of P21 list composition and its dedicated key factory.
+
+
+## Hosted run 41841051553 finding — 2026-11-04
+
+- Backend full suite/wheel, frontend, package assembly, and A35 handoff passed. The P21 PG18.6 HTTP check returned 404 RESOURCE_NOT_FOUND for the synthetic Project Manager list request before pagination assertions; P21 is incomplete. See run 41841051553 and job 126617682159.
+- A17 packaged flow also failed at production startup because the newly required Output list cursor key was absent from its synthetic package test credentials. No customer or production data was used. See job 126618290597. This is a test-fixture compatibility gap; do not weaken the missing-key fail-closed behavior.
+- Next: isolate why the seeded authorized Project Manager resolves to 404 (membership/project/department state versus fixture); add the dedicated synthetic cursor key to the hosted A17 fixture only, preserving the read-only current-account Vault contract; rerun full hosted workflow and parent PG smoke. A17 stays unverified until it passes.
+- No migration or database recovery needed. P21 rollback still removes only list composition and its key resolver.
