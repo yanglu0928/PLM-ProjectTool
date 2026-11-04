@@ -1,7 +1,7 @@
 # CR-OUT-010：OutputRequest 固定版本只读详情
 
 - 日期：2026-11-04
-- 状态：已按持续授权登记；OUT-01-A01-P13编码前检查通过
+- 状态：PASS_SCOPE_LIMITED；OUT-01-A01-P13已完成
 - 来源：CR-EXEC-002 Windows内部Pilot纵向链；P12 Create路由完成后需提供其冻结详情查询
 - 基线：API-03 OUTPUT_REQUEST_GET；不修改冻结API/Data Model/Schema
 
@@ -16,3 +16,11 @@
 ## 验收计划
 
 Hosted后端定向/全量与PG18合成隔离、最小详情projection，再运行父包/A17/A34/A35/A50。正式路由保持未挂载，客户数据不进入验证。
+
+
+## 实施及验收记录（2026-11-04）
+
+- 实现固定版本详情 Application Service、SQLAlchemy只读Projection与opt-in GET；查询同时限定ProjectId和OutputRequestId，并以同事务Session、License及Project成员读取授权保护资源。
+- hosted run [41785576480](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41785576480) 14/14 jobs通过；后端3,988项测试/wheel、前端、PG18/pgvector、父包及A17/A34/A35/A50通过。
+- 新增HTTP、安全错误/Session测试、Application成员授权测试及PostgreSQL dialect投影测试。父包PG18生命周期 smoke成功，但没有直接以PG18真实请求行运行该read repository；此项作为限制保留，不宣称其PG行集成已通过。
+- 无Migration、冻结Contract变化、默认应用挂载、客户数据、AI/插件调用或文件输出。仅合成数据，未在用户本机运行代码。

@@ -1,5 +1,8 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- OUT-01-A01-P13按CR-OUT-010以PASS_SCOPE_LIMITED完成。Hosted run [41785576480](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41785576480) 14/14 jobs成功：后端3,988 tests/wheel、前端、PG18/pgvector、非发行父包、A17/A34/A35/A50全通过。新增固定版本OutputRequest read service、project隔离SQL projection与opt-in GET，HTTP/授权/SQL安全投影测试通过。该运行没有针对该Repository的PG18正向数据测试；正式路由未挂载、无插件/文件输出。详见`docs/progress/out-01-a01-p13-output-request-read-result.md`。下一项P14核查OUTPUT_REQUEST_LIST的角色和分页游标。
+
+
 - OUT-01-A01-P13编码前检查通过并登记CR-OUT-010：读取固定OutputRequest refs/状态/JobRef的opt-in详情GET，按project+request双重过滤，Context正文不出库。详见docs/progress/out-01-a01-p13-output-request-read-precheck.md。
 
 - OUT-01-A01-P12按CR-OUT-009以 PASS_SCOPE_LIMITED 完成。Hosted run [41780566043](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41780566043) 14/14 jobs成功；后端3,979 tests/wheel、新增OUTPUT_REQUEST_CREATE opt-in HTTP contract tests、PG18.6及完整非发行父包/A17/A34/A35/A50通过。服务未启动真实API、router默认未挂载、未执行插件或文件发布。详见docs/progress/out-01-a01-p12-output-request-create-http-result.md。下一项P13为OUTPUT_REQUEST_GET固定版本只读详情。
