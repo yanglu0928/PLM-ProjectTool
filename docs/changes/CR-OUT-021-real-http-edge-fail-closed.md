@@ -34,3 +34,9 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - Run [41895767137](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41895767137) 中P25专用job在D盘runner temp完成前端与sidecar provenance、Node/Python语法检查和依赖安装后，sidecar包哈希/文件清单校验通过；随后Windows initdb.exe非零退出，未启动PostgreSQL、API或浏览器。P25 job失败，其他独立hosted作业继续中；无产品API修改、插件执行或数据写入。
 - 首轮包装器为避免日志泄漏只报告命令名，未保留initdb标准错误，因此目前无法确定真实根因；不得假设为locale、路径或sidecar文件问题。
 - 修复前方案：仅让P25 harness在命令失败时输出截断的initdb标准输出/错误尾部，并过滤临时绝对路径、用户名和控制字符；成功时保持静默。复核PG配置文件/共享库、初始化参数与D盘路径；保持密码/Secret不进入命令参数或日志。之后重跑P25及完整hosted链。此为测试诊断变更，不调整产品服务信任。
+
+
+## 第二轮 hosted 偏差（修复前登记，2026-11-05）
+
+- Run [41897161326](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41897161326) 的P25 job再次在initdb.exe启动前失败；P25脚本语法、依赖、同runPG18 sidecar完整性均通过。新增诊断显示initdb stdout/stderr均为空；当前日志尚未包括Windows进程退出码，因此根因仍未知。PostgreSQL服务、真实HTTP与Edge步骤未执行。
+- 实施前方案：诊断helper仅增加进程退出码并在启动PG前依次调用包内pg_config.exe --version、postgres.exe --version，验证二进制可加载；命令失败时仍只保留截断、去runner-temp路径的标准输出/错误。复核PATH包含verified bin/lib及工作目录。不改产品代码、DB合同、Publisher信任或预期拒绝。诊断确认根因后，先记录再实施后续修复。
