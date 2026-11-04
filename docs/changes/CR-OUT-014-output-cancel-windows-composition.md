@@ -41,3 +41,5 @@ PASS_WITH_LIMITATION。证据已确认API router与默认App均解耦，Windows�
 - 当前根因尚在定位；日志定位到显式 App 路由断言未找到 POST，以及基线 ProductionLogin 无写模式启动抛出 `ProductionLoginStartupError`。在定位前不判定为产品代码缺陷或单纯测试误报。
 - 影响：P18仍未通过；没有 Gate/Pilot/Release 状态变化。未产生客户数据或生产副作用。
 - 处理：先基于失败栈检查App挂载方式与显式/默认组合初始化，再作最小修复；保持默认路由关闭、显式写组合才开放。修复后重跑完整 hosted workflow；若失败再次记录后再改。
+
+- 后续诊断（仍基于同一失败run）：第一项根因确认为 `output_request_cancel_router` 的默认 `None` 初始化被放在 secret-write 专属代码块内，导致默认登录构造读取未绑定局部变量；第二项根因是当前 FastAPI 的 `app.routes` 使用延迟路由包装，单测内部实现断言看不到路径。修复将把默认初始化移至无条件路由声明区、保留实际router仅在写模式生成，并改用公开 OpenAPI schema 验证默认无路由/显式有 POST。该失败没有揭示其它业务逻辑缺陷；仍以修复后的全量 hosted 证据为准。
