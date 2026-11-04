@@ -1,8 +1,9 @@
-## Unreleased · 2026-11-05（P25运行环境对照候选，非发行版本）
+## Unreleased · 2026-11-05（内部云端开发，非发行版本）
 
-- hosted run [41921391921](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41921391921) 完成全链：除P25外的后端/前端、PG sidecar、P24/A50、父包/A17/A34/A35均通过。P25增加的15模块延迟导入探测无缺项、Application Error/WER无记录，initdb仍以 `0xC0000135` 在创建数据目录前退出；HTTP/Edge未执行。
-- 同run父包候选的PG18.6/pgvector0.8.6生命周期smoke通过。新一轮只给initdb/pg_ctl/psql子进程临时移除Node可执行目录的PATH副本；Node/Edge进程与全局PATH保持不变。代码和测试仅托管执行于GitHub Windows runner，项目数据在D盘。
-- 兼容性/升级：仅非发行验收harness变更；无产品API/Schema/Migration/安装变更。P25仍未通过，Pilot/Gate/Release状态不变；本诊断结果待hosted验证。
+- OUT-01-A01-P26按CR-OUT-022以PASS_SCOPE_LIMITED完成，结果见 docs/progress/out-01-a01-p26-output-job-claim-result.md。Hosted run [41931429638](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41931429638) 中后端4,023 tests/wheel、前端测试/typecheck/build、PG18/pgvector、父包PG smoke、A17/A34/A35/A50、P24均通过；14 jobs中仅P25失败。PG smoke验证Output专属claim取2项匹配作业，generic claim只取3项非Output作业且保留剩余Output作业为PENDING，fencing正确。
+- P25仍在GitHub hosted Windows runner D盘的initdb数据目录创建前以 0xC0000135 失败；未运行真实HTTP/Edge或业务计数复核。P25、Gate、Pilot、正式Release状态不变。
+- 兼容性/升级：P26仅改内部Jobs claim隔离，无公开API、Schema、Migration、安装包升级或数据迁移。未执行插件、生成文件、客户数据或外部API。开发与验证只在GitHub hosted云端D盘临时区运行；未使用用户本机或C盘。
+
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
