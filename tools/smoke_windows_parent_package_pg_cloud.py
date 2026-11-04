@@ -927,6 +927,14 @@ def main() -> int:
         registration_validation = json.loads(registration_run.stdout.strip().splitlines()[-1])
         if registration_validation.get("status") != "PASS_LIMITED":
             raise RuntimeError("Plugin package registration owner validation failed")
+        plugin_disable_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/plg-02-a06-operation-disable/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        plugin_disable_validation = json.loads(plugin_disable_run.stdout.strip().splitlines()[-1])
+        if plugin_disable_validation.get("status") != "PASS_LIMITED":
+            raise RuntimeError("Plugin operation disable owner validation failed")
         owner_run = run_checked(
             [sys.executable,
              str(ROOT / "validation/out-01-a01-p02-owner/verify.py"),
@@ -946,6 +954,7 @@ def main() -> int:
             "output_owner_validation": owner_validation,
             "plugin_package_schema_validation": plugin_validation,
             "plugin_package_registration_validation": registration_validation,
+            "plugin_operation_disable_validation": plugin_disable_validation,
             "listen_host": "127.0.0.1", "temporary_database_only": True,
             "production_installation": False, "product_api_started": False,
             "license_trust_used": False, "runner_drive": root.drive,
