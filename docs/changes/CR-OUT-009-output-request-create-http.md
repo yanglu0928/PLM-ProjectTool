@@ -1,7 +1,7 @@
 # CR-OUT-009：OutputRequest Create 可选HTTP边界
 
 - 日期：2026-11-04
-- 状态：已按持续授权登记；OUT-01-A01-P12编码前检查通过，待开始实现
+- 状态：PASS_SCOPE_LIMITED；OUT-01-A01-P12由hosted run 41780566043验收关闭
 - 来源：CR-EXEC-002 Windows内部Pilot纵向链；OUT-01-A01-P11完成后复核冻结API-03的Output Create缺口
 - 基线：API-03 / API Contract V1 的 OUTPUT_REQUEST_CREATE；不修改API、数据模型或Schema
 
@@ -16,3 +16,10 @@ HTTP层严格解析冻结请求字段，复用 Owner 对 Session/CSRF/Project ro
 ## 风险、回滚与验证
 
 无数据库/API迁移。风险是字段越权或业务验证绕过；通过 schema allowlist、route contract、Owner复用和失败关闭验证。回滚为移除 router 和HTTP测试。Hosted验证计划：定向HTTP、后端全量/wheel、PG18、父包/A17/A34/A35/A50；运行环境不在用户本机/C盘。
+
+## 最终验收（2026-11-04）
+
+- Hosted run 41780566043：14/14 jobs成功；后端3,979 tests/wheel、前端、PG18.6、父包和A17/A34/A35/A50均通过。
+- HTTP定向测试通过202最小Ref投影、严格字段白名单、重复Source拒绝、session/CSRF调用与安全错误映射。
+- 路由opt-in且默认未挂载，没有产品API启动、插件执行或文件发布。
+- 结论 PASS_SCOPE_LIMITED；License/正式信任和Pilot/Gate/Release仍保持未通过状态。

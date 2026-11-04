@@ -1,7 +1,7 @@
 # OUT-01-A01-P12：OutputRequest Create HTTP 可选边界（编码前检查）
 
 - 日期：2026-11-04
-- 状态：编码前检查通过；CR-OUT-009已登记，可开始单一端点实现
+- 状态：PASS_SCOPE_LIMITED；hosted run 41780566043通过
 - Phase/WBS：Phase 2 Platform Core / OUT-01-A01-P12
 - 依据：冻结 API-03 / API Contract V1，OutputRequest 内部 Owner（P01～P02）、Resolver/Policy/Template/Source/Plugin capability（P03～P11）
 - 执行环境：GitHub hosted runner/沙箱；临时文件与数据库只在 runner 临时目录；不在用户本机运行项目程序

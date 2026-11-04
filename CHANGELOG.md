@@ -1,5 +1,9 @@
 ## Unreleased · 2026-11-04（内部云端开发，非发行版本）
 
+- OUT-01-A01-P13编码前检查通过并登记CR-OUT-010：读取固定OutputRequest refs/状态/JobRef的opt-in详情GET，按project+request双重过滤，Context正文不出库。详见docs/progress/out-01-a01-p13-output-request-read-precheck.md。
+
+- OUT-01-A01-P12按CR-OUT-009以 PASS_SCOPE_LIMITED 完成。Hosted run [41780566043](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41780566043) 14/14 jobs成功；后端3,979 tests/wheel、新增OUTPUT_REQUEST_CREATE opt-in HTTP contract tests、PG18.6及完整非发行父包/A17/A34/A35/A50通过。服务未启动真实API、router默认未挂载、未执行插件或文件发布。详见docs/progress/out-01-a01-p12-output-request-create-http-result.md。下一项P13为OUTPUT_REQUEST_GET固定版本只读详情。
+
 - OUT-01-A01-P12编码前检查通过并登记CR-OUT-009：仅接入冻结API-03的OUTPUT_REQUEST_CREATE单端点，复用既有Owner，router默认不挂载。详见docs/progress/out-01-a01-p12-output-request-create-http-precheck.md。
 
 - OUT-01-A01-P11按CR-OUT-008以 PASS_SCOPE_LIMITED 完成。Hosted run [41777943851](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41777943851) 14/14 jobs成功；Plugin Owner-backed Output capability只读投影、正式publisher缺失/最新不兼容/歧义失败关闭已由PG18.6合成库验证。后端3,975 tests/wheel、前端与完整父包/A17/A34/A35/A50通过。无Win11实机、产品API启动、正式信任或插件执行。详见docs/progress/out-01-a01-p11-plugin-operation-capability-result.md。下一项P12为冻结OUTPUT_REQUEST_CREATE的可选HTTP adapter。
