@@ -278,8 +278,8 @@ jobs:
           if (([IO.Path]::GetPathRoot($root)).TrimEnd('\\') -eq "C:") { throw "A27 requires non-C RUNNER_TEMP" }
           New-Item -ItemType Directory -Path $temp -Force | Out-Null
           $env:PYTHONPYCACHEPREFIX = Join-Path $temp "pycache"
-          python -B -m py_compile validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py tools/run_a17_packaged_cloud_validation.py tools/package_windows_current_app_candidate.py
-          if ($LASTEXITCODE -ne 0) { throw "A17 Python harness syntax validation failed" }
+          python -B -m py_compile validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py validation/out-01-a01-p17-cancel-owner/verify.py validation/out-01-a01-p18-cancel-http/verify.py tools/run_a17_packaged_cloud_validation.py tools/package_windows_current_app_candidate.py
+          if ($LASTEXITCODE -ne 0) { throw "Hosted validation harness syntax validation failed" }
           node --check validation/plt-pkg-01-a09-p51-a17-planversion-packaged/run-edge-browser.mjs
           if ($LASTEXITCODE -ne 0) { throw "A17 Edge harness syntax validation failed" }
           $resolved = (Resolve-Path $temp).Path
