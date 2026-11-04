@@ -751,6 +751,80 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  run-out-p25-real-http-edge:
+    name: P25 real Output Create HTTP failure closed in hosted Edge
+    needs: [frontend, rebuild-pg18-sidecar]
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install backend dependencies with temporary paths on D
+        working-directory: apps/backend
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          PIP_CACHE_DIR: ${{ runner.temp }}/plm-p25-pip-cache
+        run: |
+          python -m pip install --disable-pip-version-check -e ".[test]"
+          if ($LASTEXITCODE -ne 0) { throw "P25 backend dependency setup failed" }
+      - name: Download same-run frontend production build
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p25-frontend
+      - name: Download same-run rebuilt PostgreSQL 18.6 sidecar
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-pg18-rebuilt-sidecar-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p25-pg-input
+      - name: Verify D-drive inputs and P25 harness syntax
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $temp = (Resolve-Path $env:RUNNER_TEMP).Path
+          if ([IO.Path]::GetPathRoot($temp).TrimEnd('\') -ne "D:") { throw "P25 requires D: runner temp" }
+          $dist = Join-Path $env:RUNNER_TEMP "plm-out-p25-frontend"
+          $manifestPath = Join-Path $dist "cloud-build-manifest.json"
+          $build = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          if ($build.source_commit -ne $env:GITHUB_SHA -or [string]$build.workflow_run -ne $env:GITHUB_RUN_ID -or $build.release_eligible -ne $false) { throw "P25 frontend provenance mismatch" }
+          if (-not (Test-Path (Join-Path $dist "index.html"))) { throw "P25 frontend build incomplete" }
+          Remove-Item -LiteralPath $manifestPath -Force
+          $pgInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-pg-input"
+          foreach ($name in @("NOT-FOR-RELEASE-windows-pg18-pgvector-runtime.zip", "sidecar-sha256.json", "pg18-rebuilt-summary.json")) {
+            if (-not (Test-Path (Join-Path $pgInput $name))) { throw "P25 same-run PG18 sidecar artifact incomplete" }
+          }
+          node --check validation/out-01-a01-p25-real-http-edge/run.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P25 Edge harness syntax failed" }
+          python -B -c "import ast,pathlib; ast.parse(pathlib.Path('validation/out-01-a01-p25-real-http-edge/run.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw "P25 HTTP harness syntax failed" }
+      - name: Run real Output HTTP and Edge failure-closed flow on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $summary = Join-Path $env:RUNNER_TEMP ("plm-out-p25-summary-" + $env:GITHUB_RUN_ID + ".json")
+          $pgInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-pg-input"
+          python -B validation/out-01-a01-p25-real-http-edge/run.py --dist (Join-Path $env:RUNNER_TEMP "plm-out-p25-frontend") --sidecar (Join-Path $pgInput "NOT-FOR-RELEASE-windows-pg18-pgvector-runtime.zip") --sidecar-sha (Join-Path $pgInput "sidecar-sha256.json") --summary-out $summary --run-id $env:GITHUB_RUN_ID
+          if ($LASTEXITCODE -ne 0) { throw "P25 real HTTP + hosted Edge fail-closed validation failed" }
+          if (-not (Test-Path $summary)) { throw "P25 bounded result summary missing" }
+      - name: Upload P25 real HTTP and Edge evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-out-p25-real-http-edge-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p25-summary-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
   run-a50-edge-source-location:
     name: A50 hosted Edge source navigation
     needs: [frontend]

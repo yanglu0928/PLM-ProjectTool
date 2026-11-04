@@ -1,6 +1,6 @@
 ## Unreleased · 2026-11-05（P25编码前检查，非发行版本）
 
-- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；P25实现和完整hosted验证待执行。
+- OUT-01-A01-P25编码前检查PASS_WITH_LIMITATION：登记CR-OUT-021，拟将P19真实PG18失败关闭Create HTTP与P24 hosted Edge前端连通，在合成身份/空Publisher信任状态下验证安全拒绝提示和零数据库写入。仅新增云端验收桥接，不更改API/Schema/Migration/默认挂载；P25专用真实HTTP/Edge/PG18合成验收代码已提交，完整hosted验证待执行。
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
