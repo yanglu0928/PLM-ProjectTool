@@ -36,3 +36,10 @@ P24 Edge浏览器成功完成合成登录，并请求了项目Requirement及Vers
 ## ETag fixture 修正（2026-11-04）
 
 已在P24合成HTTP服务中为Requirement GET响应附加与JSON正文etag相同的HTTP ETag。显式Summary对象和去敏HTTP状态诊断一并保留。未改产品逻辑。下一步依赖GitHub hosted Edge及完整流水线复验。
+
+
+## 第二轮 hosted 偏差（修复前登记，2026-11-04）
+
+- ETag修复后的 run 41878499626 已成功读取批准版本并到达唯一POST；日志确认POST返回202、CSRF与幂等头存在。Edge等待成功回执UI状态时超时，截图未显示回执文案；测试未通过。
+- 新证据排除了版本读取和请求未送达问题；具体是输出Create组件状态、响应解析还是浏览器可访问性树观察尚待隔离。不得改产品文案/业务逻辑或宣称提交成功路径已通过。
+- 修复前计划：在 harness 安全诊断中补充 `.output-create` 是否存在、role=status/alert文案和按钮名快照；只输出合成UI文本，不输出请求正文、CSRF、Cookie或幂等Key。对照 OutputRequestCreateClient 的严格202收据解析与 Vue 状态流，再以 hosted Edge重验。产品代码不改。

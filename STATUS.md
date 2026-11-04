@@ -1,3 +1,4 @@
+|Execution Note|P24第二轮run 41878499626：ETag修复后已读到批准版本且向合成API发出一次202 POST，固定负载/CSRF/幂等头通过；回执UI等待超时，P24仍失败。组件状态诊断计划已先记录在CR-OUT-020，再实施；产品代码暂不改。|
 |Execution Note|P24合成Requirement GET已按CR-OUT-020补齐HTTP ETag与正文版本标记一致，并保留显式Summary及安全诊断。实现提交等待GitHub hosted Edge及全链复验。|
 |Execution Note|P24首轮根因已根据客户端冻结读契约定位：合成Requirement GET缺少匹配正文etag的HTTP ETag header，触发安全解析拒绝。补齐合成header的计划已先追加至CR-OUT-020，再实施；产品读取逻辑不改。|
 |Execution Note|P24 hosted fixture修正已提交：版本Summary改为冻结字段显式对象，增加安全HTTP状态诊断且不输出Cookie/CSRF/Idempotency值。由CR-OUT-020先记录首轮偏差，再实施；修复后全链hosted验收进行中。|

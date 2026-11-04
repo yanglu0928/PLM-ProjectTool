@@ -52,3 +52,10 @@ P24首轮hosted run 41875807078在合成登录后读取需求详情/版本列表
 ## ETag fixture 修正已实施
 
 合成Requirement GET现返回HTTP ETag，值与JSON正文etag完全一致，满足前端冻结RequirementReadClient合同。保留先前显式Summary和去敏诊断。产品API/解析器没有修改；Hosted复验等待中。
+
+
+## 第二轮 hosted 偏差（修复前登记，2026-11-04）
+
+- ETag修复后的 run 41878499626 已成功读取批准版本并到达唯一POST；日志确认POST返回202、CSRF与幂等头存在。Edge等待成功回执UI状态时超时，截图未显示回执文案；测试未通过。
+- 新证据排除了版本读取和请求未送达问题；具体是输出Create组件状态、响应解析还是浏览器可访问性树观察尚待隔离。不得改产品文案/业务逻辑或宣称提交成功路径已通过。
+- 修复前计划：在 harness 安全诊断中补充 `.output-create` 是否存在、role=status/alert文案和按钮名快照；只输出合成UI文本，不输出请求正文、CSRF、Cookie或幂等Key。对照 OutputRequestCreateClient 的严格202收据解析与 Vue 状态流，再以 hosted Edge重验。产品代码不改。
