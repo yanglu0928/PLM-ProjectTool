@@ -169,8 +169,8 @@ class PluginInstallationDisableService:
         self, command: DisablePluginInstallationCommand, *,
         scope: IdempotencyScope, session_token: bytes, csrf_token: bytes,
     ) -> PluginInstallationDisableResult:
-        self._require_license(command.trace_id)
         try:
+            self._require_license(command.trace_id)
             with self._uow() as transaction:
                 self._require_admin(
                     transaction, command, session_token=session_token,
