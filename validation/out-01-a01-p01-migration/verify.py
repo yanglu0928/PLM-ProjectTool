@@ -139,7 +139,8 @@ def _assert_plugin_installation_contract(dsn: str) -> None:
             with conn.transaction():
                 conn.execute(
                     "TRUNCATE plm.plg_installations, plm.plg_enabled_operations, "
-                    "plm.plg_runtime_validations, plm.plg_enabled_operation_history"
+                    "plm.plg_runtime_validations, plm.plg_enabled_operation_history, "
+                    "plm.plg_disable_results"
                 )
         except errors.RaiseException:
             pass
