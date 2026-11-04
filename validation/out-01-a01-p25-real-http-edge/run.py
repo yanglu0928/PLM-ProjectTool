@@ -349,6 +349,65 @@ async def main() -> int:
                                     encoding="utf-8")
         print(json.dumps(result, ensure_ascii=False, sort_keys=True), flush=True)
         return 0
+    except Exception as failure:
+        def safe_diagnostic_text(value: str, limit: int = 1600) -> str:
+            value = value.replace(str(runner_temp), "<runner-temp>")
+            value = re.sub(r"[\x00-\x1f]+", " ", value)
+            value = re.sub(r"(?i)(password|token|secret|api[_-]?key)=([^\s&]+)", r"\1=<redacted>", value)
+            return value[-limit:]
+
+        diagnostic: dict[str, object] = {
+            "wbs": "OUT-01-A01-P25",
+            "status": "FAILED_DIAGNOSTIC",
+            "failure_type": type(failure).__name__[:120],
+            "failure": safe_diagnostic_text(str(failure)),
+            "customer_data": False,
+            "external_api_calls": 0,
+            "plugin_executed": False,
+            "database_files_included": False,
+        }
+        if pg_root is not None and pg_data is not None:
+            try:
+                status_probe = subprocess.run(
+                    [str(pg_root / "bin" / "pg_ctl.exe"), "-D", str(pg_data), "status"],
+                    stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    text=True, encoding="utf-8", errors="replace", timeout=20, check=False)
+                diagnostic["pg_ctl_status"] = {
+                    "exit_code": status_probe.returncode,
+                    "stdout": safe_diagnostic_text(status_probe.stdout, 600),
+                    "stderr": safe_diagnostic_text(status_probe.stderr, 600),
+                }
+            except Exception as probe_failure:
+                diagnostic["pg_ctl_status_probe_error"] = safe_diagnostic_text(str(probe_failure), 600)
+        if pg_run is not None and pg_run.exists():
+            inventory = []
+            try:
+                for candidate in sorted(pg_run.rglob("*"))[:80]:
+                    if candidate.is_file():
+                        inventory.append({
+                            "path": candidate.relative_to(pg_run).as_posix()[:240],
+                            "size_bytes": candidate.stat().st_size,
+                        })
+                diagnostic["pg_temp_files"] = inventory
+                diagnostic["pg_temp_file_count_capped"] = len(inventory) == 80
+            except Exception as inventory_failure:
+                diagnostic["pg_temp_inventory_error"] = safe_diagnostic_text(str(inventory_failure), 600)
+        if pg_log is not None and pg_log.is_file():
+            try:
+                log_tail = pg_log.read_text(encoding="utf-8", errors="replace")[-3000:]
+                diagnostic["postgres_log_tail"] = safe_diagnostic_text(log_tail, 2400)
+            except Exception as log_failure:
+                diagnostic["postgres_log_read_error"] = safe_diagnostic_text(str(log_failure), 600)
+        try:
+            args.summary_out.parent.mkdir(parents=True, exist_ok=True)
+            args.summary_out.write_text(
+                json.dumps(diagnostic, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+                encoding="utf-8")
+            print(json.dumps(diagnostic, ensure_ascii=False, sort_keys=True), flush=True)
+        except Exception as evidence_failure:
+            print("P25 bounded diagnostic could not be written: "
+                  + safe_diagnostic_text(str(evidence_failure), 400), flush=True)
+        raise
     finally:
         if server is not None:
             server.should_exit = True
