@@ -83,3 +83,9 @@ P24失败快照现记录输出操作区域文本、role=status/alert及可见按
 ## Trace fixture 修正已实施
 
 P24新增用例的trace_id现复用本测试文件已有的synthetic Project UUID；仅替换未定义测试常量，不改产品代码。待Hosted重新验证。
+
+
+## Trace夹具修正未闭合（修复前登记，2026-11-05）
+
+- Run 41885874291 新增用例仍失败，ReferenceError定位到202 Response的另一处 `trace` 引用；前一提交只替换了登录Response中的引用，漏掉回执Response。测试依旧2,092/2,093通过，P24 Edge跳过，产品逻辑未被判失败。
+- 修正：在本测试内为所有Response统一使用已定义的项目UUID作为synthetic trace_id；提交前检查该测试代码无未定义trace符号，然后重跑 hosted 全链。
