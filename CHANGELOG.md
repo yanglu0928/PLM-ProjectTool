@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-04（内部云端开发，非发行版本）
+
+- PLG-02-A06编码前核查已通过并登记CR-PLG-011：冻结API存在人工PLUGIN_DISABLE，但现有Owner缺少显式停用命令；本项实现同事务操作撤销、DISABLED History/Audit与状态版本更新。真实宿主安装适配器、公钥/License正式信任缺口保留为独立任务。详见`docs/progress/plg-02-a06-installation-disable-precheck.md`。后端实现及云端验收待完成。
+
 ## Unreleased · 2026-11-04（内部云端验证，非发行版本）
 
 - PLG-02-A05按CR-PLG-010完成并以`PASS_SCOPE_LIMITED`关闭。GitHub hosted run [41743782405](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41743782405) 13/13 jobs成功；后端3,955 tests/wheel、PG18.6 Migration 0229退役guard、父包/A17/A34/A35/A50链通过。父包20,173文件SHA `81b1425c…e016515`。A34显示产品启动仍被正式信任、DB凭据、ACL和TLS阻断。无公开API/默认组合/物理卸载/插件执行。详见`docs/progress/plg-02-a05-installation-retirement-result.md`。下一项PLG-02-A06编码前检查。
