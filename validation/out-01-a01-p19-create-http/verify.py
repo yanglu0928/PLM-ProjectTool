@@ -24,7 +24,6 @@ from plm_assistant.entrypoints.windows_output_create import (
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.user_orm import UserRow
-from plm_assistant.modules.output.infrastructure.create_access import SqlAlchemyOutputRequestCreateAccess
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import upgrade_database
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
@@ -142,13 +141,7 @@ def app_for(runtime, actor: uuid.UUID):
         origins=SyntheticOrigins(),
         license_guard=SyntheticLicense(),
         audit=AuditService(SqlAlchemyAuditRepository()),
-        session_access=SqlAlchemyOutputRequestCreateAccess(
-            authorization=ProjectAuthorizationService(
-                unit_of_work=runtime.unit_of_work,
-                repository=SqlAlchemyProjectAuthorizationRepository(),
-            ),
-            session_access=SyntheticSessionAccess(),
-        )._session_access,
+        session_access=SyntheticSessionAccess(),
     )
     return create_app(output_request_create_router=router)
 
