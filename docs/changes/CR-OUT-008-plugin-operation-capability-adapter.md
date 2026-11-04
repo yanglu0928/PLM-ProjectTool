@@ -20,3 +20,11 @@ OUT-01-A01-P03建立了Fail-Closed Resolver，P09建立固定Policy，但Plugin 
 ## 验收计划
 
 单测、PG18合成正负例、Resolver拒绝路径、后端全量/wheel、A17同run packaged Output marker、clean parent PG18、A34/A35/A50全部由GitHub hosted runner执行。不得使用客户数据或外部AI；不得在用户本机/C盘执行。最终至多`PASS_SCOPE_LIMITED`，不代表真实publisher信任、Pilot/Gate/Release或插件执行通过。
+
+## Hosted验收偏差记录（2026-11-04）
+
+- 证据：首次P11托管运行 41775475116 后端全量测试 3,975 项中 1 项失败。新适配器返回 trusted=false 的明确拒绝能力事实；失败单测错误地期待该值直接变成“能力缺失”。
+- 原因：测试将“失败关闭”误读为隐藏有效的负向Owner事实。正确契约是保留 enabled/trusted 两个布尔事实，让既有 Output Resolver 拒绝不可信能力。
+- 决定：仅将单测调整为验证负向事实被保留，并由 Resolver 做最终拒绝；不修改生产适配器行为、Schema/API或数据。
+- 风险/回滚：无持久化变化；若修正后验收失败，仍保持 resolver 默认拒绝并按后续证据记录。
+- 验证计划：托管后端全量、PG18 owner projection、Resolver拒绝路径及完整父包链复验；本机不运行。
