@@ -115,17 +115,15 @@ def verify_and_extract_sidecar(archive: Path, digest_file: Path, root: Path) -> 
     return root / "payload" / "pgsql"
 
 
-def run_checked(args: list[str], *, env: dict[str, str] | None = None, timeout: int = 180) -> str:
+def run_checked(args: list[str], *, timeout: int = 180) -> str:
     p = subprocess.run(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                       text=True, encoding="utf-8", errors="replace", timeout=timeout,
-                       check=False, env=env)
+                       text=True, encoding="utf-8", errors="replace", timeout=timeout, check=False)
     if p.returncode:
         def safe_tail(value: str) -> str:
             runner_temp = os.environ.get("RUNNER_TEMP", "")
             if runner_temp:
                 value = value.replace(runner_temp, "<runner-temp>")
             value = re.sub(r"[\x00-\x1f]+", " ", value)
-            value = re.sub(r"[\\x00-\\x1f]+", " ", value)
             return value[-1200:]
         raise RuntimeError("hosted P25 command failed: " + Path(args[0]).name
                            + " exit_code=" + str(p.returncode)
@@ -134,32 +132,32 @@ def run_checked(args: list[str], *, env: dict[str, str] | None = None, timeout: 
     return p.stdout.strip()
 
 
-def start_pg(binary: Path, data: Path, log: Path, port: int, env: dict[str, str]) -> None:
+def start_pg(binary: Path, data: Path, log: Path, port: int) -> None:
     for name in ("pg_config.exe", "postgres.exe", "initdb.exe"):
-        run_checked([str(binary / name), "--version"], env=env, timeout=30)
+        run_checked([str(binary / name), "--version"], timeout=30)
     run_checked([str(binary / "initdb.exe"), f"--pgdata={data}", "--username=poc_admin",
-                 "--auth=trust", "--encoding=UTF8", "--locale=C"], env=env, timeout=180)
+                 "--auth=trust", "--encoding=UTF8", "--locale=C"], timeout=180)
     result = subprocess.run([str(binary / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
                              "-o", f"-h 127.0.0.1 -p {port}", "-w", "start"],
                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL, timeout=90, check=False, env=env)
+                            stderr=subprocess.DEVNULL, timeout=90, check=False)
     if result.returncode:
         raise RuntimeError("isolated PG18 failed to start; runner temp data retained for diagnosis")
 
 
-def pg_sql(binary: Path, port: int, db: str, statement: str, env: dict[str, str]) -> str:
+def pg_sql(binary: Path, port: int, db: str, statement: str) -> str:
     return run_checked([str(binary / "psql.exe"), "-X", "-v", "ON_ERROR_STOP=1",
-                        "-h", "127.0.0.1", "-p", str(port), "-U", "postgres",
-                        "-d", db, "-Atc", statement], env=env, timeout=60)
+                        "-h", "127.0.0.1", "-p", str(port), "-U", "poc_admin",
+                        "-d", db, "-Atc", statement], timeout=60)
 
 
 def db_url(name: str, port: int) -> URL:
-    return URL.create("postgresql+psycopg", username="postgres", host="127.0.0.1",
+    return URL.create("postgresql+psycopg", username="poc_admin", host="127.0.0.1",
                       port=port, database=name)
 
 
 def db_dsn(name: str, port: int) -> str:
-    return f"postgresql://postgres@127.0.0.1:{port}/{name}"
+    return f"postgresql://poc_admin@127.0.0.1:{port}/{name}"
 
 
 def create_database(name: str, port: int) -> None:
@@ -262,8 +260,9 @@ async def main() -> int:
     work = Path(tempfile.mkdtemp(prefix="plm-out-p25-", dir=runner_temp))
     if not work.resolve(strict=True).is_relative_to(runner_temp) or not str(work).isascii():
         raise ValueError("P25 work root is not an ASCII RUNNER_TEMP child")
-    pg_data = work / "pg-data"
-    pg_log = work / "pg-server.log"
+    pg_data = None
+    pg_run = None
+    pg_log = None
     pg_root = None
     pg_started = False
     database = "plm_out25_" + args.run_id[-10:]
@@ -274,15 +273,19 @@ async def main() -> int:
     try:
         pg_root = verify_and_extract_sidecar(args.sidecar, args.sidecar_sha, work / "pg-runtime")
         binary = pg_root / "bin"
-        pg_env = os.environ.copy()
         pg_port = free_port()
-        start_pg(binary, pg_data, pg_log, pg_port, pg_env)
+        pg_run = Path(tempfile.mkdtemp(prefix="plm-out-p25-pg-", dir=runner_temp))
+        if not pg_run.resolve(strict=True).is_relative_to(runner_temp) or not str(pg_run).isascii():
+            raise ValueError("P25 PostgreSQL data directory escaped the D-drive runner temp")
+        pg_data = pg_run / "data"
+        pg_log = pg_run / "postgresql.log"
+        start_pg(binary, pg_data, pg_log, pg_port)
         pg_started = True
         create_database(database, pg_port)
-        version = pg_sql(binary, pg_port, database, "SHOW server_version;", pg_env)
-        pg_sql(binary, pg_port, database, "CREATE EXTENSION vector;", pg_env)
+        version = pg_sql(binary, pg_port, database, "SHOW server_version;")
+        pg_sql(binary, pg_port, database, "CREATE EXTENSION vector;")
         vector = pg_sql(binary, pg_port, database,
-                        "SELECT extversion FROM pg_extension WHERE extname='vector';", pg_env)
+                        "SELECT extversion FROM pg_extension WHERE extname='vector';")
         if version != "18.6" or vector != "0.8.6":
             raise ValueError("P25 isolated PostgreSQL runtime version mismatch")
         upgrade_database(db_url(database, pg_port), "head")
@@ -356,10 +359,21 @@ async def main() -> int:
         if pg_started:
             drop_database(database, pg_port)
         ACTOR_BY_TOKEN.clear()
-        if pg_started and pg_root is not None:
-            env = os.environ.copy()
-            run_checked([str(pg_root / "bin" / "pg_ctl.exe"), "-D", str(pg_data),
-                         "-m", "fast", "-w", "stop"], env=env, timeout=90)
+        if pg_run is not None and pg_run.exists() and pg_root is not None:
+            pgctl = str(pg_root / "bin" / "pg_ctl.exe")
+            state = subprocess.run([pgctl, "-D", str(pg_data), "status"], capture_output=True,
+                                   timeout=20, check=False)
+            if state.returncode == 0:
+                run_checked([pgctl, "-D", str(pg_data), "-m", "fast", "-w", "stop"], timeout=90)
+                state = subprocess.run([pgctl, "-D", str(pg_data), "status"], capture_output=True,
+                                       timeout=20, check=False)
+            if state.returncode == 0:
+                raise RuntimeError("P25 PostgreSQL remains running; its D-drive data is preserved")
+            if state.returncode != 3:
+                raise RuntimeError("P25 could not confirm PostgreSQL stopped; its D-drive data is preserved")
+            if pg_run.resolve(strict=True).parent != runner_temp or not pg_run.name.startswith("plm-out-p25-pg-"):
+                raise RuntimeError("P25 cleanup refused an unowned PostgreSQL path")
+            shutil.rmtree(pg_run)
         if work.exists():
             if not work.resolve(strict=True).is_relative_to(runner_temp) or not work.name.startswith("plm-out-p25-"):
                 raise RuntimeError("P25 cleanup refused an unowned path")
