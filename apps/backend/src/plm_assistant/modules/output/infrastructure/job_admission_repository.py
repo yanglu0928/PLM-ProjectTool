@@ -67,6 +67,7 @@ class SqlAlchemyOutputJobAdmissionRepository:
                 source_version_refs=sources,
                 output_policy_ref=request.output_policy_ref,
                 plugin_operation=request.plugin_operation,
+                input_fingerprint=bytes(request.input_fingerprint),
                 context_payload=dict(snapshot.context_payload),
                 context_fingerprint=bytes(snapshot.context_fingerprint),
             )
