@@ -29,3 +29,9 @@ Output Create client合同/错误测试、Approved/非Approved版本与角色显
 ## 实施提交（2026-11-05）
 
 已实现SessionClient固定POST路径、Output DOCX请求client与需求固定版本入口；UI只向当前已批准版本/PM或IM开放。幂等key在同一组件尝试中保留；提交状态不确定时禁止自动重试并提供历史核对入口。后端Owner仍复核Session/CSRF/Project/License/版本/插件签名信任。未改API、Schema、默认路由或密钥来源；没有执行插件或生成文件。本提交云端全量验收进行中，完成前不标记P23通过。
+
+
+## 首次 hosted 验收偏差（修复前记录）
+
+- Hosted run [41868957522](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41868957522) 前端 job 因 OutputRequestCreateAction.spec.ts 第34行 TypeScript 对象字面量 `as unknown as` 跨行写法被Vite/OXC拒绝，测试套件未能加载；其余2,089项前端测试通过。该错误限于测试文件语法，不涉及生产组件/API/数据，尚不能据此关闭P23。
+- 修复方案：将该测试对象类型断言改成解析器接受的单行表达式，按GitHub hosted全量 workflow 重跑前端、后端、PG18及父包/A17/A34/A35/A50。不得在本机/C盘运行项目代码或测试。
