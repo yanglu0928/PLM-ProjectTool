@@ -1,7 +1,7 @@
 # CR-OUT-020：P24 Edge 合成版本 fixture 解析失败修正
 
 - 日期：2026-11-04
-- 状态：偏差已记录；fixture修正与hosted全链复验待执行
+- 状态：P24 PASS_SCOPE_LIMITED；GitHub hosted run 41888874127 14/14 jobs成功
 - 来源：OUT-01-A01-P24 首次 hosted run 41875807078
 - 基线：冻结Requirement Read Contract、CR-OUT-019、P24编码前检查
 - 影响面：仅validation harness与云端验收证据；无产品代码、API、Schema或Migration变化
@@ -118,3 +118,12 @@ Edge harness不再要求错误后手动重试按钮消失；保留对role=alert�
 ## 未批准版本 helper 修正已实施
 
 openRequirement helper增加 expectCreateAction 参数。已批准场景等待创建区域出现；未批准场景等待固定版本详情正文并断言整个操作区域和请求按钮不存在。未更改产品逻辑。
+
+## 最终 hosted 验收（2026-11-05）
+
+- GitHub Actions [run 41888874127](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41888874127) 完成，14/14 jobs success。GitHub hosted Windows Server 2025 runner使用D盘runner temp，下载同run前端production build并以Microsoft Edge headless完成验收。
+- Frontend：204/204 test files、2,093/2,093 tests、typecheck与production build通过。Backend：4,022 tests与wheel通过。PG18/pgvector、父包/清洁解包以及A17/A34/A35/A50均成功。
+- Edge专项检查：已批准固定版本显示请求入口；提交的template/policy/operation/source refs精确，CSRF与单一Idempotency-Key存在；HTTP 202回执显示并导航到历史；模拟503错误可见且500ms观察期间没有自动第二次POST；未批准版本没有请求操作。专项合成POST共2次（一次202、一次受控503）。
+- 合成用户、项目、需求版本和API；customer_data=false、external_api_calls=0、plugin_executed=false、docx_generated=false。P24只验证UI合同与浏览器状态，不代表真实Publisher信任、文件生成、Windows 11实机、Gate、Pilot或Release。
+- 发现并修复的产品缺陷及所有harness/fixture/断言偏差均已按发生顺序保留在本CR中；hosted成功后才关闭该WBS。
+- 结果文档：docs/progress/out-01-a01-p24-edge-create-ui-result.md。

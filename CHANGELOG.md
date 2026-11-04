@@ -1,5 +1,9 @@
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
+- OUT-01-A01-P24按CR-OUT-020以PASS_SCOPE_LIMITED完成。GitHub hosted run [41888874127](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41888874127) 14/14 jobs成功：前端2,093项测试/typecheck/build、后端4,022 tests/wheel、PG18/pgvector、父包及A17/A34/A35/A50通过。Windows Server 2025 hosted Edge验证DOCX请求UI固定合同、CSRF/幂等、202回执/历史导航、503无自动重试与未批准版本隐藏入口。仅合成API与数据，无DOCX生成、插件执行、客户数据或外部调用。详情见 docs/progress/out-01-a01-p24-edge-create-ui-result.md。真实Publisher信任、Win11实机、Gate/Pilot/Release仍未通过。下一项P25先做真实HTTP+Edge集成编码前检查。
+
+## Unreleased · 2026-11-05（内部云端验证，非发行版本）
+
 - P24 hosted Edge确认202请求已发出但回执UI消失；根因定位为SessionClient请求期间 canSubmit=false 导致整个Create组件卸载、异步结果丢弃。先按CR-OUT-020登记产品修正，再实施区域与提交门控拆分并增补定向测试。
 
 - P24 首轮hosted run [41875807078](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41875807078) 的P24 Edge步骤因合成RequirementVersion响应被前端冻结解析器拒绝而失败；尚未触发输出请求。根因调查与纯fixture修复/诊断计划已先登记 CR-OUT-020，待修复后全链复验。
