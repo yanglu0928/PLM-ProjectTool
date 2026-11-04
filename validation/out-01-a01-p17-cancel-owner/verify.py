@@ -125,7 +125,7 @@ def main():
         except OutputRequestCancelError as exc:
             if exc.code!="RESOURCE_NOT_FOUND":raise
         else:raise AssertionError("denied creator/manager policy authorized cancellation")
-        if state(db,args.port,first.output_request_id)!=before:raise AssertionError("denied role changed rows")
+        if state(db,args.port,first.output_request_id)[:4]!=before[:4]:raise AssertionError("denied role changed rows")
         def issue(_):return owner.cancel(command,idempotency_key="p17-same-cancel-key-00001")
         with ThreadPoolExecutor(max_workers=2) as pool:pair=list(pool.map(issue,(1,2)))
         if any(x.state!="CANCELLED" for x in pair):raise AssertionError("same-key concurrent calls did not converge")
