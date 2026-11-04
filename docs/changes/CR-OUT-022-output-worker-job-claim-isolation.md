@@ -35,3 +35,12 @@
 - Run [41929416448](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41929416448) 中后端全量4,023项/wheel、前端、P24/A50通过；父包PG smoke执行至新P26验证器清理阶段失败，原因是验证器调用不存在的 `DatabaseRuntime.engine` 属性。已核对真实运行时有公开 `dispose()` 资源关闭方法。
 - 专项claim断言此前已全部执行至finally清理，初步路径证据符合预期，但父包PG smoke以非零退出且P26没有正式Summary，故本轮不能作为PASS验收。无生产代码、Schema或Migration故障；未运行HTTP、插件或文件生成。
 - 父PG smoke finally停止了D盘runner temp中的临时服务并删除本轮专用根目录；合成子库没有打包/上传。仅修正验证器以调用 `DatabaseRuntime.dispose()` 后，由同一父包PG hosted job重跑。禁止在本机/C盘复现。
+
+
+## 第二轮 hosted 验证与结果（2026-11-05）
+
+- Run [41931429638](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41931429638) 的14个作业中13个成功、1个失败。后端4,023项测试和wheel、前端测试/typecheck/build、PG18/pgvector sidecar、父包组装、父包PG lifecycle smoke、A17、A34、A35、A50及P24均成功；P25仍在 `initdb.exe` 创建数据目录前以 `3221225781 / 0xC0000135` 失败，真实Output HTTP/Edge未执行。
+- 父包PG smoke内的 P26 专项验证返回 `PASS_SCOPE_LIMITED`：generic claim取得3个非Output组合，且未取得Output Generate；Output专属claim取得两项 `output/OUTPUT_GENERATE`；fencing token正确。合成验证没有Schema变化、插件执行、输出文件、外部API或客户数据；临时PG服务在GitHub hosted Windows Server 2025 runner的D盘生命周期内关闭并清理。
+- 第一轮cleanup偏差只影响验证器资源回收：已先记录后改用 `DatabaseRuntime.dispose()`。本轮验证摘要完整生成，P26按限界范围完成；P25独立阻塞不被此结果覆盖。
+- **结论：OUT-01-A01-P26 = PASS_SCOPE_LIMITED。** 兼容性仅涵盖托管Windows Server 2025 runner上的合成PG18.6/pgvector0.8.6 claim隔离与同run流水线，不是Windows 11实机或生产Worker证据。无API、Schema、Migration、安装包升级或业务数据迁移；回滚可撤回claim边界变更，保持无消费者时Output job排队失败关闭。
+- 后续编码前检查应先确认Output Worker不存在时的下一安全边界和可验证输入；在正式Publisher/插件执行信任链就绪前，不得新增真实渲染、插件执行或成功发布路径。
