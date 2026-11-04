@@ -84,7 +84,7 @@ class CompositionTests(unittest.TestCase):
         self.assertIs(result, expected)
         service = create_router.call_args.kwargs["service"]
         self.assertIs(service._uow, runtime.unit_of_work)
-        self.assertIs(service._guard, guard)
+        self.assertIs(service._license, guard)
         self.assertIs(service._audit, audit)
         self.assertIsNotNone(service._resolver)
 
