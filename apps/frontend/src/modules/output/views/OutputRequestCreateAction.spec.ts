@@ -39,6 +39,31 @@ describe("OutputRequestCreateAction", () => {
     expect(wrapper.text()).toContain(requestId); expect(wrapper.text()).not.toContain("可下载");
     wrapper.unmount();
   });
+  it("keeps the receipt area mounted while SessionClient is busy posting", async () => {
+    let resolvePost!: (value: Response) => void;
+    const transport = vi.fn()
+      .mockResolvedValueOnce(response({ user: { user_id: project, username_display: "合成用户" },
+        deployment_role: "NONE", password_change_required: false,
+        authorized_projects: [{ project_id: project, name: "合成项目", role: "PROJECT_MANAGER" }],
+        absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z", csrf_token: "a".repeat(64) }))
+      .mockImplementationOnce(() => new Promise<Response>(resolve => { resolvePost = resolve; }));
+    const auth = new SessionClient(transport as typeof fetch);
+    await auth.login("user", "synthetic-only");
+    const creator = new OutputRequestCreateClient(auth);
+    const wrapper = await mountAction(auth, creator);
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(auth.canSubmit).toBe(false);
+    expect(wrapper.find(".output-create").exists()).toBe(true);
+    expect(wrapper.get("button").element.disabled).toBe(true);
+    resolvePost(new Response(JSON.stringify({ data: { output_request_id: requestId,
+      job_id: "51234567-89ab-4cde-8123-456789abcdef", state: "QUEUED" }, trace_id: trace }),
+      { status: 202, headers: { "Content-Type": "application/json" } }));
+    await flushPromises();
+    expect(wrapper.text()).toContain("请求已受理");
+    expect(wrapper.text()).toContain(requestId);
+    wrapper.unmount();
+  });
   it("hides the action for a non-current approval and a customer member", async () => {
     const creator = { create: vi.fn() } as unknown as OutputRequestCreateClient;
     const mismatch = await mountAction(await session(), creator, "31234567-89ab-4cde-8123-456789abcdef");

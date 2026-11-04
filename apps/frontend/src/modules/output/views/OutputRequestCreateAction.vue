@@ -18,15 +18,16 @@ watch(() => [props.projectId, props.version.requirement_version_id, props.approv
   generation += 1; busy.value = false; receipt.value = null; error.value = ""; uncertain.value = false; idempotencyKey.value = null;
 });
 onUnmounted(() => { mounted = false; generation += 1; });
-function canCreate() {
+function canRender() {
   const view = session.view;
   return mounted && props.version.project_id === props.projectId
     && props.version.state === "APPROVED"
     && props.approvedVersionRef === props.version.requirement_version_id
-    && !!view && !view.password_change_required && session.canSubmit
+    && !!view && !view.password_change_required
     && view.authorized_projects.some(item => item.project_id === props.projectId
       && (item.role === "PROJECT_MANAGER" || item.role === "IMPLEMENTATION_MEMBER"));
 }
+function canCreate() { return canRender() && session.canSubmit; }
 async function requestDocx() {
   if (!canCreate() || busy.value || receipt.value || uncertain.value) return;
   const current = ++generation; const project = props.projectId; const versionId = props.version.requirement_version_id;
@@ -47,10 +48,10 @@ async function requestDocx() {
 </script>
 
 <template>
-  <section v-if="canCreate()" class="output-create" aria-labelledby="output-create-title">
+  <section v-if="canRender()" class="output-create" aria-labelledby="output-create-title">
     <h3 id="output-create-title">生成需求说明文档</h3>
     <p>只针对当前已批准固定版本发起 DOCX 请求。请求受理不代表文件已生成。</p>
-    <button v-if="!receipt && !uncertain" type="button" :disabled="busy" @click="requestDocx">
+    <button v-if="!receipt && !uncertain" type="button" :disabled="busy || !session.canSubmit" @click="requestDocx">
       {{ busy ? "正在提交…" : "请求生成 DOCX" }}
     </button>
     <p v-if="error" role="alert">{{ error }}</p>

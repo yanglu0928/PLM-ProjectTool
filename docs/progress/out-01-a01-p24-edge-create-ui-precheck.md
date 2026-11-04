@@ -72,3 +72,8 @@ P24失败快照现记录输出操作区域文本、role=status/alert及可见按
 - 对照源码确认真实产品原因：`SessionClient.#postCommand` 在请求进行中把 `canSubmit` 置为false；`OutputRequestCreateAction.vue` 又用包含 `session.canSubmit` 的 `canCreate()` 作为整个 `<section>` 的条件。按钮点击后组件因此卸载，异步结果因mounted检查被丢弃。Edge证据与单测未覆盖该真实状态交互。
 - 实施前修正方案：拆分只决定操作区可见性的 `canRender()` 与提交可用性的 `canSubmit()`；区域在受控请求进行中保持挂载，按钮在busy/SessionClient busy时禁用。增加真实SessionClient+待完成POST的前端定向测试，并由P24 Edge复验202回执、503安全错误、幂等不重试与未批准版本隐藏。无API/Schema/Migration改动。
 - 风险/回滚：请求期间必须仍尊重项目/角色/当前批准版本；props变化仍取消旧代次结果。回滚为恢复原组件门控和删除该测试。仅影响批准版本Output请求交互。
+
+
+## 产品缺陷修复已实施（2026-11-05）
+
+按CR-OUT-020将版本/角色/授权决定的区域显示资格（canRender）与SessionClient可提交资格分开。写请求忙时操作区保持挂载，按钮禁用；SessionClient返回后可显示回执/错误。新增真实SessionClient异步POST定向用例，覆盖忙态期间组件仍挂载和202收据展示。当前只完成源码实施；hosted full run未过前不得关闭P24。
