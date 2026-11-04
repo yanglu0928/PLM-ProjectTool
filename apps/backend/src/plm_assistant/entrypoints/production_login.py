@@ -702,6 +702,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         output_request_cancel_router = None
         output_request_create_router = None
         output_request_read_router = None
+        output_request_list_router = None
         document_upload_create_router = None
         document_upload_content_router = None
         plugin_installation_metadata_router = None
