@@ -262,6 +262,14 @@ class SqlAlchemyJobLeaseRepository:
             owner_filter=("plugin", "PLUGIN_PACKAGE_VERIFY"),
         )
 
+    def claim_next_output(self, transaction: object, *, worker_ref: str,
+                          lease_seconds: int) -> ClaimedJob | None:
+        """Output generation may only be leased by its dedicated Output worker."""
+        return self._claim_next_filtered(
+            transaction, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            owner_filter=("output", "OUTPUT_GENERATE"),
+        )
+
     def _claim_next_filtered(self, transaction: object, *, worker_ref: str,
                              lease_seconds: int,
                              owner_filter: tuple[str, str] | None) -> ClaimedJob | None:
@@ -298,6 +306,11 @@ class SqlAlchemyJobLeaseRepository:
                 conditions.append(or_(
                     JobRow.owner_module != "plugin",
                     JobRow.job_type != "PLUGIN_PACKAGE_VERIFY",
+                ))
+                # Output generation requires a dedicated owner-specific worker.
+                conditions.append(or_(
+                    JobRow.owner_module != "output",
+                    JobRow.job_type != "OUTPUT_GENERATE",
                 ))
             job = session.execute(select(JobRow).where(*conditions)
                 .order_by(JobRow.priority.desc(), JobRow.available_at, JobRow.job_id)
