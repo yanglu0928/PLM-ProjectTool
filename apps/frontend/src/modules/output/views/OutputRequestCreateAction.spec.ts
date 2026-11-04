@@ -30,8 +30,7 @@ async function mountAction(auth: SessionClient, creator: OutputRequestCreateClie
 }
 describe("OutputRequestCreateAction", () => {
   it("shows only for the current approved version and reports request receipt without claiming a file", async () => {
-    const creator = { create: vi.fn().mockResolvedValue({ output_request_id: requestId, state: "QUEUED" }) }
-      as unknown as OutputRequestCreateClient;
+    const creator = { create: vi.fn().mockResolvedValue({ output_request_id: requestId, state: "QUEUED" }) } as unknown as OutputRequestCreateClient;
     const wrapper = await mountAction(await session(), creator);
     expect(wrapper.text()).toContain("请求受理不代表文件已生成");
     await wrapper.get("button").trigger("click"); await flushPromises();
@@ -51,8 +50,7 @@ describe("OutputRequestCreateAction", () => {
     expect(member.find("button").exists()).toBe(false); expect(creator.create).not.toHaveBeenCalled(); member.unmount();
   });
   it("retains an uncertain result message and never retries automatically", async () => {
-    const creator = { create: vi.fn().mockRejectedValue(new OutputRequestCreateError("OUTPUT_CREATE_UNCERTAIN")) }
-      as unknown as OutputRequestCreateClient;
+    const creator = { create: vi.fn().mockRejectedValue(new OutputRequestCreateError("OUTPUT_CREATE_UNCERTAIN")) } as unknown as OutputRequestCreateClient;
     const wrapper = await mountAction(await session(), creator);
     await wrapper.get("button").trigger("click"); await flushPromises();
     expect(wrapper.get('[role="alert"]').text()).toContain("不要换操作号重复提交");
