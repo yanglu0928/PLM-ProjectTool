@@ -1,7 +1,7 @@
 # CR-OUT-012：冻结 OutputRequest 取消的原子 Owner 与可选 HTTP 接入
 
 - 日期：2026-11-04
-- 状态：P15 编码前检查通过；P16 实施中
+- 状态：P15/P16编码前核查通过；P16实现可开始
 - 来源：冻结 API Contract V1 / API-03 的 `OUTPUT_REQUEST_CANCEL`
 - 基线：不修改 API 路径、角色、数据模型、DB Schema 或现有 Migration；沿用持续授权，实施与验收证据按提交追溯
 
@@ -27,3 +27,12 @@ P16 在 Output application/infrastructure/api 内实现可注入的取消 Owner 
 ## 编码前结论
 
 P15 证实必须以 OutputRequest lock_version 为公开并发版本，由 Output 在其事务内协调 Jobs-owned cancellation Port；通用 Job dispatcher 的两个 UOW不满足原子状态更新。P16 开始前需核查终态 Worker/审计锁序并保持显式 Owner。未发现需要改写冻结路径或角色；如直接 PG18验收无法在单任务完成，必须降级为 `PASS_SCOPE_LIMITED` 并明示限制，不得虚报 Gate/Pilot/Release。
+
+
+## P16 编码前终态/锁序复核（2026-11-04）
+
+- 检查 `modules/output` application、infrastructure、API 目录与其关联测试，未发现生成执行、成功/失败终态写入Owner或Output专属取消Owner。当前可证事实仅到P12创建入队、P13/P14读取；因此没有现存Output/Job双行锁序可复用。
+- 决定：新取消Owner按单向 `OutputRequest → Job` 锁序，在同一显式UOW完成强版本比较、Job取消状态命令、OutputRequest同步、Audit和幂等写入；如任一Job绑定/状态与Output不符则全事务失败。RUNNING只设置双方的CANCEL_REQUESTED请求，不宣称Worker已确认；PENDING/RETRY_WAIT遵循JobOwner的立即取消规则。未来生成Worker必须遵循同一资源锁序并以既有fencing lease处理取消。
+- 这是对原计划“核查现有终态Owner锁序”的证据性偏差：被核查Owner当前不存在，故锁序改为本CR显式规定的前向兼容约束。实施前先记本节，不涉及冻结架构/契约/Schema或生产事实改变。
+- 诚实限制：当前无Output执行/终态Owner意味着本轮可以验收取消请求存储与状态同步，不能验证实际生成进程终止或RUNNING取消确认。Hosted PG18并发和事务测试只证明数据库边界，不代表真实Worker执行。
+
