@@ -23,3 +23,11 @@
 - HTTP测试覆盖分页、malformed query、Session/Origin、许可/权限/异常安全合同。
 - 在Hosted Actions执行后端全套/wheel及父包PG18/前端/A17/A34/A35/A50。
 - P13 direct PG18 read repository正向行集成尚未完成；本任务优先尝试加入隔离PG18正/负查询证据，否则明确作为限界并登记后续，不虚报通过。
+
+
+## 托管验收偏差（2026-11-04，修复前登记）
+
+- GitHub hosted run [41788380578](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41788380578) 后端回归失败：新增一条预期的 `OUTPUT_REQUEST_LIST` Project role policy 后，既有精确矩阵测试仍断言 185 条，实际为186条。
+- 证据表明失败来自冻结策略数量的旧测试断言，不是功能行为测试；本次Policy按API-03规定的三个读取角色，write=false、lock_reads=true。
+- 处理：在实施任何修复前登记该偏差；随后只将矩阵预期数改为186，并增加该Operation角色/只读属性断言。Production policy保持冻结契约范围，不删减权限，也不放宽角色。
+- 验证计划：重跑托管全量后端、wheel及PR完整父包验证；若其他断言失败再单独记录。
