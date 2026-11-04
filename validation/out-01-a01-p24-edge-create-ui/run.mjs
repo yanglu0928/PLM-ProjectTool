@@ -143,13 +143,14 @@ async function setValue(selector,value){
  if(!ok)throw new Error("missing browser input: "+selector);
 }
 async function navigate(path){await evaluate("history.pushState({},'',"+JSON.stringify(path)+");dispatchEvent(new PopStateEvent('popstate'))")}
-async function openRequirement(){
+async function openRequirement(expectCreateAction=true){
  await navigate("/projects/"+ids.project+"/output-requests");
  await waitFor("location.pathname==='/projects/"+ids.project+"/output-requests'","output history route");
  await navigate("/projects/"+ids.project+"/requirements/"+ids.requirement);
  await waitFor("document.body.innerText.includes('固定版本')","requirement detail");
  await click("查看版本 1 的详情与原文入口");
- await waitFor("document.querySelector('#output-create-title')","selected requirement version");
+ if(expectCreateAction)await waitFor("document.querySelector('#output-create-title')","selected approved requirement version");
+ else await waitFor("document.body.innerText.includes('Synthetic requirement only')","selected non-approved requirement version");
 }
 try{
  const page=await getPage();socket=new WebSocket(page.webSocketDebuggerUrl);
@@ -182,7 +183,8 @@ try{
  assert.ok(await evaluate("document.querySelector('[role=alert]')?.innerText.includes('输出服务暂不可用')"));
  checks.push("simulated service rejection is visible and no automatic second POST occurs");
 
- mode="unapproved";await openRequirement();
+ mode="unapproved";await openRequirement(false);
+ assert.equal(await evaluate("document.querySelector('.output-create')!==null"),false);
  assert.equal(await evaluate("[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='请求生成 DOCX')"),false);
  checks.push("non-approved version has no request action");
 
