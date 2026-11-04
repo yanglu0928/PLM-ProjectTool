@@ -1,3 +1,4 @@
+|Execution Note|P24 hosted fixture修正已提交：版本Summary改为冻结字段显式对象，增加安全HTTP状态诊断且不输出Cookie/CSRF/Idempotency值。由CR-OUT-020先记录首轮偏差，再实施；修复后全链hosted验收进行中。|
 |Execution Note|P24首次hosted run [41875807078](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41875807078) 的Edge专项在需求详情阶段失败，合成RequirementVersion列表未满足冻结读取解析契约，未进入Create请求步骤。偏差/诊断计划先记于P24前置记录与CR-OUT-020，再修复fixture；不改产品逻辑。|
 |Execution Note|P23最终hosted run [41869866457](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41869866457) 于2026-11-04完成，13/13 jobs success；首轮OXC测试语法错误已修复并保留历史。P23限界通过，详细证据见结果记录；进入P24 Edge集成验收。用户要求项目程序和测试不得在其本机/C盘运行，后续仅使用GitHub hosted runner/云端沙箱。|
 |Execution Note|P23 首次hosted run [41868957522](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41868957522) 前端2,089项测试通过，但OutputRequestCreateAction.spec.ts第34行对象类型断言跨行导致OXC解析失败。偏差与修复计划已先记入CR-OUT-019；P23不关闭，待云端重验。|

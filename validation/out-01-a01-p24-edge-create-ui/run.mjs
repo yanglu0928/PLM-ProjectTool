@@ -33,6 +33,14 @@ function version(state){
   statement:"Synthetic requirement only",rationale:"Synthetic fixture",sources:[],acceptance_criteria:[],
   capability_assessments:[],assumptions:[],exclusions:[],dependencies:[],ai_tasks:[]};
 }
+function summary(state){
+ const v=version(state);
+ return {requirement_version_id:v.requirement_version_id,requirement_id:v.requirement_id,project_id:v.project_id,
+  version_no:v.version_no,state:v.state,title:v.title,domain_name:v.domain_name,priority:v.priority,risk:v.risk,
+  classification:v.classification,content_fingerprint:v.content_fingerprint,declared_counts:v.declared_counts,
+  supersedes_version_ref:v.supersedes_version_ref,review_ref:v.review_ref,review_round_ref:v.review_round_ref,
+  created_by:v.created_by,created_at:v.created_at};
+}
 function envelope(data,status=200){
  return {status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"},
   body:JSON.stringify(status>=400?{error:{code:data},trace_id:trace}:{data,trace_id:trace})};
@@ -40,9 +48,10 @@ function envelope(data,status=200){
 function hasSession(req){return (req.headers.cookie||"").includes("plm_synthetic_session=accepted")}
 function api(req,url){
  const method=req.method||"GET",path=url.pathname;
- const entry={method,path,query:url.search,headers:{},body:""};
- for(const name of ["cookie","x-csrf-token","idempotency-key","content-type"])if(req.headers[name])entry.headers[name]=req.headers[name];
- reqs.push(entry);
+ const entry={method,path,query:url.search,headers:{
+  csrf_present:Boolean(req.headers["x-csrf-token"]),idempotency_key_present:Boolean(req.headers["idempotency-key"]),
+  content_type:req.headers["content-type"]||null},body:"",status:null};
+ req.__p24Entry=entry;reqs.push(entry);
  if(path==="/api/v1/auth/login"&&method==="POST"){
   return {stream:true,collect:async()=>new Promise(resolveBody=>{let raw="";req.on("data",b=>raw+=b);req.on("end",()=>resolveBody(raw))})};
  }
@@ -50,10 +59,7 @@ function api(req,url){
  const base="/api/v1/projects/"+ids.project;
  if(path===base+"/requirements/"+ids.requirement&&method==="GET")return envelope(root);
  if(path===base+"/requirements/"+ids.requirement+"/versions"&&method==="GET"){
-  const v=version(mode==="unapproved"?"DRAFT":"APPROVED");
-  return envelope({items:[{...v,statement:undefined,rationale:undefined,sources:undefined,acceptance_criteria:undefined,
-   capability_assessments:undefined,assumptions:undefined,exclusions:undefined,dependencies:undefined,ai_tasks:undefined}],
-   next_cursor:null,has_more:false});
+  return envelope({items:[summary(mode==="unapproved"?"DRAFT":"APPROVED")],next_cursor:null,has_more:false});
  }
  if(path===base+"/requirements/"+ids.requirement+"/versions/"+ids.version&&method==="GET")
   return envelope(version(mode==="unapproved"?"DRAFT":"APPROVED"));
@@ -67,6 +73,7 @@ function api(req,url){
 const mime={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",
  ".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".png":"image/png",".woff2":"font/woff2",".json":"application/json"};
 const server=createServer(async(req,res)=>{
+ res.on("finish",()=>{if(req.__p24Entry)req.__p24Entry.status=res.statusCode});
  const url=new URL(req.url||"/","http://localhost");
  try{
   if(url.pathname.startsWith("/api/")){
@@ -137,8 +144,10 @@ async function setValue(selector,value){
 }
 async function navigate(path){await evaluate("history.pushState({},'',"+JSON.stringify(path)+");dispatchEvent(new PopStateEvent('popstate'))")}
 async function openRequirement(){
+ await navigate("/projects/"+ids.project+"/output-requests");
+ await waitFor("location.pathname==='/projects/"+ids.project+"/output-requests'","output history route");
  await navigate("/projects/"+ids.project+"/requirements/"+ids.requirement);
- await waitFor("document.querySelector('button')&&document.body.innerText.includes('固定版本')","requirement detail");
+ await waitFor("document.body.innerText.includes('固定版本')","requirement detail");
  await click("查看版本 1 的详情与原文入口");
  await waitFor("document.querySelector('#output-create-title')","selected requirement version");
 }
@@ -156,7 +165,7 @@ try{
  await waitFor("document.body.innerText.includes('请求已受理')","accepted request receipt");
  assert.equal(reqs.filter(x=>x.method==="POST"&&x.path==="/api/v1/projects/"+ids.project+"/output-requests").length,1);
  const post=reqs.find(x=>x.method==="POST"&&x.path.endsWith("/output-requests"));
- assert.equal(post.headers["x-csrf-token"],csrf);assert.ok(post.headers["idempotency-key"]);
+ assert.equal(post.headers.csrf_present,true);assert.equal(post.headers.idempotency_key_present,true);
  assert.deepEqual(JSON.parse(post.body),{output_type:"DOCX",template_version_ref:"a1272ce0-01f0-5e6c-9706-000000000001",
   source_version_refs:[ids.version],output_policy_ref:"output.policy.requirement-docx.v1",plugin_operation:"word.generate"});
  assert.ok(await evaluate("document.body.innerText.includes('请求受理不代表文件已生成')"));
@@ -182,6 +191,6 @@ try{
   customer_data:false,external_api_calls:0,plugin_executed:false,docx_generated:false,formal_license_trust:false,
   gate3_changed:false,pilot_ready:false,release_eligible:false};
  await writeFile(summaryPath,JSON.stringify(summary,null,2)+"\n","utf8");console.log(JSON.stringify(summary));
-}catch(error){console.error(JSON.stringify({error:String(error),requests:reqs.slice(-30)},null,2));process.exitCode=1}
+}catch(error){console.error(JSON.stringify({error:String(error),requests:reqs.slice(-30).map(x=>({method:x.method,path:x.path,query:x.query,status:x.status,headers:x.headers}))},null,2));process.exitCode=1}
 finally{if(socket&&socket.readyState===WebSocket.OPEN)socket.close();edge.kill();await pause(300);
  await rm(profile,{recursive:true,force:true});await new Promise(ok=>server.close(()=>ok()));}

@@ -21,3 +21,8 @@ P24 Edge浏览器成功完成合成登录，并请求了项目Requirement及Vers
 - 风险：修复 fixture 后若仍有拒绝，需依据新状态/字段诊断继续定位；不得以放宽生产解析规则绕过。
 - 回滚：撤销P24 harness内的fixture/诊断改动与对应专用job。
 - 验收：Edge加载批准版本详情、精确POST payload和CSRF/Idempotency、受理/历史导航、合成SYSTEM_UNAVAILABLE失败关闭且无自动重试、未批准版本隐藏入口；合成数据且external API=0。
+
+
+## 修正已实施（2026-11-04）
+
+测试harness已将RequirementVersion Summary改为显式字段对象，并为失败日志增加HTTP状态/字段存在性记录；不记录Cookie、CSRF值、幂等Key或请求正文。产品解析器和业务组件未修改。通过GitHub hosted全链工作流重新验证，结果待回填。
