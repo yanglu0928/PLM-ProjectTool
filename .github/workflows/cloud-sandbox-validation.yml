@@ -808,9 +808,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "P25 HTTP harness syntax failed" }
       - name: Run real Output HTTP and Edge failure-closed flow on D-drive temp
         shell: pwsh
-        env:
-          TEMP: ${{ runner.temp }}
-          TMP: ${{ runner.temp }}
         run: |
           $summary = Join-Path $env:RUNNER_TEMP ("plm-out-p25-summary-" + $env:GITHUB_RUN_ID + ".json")
           $pgInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-pg-input"
