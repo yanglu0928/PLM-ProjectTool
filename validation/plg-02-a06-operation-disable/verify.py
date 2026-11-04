@@ -141,7 +141,7 @@ def _signed_package(private_key: Ed25519PrivateKey) -> tuple[bytes, bytes]:
     manifest = {
         "schema_version": "plm.plugin.manifest.v1",
         "plugin_id": "synthetic.a06",
-        "name": "Synthetic A06",
+        "name": "合成插件A06",
         "version": "1.0.0",
         "plugin_api_version": "1.0.0",
         "supported_os": ["windows-11"],

@@ -45,7 +45,7 @@ def _view(installation_id: uuid.UUID) -> PluginInstallationMetadataView:
         plugin_installation_id=installation_id,
         plugin_package_id=uuid.uuid4(),
         plugin_id="synthetic.read",
-        plugin_name="Synthetic Plugin",
+        plugin_name="测试插件",
         plugin_version="1.0.0",
         package_sha256="a" * 64,
         package_state="VERIFIED",

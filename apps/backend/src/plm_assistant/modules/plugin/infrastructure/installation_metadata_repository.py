@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 import uuid
 
 from sqlalchemy import select
@@ -20,7 +21,6 @@ from plm_assistant.modules.plugin.infrastructure.orm import (
     PluginRuntimeValidationRow,
 )
 
-_SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._()/-]{0,255}", re.ASCII)
 _SAFE_VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9.+!_-]{0,63}", re.ASCII)
 
 
@@ -66,7 +66,8 @@ class SqlAlchemyPluginInstallationMetadataRepository:
         api_version = manifest.get("plugin_api_version")
         supported_os = manifest.get("supported_os")
         architecture = manifest.get("architecture")
-        if (type(name) is not str or _SAFE_NAME.fullmatch(name) is None
+        if (type(name) is not str or not 1 <= len(name) <= 255
+                or any(unicodedata.category(ch) == "Cc" for ch in name)
                 or type(api_version) is not str or _SAFE_VERSION.fullmatch(api_version) is None
                 or type(supported_os) is not list or not 1 <= len(supported_os) <= 3
                 or any(item not in {"windows-11", "windows-server-2025", "debian-13"}
@@ -108,7 +109,8 @@ class SqlAlchemyPluginInstallationMetadataRepository:
                 or snapshot.get("schema_version") != "1"
                 or snapshot.get("os") not in {"windows-11", "windows-server-2025", "debian-13"}
                 or snapshot.get("architecture") != "x86_64"
-                or type(snapshot.get("python_version")) is not str
+                 or type(snapshot.get("python_version")) is not str
+                or _SAFE_VERSION.fullmatch(snapshot.get("python_version")) is None
                 or type(dependencies) is not dict or len(dependencies) > 256
                 or any(type(k) is not str or type(v) is not str
                        or _SAFE_VERSION.fullmatch(k) is None
