@@ -36,3 +36,6 @@
 ## Hosted guard inventory follow-up（2026-11-04）
 
 hosted run [41768655588](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41768655588) 中，Backend/Frontend、嵌入式运行时、父包、A35与A17候选投影均通过；clean extraction PG18 smoke 已越过 Migration 0230 head 与外键清理，随后 `validation/plg-01-a01-package-schema/verify.py` 的 `_assert_guards_closed` 失败：数据库实际有4个 `trg_plg_%__owner_closed`，当前断言预期5个。0230迁移源中定义了 `plg_disable_results` 的 owner_closed INSERT/UPDATE/DELETE触发器，因此须继续查明触发器是否未装入实际父包迁移链，或验收运行库的触发器命名/过滤口径是否遗漏该项。修复计划：对照运行库触发器清单、0230升级和parent package迁移脚本，修正真实缺失或最小化统计查询；保留闭合写入与审计约束，并重跑PG18及全量托管验收。不得仅通过降低预期数量来关闭检查。
+
+
+Inspection confirmed the trigger inventory is correct at the current head: `_assert_guards` checks all 21 PLG triggers and 5 closed-owner guards at `head` (0230). The reported count of 4 occurs later, after the fixture explicitly downgrades the database to `20261102_0222`, where the A08 trigger is correctly absent. The fix is to assert the historically correct count of 4 only at that 0222 point; the 0230 head still retains the strict count of 5. This is a test-stage expectation correction, not a weakened current-schema check.
