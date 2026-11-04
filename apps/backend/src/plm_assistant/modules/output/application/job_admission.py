@@ -33,6 +33,7 @@ class OutputJobAdmissionFacts:
     source_version_refs: tuple[uuid.UUID, ...]
     output_policy_ref: str
     plugin_operation: str
+    input_fingerprint: bytes = field(repr=False)
     context_payload: dict = field(repr=False)
     context_fingerprint: bytes = field(repr=False)
 
@@ -50,6 +51,7 @@ class OutputExecutionAdmission:
     source_version_refs: tuple[uuid.UUID, ...]
     output_policy_ref: str
     plugin_operation: str
+    input_fingerprint: bytes = field(repr=False)
     context_fingerprint: bytes = field(repr=False)
 
 
@@ -111,6 +113,7 @@ class OutputJobExecutionAdmissionOwner:
                     source_version_refs=facts.source_version_refs,
                     output_policy_ref=facts.output_policy_ref,
                     plugin_operation=facts.plugin_operation,
+                    input_fingerprint=facts.input_fingerprint,
                     context_fingerprint=facts.context_fingerprint,
                 )
         except OutputJobAdmissionError:
@@ -165,11 +168,24 @@ class OutputJobExecutionAdmissionOwner:
                 or type(facts.plugin_operation) is not str
                 or not facts.plugin_operation.strip()
                 or type(facts.context_payload) is not dict
+                or type(facts.input_fingerprint) is not bytes
+                or len(facts.input_fingerprint) != 32
                 or type(facts.context_fingerprint) is not bytes
                 or len(facts.context_fingerprint) != 32):
             raise OutputJobAdmissionError()
         try:
             if canonical_payload_fingerprint(facts.context_payload) != facts.context_fingerprint:
+                raise OutputJobAdmissionError()
+            expected_input = canonical_payload_fingerprint({
+                "project_id": str(facts.project_id),
+                "output_type": facts.output_type,
+                "template_version_ref": str(facts.template_version_ref),
+                "source_version_refs": [str(value) for value in facts.source_version_refs],
+                "output_policy_ref": facts.output_policy_ref,
+                "plugin_operation": facts.plugin_operation,
+                "context_fingerprint": facts.context_fingerprint.hex(),
+            })
+            if expected_input != facts.input_fingerprint:
                 raise OutputJobAdmissionError()
         except IdempotencyError:
             raise OutputJobAdmissionError() from None
