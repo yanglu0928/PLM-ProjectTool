@@ -433,6 +433,39 @@ def _verify_plugin_operation_capability(
     finally:
         runtime.dispose()
 
+    duplicate_package_id = uuid.uuid4()
+    with psycopg.connect(dsn) as conn:
+        conn.execute(
+            "INSERT INTO plm.plg_packages "
+            "(plugin_package_id,plugin_id_normalized,plugin_version,package_sha256,"
+            "manifest_snapshot,signature,signer_key_ref,compatibility_policy_ref) "
+            "VALUES (%s,'synthetic.ambiguous','1.0.0',%s,"
+            "'{\"schema_version\":\"1\"}'::jsonb,%s,'unknown-test-key',"
+            "'host.platforms.v1')",
+            (duplicate_package_id, bytes([0x55]) * 32, bytes([0x66]) * 64),
+        )
+        conn.execute(
+            "INSERT INTO plm.plg_manifest_operations "
+            "(plugin_package_id,operation_id,output_types,plugin_api_version) "
+            "VALUES (%s,'document.render','[\"DOCX\"]'::jsonb,'1')",
+            (duplicate_package_id,),
+        )
+    ambiguity_runtime = DatabaseRuntime(create_engine(database_url))
+    try:
+        reader = PluginOperationCapabilityReader(
+            SqlAlchemyPluginOperationCapabilityRepository(
+                _SyntheticP11SignerResolver(),
+            ),
+        )
+        with ambiguity_runtime.unit_of_work() as transaction:
+            ambiguous = reader.get_operation(
+                transaction, operation_id="document.render",
+            )
+        if ambiguous is not None:
+            raise AssertionError("P11 ambiguous operation definitions did not fail closed")
+    finally:
+        ambiguity_runtime.dispose()
+
 def _verify_plugin_retirement_guard(dsn: str, installation_id: uuid.UUID) -> None:
     actor_id = uuid.uuid4()
     with psycopg.connect(dsn) as conn:
