@@ -28,3 +28,9 @@
 - 回滚：撤回新增Owner/Repository及测试即可；不需要数据迁移。无公开接口、运行时挂载或消费者变更。
 - 验证计划：输入/引用/项目/状态/fingerprint/能力缺失或撤销单测失败关闭；Hosted PG18 synthetic rows验证精确绑定通过及不一致拒绝；后端、前端、父包流水线复验。用户本机/C盘不运行代码，所有运行使用GitHub hosted runner D盘临时区。
 - 隐私：不读客户业务数据；只使用由CI创建的合成行，不调外部API、不执行插件、不生成文件、不使用正式密钥。
+
+
+## 编码中复核发现（修复前记录）
+
+- 在首次P27 hosted验证完成前的代码对照中，发现初版准入Owner仅校验ContextSnapshot自身fingerprint，未重算OutputRequest在创建时使用的总input_fingerprint（该指纹还覆盖Project、Output类型、模板、来源、策略与Plugin operation）。若不补此项，持久化请求内容与其总输入指纹之间仍存在未验证绑定。
+- 修复方案：按OutputRequestService创建时的canonical payload结构重算总指纹，并与OutputRequest.input_fingerprint逐字节比较；把错配加入单测和D盘hosted PostgreSQL拒绝用例。先登记本偏差再修，不更改Schema/API/业务状态或数据。
