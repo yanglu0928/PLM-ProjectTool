@@ -704,6 +704,53 @@ jobs:
             ${{ runner.temp }}/plm-a35-current-chunks/current.part-07.bin
           retention-days: 14
 
+  run-out-p24-edge-create-ui:
+    name: P24 hosted Edge DOCX request UI contract
+    needs: [frontend]
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Download same-run frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p24-frontend
+      - name: Verify same-run frontend provenance and runner temp
+        shell: pwsh
+        run: |
+          $temp = (Resolve-Path $env:RUNNER_TEMP).Path
+          if ([IO.Path]::GetPathRoot($temp).TrimEnd('\\') -ne "D:") { throw "P24 requires D: runner temp" }
+          $dist = Join-Path $env:RUNNER_TEMP "plm-out-p24-frontend"
+          $manifest = Get-Content -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Raw | ConvertFrom-Json
+          if ($manifest.source_commit -ne $env:GITHUB_SHA -or [string]$manifest.workflow_run -ne $env:GITHUB_RUN_ID -or $manifest.release_eligible -ne $false) { throw "P24 Edge frontend artifact provenance mismatch" }
+          if (-not (Test-Path (Join-Path $dist "index.html"))) { throw "P24 frontend artifact incomplete" }
+          Remove-Item -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Force
+      - name: Verify P24 hosted Edge harness syntax
+        shell: pwsh
+        run: |
+          node --check validation/out-01-a01-p24-edge-create-ui/run.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P24 Edge harness syntax failed" }
+      - name: Run synthetic DOCX request flow in hosted Edge on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $summary = Join-Path $env:RUNNER_TEMP "plm-out-p24-edge-summary.json"
+          node validation/out-01-a01-p24-edge-create-ui/run.mjs --dist (Join-Path $env:RUNNER_TEMP "plm-out-p24-frontend") --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "P24 hosted Edge DOCX request UI contract failed" }
+      - name: Upload P24 synthetic Edge evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-out-p24-edge-create-ui-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p24-edge-summary.json
+          if-no-files-found: error
+          retention-days: 14
+
   run-a50-edge-source-location:
     name: A50 hosted Edge source navigation
     needs: [frontend]
