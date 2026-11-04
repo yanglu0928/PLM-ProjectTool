@@ -59,6 +59,10 @@ class PluginPackageSchemaTests(unittest.TestCase):
         self.assertIn("fk_plg_enabled_operations__manifest_operation", op_constraints)
         self.assertIn("uq_plg_enabled_operations__plugin_operation", {i.name for i in operation.indexes})
         validation_constraints = {item.name for item in validation.constraints if item.name}
+        disable_result = plugin_orm.PluginInstallationDisableResultRow.__table__
+        disable_constraints = {item.name for item in disable_result.constraints if item.name}
+        self.assertIn("fk_plg_disable_results__installation", disable_constraints)
+        self.assertIn("ck_plg_disable_results__result_version", disable_constraints)
         history = plugin_orm.PluginEnabledOperationHistoryRow.__table__
         history_constraints = {item.name for item in history.constraints if item.name}
         self.assertIn("fk_plg_enabled_operation_history__audit_event", history_constraints)

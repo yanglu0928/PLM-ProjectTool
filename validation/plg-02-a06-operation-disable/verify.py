@@ -128,9 +128,10 @@ class _ReadAccess:
     def __init__(self, actor_id: uuid.UUID) -> None:
         self.actor_id = actor_id
     def authorized_admin(self, _transaction: object, *, session_token: bytes,
-                         csrf_token: bytes, now: object):
+                         now: object, csrf_token: bytes | None = None):
         if (type(session_token) is not bytes or len(session_token) != 32
-                or type(csrf_token) is not bytes or len(csrf_token) != 32):
+                or csrf_token is not None
+                and (type(csrf_token) is not bytes or len(csrf_token) != 32)):
             return None
         return self.actor_id
 
@@ -382,6 +383,21 @@ def main() -> int:
                 or _state(_dsn(database, args.port), api_installation_id)
                 != ("DISABLED", 2, 0, 4)):
             raise AssertionError("A08 exact idempotent disable replay was not immutable")
+        activation.enable(EnablePluginOperationsCommand(
+            api_installation_id, ("document.render", "document.export"), 2,
+            actor_id, uuid.uuid4(),
+        ))
+        later_replay = disable_service.disable(
+            DisablePluginInstallationCommand(
+                api_installation_id, 1, actor_id, uuid.uuid4(),
+            ),
+            session_token=b"m" * 32, csrf_token=b"c" * 32,
+            idempotency_key=request_key,
+        )
+        if (later_replay != first_response
+                or _state(_dsn(database, args.port), api_installation_id)
+                != ("ENABLED", 3, 2, 6)):
+            raise AssertionError("A08 retry did not return the immutable first response")
         try:
             disable_service.disable(
                 DisablePluginInstallationCommand(
