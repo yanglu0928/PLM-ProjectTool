@@ -818,11 +818,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "P25 real HTTP + hosted Edge fail-closed validation failed" }
           if (-not (Test-Path $summary)) { throw "P25 bounded result summary missing" }
       - name: Upload P25 real HTTP and Edge evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: plm-out-p25-real-http-edge-${{ github.sha }}
           path: ${{ runner.temp }}/plm-out-p25-summary-${{ github.run_id }}.json
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
 
   run-a50-edge-source-location:
