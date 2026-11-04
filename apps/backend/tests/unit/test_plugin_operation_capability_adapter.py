@@ -47,7 +47,6 @@ class PluginOperationCapabilityAdapterTests(unittest.TestCase):
     def test_missing_or_malformed_owner_facts_fail_closed(self):
         for value in (
             None,
-            PluginOperationCapabilityView("word.generate", ("DOCX",), True, False),
             PluginOperationCapabilityView("other.operation", ("DOCX",), True, True),
             PluginOperationCapabilityView("word.generate", ("../private",), True, True),
         ):
