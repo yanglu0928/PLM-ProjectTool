@@ -20,7 +20,7 @@ from plm_assistant.modules.platform.infrastructure.migration import (  # noqa: E
     upgrade_database,
 )
 
-HEAD = "20261104_0228"
+HEAD = "20261104_0229"
 PARENT = "20261103_0223"
 _TABLES = (
     "plg_packages",
@@ -93,7 +93,7 @@ def _assert_guards(dsn: str) -> None:
             "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%'"
         ).fetchone()[0]
     if actual != 20:
-        raise AssertionError(f"expected 20 PLG immutable/truncate/owner guards at 0227, got {actual}")
+        raise AssertionError(f"expected 20 PLG immutable/truncate/owner guards through 0229 (0227/0228), got {actual}")
     with psycopg.connect(dsn) as conn:
         closed = conn.execute(
             "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
