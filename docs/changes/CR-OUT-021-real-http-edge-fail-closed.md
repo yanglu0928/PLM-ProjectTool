@@ -40,3 +40,10 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 
 - Run [41897161326](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41897161326) 的P25 job再次在initdb.exe启动前失败；P25脚本语法、依赖、同runPG18 sidecar完整性均通过。新增诊断显示initdb stdout/stderr均为空；当前日志尚未包括Windows进程退出码，因此根因仍未知。PostgreSQL服务、真实HTTP与Edge步骤未执行。
 - 实施前方案：诊断helper仅增加进程退出码并在启动PG前依次调用包内pg_config.exe --version、postgres.exe --version，验证二进制可加载；命令失败时仍只保留截断、去runner-temp路径的标准输出/错误。复核PATH包含verified bin/lib及工作目录。不改产品代码、DB合同、Publisher信任或预期拒绝。诊断确认根因后，先记录再实施后续修复。
+
+
+## 第三轮 hosted 根因证据与修正决定（实施前，2026-11-05）
+
+- Run [41898332690](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41898332690) 的二进制版本探测均成功，但initdb正式初始化退出码为3221225781（0xC0000135，Windows STATUS_DLL_NOT_FOUND），stdout/stderr为空。证据指向初始化阶段的原生动态库加载失败；API/Edge尚未运行。
+- 仓库现有PG18 hosted smoke采用同一重建sidecar、临时D盘数据目录、auth=trust/UTF8/locale=C，以poc_admin初始化，且不改写全局PATH。P25与该可复用路径的差异是使用postgres用户名并额外重写PATH。
+- 最小修正：P25按已有PG smoke采用poc_admin及继承runner原PATH，保留版本探测和受限退出码/错误尾部；把D盘PG runtime/bin加入PATH只供该child process需要时再定位。该调整不改业务数据、Schema、License/Publisher信任或API。下轮若仍失败，先检查并输出隔离PG日志末尾的去路径摘要，再选后续修复。

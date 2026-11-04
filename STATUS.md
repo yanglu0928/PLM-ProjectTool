@@ -1,3 +1,4 @@
+|Execution Note|P25第三轮hosted run 41898332690：前后端、PG18 sidecar及P24 Edge成功；PG版本探测通过，但initdb初始化返回3221225781/0xC0000135（Windows STATUS_DLL_NOT_FOUND），API/Edge未启动。已按现有PG smoke约定记录CR-OUT-021并计划以poc_admin+原PATH复验。P25未通过。|
 |Execution Note|P25第二轮hosted run 41897161326前端/后端、PG18 sidecar、P24 Edge通过；P25仍在initdb.exe启动前退出，stdout/stderr为空且缺少进程退出码。根因未知；先记录CR-OUT-021，计划云端增加退出码与PG二进制探测后再判断。P25仍未通过。|
 |Execution Note|P25首次hosted run 41895767137：前端/后端全量回归及PG18 sidecar构建通过，Edge job在initdb.exe非零退出；当前包装器没有保留安全错误摘要，原因待查。偏差与受限日志诊断计划已先记录CR-OUT-021，P25未通过，待再次Hosted复验。|
 |Execution Note|OUT-01-A01-P25专用hosted集成代码已准备：真实Windows Create HTTP、Edge合成登录/Requirement、同runPG18隔离库；期望VALIDATION_FAILED/422由用户安全提示呈现且数据库相关表无写入。代码仅在D盘GitHub runner执行，等待全链验证。|
