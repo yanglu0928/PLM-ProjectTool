@@ -1,3 +1,4 @@
+|Execution Note|P25重复hosted run 41919589855沿用`--debug --no-clean`，仍于initdb数据目录创建前以0xC0000135失败；调试输出只有模式提示，PG目录/文件为空，静态依赖与initdb事件筛查未发现异常。前后端/PG sidecar/P24/A50及嵌入式运行时通过，P25未通过；CR-OUT-021已登记`DUMPBIN /IMPORTS`延迟导入及postgres事件诊断。代码验证继续仅在GitHub云端。|
 |Execution Note|P25第十轮hosted run 41916567299：initdb参数、stdin与TEMP/TMP对照后仍以3221225781/0xC0000135退出，D盘数据目录未初始化；真实HTTP/Edge未执行。失败摘要已上传；后端/前端/PG sidecar/P24/A50及嵌入式Python组装通过，下游父包/A17/A34/A35因P25失败取消。CR-OUT-021已先登记本轮偏差与`--debug --no-clean`诊断计划；P25未通过。项目开发与验证仅在GitHub云端执行，不占用用户本机C盘。|
 |Execution Note|P25第九轮hosted run 41913332612：initdb参数和stdin均与通过smoke对齐后仍0xC0000135，D盘数据目录未创建；失败摘要上传。前后端/PG sidecar/父包/A17/A34/A35/P24/A50通过。观察到P25显式TEMP/TMP=D盘runner temp而父包smoke继承runner默认，已在CR-OUT-021登记该最小环境对照；P25未通过。|
 |Execution Note|P25第八轮hosted run 41910278934：initdb参数和临时用户与Windows PG smoke对齐后仍以0xC0000135退出，目录未创建；失败摘要上传。前后端、PG重建、父包/A17/A34/A35/P24/A50通过。对比发现P25 run_checked强制stdin=DEVNULL，而通过smoke继承runner stdin；已在CR-OUT-021登记下一项最小对照。P25仍未通过。|

@@ -107,3 +107,7 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - 同run递归静态依赖探测的9个模块均无缺失项；该检查只证明普通导入表的文件可定位，不覆盖延迟加载/按需载入。run中的前后端、PG sidecar重建、P24/A50、A17语法边界等独立作业通过，父包组装当时仍运行。没有客户数据、外部API、插件、文件发布或产品DB写入。
 - 第十一轮代码仅增加受限initdb调试开关；输出与临时目录仍受现有截断、去路径/文件清单和D盘生命周期规则控制。此诊断无产品/API/Schema/Migration变更，P25仍未通过。
 - 下一项编码前检查：保留普通导入扫描，追加同一hosted runner的 `dumpbin /imports` 延迟导入名称探测，覆盖initdb及当前递归依赖模块；只记录DLL名称和可定位状态，并把Application Error/WER查询扩展为initdb及postgres进程名。不得上传完整dumpbin输出、数据库文件、sidecar内容或系统日志。若没有发现可解释的差异，停止基于猜测反复改参数，转用已通过的同run父包PG二进制作哈希/版本对照或调整任务拆分，让不受阻WBS继续推进。
+
+
+- 同一 \`--debug --no-clean\` 候选在 hosted run [41919589855](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41919589855) 重复复验，P25仍以 \`0xC0000135\` 在数据目录创建前失败；debug输出仍只有模式提示，普通依赖扫描无缺项，Application Error/WER摘要为空。后端/前端、PG sidecar、P24/A50和嵌入式运行时作业通过；P25未通过，不构成额外产品验收。
+- 延迟导入诊断依据 Microsoft Learn 的[\`DUMPBIN /IMPORTS\`](https://learn.microsoft.com/en-us/cpp/build/reference/imports-dumpbin?view=msvc-170)（列出静态及延迟加载导入）：只解析标记为delay-load的DLL名和本机可定位状态，并把initdb、postgres及递归依赖纳入探测；Application Error/WER过滤扩展到initdb/postgres进程。摘要不保存完整工具输出或系统事件文本。

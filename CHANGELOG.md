@@ -1,8 +1,8 @@
-## Unreleased · 2026-11-05（P25初始化故障诊断迭代，非发行版本）
+## Unreleased · 2026-11-05（P25延迟导入诊断候选，非发行版本）
 
-- OUT-01-A01-P25 hosted 第十轮 run [41916567299](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41916567299) 中，initdb 在创建数据目录前仍以 `0xC0000135` 失败；参数、stdin、TEMP/TMP 对照均未改变结果，真实HTTP/Edge未运行。前后端、PG sidecar、P24/A50及嵌入式Python作业通过；父包/A17/A34/A35下游因失败取消。偏差及后续方案已先记录CR-OUT-021。
-- 诊断候选仅为P25合成测试的 `initdb --debug --no-clean`；保持runner D盘临时数据与失败摘要边界，不上传数据库文件。产品API/Schema/Migration/生产行为未改变；本轮诊断尚待hosted验证。
-- 兼容性/升级：仅云端验收harness变化，无产品安装或升级。已知限制：P25未通过，真实HTTP/Edge及零数据库写入验收未执行；Pilot/Gate/正式Release不变。
+- hosted run [41918283038](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41918283038) 与重复复验 [41919589855](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41919589855) 表明 `initdb --debug --no-clean` 仍以 `0xC0000135` 在创建数据目录前退出；仅输出debug/no-clean提示，常规导入文件可定位、initdb应用事件为空。真实HTTP/Edge未运行，P25未通过。
+- 新增P25限定诊断：递归扫描initdb、postgres及常规依赖的 `DUMPBIN /IMPORTS` 延迟导入，并同时检查二者的Windows应用错误摘要；只保留DLL名称、定位类别和去路径短摘要。无业务API、Schema、Migration或发行行为变化；定向hosted验证待执行。
+- 兼容性/升级：仅非发行验收脚本变化，无产品安装升级。Pilot/Gate/Release保持未通过。
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 

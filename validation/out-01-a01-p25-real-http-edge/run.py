@@ -292,8 +292,10 @@ def windows_loader_diagnostics(pg_root: Path) -> dict[str, object]:
                     dumpbin = candidates[-1]
         result["pe_tool_available"] = dumpbin is not None
         dependency_rows: list[dict[str, str]] = []
+        delay_import_rows: list[dict[str, str]] = []
+        delay_probe_failures: list[str] = []
         missing: set[str] = set()
-        queue = [pg_root / "bin" / "initdb.exe"]
+        queue = [pg_root / "bin" / "initdb.exe", pg_root / "bin" / "postgres.exe"]
         visited: set[Path] = set()
         while dumpbin is not None and queue and len(visited) < 48:
             image = queue.pop(0)
@@ -322,10 +324,49 @@ def windows_loader_diagnostics(pg_root: Path) -> dict[str, object]:
                     queue.append(pg_root / "bin" / name)
                 elif where == "sidecar_lib":
                     queue.append(pg_root / "lib" / name)
+
+            imports = subprocess.run(
+                [str(dumpbin), "/nologo", "/imports", str(image)],
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, encoding="utf-8", errors="replace", timeout=25, check=False)
+            if imports.returncode != 0:
+                delay_probe_failures.append(image.name[:120])
+            else:
+                in_delay_section = False
+                delay_names: set[str] = set()
+                for line in imports.stdout.splitlines():
+                    lowered = line.casefold()
+                    if "delay" in lowered and "import" in lowered:
+                        in_delay_section = True
+                        continue
+                    if in_delay_section and "section contains the following imports" in lowered:
+                        in_delay_section = False
+                    if not in_delay_section:
+                        continue
+                    match = re.fullmatch(r"\s*([A-Za-z0-9_.+-]+\.dll)\s*", line,
+                                         flags=re.IGNORECASE)
+                    if match:
+                        delay_names.add(match.group(1))
+                for name in sorted(delay_names, key=str.lower):
+                    where = category(name)
+                    delay_import_rows.append({
+                        "image": image.name[:120], "name": name[:160], "resolved": where})
+                    if where == "missing":
+                        missing.add(name.lower())
+                    elif where == "sidecar_bin":
+                        queue.append(pg_root / "bin" / name)
+                    elif where == "sidecar_lib":
+                        queue.append(pg_root / "lib" / name)
         result["dependency_probe_count"] = len(visited)
         result["dependencies"] = dependency_rows[:120]
+        result["delay_import_probe_count"] = len(visited) - len(delay_probe_failures)
+        result["delay_imports"] = delay_import_rows[:120]
+        result["delay_import_probe_failures"] = delay_probe_failures[:48]
         result["missing_dependencies"] = sorted(missing)[:80]
-        result["dependency_probe_truncated"] = bool(queue) or len(dependency_rows) > 120
+        result["dependency_probe_truncated"] = (
+            bool(queue) or len(dependency_rows) + len(delay_import_rows) > 120
+            or len(delay_probe_failures) > 48
+        )
     except Exception as probe_failure:
         result["pe_probe_error_type"] = type(probe_failure).__name__[:120]
 
@@ -337,7 +378,7 @@ def windows_loader_diagnostics(pg_root: Path) -> dict[str, object]:
             command = (
                 "$e=Get-WinEvent -FilterHashtable @{LogName='Application';StartTime=(Get-Date).AddMinutes(-30)} "
                 "-ErrorAction SilentlyContinue | Where-Object { "
-                "$_.ProviderName -in @('Application Error','Windows Error Reporting') -and $_.Message -match '(?i)initdb\\.exe' } "
+                "$_.ProviderName -in @('Application Error','Windows Error Reporting') -and $_.Message -match '(?i)(initdb|postgres)\\.exe' } "
                 "| Select-Object -First 3; if(-not $e){ '[]' } else { "
                 "$e | ForEach-Object { [ordered]@{ id=$_.Id; provider=$_.ProviderName; "
                 "message=$_.Message.Substring(0,[Math]::Min(1200,$_.Message.Length)) } } | ConvertTo-Json -Compress }"
