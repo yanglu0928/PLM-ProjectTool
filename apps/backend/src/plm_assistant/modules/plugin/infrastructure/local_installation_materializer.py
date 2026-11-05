@@ -5,11 +5,13 @@ imports plugin code, installs dependencies, or enables operations.
 """
 from __future__ import annotations
 
+import ctypes
 import hashlib
 import io
 import hmac
 import os
 import stat
+import sys
 import tempfile
 import uuid
 import zipfile
@@ -96,7 +98,7 @@ class LocalPluginInstallationMaterializer:
     ) -> Path:
         """Create the installation directory, or prove an existing exact replay."""
         _validate_package(package, installation_id)
-        archive_bytes, inspected, entries = self._verified_archive(package)
+        archive_bytes, _inspected, entries = self._verified_archive(package)
         parent = self._installation_parent()
         target = parent / installation_id.hex
         if os.path.lexists(target):
@@ -114,7 +116,7 @@ class LocalPluginInstallationMaterializer:
         if os.path.lexists(target):
             raise PluginInstallationMaterializationError()
         try:
-            os.rename(staging, target)
+            self._rename_directory_noreplace(staging, target)
         except OSError:
             # A concurrent exact replay may have won. Never replace its directory.
             if os.path.lexists(target):
@@ -253,6 +255,28 @@ class LocalPluginInstallationMaterializer:
             raise
         except Exception:
             raise PluginInstallationMaterializationError() from None
+
+    @staticmethod
+    def _rename_directory_noreplace(source: Path, destination: Path) -> None:
+        if os.name == "nt":
+            # Windows MoveFile semantics used by os.rename fail if destination exists.
+            os.rename(source, destination)
+            return
+        if sys.platform.startswith("linux"):
+            renameat2 = getattr(ctypes.CDLL(None, use_errno=True), "renameat2", None)
+            if renameat2 is None:
+                raise OSError("atomic no-replace directory promotion unavailable")
+            renameat2.argtypes = [ctypes.c_int, ctypes.c_char_p,
+                                  ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+            renameat2.restype = ctypes.c_int
+            result = renameat2(
+                -100, os.fsencode(source), -100, os.fsencode(destination), 1,
+            )
+            if result != 0:
+                error_number = ctypes.get_errno()
+                raise OSError(error_number, os.strerror(error_number))
+            return
+        raise OSError("atomic no-replace directory promotion unavailable")
 
     def _verify_tree(self, root: Path, entries) -> None:
         files, expected_directories = entries
