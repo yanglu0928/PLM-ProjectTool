@@ -22,6 +22,8 @@
 
 - 第二轮hosted run 41949611412：全量后端4036 tests/wheel、前端/build、sidecar及父包组装通过；父包PG smoke已进入P29 verifier，但因验收fixture将2个输出组误按5个变量解包而失败，业务Owner尚未执行。偏差范围仅是Verifier夹具；修复为明确选取两个fixture索引并保留全部负向校验，再完整重跑hosted链。
 
+- 第三轮hosted run 41951315834：PG18 verifier进入P29实际断言；正向和错误worker路径先行通过，随后“stale token”负例被接受。诊断发现测试循环计算了旧token但仍传原始ClaimedJob，变量未用于构造输入；这使该负例没有真正改变token，不能作为产品缺陷证据。已先登记本项偏差，下一步用 dataclasses.replace 构造 fencing_token=当前值-1 的真实旧claim，确保测试的是已签发活动token的前序代次；再执行完整hosted复验。P29暂不PASS。
+
 ## 风险/恢复/验证
 
 - 风险：UOW提交后实际Worker副作用仍可能因租约过期/撤销而不能开始；副作用边界必须再次proof/fencing，不能把GENERATING状态视为授权。
