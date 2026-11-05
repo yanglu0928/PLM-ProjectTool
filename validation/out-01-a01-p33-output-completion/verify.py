@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import shutil
 import os
 import re
 import sys
@@ -27,8 +29,15 @@ from plm_assistant.modules.output.application.complete_generation import (
 from plm_assistant.modules.output.infrastructure.complete_generation_repository import (
     SqlAlchemyOutputGenerationCompletionRepository,
 )
+from plm_assistant.modules.document.application.generated_artifact_file import (
+    GeneratedFilePublicationError, OutputGeneratedFilePublicationOwner,
+)
+from plm_assistant.modules.document.infrastructure.generated_artifact_file_repository import (
+    SqlAlchemyOutputGeneratedFilePublicationRepository,
+)
+from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.document.application.generated_artifact_version import (
-    GeneratedDocumentVersion, OutputGeneratedDocumentVersionOwner,
+    OutputGeneratedDocumentVersionOwner,
 )
 from plm_assistant.modules.document.infrastructure.generated_artifact_version_repository import (
     SqlAlchemyOutputGeneratedDocumentVersionRepository,
@@ -67,13 +76,16 @@ class _UnitOfWork:
         return _Transaction(self.engine)
 
 
-class _FailAudit:
-    def __init__(self):
+class _FailCompletionAudit:
+    def __init__(self, delegate):
+        self.delegate = delegate
         self.called = False
 
     def append(self, transaction, event):
-        self.called = True
-        raise RuntimeError("synthetic audit failure")
+        if event.action == "OUTPUT_GENERATION_SUCCEEDED":
+            self.called = True
+            raise RuntimeError("synthetic completion audit failure")
+        self.delegate.append(transaction, event)
 
 
 def _url(name: str, port: int) -> URL:
@@ -143,8 +155,8 @@ def _seed(dsn: str, *, data: dict) -> None:
             "(file_object_id,usage_kind,scope,project_id,storage_class,storage_locator,"
             "original_name_metadata,sha256,size_bytes,detected_mime,file_state,created_by,"
             "available_at) VALUES (%(file)s,'DOCUMENT','PROJECT',%(project)s,'PERSISTENT',"
-            "%(locator)s,'synthetic-output.docx',%(content_hash)s,17,%(mime)s,'AVAILABLE',"
-            "%(user)s,statement_timestamp())", data)
+            "%(locator)s,'synthetic-output.docx',%(content_hash)s,%(size)s,%(mime)s,'STAGED',"
+            "%(user)s,NULL)", data)
         conn.execute(
             "INSERT INTO plm.doc_documents "
             "(document_id,scope,project_id,document_category,title,original_display_name,"
@@ -224,6 +236,7 @@ def main() -> int:
     dsn = f"postgresql://postgres@127.0.0.1:{args.port}/{database}"
     engine = None
     created = False
+    storage_root = None
     try:
         with psycopg.connect(admin_dsn, autocommit=True) as conn:
             conn.execute(f'CREATE DATABASE "{database}"')
@@ -240,10 +253,12 @@ def main() -> int:
             "file": uuid.uuid4(), "document": uuid.uuid4(), "version": uuid.uuid4(),
             "context_hash": bytes.fromhex("12"*32),
             "manifest_hash": bytes.fromhex("34"*32),
-            "content_hash": bytes.fromhex("56"*32),
+            "content_bytes": b"synthetic generated Output bytes",
             "mime": MIME, "idempotency": "synthetic-p33-job",
             "request_key": "synthetic-p33-request", "expires": datetime.now(timezone.utc)+timedelta(minutes=10),
         }
+        data["content_hash"] = hashlib.sha256(data["content_bytes"]).digest()
+        data["size"] = len(data["content_bytes"])
         data["trace_text"] = str(data["trace"])
         data["execution"] = uuid.uuid5(data["job"], "output-generation:7")
         data["version"] = uuid.uuid5(data["execution"], "generated-document-version:" + str(data["file"]))
@@ -251,7 +266,17 @@ def main() -> int:
             "output_request_id":str(data["request"]),
             "context_snapshot_id":str(data["snapshot"]),
         }, separators=(",",":"))
-        data["locator"] = "projects/" + data["project"].hex + "/objects/" + data["file"].hex[:2] + "/" + data["file"].hex
+        data["locator"], data["final_locator"] = LocalFileStorage.locators(
+            scope="PROJECT", project_id=data["project"], file_object_id=data["file"])
+        storage_root = temp / ("plm-out-p34b-" + args.run_id)
+        if storage_root.exists():
+            raise ValueError("isolated hosted storage root already exists")
+        storage_root.mkdir()
+        storage = LocalFileStorage(storage_root)
+        with storage.reserve_staging(data["locator"]) as stream:
+            stream.write(data["content_bytes"])
+            stream.flush()
+            os.fsync(stream.fileno())
         _seed(dsn, data=data)
         claim = ClaimedJob(
             data["job"], "OUTPUT_GENERATE", "PROJECT", data["project"],
@@ -261,7 +286,7 @@ def main() -> int:
         )
         publication = OutputArtifactPublication(
             uuid.uuid4(), data["execution"], data["document"], data["version"], data["file"],
-            data["content_hash"], 17, MIME,
+            data["content_hash"], data["size"], MIME,
             tuple(OutputValidationEvidence(
                 code, "PASSED",
                 data["content_hash"] if code == "HASH_CHECK" else bytes.fromhex("78"*32),
@@ -276,15 +301,28 @@ def main() -> int:
             audit=AuditService(SqlAlchemyAuditRepository()),
             system_actor_id=data["user"],
         )
-        generated_publication = GeneratedDocumentVersion(
-            document_id=data["document"], document_version_id=data["version"],
-            file_object_id=data["file"], plugin_execution_id=data["execution"],
-            sha256=data["content_hash"], size_bytes=17, media_type=MIME,
+        fail_audit = _FailCompletionAudit(AuditService(SqlAlchemyAuditRepository()))
+        failing_completion = OutputGenerationCompletionOwner(
+            unit_of_work=uow, jobs=jobs, repository=repository,
+            audit=fail_audit, system_actor_id=data["user"],
         )
-        generated_facts = generated_owner.commit(
-            claim, worker_ref="p33-verifier-worker", publication=generated_publication)
-        replayed_generated = generated_owner.commit(
-            claim, worker_ref="p33-verifier-worker", publication=generated_publication)
+        failing_publication_owner = OutputGeneratedFilePublicationOwner(
+            unit_of_work=uow, jobs=jobs,
+            repository=SqlAlchemyOutputGeneratedFilePublicationRepository(),
+            storage=storage, audit=AuditService(SqlAlchemyAuditRepository()),
+            version_owner=generated_owner, completion_owner=failing_completion,
+            system_actor_id=data["user"],
+        )
+        try:
+            failing_publication_owner.publish(
+                claim, worker_ref="p33-verifier-worker", publication=publication)
+        except GeneratedFilePublicationError:
+            pass
+        else:
+            raise AssertionError("synthetic P33 audit failure did not stop publication")
+        if not fail_audit.called:
+            raise AssertionError("synthetic P33 audit failure was not reached")
+        generated_state = None
         with psycopg.connect(dsn) as conn:
             generated_state = conn.execute(
                 "SELECT d.latest_version_ref, v.version_no, v.availability_state, "
@@ -299,37 +337,29 @@ def main() -> int:
                 "v.availability_state,s.source_kind,s.source_object_id,s.source_version_id",
                 (data["document"],),
             ).fetchone()
-        if (generated_facts.changed is not True or replayed_generated.changed is not False
-                or generated_facts.document_version_id != data["version"]
-                or generated_state != (
-                    data["version"], 1, "AVAILABLE", "OUTPUT_GENERATION",
-                    data["request"], data["execution"], 1
-                )):
-            raise AssertionError("P34A PostgreSQL commit/replay/Audit evidence mismatch")
-        fail_audit = _FailAudit()
-        owner = OutputGenerationCompletionOwner(
-            unit_of_work=uow, jobs=jobs, repository=repository,
-            audit=fail_audit, system_actor_id=data["user"],
-        )
-        try:
-            owner.complete(claim, worker_ref="p33-verifier-worker", publication=publication)
-        except OutputGenerationCompletionError:
-            pass
-        else:
-            raise AssertionError("synthetic audit failure did not roll back completion")
-        if not fail_audit.called:
-            raise AssertionError("synthetic audit failure was not reached")
+        if generated_state != (
+                data["version"], 1, "AVAILABLE", "OUTPUT_GENERATION",
+                data["request"], data["execution"], 1):
+            raise AssertionError("P34B did not atomically persist FileObject and P34A")
+        with psycopg.connect(dsn) as conn:
+            file_state = conn.execute(
+                "SELECT file_state,storage_locator,available_at IS NOT NULL "
+                "FROM plm.doc_file_objects WHERE file_object_id=%s",
+                (data["file"],)).fetchone()
+        if file_state != ("AVAILABLE", data["final_locator"], True):
+            raise AssertionError("P34B did not persist the verified final FileObject")
+        owner = failing_completion
 
         after_audit_failure = _state(dsn, data)
         if after_audit_failure != {
             "request":"GENERATING","job":"RUNNING","lease":"ACTIVE",
             "attempt_completed":False,"artifacts":0,"validation_results":0,"audit":0,
         }:
-            raise AssertionError("Audit failure did not roll back every PostgreSQL owner")
+            raise AssertionError("P33 audit failure did not roll back P33-owned state")
 
         wrong_document = OutputArtifactPublication(
             uuid.uuid4(), data["execution"], uuid.uuid4(), data["version"], data["file"],
-            data["content_hash"], 17, MIME, publication.validations,
+            data["content_hash"], data["size"], MIME, publication.validations,
         )
         try:
             owner.complete(claim, worker_ref="p33-verifier-worker",
@@ -346,9 +376,17 @@ def main() -> int:
             unit_of_work=uow, jobs=jobs, repository=repository,
             audit=AuditService(SqlAlchemyAuditRepository()), system_actor_id=data["user"],
         )
+        publication_owner = OutputGeneratedFilePublicationOwner(
+            unit_of_work=uow, jobs=jobs,
+            repository=SqlAlchemyOutputGeneratedFilePublicationRepository(),
+            storage=storage, audit=AuditService(SqlAlchemyAuditRepository()),
+            version_owner=generated_owner, completion_owner=owner,
+            system_actor_id=data["user"],
+        )
         try:
-            facts = owner.complete(claim, worker_ref="p33-verifier-worker",
-                                   publication=publication)
+            published = publication_owner.publish(
+                claim, worker_ref="p33-verifier-worker", publication=publication)
+            facts = published.completion
         except OutputGenerationCompletionError as exc:
             print(json.dumps({
                 "status":"DIAGNOSTIC_ONLY",
@@ -365,13 +403,16 @@ def main() -> int:
                     "attempt_completed":True,"artifacts":1,"validation_results":4,"audit":1,
                 }):
             raise AssertionError("atomic P33 completion outcome mismatch")
-        replay = owner.complete(claim, worker_ref="p33-verifier-worker",
-                                publication=publication)
+        replay = publication_owner.publish(
+            claim, worker_ref="p33-verifier-worker", publication=publication)
         replay_state = _state(dsn, data)
-        if (replay.artifact_id != facts.artifact_id or replay.request_state != facts.request_state
-                or replay.artifact_state != facts.artifact_state or replay.changed
-                or replay.lock_version != facts.lock_version or replay_state != final):
-            raise AssertionError("exact P33 success replay changed or differed from original result")
+        if (replay.completion.artifact_id != facts.artifact_id
+                or replay.completion.request_state != facts.request_state
+                or replay.completion.artifact_state != facts.artifact_state
+                or replay.completion.changed
+                or replay.completion.lock_version != facts.lock_version
+                or replay_state != final):
+            raise AssertionError("exact P34B/P33 success replay changed persisted state")
         altered_publication = OutputArtifactPublication(
             uuid.uuid4(), data["execution"], data["document"], data["version"], data["file"],
             data["content_hash"], 17, MIME, publication.validations,
@@ -393,12 +434,14 @@ def main() -> int:
             "active_lease_fencing":"PASS",
             "project_document_execution_file_binding":"PASS",
             "four_validation_results":"PASS",
-            "audit_failure_full_rollback":"PASS",
+            "storage_stage_promoted_hash_and_size_verified":"PASS",
+            "p34a_version_and_system_audit_committed":"PASS",
+            "p33_audit_failure_rolled_back_p33_state":"PASS",
             "mismatched_document_rejected":"PASS",
             "audit_event_persisted_in_same_transaction":True,
             "exact_success_replay_idempotent":"PASS",
             "altered_success_replay_rejected":"PASS",
-            "files_created":False,"plugin_executed":False,
+            "synthetic_storage_file_created":True,"plugin_executed":False,
             "customer_data":False,"production_write_open":False,
         },sort_keys=True))
         return 0
@@ -408,6 +451,10 @@ def main() -> int:
         if created:
             with psycopg.connect(admin_dsn,autocommit=True) as conn:
                 conn.execute(f'DROP DATABASE IF EXISTS "{database}"')
+        if storage_root is not None and storage_root.exists():
+            if storage_root.parent != temp or not storage_root.name.startswith("plm-out-p34b-"):
+                raise RuntimeError("refusing to clean storage outside the isolated D-drive root")
+            shutil.rmtree(storage_root)
 
 
 if __name__ == "__main__":
