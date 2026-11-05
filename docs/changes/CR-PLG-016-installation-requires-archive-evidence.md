@@ -36,3 +36,9 @@ PLG-04-A01已将已登记签名ZIP私有持久化并实现 `LocalPluginPackageAr
 ## 编码前核查结论
 
 PASS_WITH_LIMITATION。Package ORM已包含package_version、hash、Manifest snapshot、signature、signer key ref、compatibility policy及VERIFIED状态；现有Repository可在同一读取中提供这些字段。Owner现有Host evidence仍独立检查精确已安装SHA、兼容性和Runtime Snapshot。方案只增加一个先行归档复验，不改变这两个证据的含义，不扩Schema/API。
+
+## Hosted 验收偏差（修复前记录）
+
+- 2026-11-06 hosted run [42074467159](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42074467159) 后端全量测试的4,073项中有8项因 `test_plugin_runtime_revalidation_owner.py` 仍以PLG-04-A02前的4参数构造 `InstallablePluginPackage`，新增必需包版本/签名/签名者/兼容策略/验证状态字段后，在测试setUp阶段报TypeError；因此本轮产品代码尚未通过后端全量验收。
+- 影响范围：运行时复验单元测试夹具陈旧；不是PG18验收结果，也未证明A02安装Owner路径通过或失败。A02 PostgreSQL端到端验证需在新的hosted run确认。
+- 修复方案：只更新合成测试夹具使用与Owner契约一致的完整Verified Package元数据；不放宽产品验证、不更改运行时复验逻辑。修复后重新跑完整托管验收；如再出现独立失败，先记录再处理。
