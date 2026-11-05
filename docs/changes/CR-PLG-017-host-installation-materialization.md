@@ -52,3 +52,10 @@ GitHub hosted Windows runner D盘临时数据根和隔离PG18，只用synthetic 
 - Windows Server 2025 hosted runner上，`DirEntry.stat(follow_symlinks=False)` 对新建普通文件返回 `st_mode=33206`、归档属性32且 `st_nlink=0`，使 materializer 把普通文件误判为无效类型；后端全套4078项中仅3项物化器用例失败。改为对枚举到的目标调用 `Path.lstat()` 获取完整本机文件状态，继续拒绝链接/reparse与多硬链接，不放宽安全断言。
 - 新增证据字段对既有 Runtime Revalidation Host port 的兼容：`plugin_installation_id` 缺省可空；仅 `PluginInstallationOwner.record` 本次传入installation ID时强制逐字匹配，既有重验证不记录新的Installation ID。
 - 该run未到wheel、PG18、A17；A03/A02均未验收。首轮改动已先记录，需通过修正后完整hosted run再判断。
+
+
+## 第二轮Hosted复验偏差（2026-11-06，run 42104924949）
+
+- 后端4,078项/wheel、前端/build、A17 harness语法、clean PG18/pgvector、embedded runtime、parent assembly、P24/A50/A35及A34均通过；A02正向归档/Host事实与A03损坏安装树零PG事实检查均实际通过。
+- A17最后的A08文件清单断言仍使用A08原“归档+对象”计数，未把A03新增的 `plugins/installations/<UUID>` 文件加入预期；因此在A03 PG18探针已通过后，A17后续A08存储盘点断言失败。修正为从精确 `valid_archive` 成员动态推导安装树清单并独立核对原对象/归档计数。该问题只在验证器清单断言，不改业务代码。
+- 独立P25仍因Windows hosted `initdb.exe 0xC0000135`失败；不是A03根因。run整体失败，A03不关闭，Pilot/Gate/Release状态不变。
