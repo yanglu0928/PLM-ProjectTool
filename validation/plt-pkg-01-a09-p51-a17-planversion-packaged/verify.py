@@ -1048,9 +1048,11 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             item for item in files
             if item not in plugin_archives and item not in plugin_installations
         ]
-        expected_install_files = {
-            "manifest.json", "plugin/main.py", "plugin/data/info.txt",
-        }
+        with zipfile.ZipFile(io.BytesIO(valid_archive), "r") as source_archive:
+            expected_install_files = {
+                item.filename for item in source_archive.infolist()
+                if not item.is_dir()
+            }
         install_root = (
             Path(storage_root) / "plugins" / "installations"
             / installation_command.plugin_installation_id.hex
