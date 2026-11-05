@@ -135,40 +135,19 @@ def run_checked(args: list[str], *, timeout: int = 180,
 
 
 def postgres_child_environment() -> tuple[dict[str, str], dict[str, object]]:
-    env = os.environ.copy()
-    node_executable = shutil.which("node.exe")
-    removed = 0
-    if node_executable:
-        node_directory = Path(node_executable).resolve().parent
-        retained: list[str] = []
-        for raw in env.get("PATH", "").split(os.pathsep):
-            entry = raw.strip().strip('"')
-            if not entry:
-                retained.append(raw)
-                continue
-            try:
-                matches_node = Path(entry).resolve() == node_directory
-            except OSError:
-                matches_node = False
-            if matches_node:
-                removed += 1
-            else:
-                retained.append(raw)
-        env["PATH"] = os.pathsep.join(retained)
-    return env, {
-        "node_executable_found": node_executable is not None,
-        "node_directory_removed": removed > 0,
-        "path_entries_removed": removed,
+    """Match the known-good PostgreSQL smoke by preserving runner PATH."""
+    return os.environ.copy(), {
+        "node_executable_found": shutil.which("node.exe") is not None,
+        "node_directory_removed": False,
+        "path_entries_removed": 0,
     }
-
 
 def start_pg(binary: Path, data: Path, log: Path, port: int,
              env: dict[str, str]) -> None:
     for name in ("pg_config.exe", "postgres.exe", "initdb.exe"):
         run_checked([str(binary / name), "--version"], timeout=30, env=env)
-    run_checked([str(binary / "initdb.exe"), "-D", str(data), "-U", "postgres",
-                 "--auth-local=trust", "--auth-host=trust", "--no-locale",
-                 "-E", "UTF8", "--debug", "--no-clean"], timeout=180, env=env)
+    run_checked([str(binary / "initdb.exe"), f"--pgdata={data}", "--username=poc_admin",
+                 "--auth=trust", "--encoding=UTF8", "--locale=C"], timeout=120, env=env)
     result = subprocess.run([str(binary / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
                              "-o", f"-h 127.0.0.1 -p {port}", "-w", "start"],
                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
@@ -180,17 +159,17 @@ def start_pg(binary: Path, data: Path, log: Path, port: int,
 def pg_sql(binary: Path, port: int, db: str, statement: str,
            env: dict[str, str]) -> str:
     return run_checked([str(binary / "psql.exe"), "-X", "-v", "ON_ERROR_STOP=1",
-                        "-h", "127.0.0.1", "-p", str(port), "-U", "postgres",
+                        "-h", "127.0.0.1", "-p", str(port), "-U", "poc_admin",
                         "-d", db, "-Atc", statement], timeout=60, env=env)
 
 
 def db_url(name: str, port: int) -> URL:
-    return URL.create("postgresql+psycopg", username="postgres", host="127.0.0.1",
+    return URL.create("postgresql+psycopg", username="poc_admin", host="127.0.0.1",
                       port=port, database=name)
 
 
 def db_dsn(name: str, port: int) -> str:
-    return f"postgresql://postgres@127.0.0.1:{port}/{name}"
+    return f"postgresql://poc_admin@127.0.0.1:{port}/{name}"
 
 
 def create_database(name: str, port: int) -> None:
