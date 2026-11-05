@@ -520,3 +520,5 @@
 
 ## Unreleased · 2026-11-05（P34发布Owner前置拆分）
 - P34源码审计发现普通上传版本Owner明确拒绝GENERATED_ARTIFACT，P33又要求AVAILABLE DocumentVersion既存；按CR-OUT-031拆分P34A系统生成版本Owner与P34B本地Storage发布协调。仅记录源码证据，尚无代码验收，不视为PASS。后续项目代码仅使用GitHub hosted D盘/云端沙箱，用户本机与C盘不运行。
+
+- OUT-01-A01-P34A编码前检查按CR-OUT-031为PASS_WITH_LIMITATION：Migration 0022来源引用与DocumentVersion触发器支持无Schema调整实现OUTPUT_GENERATION来源；实现/PG18验收待完成。
