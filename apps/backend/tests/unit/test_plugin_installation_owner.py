@@ -69,22 +69,20 @@ class _ArchiveEvidence:
 
 
 class _Evidence:
-    def __init__(self, repo):
+    def __init__(self, repo, installation_id):
         self.repo = repo
-        self.installation_id = None
-        self.response = None
+        self.installation_id = installation_id
+        self.response = PluginInstallationEvidence(
+            repo.package_id, repo.package.package_sha256, True, True,
+            {"schema_version":"1", "os":"windows-11", "architecture":"x86_64",
+             "python_version":"3.13.15", "dependency_versions":{"example":"1.2.3"}},
+            installation_id,
+        )
         self.calls = 0
 
     def inspect_installed_package(self, _package, *, installation_id):
         self.calls += 1
         self.installation_id = installation_id
-        if self.response is None:
-            self.response = PluginInstallationEvidence(
-                self.repo.package_id, self.repo.package.package_sha256, True, True,
-                {"schema_version":"1", "os":"windows-11", "architecture":"x86_64",
-                 "python_version":"3.13.15", "dependency_versions":{"example":"1.2.3"}},
-                installation_id,
-            )
         return self.response
 
 
@@ -123,13 +121,13 @@ class _Uow:
 class PluginInstallationOwnerTests(unittest.TestCase):
     def setUp(self):
         self.repo = _Repository()
-        self.evidence = _Evidence(self.repo)
-        self.archive_evidence = _ArchiveEvidence(self.repo)
-        self.audit = _Audit()
-        self.owner = self._owner()
         self.command = RecordPluginInstallationCommand(
             uuid.uuid4(), self.repo.package_id, self.repo.actor, uuid.uuid4(),
         )
+        self.evidence = _Evidence(self.repo, self.command.plugin_installation_id)
+        self.archive_evidence = _ArchiveEvidence(self.repo)
+        self.audit = _Audit()
+        self.owner = self._owner()
 
     def _owner(self):
         return PluginInstallationOwner(
