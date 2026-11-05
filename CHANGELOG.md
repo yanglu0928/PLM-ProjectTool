@@ -1,3 +1,12 @@
+## Unreleased · 2026-11-06（PLG-04-A01：Plugin签名包正文私有持久化）
+
+- 版本：未发行的内部开发候选；不是Pilot或正式Release。
+- 变更：Worker在Package登记成功后以UUID locator保存原始签名ZIP；同卷无覆盖提升、SHA-256/大小验证和精确重放；只读适配器重新验证签名/ZIP/Manifest及登记快照，仅返回元数据。
+- 兼容性：无冻结Schema/API变更，无新依赖或迁移。
+- 升级：无需DB Migration；新导入包正文写入受保护data_root的 `plugins/packages` 命名空间；历史数据库中仅有元数据的旧包不自动补齐，安装证据仍失败关闭。
+- 已知问题：生产publisher signer清单为空；本次不表示真实信任/安装/插件执行。P25 HTTP/Edge继续被initdb.exe 0xC0000135阻断。
+- 验证：GitHub hosted run [42070621770](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42070621770)中后端4,071 tests/wheel、前端/build、PG18 smoke、A17/A34/A35/P24/A50通过；仅独立P25 job失败。全workflow非全绿，结论PASS_SCOPE_LIMITED。
+
 ## Unreleased · 2026-11-05（P34B重复Hosted下载阻塞，非发行版本）
 
 - Hosted run [42045197675](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42045197675) 的所有前置构建与测试、嵌入后端运行时、A17 harness、P24/A50通过；父包在固定Caddy 2.11.4输入下载第二次遇到HTTP 504，PG18 smoke/P34B skipped。已先记CR-OUT-030/031。

@@ -1,7 +1,7 @@
 # CR-PLG-015：已验签 Plugin 包正文的私有持久化
 
 - 日期：2026-11-06
-- 状态：已记录；PLG-04-A01 编码与 GitHub hosted 验收中
+- 状态：PASS_SCOPE_LIMITED（GitHub hosted run 42070621770；P25独立失败不影响本WBS专项结论）
 - 来源：Plugin 包导入/安装源码审计；承接 CR-PLG-005、CR-PLG-006、CR-PLG-007、CR-PLG-009、CR-PLG-014
 - 适用基线：Gate 2 冻结 Data Model / DB Schema V1、PLG Package/Installation/Execution；CR-EXEC-002 交付顺序
 - 执行边界：只用 GitHub hosted runner D 盘或云端沙箱运行代码和测试；不在用户本机/C 盘运行
@@ -46,3 +46,16 @@ GitHub hosted run [42063771396](https://github.com/yanglu0928/PLM-ProjectTool/ac
 第二轮 hosted run [42067292485](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42067292485) 中，后端全量/wheel、前端/build、PG18 clean parent smoke、A35/P24/A50和父包构建通过；A17 packaged flow已越过首次漏注入，完成合成签名包导入与Worker重试后，因旧验证器断言整个storage_root固定只有3个文件而失败。新增的正确产品行为会在登记成功后另存一个私有 Plugin ZIP，故旧总数断言漏算了该目录，报告“A08 worker smoke changed the staged package count”。该次A17未PASS；不是存储Hash或Worker断言失败。P25仍独立因initdb.exe 0xC0000135失败。
 
 修复计划：保持原有3个上传/存储对象数量语义，额外要求受限 `plugins/packages` 目录下仅有1个归档文件，并逐字节核对它等于合成 `valid_archive`；保留所有现有Job/Audit/签名/重试断言，再重跑完整Hosted workflow。仅更新独立验收器，不调整产品行为和验收阈值。
+
+
+## 最终 Hosted 验收（2026-11-06）
+
+GitHub hosted run [42070621770](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42070621770)，提交 `eebc0420720eb1677ada7314faa1c198115544b4`，PLG-04-A01专项验收通过，结论 `PASS_SCOPE_LIMITED`：
+
+- Backend 4,071 tests、P51-A32 5 tests、Developer Workbench synthetic key tests 5 tests及wheel成功；Frontend tests/build成功；PG18/pgvector sidecar重建成功。
+- 同run Windows 离线backend/父包候选组装、clean extraction + PostgreSQL/pgvector smoke、A35 handoff、A17 packaged PlanVersion Edge/HTTPS/PG flow、A34 offline replacement/manual recovery、P24、A50均成功。
+- A17合成Plugin worker读取签名包后，Package Registration成功、归档存储成功后才finish；验收器断言同一 `valid_archive` 原始字节存在于UUID私有locator中，原有上传对象数不变。仅合成密钥与包，没有产品publisher信任结论。
+- 全workflow唯一失败是独立P25 HTTP/Edge job：随包PostgreSQL `initdb.exe` 在数据目录创建前返回 `0xC0000135`，未启动真实HTTP/Edge。P25继续 `BLOCKED_DIAGNOSTIC`，整体workflow不是全绿；不否定本CR的PG smoke与A17隔离验收。
+- 只在GitHub hosted Windows Server 2025 runner的D盘临时区执行；无本机/C盘代码运行、客户数据、真实插件执行、Schema/API变更、正式signer trust、付款或生产写入。
+
+PLG-04-A01已按本CR范围完成。下一项为单一WBS：把此只读归档证据适配器接入PluginInstallationOwner，使Installation仅能在精确包摘要/签名/Manifest复核成功时记录；不解压、不运行插件。真实publisher trust为空时仍失败关闭。
