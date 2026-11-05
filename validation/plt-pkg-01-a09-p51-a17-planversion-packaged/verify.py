@@ -713,8 +713,9 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             tx.commit()
 
         class SyntheticInstalledHostEvidence:
-            def inspect_installed_package(self, package):
+            def inspect_installed_package(self, package, *, installation_id):
                 return PluginInstallationEvidence(
+                    plugin_installation_id=installation_id,
                     plugin_package_id=package.plugin_package_id,
                     installed_package_sha256=package.package_sha256,
                     installation_present=True,
@@ -817,11 +818,12 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
                 self.available = available
                 self.calls = 0
 
-            def inspect_installed_package(self, package):
+            def inspect_installed_package(self, package, *, installation_id):
                 self.calls += 1
                 if not self.available:
                     return None
                 return PluginInstallationEvidence(
+                    plugin_installation_id=installation_id,
                     plugin_package_id=package.plugin_package_id,
                     installed_package_sha256=package.package_sha256,
                     installation_present=True,
