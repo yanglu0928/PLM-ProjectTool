@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P37第二轮Hosted解析偏差，非发行版本）
+
+- run [42125753500](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42125753500) 前端suite仍因对象字面量 `as` 类型断言语法失败，204个suite中的其余204通过、2,092项用例通过；typecheck/build未执行。已按CR-OUT-032先记录，改为显式变量类型标注后重新Hosted验收；P37未通过。
+
 ## Unreleased · 2026-11-06（P37首轮Hosted解析偏差，非发行版本）
 
 - run [42124943609](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42124943609) 前端全量测试2092项通过，但新增 `OutputRequestListView.spec.ts` suite因对象字面量后的换行类型断言语法错误未能解析；typecheck/build未执行，P37不通过。偏差先记录CR-OUT-032，计划只修测试夹具语法后在GitHub hosted重跑；未在本机/C盘运行。
