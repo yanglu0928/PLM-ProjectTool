@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import json
 import os
 import re
@@ -11,7 +12,7 @@ from pathlib import Path
 
 import psycopg
 from psycopg import sql
-from sqlalchemy import URL, select, text
+from sqlalchemy import URL, func, select, text, update
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps" / "backend" / "src"))
@@ -23,7 +24,7 @@ from plm_assistant.modules.jobs.application.lease import (
     ClaimedJob, JobLeaseError, JobLeaseService,
 )
 from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
-from plm_assistant.modules.jobs.infrastructure.orm import JobRow
+from plm_assistant.modules.jobs.infrastructure.orm import JobLeaseRow, JobRow
 from plm_assistant.modules.output.application.start_generation import (
     OutputGenerationStartError, OutputGenerationStartOwner,
 )
@@ -177,17 +178,41 @@ def main() -> int:
                 raise AssertionError("Output queue did not issue its exact synthetic claim")
             claims[claim.job_id] = claim
 
-        owner = make_owner(runtime, system_actor)
         valid_claim = claims[valid[0]]
+        past = func.statement_timestamp() - text("INTERVAL '1 second'")
+        with runtime.unit_of_work() as uow:
+            uow.session.execute(
+                update(JobRow).where(JobRow.job_id == valid_claim.job_id)
+                .values(lease_expires_at=past)
+            )
+            uow.session.execute(
+                update(JobLeaseRow).where(
+                    JobLeaseRow.job_id == valid_claim.job_id,
+                    JobLeaseRow.fencing_token == valid_claim.fencing_token,
+                ).values(
+                    lease_expires_at=past,
+                    acquired_at=past - text("INTERVAL '1 second'"),
+                )
+            )
+            uow.commit()
+        valid_claim = queue.claim_next_output(worker_ref=worker, lease_seconds=300)
+        if (valid_claim is None or valid_claim.job_id != valid[0]
+                or valid_claim.fencing_token < 2):
+            raise AssertionError("valid Output job was not reclaimed with a higher fencing token")
+
+        owner = make_owner(runtime, system_actor)
         before_valid = snapshot(database_dsn(database, args.port), project, valid[1], valid[0])
-        for label, wrong_worker_ref, token, altered in (
-            ("wrong worker", "p29-other-worker", valid_claim.fencing_token, valid_claim),
-            ("stale token", worker, valid_claim.fencing_token + 1, valid_claim),
-            ("wrong request binding", worker, valid_claim.fencing_token,
-             ClaimedJob(valid_claim.job_id, valid_claim.job_type, valid_claim.scope,
-                        valid_claim.project_id,
-                        {**valid_claim.payload_refs, "output_request_id": str(uuid.uuid4())},
-                        valid_claim.trace_id, valid_claim.fencing_token, valid_claim.attempt_no)),
+        stale_claim = replace(valid_claim, fencing_token=valid_claim.fencing_token - 1)
+        mismatch_claim = ClaimedJob(
+            valid_claim.job_id, valid_claim.job_type, valid_claim.scope,
+            valid_claim.project_id,
+            {**valid_claim.payload_refs, "output_request_id": str(uuid.uuid4())},
+            valid_claim.trace_id, valid_claim.fencing_token, valid_claim.attempt_no,
+        )
+        for label, wrong_worker_ref, altered in (
+            ("wrong worker", "p29-other-worker", valid_claim),
+            ("stale fencing token", worker, stale_claim),
+            ("wrong request binding", worker, mismatch_claim),
         ):
             try:
                 owner.start(altered, worker_ref=wrong_worker_ref)
