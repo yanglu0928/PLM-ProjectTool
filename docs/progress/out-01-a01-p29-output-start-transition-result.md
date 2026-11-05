@@ -1,26 +1,25 @@
-# OUT-01-A01-P29：Output 生成启动原子事务验证记录（首轮验收脚本失败，修复后待复验）
+# OUT-01-A01-P29：Output 生成启动原子事务验证结果
 
 - 日期：2026-11-05
-- Change Request：CR-OUT-025
-- 状态：代码已提交；首轮GitHub Actions run 41948211782的父包PG smoke在P29 verifier调用前因结果字典字面量\\n语法错误失败。CR-OUT-025已记录偏差，修复提交8e82c05后等待完整Hosted复验，尚未PASS
+- Change Request：[CR-OUT-025](../changes/CR-OUT-025-output-generation-start-transition.md)
+- 结论：PASS_SCOPE_LIMITED
+- 证据：GitHub Actions [run 41953529123](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41953529123)，Hosted Windows Server 2025 / D盘 runner temp / 隔离 PostgreSQL 18.6
 
-## 实施内容
+## 实施与验证
 
-- Output Owner 按OutputRequest→Jobs一致锁顺序，在同一UOW先锁定绑定的QUEUED请求，再调用Jobs Repository当前lease proof。
-- 只有当前Job、worker、fencing token、attempt和数据库到期校验均通过时，才把请求改为GENERATING并设置稳定execution ref及lock_version，随后写SYSTEM Audit。
-- system_actor_id由内部组合注入，Audit original_actor_id取请求原始用户；不会将用户标记为worker。
-- 同fencing token的相同execution重放只返回现有结果且不重复写Audit。
-- 单测及hosted PG18 verifier覆盖正确启动、错worker、旧token、request错绑、精确重放、Audit失败整笔回滚及Job状态不被proof改写。
-- 不新增Schema/Migration/API/default app挂载；不启动Worker、不执行插件/渲染/外部调用、不生成输出文件。
+- Output Owner按OutputRequest→Jobs一致锁顺序，在同一UOW先锁定精确绑定的QUEUED请求，再由Jobs repository proof校验当前worker、lease、attempt、fencing token和数据库时钟。
+- 通过后同事务将请求推进到GENERATING、设置确定性execution ref、递增lock_version并写SYSTEM Audit。Audit actor为显式内部system_actor_id，original_actor_id保留原requester。
+- PG18验证有效claim成功；错worker、真实过期前序fencing token、错request绑定均拒绝且无部分状态；同一claim重放幂等且不重复Audit；注入Audit失败时整个Output转换回滚。
+- Job保持RUNNING；proof不改Job状态。无Schema、Migration、API或默认应用挂载变化；未执行Worker/插件/渲染/外部调用或输出文件。
+- 后端4036项全量单测、wheel、前端测试/build、PG18/pgvector sidecar通过；父包PG smoke、A17、A34、A35、A50成功。
 
-## 偏差记录
+## 偏差与处理
 
-CR-OUT-025初稿按Jobs→Output锁定；并发取消路径按Output→Jobs锁定，反向顺序可能造成数据库死锁。已在编码前更新CR并改成Output→Jobs，以匹配已有取消Owner。撤销新Owner/Repository/测试为回滚方式。
+- 初稿锁序Jobs→Output会与取消路径Output→Jobs冲突，已先记CR并统一为Output→Jobs。
+- 前三轮hosted偏差均在CR记录并修正：结果字典字面量换行、fixture数量解包、旧token测试未实际替换ClaimedJob。第四轮全部验证通过，前三轮历史保留。
+- 本轮独立P25 HTTP/Edge仍因initdb.exe 0xC0000135失败；它不影响本隔离PG Owner验收，也不能描述成P25通过。
 
-## 验收边界
+## 边界与后续
 
-云端Hosted Windows Server 2025，runner临时目录D盘；验收使用隔离合成PostgreSQL。验证当前尚未完成，不将预期当作通过。P25 initdb 0xC0000135问题保持独立，不将其作为P29结论依据。真实Worker/受控服务账号、正式信任和Windows 11新设备验收不在本WBS内。
+本结果只证明内部原子状态Owner和审计行为；真实Output Worker、受控服务账号、插件信任、文件产物、Windows 11实际设备、Pilot/Gate/正式Release不因此通过。下一项应先按CR-EXEC-002和当前Worker/Trust阻断建立编码前检查，避免把GENERATING当作执行授权。
 
-- 第二轮 hosted run 41949611412 的PG smoke进入Verifier后发现2个fixture被按5个变量解包；已先记CR-OUT-025，修复为两个显式fixture索引。P29 Owner行为仍待下一轮运行，当前不标PASS。
-
-- 第三轮 hosted run 41951315834的真实PG验证确认旧token负例曾重复传递当前claim，未验证旧fencing代次。已先记CR-OUT-025；验证器现令首个租约到期并以同worker重新claim，使用真正前一代正token，重测旧token拒绝与无状态/audit变化。
