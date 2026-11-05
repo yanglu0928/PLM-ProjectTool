@@ -74,11 +74,12 @@ class PluginInstallationEvidence:
     installation_present: bool
     compatible: bool
     runtime_snapshot: dict = field(repr=False)
+    plugin_installation_id: uuid.UUID
 
 
 class PluginInstalledPackageEvidencePort(Protocol):
     def inspect_installed_package(
-        self, package: InstallablePluginPackage,
+        self, package: InstallablePluginPackage, *, installation_id: uuid.UUID,
     ) -> PluginInstallationEvidence | None: ...
 
 
@@ -179,10 +180,14 @@ class PluginInstallationOwner:
                     archive_identity,
                 )
                 self._validate_archive_proof(package, archive_proof)
-                observed = self._evidence.inspect_installed_package(package)
+                observed = self._evidence.inspect_installed_package(
+                    package, installation_id=command.plugin_installation_id,
+                )
                 if type(observed) is not PluginInstallationEvidence:
                     raise PluginInstallationOwnerError("PLUGIN_INSTALLATION_EVIDENCE_UNAVAILABLE")
-                snapshot = self._validate_evidence(package, observed)
+                snapshot = self._validate_evidence(
+                    package, observed, installation_id=command.plugin_installation_id,
+                )
                 self._repository.authorize_owner_inserts(transaction)
                 installation = self._repository.create_installed(
                     transaction,
@@ -278,11 +283,15 @@ class PluginInstallationOwner:
     @staticmethod
     def _validate_evidence(
         package: InstallablePluginPackage, evidence: PluginInstallationEvidence,
-        *, require_compatible: bool = True,
+        *, installation_id: uuid.UUID | None = None,
+        require_compatible: bool = True,
     ) -> dict:
         if (type(evidence) is not PluginInstallationEvidence
                 or type(evidence.plugin_package_id) is not uuid.UUID
                 or evidence.plugin_package_id != package.plugin_package_id
+                or (installation_id is not None
+                    and (type(evidence.plugin_installation_id) is not uuid.UUID
+                         or evidence.plugin_installation_id != installation_id))
                 or type(evidence.installed_package_sha256) is not bytes
                 or not __import__("hmac").compare_digest(
                     evidence.installed_package_sha256, package.package_sha256,
