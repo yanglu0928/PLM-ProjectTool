@@ -2,7 +2,7 @@
 
 - 日期：2026-11-05
 - 阶段/WBS：Phase 2 Platform Core / PLG-03-A01
-- 状态：实现及PG18独立验收待完成
+- 状态：PASS_SCOPE_LIMITED（GitHub hosted PG18.6 独立验收完成；不开放执行Owner）
 - 基线：Gate 2 冻结 PluginExecution R-PRJ Aggregate、PLG-03；SC-01 映射 `plg_executions`、`plg_execution_result_files`、`plg_execution_state_events`。
 - 来源：P32证明后续OutputArtifact固定FK依赖PluginExecution物理Root；OutputArtifact必须等待本项。
 
@@ -63,3 +63,10 @@ EnabledOperation是当前启用投影，Disable流程会删除该行并保留不
 
 - run [41973267273](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41973267273) 后端全量、前端/build、依赖/父包组装与A35/A17 candidate/P24/A50通过。父包PG smoke依次通过P01迁移链及PLG-01 staging head，到PLG-01空库旧触发器数量断言时失败：验证器用全局 `tgname LIKE 'trg_plg_%'` 统计，固定期望21；新增PLG-03三表提供6个独立保护触发器后结果为27，尚未执行PLG-01后续及PLG-03专项断言。该失败是历史验证器范围耦合，不是触发器错误或Migration通过证据。
 - 修复计划：在PLG-01验证器中明确排除PLG-03三张表，只统计PLG-01/02既有关系上的历史21个guard；PLG-03 6个guard继续由PLG-03专属验证器以精确名字与行为独立检查。保留PLG-01/02原21项断言，不降低阈值、不更改业务DDL；随后重新运行Hosted链。
+
+
+## 托管验收结果（2026-11-05）
+
+GitHub Actions run [41974625395](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41974625395) 中 PluginExecution schema verifier 在隔离 PG18.6 数据库完成，结论 `PASS_SCOPE_LIMITED`。验证覆盖从 20261104_0230 含合成既有 Job 行升级至 20261105_0231、三表准确出现、旧表/旧行留存、项目与不可变关系约束、result-file scope/hash/path、状态事件约束、空库降级/重升、带历史时阻止降级并保留记录，以及 Owner 写关闭与 TRUNCATE 拒绝。父包同 run PG18 smoke通过；同 run 后端、wheel、前端/build、PG sidecar、A17/A34/A35/A50等成功。代码只在 GitHub hosted Windows Server 2025 runner 的 D: 临时目录执行；未运行插件、未创建文件、无客户数据或外部调用。
+
+该 workflow 的 P25 Windows 装载专项仍因 `initdb.exe` 返回 `0xC0000135` 独立失败，未进入 HTTP/Edge，因此整体 workflow 不是全绿。该故障不影响本次独立 PG18 schema 结论，也不据此推定 Windows 11、Pilot、Gate 或正式 Release 已通过。证据详见 [PLG-03-A01 结果记录](../progress/plg-03-a01-execution-persistence-result.md)。
