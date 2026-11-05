@@ -25,7 +25,8 @@ _UUID_HEX = r"[0-9a-f]{32}"
 _LOCATOR = re.compile(
     rf"(?:(?:global|temp/global)/objects/[0-9a-f]{{2}}/{_UUID_HEX}"
     rf"|(?:projects|temp/projects)/{_UUID_HEX}/objects/[0-9a-f]{{2}}/{_UUID_HEX}"
-    rf"|(?:temp/)?generated/audit/(?:deployment|projects/{_UUID_HEX})/objects/[0-9a-f]{{2}}/{_UUID_HEX})\Z",
+    rf"|(?:temp/)?generated/audit/(?:deployment|projects/{_UUID_HEX})/objects/[0-9a-f]{{2}}/{_UUID_HEX}"
+    rf"|(?:temp/)?plugins/packages/[0-9a-f]{{2}}/{_UUID_HEX})\Z",
     re.ASCII,
 )
 _REPARSE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
@@ -141,6 +142,85 @@ class LocalFileStorage:
         suffix = f"objects/{file_object_id.hex[:2]}/{file_object_id.hex}"
         base = "global" if scope == "GLOBAL" else f"projects/{project_id.hex}"
         return f"temp/{base}/{suffix}", f"{base}/{suffix}"
+
+    @staticmethod
+    def plugin_package_locators(*, package_id: uuid.UUID) -> tuple[str, str]:
+        if type(package_id) is not uuid.UUID or package_id.int == 0:
+            raise LocalStorageError()
+        suffix = f"plugins/packages/{package_id.hex[:2]}/{package_id.hex}"
+        return f"temp/{suffix}", suffix
+
+    def store_plugin_package_archive(self, *, package_id: uuid.UUID,
+                                     archive_bytes: bytes, expected_sha256: bytes,
+                                     expected_size: int) -> FileContentProof:
+        """Persist exact signed ZIP bytes using existing no-overwrite storage primitives."""
+        if (type(archive_bytes) is not bytes or not archive_bytes
+                or type(expected_sha256) is not bytes or len(expected_sha256) != 32
+                or type(expected_size) is not int or expected_size != len(archive_bytes)
+                or expected_size > 256 * 1024 * 1024):
+            raise LocalStorageError()
+        staging_locator, final_locator = self.plugin_package_locators(package_id=package_id)
+        try:
+            final_path = self._path(final_locator, allow_missing_parents=True)
+            if os.path.lexists(final_path):
+                return self.verify_content(final_locator, expected_sha256=expected_sha256,
+                    expected_size=expected_size, max_bytes=256 * 1024 * 1024)
+            staging_path = self._path(staging_locator, allow_missing_parents=True)
+            if os.path.lexists(staging_path):
+                self.verify_content(staging_locator, expected_sha256=expected_sha256,
+                    expected_size=expected_size, max_bytes=256 * 1024 * 1024)
+                return self.publish_verified(staging_locator, final_locator,
+                    expected_sha256=expected_sha256, expected_size=expected_size,
+                    max_bytes=256 * 1024 * 1024)
+            staged_identity: tuple[int, int] | None = None
+            try:
+                with self.reserve_staging(staging_locator) as stream:
+                    info = os.fstat(stream.fileno())
+                    staged_identity = (info.st_dev, info.st_ino)
+                    if stream.write(archive_bytes) != len(archive_bytes):
+                        raise LocalStorageError()
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                return self.publish_verified(staging_locator, final_locator,
+                    expected_sha256=expected_sha256, expected_size=expected_size,
+                    max_bytes=256 * 1024 * 1024)
+            except Exception:
+                if staged_identity is not None:
+                    try:
+                        self.discard_new_staging(staging_locator,
+                            device=staged_identity[0], inode=staged_identity[1])
+                    except Exception:
+                        pass
+                raise
+        except LocalStorageError:
+            raise
+        except Exception:
+            raise LocalStorageError() from None
+
+    def load_verified_plugin_package_archive(self, *, package_id: uuid.UUID,
+                                             expected_sha256: bytes) -> bytes:
+        """Return one bounded private snapshot only after hash and file identity checks."""
+        if (type(package_id) is not uuid.UUID or package_id.int == 0
+                or type(expected_sha256) is not bytes or len(expected_sha256) != 32):
+            raise LocalStorageError()
+        _staging_locator, final_locator = self.plugin_package_locators(package_id=package_id)
+        try:
+            path = self._path(final_locator)
+            info = _checked_file(path)
+            if not 0 < info.st_size <= 256 * 1024 * 1024:
+                raise LocalStorageError()
+            with self._open_verified_snapshot(final_locator,
+                    expected_sha256=expected_sha256, expected_size=info.st_size,
+                    max_bytes=256 * 1024 * 1024) as stream:
+                body = stream.read(256 * 1024 * 1024 + 1)
+            if (type(body) is not bytes or not body or len(body) != info.st_size
+                    or not hmac.compare_digest(hashlib.sha256(body).digest(), expected_sha256)):
+                raise LocalStorageError()
+            return body
+        except LocalStorageError:
+            raise
+        except Exception:
+            raise LocalStorageError() from None
 
     def scan_staging_candidates(self, *, max_entries: int = 10_000,
                                 max_candidates: int = 500) -> StagingScan:

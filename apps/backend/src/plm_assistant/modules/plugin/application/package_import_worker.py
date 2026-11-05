@@ -60,6 +60,12 @@ class PluginPackageImportStoragePort(Protocol):
                                       expected_size: int, max_bytes: int) -> BinaryIO: ...
 
 
+class PluginPackageArchiveStorePort(Protocol):
+    def store_plugin_package_archive(self, *, package_id: uuid.UUID,
+                                     archive_bytes: bytes, expected_sha256: bytes,
+                                     expected_size: int) -> object: ...
+
+
 class PluginPackageImportLicensePort(Protocol):
     def require_valid(self, *, trace_id: uuid.UUID) -> object: ...
 
@@ -79,13 +85,14 @@ class PluginPackageImportWorker:
                  lease_repository: PluginPackageImportLeaseRepositoryPort,
                  source: PluginPackageImportSourcePort,
                  storage: PluginPackageImportStoragePort,
+                 archive_store: PluginPackageArchiveStorePort,
                  registration: PluginPackageRegistrationService,
                  license_guard: PluginPackageImportLicensePort,
                  worker_ref: str,
                  lease_seconds: int = 3600) -> None:
         if any(value is None for value in (
             unit_of_work, leases, lease_repository, source, storage,
-            registration, license_guard,
+            archive_store, registration, license_guard,
         )) or type(worker_ref) is not str or not worker_ref:
             raise ValueError("Explicit Plugin package worker dependencies required")
         if type(lease_seconds) is not int or not 1 <= lease_seconds <= 3600:
@@ -95,6 +102,7 @@ class PluginPackageImportWorker:
         self._lease_repository = lease_repository
         self._source = source
         self._storage = storage
+        self._archive_store = archive_store
         self._registration = registration
         self._license_guard = license_guard
         self._worker_ref = worker_ref
@@ -152,7 +160,7 @@ class PluginPackageImportWorker:
                         or current.job_type != "PLUGIN_PACKAGE_VERIFY"):
                     raise JobLeaseError("STALE_LEASE")
 
-            self._registration.register(
+            package = self._registration.register(
                 RegisterPluginPackageCommand(
                     archive_bytes=archive_bytes,
                     detached_signature=item.detached_signature,
@@ -163,6 +171,23 @@ class PluginPackageImportWorker:
                 ),
                 commit_guard=commit_guard,
             )
+            from plm_assistant.modules.plugin.application.package_registration import (
+                PluginPackageIdentity,
+            )
+            if (type(package) is not PluginPackageIdentity
+                    or package.package_state != "VERIFIED"
+                    or package.package_sha256 != item.package_sha256):
+                raise PluginPackageImportWorkError("PLUGIN_PACKAGE_REGISTER_UNAVAILABLE")
+            try:
+                self._archive_store.store_plugin_package_archive(
+                    package_id=package.plugin_package_id, archive_bytes=archive_bytes,
+                    expected_sha256=item.package_sha256,
+                    expected_size=item.package_size_bytes,
+                )
+            except Exception:
+                raise PluginPackageImportWorkError(
+                    "PLUGIN_PACKAGE_ARCHIVE_STORE_UNAVAILABLE"
+                ) from None
             self._leases.finish(
                 job_id=claim.job_id, fencing_token=claim.fencing_token,
                 worker_ref=self._worker_ref, publish=lambda _tx, _claim: None,
@@ -178,7 +203,10 @@ class PluginPackageImportWorker:
         except PluginPackageImportWorkError as exc:
             state = self._fail(
                 claim, exc.code,
-                retryable=exc.code == "PLUGIN_PACKAGE_STAGE_UNAVAILABLE",
+                retryable=exc.code in {
+                    "PLUGIN_PACKAGE_STAGE_UNAVAILABLE",
+                    "PLUGIN_PACKAGE_ARCHIVE_STORE_UNAVAILABLE",
+                },
             )
             return state
         except JobLeaseError:

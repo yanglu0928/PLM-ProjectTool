@@ -82,6 +82,7 @@ def create_windows_plugin_package_worker(settings: BootstrapSettings):
             repository=SqlAlchemyPluginPackageRegistrationRepository(),
             audit=AuditService(SqlAlchemyAuditRepository()),
         )
+        file_storage = LocalFileStorage(settings.data_root)
         worker = PluginPackageImportWorker(
             unit_of_work=database.unit_of_work,
             leases=JobLeaseService(
@@ -90,7 +91,8 @@ def create_windows_plugin_package_worker(settings: BootstrapSettings):
             ),
             lease_repository=lease_repository,
             source=SqlAlchemyPluginPackageImportSource(),
-            storage=LocalFileStorage(settings.data_root),
+            storage=file_storage,
+            archive_store=file_storage,
             registration=registration,
             license_guard=license_services.guard,
             worker_ref="plugin-package-" + uuid4().hex,
