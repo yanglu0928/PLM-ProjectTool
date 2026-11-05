@@ -40,3 +40,7 @@ P34编码前检查必须先确认 FileObject/DocumentVersion 提交顺序、Docu
 ## P34A/P34B拆分执行状态
 
 依CR-OUT-031，P34A Generated Artifact DocumentVersion Owner已由hosted run 42033255833父包PG18 smoke验证并以PASS_SCOPE_LIMITED关闭：无版本初态提交、来源与Document指针、SYSTEM Audit、精确重放及随后P33成功终结均通过。原CR余项已明确转为P34B：真实本地Storage提升/Hash复验与final-only/linked-pair/unknown恢复协调；P34B仍未编码。P25 0xC0000135仍独立阻塞。
+
+## P34B编码前补充检查（2026-11-05）
+
+确认现有Document FilePublishService带有USER授权、USER Audit及用户幂等语义，Output SYSTEM Job不可直接复用。P34B使用专属协调Owner，事务外文件操作，短事务按Request→Job fence→Execution→File→Document顺序重验并记SYSTEM审计；调用P34A与P33做后续数据库提交。LocalFileStorage的STAGE_ONLY/FINAL_VERIFIED/LINKED_PAIR精确恢复原语可以支持该流程；NONE/BOTH_UNRELATED/UNSAFE失败关闭。未发现Schema/API变化需求，编码前检查PASS_WITH_LIMITATION。具体合同见docs/progress/out-01-a01-p34b-storage-publication-precheck.md。

@@ -528,3 +528,6 @@
 ## 2026-11-05 · OUT-01-A01-P34A PASS_SCOPE_LIMITED
 - run [42033255833](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42033255833)：后端全量/wheel、前端/build、PG18/pgvector sidecar、clean parent PG18 smoke、父包组装、A17、A34、A35、P24、A50成功。PG18 smoke以无DocumentVersion的GENERATED_ARTIFACT Document/AVAILABLE FileObject起始，执行P34A Owner，核对Version/source ref/latest pointer/SYSTEM Audit，精确重放不新增Audit，再由P33成功终结Owner验证既有端到端事务；P34A结论PASS_SCOPE_LIMITED。
 - 同run独立P25仍因initdb.exe exit 3221225781/0xC0000135及未创建数据目录而失败，P25真实HTTP/Edge未执行，整体workflow未全绿。未改变Pilot/Gate/Release状态。
+
+## 2026-11-05 · P34B编码前检查
+- PASS_WITH_LIMITATION：确认不得复用Document USER文件发布服务；采用Output SYSTEM专用协调Owner，在不持DB锁的情况下执行Storage hash/同卷提升，之后短事务重核fence与文件事实，再调用P34A/P33。恢复仅允许STAGE_ONLY、FINAL_VERIFIED、LINKED_PAIR；未知形态不动文件。无Schema/API/默认组合变化。尚未编码，见docs/progress/out-01-a01-p34b-storage-publication-precheck.md。
