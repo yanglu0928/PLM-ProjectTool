@@ -2,7 +2,7 @@
 
 - 日期：2026-11-06
 - 阶段/WBS：Phase 2 Platform Core / OUT-01-A01-P35 → P36
-- 状态：P35 PASS_WITH_LIMITATION；P36代码候选已准备提交，GitHub hosted验收待完成
+- 状态：P35、P36、P37均PASS_SCOPE_LIMITED；P38下载HTTP集成编码前检查
 - 来源：CR-EXEC-002优先形成Windows 11受控内部Pilot；P34B已证明内部生成文件发布，而用户侧无法从OutputRequest定位Artifact。
 - 基线：冻结 API Contract V1 的 OUTPUT_REQUEST_GET/LIST、OUT-02、Document/DocumentVersion/Storage合同，CR-OUT-028/031；P34B PASS_SCOPE_LIMITED。
 
@@ -78,3 +78,12 @@ GitHub hosted 前端全量测试中，`OutputRequestListView.spec.ts:99` 无法�
 ## P37 第三轮 Hosted 测试语法偏差（run 42126285195，修复前记录）
 
 上一轮改正列表 Client 的换行断言后，测试仍在 `OutputRequestListView.spec.ts:109` 失败。日志定位到同一新增用例中的 `artifactReader` 对象字面量后，仍将 `as unknown as OutputArtifactReadClient` 放在下一行。其余2,092项用例通过，但该suite为0 tests，typecheck/build未运行。前一修复遗漏这一独立断言；现在先记录，再统一检查并修正该文件全部同型断言。没有产品逻辑/API/安全策略变化；P37未通过。
+
+
+## P37 前端受控下载入口最终验收（2026-11-06）
+
+P37按范围 PASS_SCOPE_LIMITED 关闭。实现仅前端消费P36严格授权的固定Artifact引用：SUCCEEDED显示下载按钮，重新取授权引用后只导航同源Document内容路由；Client精确校验响应字段、Project/Request/Document/Version UUID、MIME/Artifact类型、SHA-256、大小和内容路径；错误失败关闭、无自动重试。没有后端/API/Schema/Migration变化。
+
+Hosted run [42126880417](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42126880417) 中：前端205 suites/2,098 tests、typecheck与production build通过；后端4,087 tests及wheel通过；父包PostgreSQL 18.6/pgvector 0.8.6结果含 available_binding=PASS、cross_project_hidden=PASS、unknown_request_hidden=PASS；父包组装/生命周期 smoke、A17、A34、A35、P24、A50通过。独立P25 job失败：initdb.exe 在建库阶段以十进制3221225781（0xC0000135）退出并未启动真实HTTP/Edge；15 jobs为14通过/1失败，整体workflow不是全绿。
+
+P37没有验证真实浏览器下载的最终字节、Windows 11设备、正式Platform trust或默认/login-only路由装配；结果不代表Pilot/Gate 3/正式Release。P38先补HTTP/Document内容流的Hosted合成集成验收。三次前端suite语法偏差均已逐次先记录并修正，最后的205套件/2,098测试全过。

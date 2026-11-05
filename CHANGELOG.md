@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-06（OUT-01-A01-P37：输出历史下载入口，非发行版本）
+
+- 结果：按CR-OUT-032以PASS_SCOPE_LIMITED完成。Hosted run [42126880417](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42126880417)：前端205 suites/2,098 tests/typecheck/build，后端4,087 tests/wheel，父包PG18 P36固定引用权限断言及A17/A34/A35/P24/A50通过。
+- 变更：输出历史中仅SUCCEEDED行提供下载入口；严格解析P36同源Artifact引用后转至受保护Document内容流。无后端/API/Schema/Migration变化。
+- 已知限制：P37测试尚未贯穿真实Document HTTP字节；正式Platform trust、Windows 11实机和Pilot/Release未通过。整体run 15 jobs中14成功，独立P25 initdb.exe 0xC0000135失败。
+- 下一步：OUT-01-A01-P38编码前检查通过，按CR-OUT-033补充临时PG18下的受保护Artifact→Document内容流HTTP集成验收。
+
 ## Unreleased · 2026-11-06（P37第三轮Hosted解析偏差，非发行版本）
 
 - run [42126285195](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42126285195) 的前端测试仍因新用例 `artifactReader` 的换行类型断言解析失败；列表Client断言已修正，但该遗漏使新增suite仍0 tests、其余2,092项通过。已先补记CR-OUT-032，随后统一修正同类fixture语法并重新Hosted验收；P37未通过。
