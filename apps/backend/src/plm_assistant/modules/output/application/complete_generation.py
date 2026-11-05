@@ -72,7 +72,7 @@ class OutputArtifactPublication:
 
 @dataclass(frozen=True, slots=True)
 class OutputGenerationCompletionFacts:
-    artifact_id: uuid.UUID
+    artifact_id: uuid.UUID | None
     output_request_id: uuid.UUID
     project_id: uuid.UUID
     job_id: uuid.UUID
@@ -133,7 +133,7 @@ class OutputGenerationCompletionOwner:
                     transaction, claim=claim, execution_id=publication.plugin_execution_id,
                 )
                 if (type(candidate) is not OutputGenerationCompletionFacts
-                        or candidate.artifact_id != publication.artifact_id
+                        or candidate.artifact_id is not None
                         or candidate.output_request_id != request_id
                         or candidate.context_snapshot_id != snapshot_id
                         or candidate.job_id != claim.job_id
