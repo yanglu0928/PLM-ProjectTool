@@ -6,6 +6,7 @@ imports plugin code, installs dependencies, or enables operations.
 from __future__ import annotations
 
 import hashlib
+import io
 import hmac
 import os
 import stat
@@ -180,8 +181,8 @@ class LocalPluginInstallationMaterializer:
                     or inspected.manifest.plugin_id != package.plugin_id_normalized
                     or inspected.manifest.version != package.plugin_version):
                 raise PluginInstallationMaterializationError()
-            with zipfile.ZipFile(__import__("io").BytesIO(body), "r") as archive:
-                files: dict[str, zipfile.ZipInfo] = {}
+            with zipfile.ZipFile(io.BytesIO(body), "r") as archive:
+                files: dict[str, tuple[zipfile.ZipInfo, bytes, int]] = {}
                 directories: set[str] = set()
                 for info in archive.infolist():
                     name = _canonical_archive_path(info.filename, directory=info.is_dir())
@@ -190,9 +191,24 @@ class LocalPluginInstallationMaterializer:
                     if info.is_dir():
                         directories.add(name)
                     else:
-                        files[name] = info
+                        files[name] = (info, b"", info.file_size)
                 if directories.intersection(files):
                     raise PluginInstallationMaterializationError()
+                for relative, (info, _digest, expected_size) in tuple(files.items()):
+                    digest = hashlib.sha256()
+                    size = 0
+                    with archive.open(info, "r") as stream:
+                        while True:
+                            chunk = stream.read(_CHUNK)
+                            if not chunk:
+                                break
+                            size += len(chunk)
+                            if size > expected_size:
+                                raise PluginInstallationMaterializationError()
+                            digest.update(chunk)
+                    if size != expected_size:
+                        raise PluginInstallationMaterializationError()
+                    files[relative] = (info, digest.digest(), expected_size)
             return body, inspected, (files, directories)
         except PluginInstallationMaterializationError:
             raise
@@ -205,12 +221,12 @@ class LocalPluginInstallationMaterializer:
             for relative in sorted(directories, key=lambda value: (value.count("/"), value)):
                 path = staging.joinpath(*relative.split("/"))
                 _directory(path, create=True)
-            with zipfile.ZipFile(__import__("io").BytesIO(archive_bytes), "r") as archive:
+            with zipfile.ZipFile(io.BytesIO(archive_bytes), "r") as archive:
                 by_name = {
                     _canonical_archive_path(info.filename, directory=info.is_dir()): info
                     for info in archive.infolist() if not info.is_dir()
                 }
-                for relative, info in files.items():
+                for relative, (info, expected_digest, expected_size) in files.items():
                     destination = staging.joinpath(*relative.split("/"))
                     _directory(destination.parent)
                     digest = hashlib.sha256()
@@ -221,22 +237,17 @@ class LocalPluginInstallationMaterializer:
                             if not chunk:
                                 break
                             written += len(chunk)
-                            if written > info.file_size:
+                            if written > expected_size:
                                 raise PluginInstallationMaterializationError()
                             digest.update(chunk)
                             sink.write(chunk)
                         sink.flush()
                         os.fsync(sink.fileno())
-                    if written != info.file_size:
+                    if written != expected_size or not hmac.compare_digest(digest.digest(), expected_digest):
                         raise PluginInstallationMaterializationError()
                     actual = destination.lstat()
                     if (not stat.S_ISREG(actual.st_mode) or _is_reparse(actual)
-                            or actual.st_nlink != 1
-                            or digest.digest() != hashlib.sha256(
-                                archive.open(by_name[relative], "r").read(info.file_size + 1)
-                            ).digest()):
-                        # The ZIP CRC/read path and subsequent exact-tree proof are
-                        # authoritative; the streaming digest also bounds each write.
+                            or actual.st_nlink != 1):
                         raise PluginInstallationMaterializationError()
         except PluginInstallationMaterializationError:
             raise
@@ -267,7 +278,7 @@ class LocalPluginInstallationMaterializer:
                             raise PluginInstallationMaterializationError()
             if actual_files != set(files) or actual_directories != expected_directories:
                 raise PluginInstallationMaterializationError()
-            for relative, zip_info in files.items():
+            for relative, (zip_info, expected_digest, expected_size) in files.items():
                 path = root.joinpath(*relative.split("/"))
                 digest = hashlib.sha256()
                 size = 0
@@ -277,17 +288,11 @@ class LocalPluginInstallationMaterializer:
                         if not chunk:
                             break
                         size += len(chunk)
-                        if size > zip_info.file_size:
+                        if size > expected_size:
                             raise PluginInstallationMaterializationError()
                         digest.update(chunk)
-                if size != zip_info.file_size:
-                    raise PluginInstallationMaterializationError()
-                # Compare to bytes streamed from the verified ZIP member, not only
-                # to attacker-controlled ZIP metadata or a saved expected hash.
-                raise_if_mismatch = False
-                with open(zip_info._materialized_archive_stream, "rb") if False else _nullcontext() as _:
-                    pass
-                if raise_if_mismatch:
+                if size != expected_size or not hmac.compare_digest(
+                        digest.digest(), expected_digest):
                     raise PluginInstallationMaterializationError()
         except PluginInstallationMaterializationError:
             raise
