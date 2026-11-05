@@ -2,7 +2,7 @@
 
 - 日期：2026-11-06
 - 阶段/WBS：Phase 2 Platform Core / OUT-01-A01-P35 → P36
-- 状态：P35编码前检查完成；P36待实现及GitHub hosted验收
+- 状态：P35 PASS_WITH_LIMITATION；P36编码前检查 PASS_WITH_LIMITATION，实施及GitHub hosted验收待完成
 - 来源：CR-EXEC-002优先形成Windows 11受控内部Pilot；P34B已证明内部生成文件发布，而用户侧无法从OutputRequest定位Artifact。
 - 基线：冻结 API Contract V1 的 OUTPUT_REQUEST_GET/LIST、OUT-02、Document/DocumentVersion/Storage合同，CR-OUT-028/031；P34B PASS_SCOPE_LIMITED。
 
