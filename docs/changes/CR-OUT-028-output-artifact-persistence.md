@@ -39,3 +39,9 @@ AVAILABLE额外守卫：物理CHECK要求Artifact进入AVAILABLE前，受控摘�
 
 - Hosted run [41979765906](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41979765906) 的后端全量/wheel、前端/build、父包组装均成功；父包PG smoke已进入P32 verifier。0232升级及新关系安装执行到既有合成Job保留查询；验证器以`uuid.UUID`绑定`job_jobs.trace_id`（数据库类型为TEXT），PG拒绝`text = uuid`比较。该夹具错误导致verifier在约束目录/负例与升降重验前停止，P32结论未定，不能视为通过或DDL失败。P25同run为独立失败。
 - 修复计划：仅将 verifier 的合成`trace_id`参数固定为字符串，使INSERT/保留查询与TEXT schema一致；不改变产品ORM、Migration或验收范围，随后重跑Hosted全链。
+
+
+## 第二轮 P32 hosted 偏差（2026-11-05，修复前登记）
+
+- run [41981257687](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41981257687) 后端全量/wheel、前端/build、父包组装成功；P32 verifier已通过0232升级、既有哨兵保留查询、关系约束/支持候选键/保护触发器存在性、Owner关闭、无效状态和缺失FK负例。单独执行`TRUNCATE out_artifacts`时，PostgreSQL先因子表`out_artifact_validation_results`的FK返回`FeatureNotSupported`，未调用根表TRUNCATE guard，导致verifier将预期保护误认成失败。不能据此判定P32失败或通过；其余升降重/历史验收未执行到。
+- 修复计划：将根、子表放入同一条不使用CASCADE的TRUNCATE负例，使数据库进入两个表的保护触发器后验证拒绝；保持独立子表TRUNCATE测试和产品DDL不变，随后重跑Hosted全链。P25仍为独立问题。

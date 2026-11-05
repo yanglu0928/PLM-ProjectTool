@@ -460,3 +460,7 @@
 
 ## Unreleased · 2026-11-05（P32首轮托管验收未关闭）
 - run [41979765906](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41979765906) 后端全量/wheel、前端/build、嵌入式组装通过；父包PG smoke在P32验证器查询既有合成Job哨兵时因TEXT trace_id错误绑定UUID而停止。该结果不能判定P32约束或Migration验收通过/失败。偏差和仅修验证器参数计划先记CR-OUT-028；等待后续云端全链复验。P25为独立失败，本机/C盘未运行代码。
+
+
+## Unreleased · 2026-11-05（P32第二轮验证器夹具偏差）
+- run [41981257687](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41981257687) 中P32 verifier通过Migration升级和关系/写守卫存在性后，单表TRUNCATE在PostgreSQL外键检查阶段拒绝，未触发自定义TRUNCATE保护断言。该负例夹具范围问题已先记CR-OUT-028；产品DDL未改，修正为根/子表同语句且不使用CASCADE后重跑。P32尚未关闭，P25独立失败。
