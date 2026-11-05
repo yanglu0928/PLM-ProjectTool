@@ -36,3 +36,5 @@ GitHub hosted Windows Server 2025 D: + 临时 PostgreSQL 18 + 纯合成数据。
 ## P36 Hosted前静态复核偏差（2026-11-06，修复前记录）
 
 新增PG18 verifier helper放置在连字符目录，但P33 smoke verifier用Python模块导入时采用了下划线路径，二者不匹配，预计会在验证器导入阶段失败。此偏差只影响测试接线，不改变产品逻辑或验收范围。修复：将helper移动至名称匹配的下划线目录并统一import，再运行新Hosted全链。
+
+修复已实施：helper改放到可导入的下划线目录，P33 verifier更新为同一路径的绝对包导入。等新的Hosted run确认，无产品逻辑改动。
