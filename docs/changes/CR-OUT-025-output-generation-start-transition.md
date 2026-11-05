@@ -15,6 +15,11 @@
 - 命令携带排队request与snapshot refs，须精确匹配Job payload、request绑定与当前claim；相同execution idempotent replay返回当前GENERATING结果，错token/错request拒绝。完成文件输出与最终SUCCEEDED状态不在本WBS。
 - 不得生成文件、启动插件、运行外部调用；不改正式服务账户/Vault、Publisher信任或安装包。
 
+## 云端验收偏差记录
+
+- 首轮hosted run 41948211782：后端4036项/wheel、前端/build、PG18/pgvector等相关前置成功；父包PG smoke在解析阶段失败，定位为工具脚本结果字典含字面量\\n，Python语法错误，尚未执行新P29 verifier。
+- 影响仅为验收未完成，不是产品路径失败。先修复smoke脚本拼接并再次执行完整hosted工作流；保留首轮失败记录。P25独立0xC0000135失败仍不归因P29。
+
 ## 风险/恢复/验证
 
 - 风险：UOW提交后实际Worker副作用仍可能因租约过期/撤销而不能开始；副作用边界必须再次proof/fencing，不能把GENERATING状态视为授权。
