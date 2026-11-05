@@ -55,3 +55,10 @@ Hosted run [41997886517](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [41999961492](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41999961492) 的P33 verifier编译、全量后端/wheel、前端/build、PG18 sidecar重建、嵌入式Python及Windows父包组装、A17候选投影、A35、A50和P24通过。父包PG18 smoke启动临时库并完成迁移，随后预期成功的Owner调用返回 `OUTPUT_COMPLETION_NOT_ELIGIBLE`，本轮尚未提交Artifact/验证记录/Output/Job/Audit写入；P33暂不能通过。原因尚未定位，不能先验归咎Owner或测试夹具。P25仍独立在initdb以3221225781/0xC0000135退出并保留无法判定停止状态的D盘临时PG数据，属于已知独立阻断。
 
 修复计划：只在一次性verifier数据库增加无客户数据的发布前置引用谓词检查，逐项确认PluginExecution、FileObject、Document、DocumentVersion符合Owner查询条件；输出不含敏感数据的布尔断言/缺失阶段，定位是fixture或Owner predicate。若夹具与既有持久化契约不一致，只修fixture并重跑；若现有Owner谓词与冻结模型不一致，才调整Owner并补单测。无条件清理不确定状态数据，当前runner已结束，不触及本机。修复后重跑完整hosted验证。
+
+
+## P33资格诊断输出未穿透包装器（修复前，2026-11-05）
+
+Hosted run [42002678699](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42002678699) 后端全量/wheel、前端/build、PG18 sidecar、嵌入式运行时、父包组装、A17/A35/A50/P24均通过；P33隔离PG18 verifier仍在预期成功Owner调用处返回 `OUTPUT_COMPLETION_NOT_ELIGIBLE`，事务失败关闭。此次新增资格谓词检查写到子进程stdout，但父包smoke包装器仅把子进程stderr尾段放入失败日志，故确切谓词结果未进入可见验收日志。没有Owner/数据库变更，P33仍未通过。P25仍独立因initdb退出3221225781/0xC0000135，未启动HTTP/Edge。
+
+修复计划：只将同一无敏感布尔资格诊断输出到stderr，使现有父包装器能保留原因；不改任何业务Owner/Repository、Schema或数据。再次hosted验收，根据谓词结果再判断只修夹具或Owner条件；保留Audit失败全回滚、错Document拒绝和成功事务三组断言。
