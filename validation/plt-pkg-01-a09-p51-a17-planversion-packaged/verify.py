@@ -822,6 +822,63 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
                     )
                 tx.commit()
 
+        bad_materialization_command = RecordPluginInstallationCommand(
+            plugin_installation_id=uuid.uuid4(),
+            plugin_package_id=registered_package_id,
+            actor_id=actor_id,
+            trace_id=uuid.uuid4(),
+        )
+        with tempfile.TemporaryDirectory(
+                prefix="plg-a03-negative-", dir=test_root) as negative_root:
+            negative_storage = LocalFileStorage(Path(negative_root))
+            negative_storage.store_plugin_package_archive(
+                package_id=registered_package_id,
+                archive_bytes=valid_archive,
+                expected_sha256=valid_digest,
+                expected_size=len(valid_archive),
+            )
+            negative_materializer = LocalPluginInstallationMaterializer(
+                storage=negative_storage,
+                inspector=installation_inspector,
+                runtime_snapshot_provider=lambda: {
+                    "schema_version": "1", "os": "windows-11",
+                    "architecture": "x86_64", "python_version": "3.13.15",
+                    "dependency_versions": {},
+                },
+            )
+            negative_materializer.materialize(
+                installable_package,
+                installation_id=bad_materialization_command.plugin_installation_id,
+            )
+            bad_file = (
+                Path(negative_root) / "plugins" / "installations"
+                / bad_materialization_command.plugin_installation_id.hex
+                / "plugin" / "main.py"
+            )
+            bad_file.write_bytes(b"tampered synthetic member")
+            negative_owner = PluginInstallationOwner(
+                unit_of_work=runtime.unit_of_work,
+                evidence=negative_materializer,
+                archive_evidence=archive_evidence,
+                repository=installation_repository,
+                audit=audit,
+            )
+            try:
+                negative_owner.record(bad_materialization_command)
+            except PluginInstallationOwnerError as exc:
+                if exc.code != "PLUGIN_INSTALLATION_EVIDENCE_UNAVAILABLE":
+                    raise
+            else:
+                raise AssertionError("A03 tampered host tree was accepted")
+            assert_no_installation_fact(
+                bad_materialization_command, label="tampered materialized member",
+            )
+        print(
+            "PLG_04_A03_TAMPERED_HOST_ZERO_FACTS_PG18_PASS: changed member rejected "
+            "after valid archive proof and left no Installation/validation/Audit",
+            flush=True,
+        )
+
         class CountingSyntheticHostEvidence:
             def __init__(self, *, available: bool) -> None:
                 self.available = available
