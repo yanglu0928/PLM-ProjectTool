@@ -167,12 +167,13 @@ class PluginInstallationMaterializerTests(unittest.TestCase):
             ("plugin/main.py", self.contents),
             ("../outside.txt", b"escape"),
         ])
+        self.package_id = uuid.uuid4()
         package = self._register_package(malicious)
         with self.assertRaises(PluginInstallationMaterializationError):
             self.materializer.materialize(
                 package, installation_id=uuid.uuid4(),
             )
-        self.assertFalse((self.root.parent / "outside.txt").exists())
+        self.assertFalse((self.root / "plugins" / "installations" / "outside.txt").exists())
 
 
 if __name__ == "__main__":
