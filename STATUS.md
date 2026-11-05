@@ -1,3 +1,4 @@
+|Execution Note|P33首轮 hosted run [41992151148](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41992151148)：前端/build、runner边界检查通过；新增成功Owner单测因Audit outcome枚举应为SUCCESS而传SUCCEEDED失败，整个UOW回滚。已先登记CR-OUT-029，仅修接线及测试期望后重跑。P33未关闭；P25维持独立BLOCKED_DIAGNOSTIC。|
 |Execution Note|OUT-01-A01-P32 按 CR-OUT-028 完成并以 PASS_SCOPE_LIMITED 关闭；hosted run [41988323089](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41988323089) 的 P32 PG18 verifier、父包PG smoke、后端/wheel、前端/build、A17、A34通过。父包SHA-256 ad37ffd0b7fc6b59968ecb2b10f2e8cddc9f3431c9851e70a0e03c221d1440e2，20,216 files。P25独立 initdb.exe 0xC0000135 失败、未启动真实HTTP/Edge，整体workflow非全绿。仅GitHub hosted D盘运行；无文件生成/插件执行/客户数据。见docs/progress/out-01-a01-p32-output-artifact-result.md。|
 |Current WBS|OUT-01-A01-P33：完成输出成功终结Owner编码前检查，核对Artifact AVAILABLE、OutputRequest/Job成功及Audit同事务边界；生产组合保持关闭。|
 |Current WBS Status|P32 PASS_SCOPE_LIMITED；P25 BLOCKED_DIAGNOSTIC（独立环境问题），Windows 11 Pilot/Gate 3/Release未通过。|

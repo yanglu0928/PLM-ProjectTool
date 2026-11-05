@@ -27,3 +27,10 @@
 ## 编码前检查结论
 
 PASS_WITH_LIMITATION：本地源码/基线通过GitHub branch只读核对；新增成功终结Owner可与冻结模型兼容且不需要Schema/API变更。P25 initdb失败不影响单独PG18 verifier。所有程序和测试继续仅在GitHub hosted runner的D:临时环境运行。
+
+
+## 首轮 P33 偏差登记（修复前，2026-11-05）
+
+Hosted run [41992151148](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41992151148) 的新增P33应用层测试发现审计契约接线错误：`AuditEventDraft.outcome`只允许`SUCCESS/DENIED/FAILED`，Owner传入了`SUCCEEDED`。失败在SYSTEM AuditDraft构造时发生，事务上下文回滚了Output、Artifact、Job、Lease及Audit，无持久化副作用；其余后端4,057项通过，新增P33用例1项失败，前端/build与runner路径检查通过。此次验证不代表P33通过。
+
+修复方案：状态字段继续使用业务终态`SUCCEEDED`；仅Audit outcome改为`SUCCESS`，并同步测试期望。不得改Audit枚举或公开API，不扩大范围。重跑全量Hosted workflow并确认回滚断言仍通过。

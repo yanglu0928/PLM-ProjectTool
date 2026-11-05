@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-05（P33首轮Hosted偏差）
+- OUT-01-A01-P33 首轮run [41992151148](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41992151148) 中新增成功Owner用例发现Audit outcome枚举接线错误（传SUCCEEDED，而冻结Audit契约要求SUCCESS）；整体变更被SYSTEM_UNAVAILABLE收敛并回滚。先记CR-OUT-029，再仅修Audit outcome及测试期望，重新全量托管验收。没有本机代码运行或持久化副作用。
+
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
 - OUT-01-A01-P32 按 CR-OUT-028 以 PASS_SCOPE_LIMITED 完成。Hosted run [41988323089](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41988323089)：P32 PostgreSQL 18专项、父包 PG smoke、后端/wheel、前端测试/typecheck/build、A17/A34成功。Migration 0232验证空库/既有合成数据升级、空库降级重升及历史保护；复合关系、AVAILABLE正反例、只追加/不可变和TRUNCATE保护通过。
