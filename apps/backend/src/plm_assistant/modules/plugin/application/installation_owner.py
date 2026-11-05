@@ -13,6 +13,7 @@ from typing import Callable, Protocol
 
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
 from plm_assistant.modules.platform.application.unit_of_work import UnitOfWork
+from plm_assistant.modules.plugin.application.package_registration import PluginPackageIdentity
 
 _OS = frozenset({"windows-11", "windows-server-2025", "debian-13"})
 _VERSION = re.compile(r"^[0-9]{1,3}(?:\.[0-9]{1,3}){1,3}$", re.ASCII)
@@ -42,6 +43,26 @@ class InstallablePluginPackage:
     plugin_id_normalized: str
     package_sha256: bytes = field(repr=False)
     manifest_snapshot: dict = field(repr=False)
+    plugin_version: str
+    signature: bytes = field(repr=False)
+    signer_key_ref: str = field(repr=False)
+    compatibility_policy_ref: str = field(repr=False)
+    package_state: str
+
+
+@dataclass(frozen=True, slots=True)
+class PluginPackageArchiveProof:
+    plugin_package_id: uuid.UUID
+    plugin_id_normalized: str
+    plugin_version: str
+    package_sha256: bytes = field(repr=False)
+    present_and_verified: bool
+
+
+class PluginPackageArchiveEvidencePort(Protocol):
+    def inspect_registered_package(
+        self, package: PluginPackageIdentity,
+    ) -> PluginPackageArchiveProof | None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,13 +118,17 @@ class PluginInstallationOwner:
     def __init__(
         self, *, unit_of_work: Callable[[], UnitOfWork],
         evidence: PluginInstalledPackageEvidencePort,
+        archive_evidence: PluginPackageArchiveEvidencePort,
         repository: PluginInstallationRepositoryPort,
         audit: AuditService,
     ) -> None:
-        if any(value is None for value in (unit_of_work, evidence, repository, audit)):
+        if any(value is None for value in (
+            unit_of_work, evidence, archive_evidence, repository, audit,
+        )):
             raise ValueError("Plugin installation owner dependencies are required")
         self._uow = unit_of_work
         self._evidence = evidence
+        self._archive_evidence = archive_evidence
         self._repository = repository
         self._audit = audit
 
@@ -139,6 +164,21 @@ class PluginInstallationOwner:
                 if type(package) is not InstallablePluginPackage:
                     raise PluginInstallationOwnerError("PLUGIN_PACKAGE_NOT_INSTALLABLE")
                 self._validate_package(package)
+                archive_identity = PluginPackageIdentity(
+                    plugin_package_id=package.plugin_package_id,
+                    plugin_id_normalized=package.plugin_id_normalized,
+                    plugin_version=package.plugin_version,
+                    package_sha256=package.package_sha256,
+                    signature=package.signature,
+                    signer_key_ref=package.signer_key_ref,
+                    compatibility_policy_ref=package.compatibility_policy_ref,
+                    manifest_snapshot=dict(package.manifest_snapshot),
+                    package_state=package.package_state,
+                )
+                archive_proof = self._archive_evidence.inspect_registered_package(
+                    archive_identity,
+                )
+                self._validate_archive_proof(package, archive_proof)
                 observed = self._evidence.inspect_installed_package(package)
                 if type(observed) is not PluginInstallationEvidence:
                     raise PluginInstallationOwnerError("PLUGIN_INSTALLATION_EVIDENCE_UNAVAILABLE")
@@ -204,8 +244,36 @@ class PluginInstallationOwner:
                 or type(package.package_sha256) is not bytes
                 or len(package.package_sha256) != 32
                 or type(package.manifest_snapshot) is not dict
-                or package.manifest_snapshot.get("schema_version") != "plm.plugin.manifest.v1"):
+                or package.manifest_snapshot.get("schema_version") != "plm.plugin.manifest.v1"
+                or type(package.plugin_version) is not str or not package.plugin_version
+                or type(package.signature) is not bytes or len(package.signature) != 64
+                or type(package.signer_key_ref) is not str or not package.signer_key_ref
+                or type(package.compatibility_policy_ref) is not str
+                or not package.compatibility_policy_ref
+                or package.package_state != "VERIFIED"):
             raise PluginInstallationOwnerError("PLUGIN_PACKAGE_NOT_INSTALLABLE")
+
+    @staticmethod
+    def _validate_archive_proof(
+        package: InstallablePluginPackage, proof: object,
+    ) -> None:
+        if proof is None:
+            raise PluginInstallationOwnerError(
+                "PLUGIN_PACKAGE_ARCHIVE_EVIDENCE_UNAVAILABLE"
+            )
+        if (type(proof) is not PluginPackageArchiveProof
+                or proof.plugin_package_id != package.plugin_package_id
+                or proof.plugin_id_normalized != package.plugin_id_normalized
+                or proof.plugin_version != package.plugin_version
+                or type(proof.package_sha256) is not bytes
+                or len(proof.package_sha256) != 32
+                or not __import__("hmac").compare_digest(
+                    proof.package_sha256, package.package_sha256,
+                )
+                or proof.present_and_verified is not True):
+            raise PluginInstallationOwnerError(
+                "PLUGIN_PACKAGE_ARCHIVE_EVIDENCE_INVALID"
+            )
 
     @staticmethod
     def _validate_evidence(

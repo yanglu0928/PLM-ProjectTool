@@ -9,18 +9,12 @@ from plm_assistant.modules.document.infrastructure.local_storage import LocalFil
 from plm_assistant.modules.plugin.application.package_archive_inspector import (
     InspectedPluginPackage, PluginPackageArchiveInspector,
 )
+from plm_assistant.modules.plugin.application.installation_owner import (
+    PluginPackageArchiveProof,
+)
 from plm_assistant.modules.plugin.application.package_registration import (
     PluginPackageIdentity, PluginPackageRegistrationService,
 )
-
-
-@dataclass(frozen=True, slots=True)
-class PluginPackageArchiveEvidence:
-    plugin_package_id: uuid.UUID
-    plugin_id_normalized: str
-    plugin_version: str
-    package_sha256: bytes = field(repr=False)
-    present_and_verified: bool
 
 
 class LocalPluginPackageArchiveEvidence:
@@ -33,7 +27,7 @@ class LocalPluginPackageArchiveEvidence:
 
     def inspect_registered_package(
         self, package: PluginPackageIdentity,
-    ) -> PluginPackageArchiveEvidence | None:
+    ) -> PluginPackageArchiveProof | None:
         if (type(package) is not PluginPackageIdentity
                 or package.package_state != "VERIFIED"
                 or type(package.plugin_package_id) is not uuid.UUID
@@ -60,7 +54,7 @@ class LocalPluginPackageArchiveEvidence:
                 return None
         except Exception:
             return None
-        return PluginPackageArchiveEvidence(
+        return PluginPackageArchiveProof(
             plugin_package_id=package.plugin_package_id,
             plugin_id_normalized=package.plugin_id_normalized,
             plugin_version=package.plugin_version,

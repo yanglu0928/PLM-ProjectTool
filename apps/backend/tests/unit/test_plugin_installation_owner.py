@@ -7,6 +7,7 @@ import uuid
 
 from plm_assistant.modules.plugin.application.installation_owner import (
     InstallablePluginPackage,
+    PluginPackageArchiveProof,
     PluginInstallationEvidence,
     PluginInstallationIdentity,
     PluginInstallationOwner,
@@ -22,6 +23,8 @@ class _Repository:
         self.package = InstallablePluginPackage(
             self.package_id, "synthetic.echo", hashlib.sha256(b"synthetic package").digest(),
             {"schema_version": "plm.plugin.manifest.v1"},
+            "1.0.0", b"s" * 64, "test-key:fixture",
+            "host.platforms.v1", "VERIFIED",
         )
         self.installations = {}
         self.validations = []
@@ -49,6 +52,20 @@ class _Repository:
 
     def append_runtime_validation(self, _tx, *, installation_id, actor_id, runtime_snapshot):
         self.validations.append((installation_id, actor_id, copy.deepcopy(runtime_snapshot)))
+
+
+class _ArchiveEvidence:
+    def __init__(self, repo):
+        self.repo = repo
+        self.response = PluginPackageArchiveProof(
+            repo.package_id, repo.package.plugin_id_normalized,
+            repo.package.plugin_version, repo.package.package_sha256, True,
+        )
+        self.calls = 0
+
+    def inspect_registered_package(self, _package):
+        self.calls += 1
+        return self.response
 
 
 class _Evidence:
@@ -102,6 +119,7 @@ class PluginInstallationOwnerTests(unittest.TestCase):
     def setUp(self):
         self.repo = _Repository()
         self.evidence = _Evidence(self.repo)
+        self.archive_evidence = _ArchiveEvidence(self.repo)
         self.audit = _Audit()
         self.owner = self._owner()
         self.command = RecordPluginInstallationCommand(
@@ -111,7 +129,8 @@ class PluginInstallationOwnerTests(unittest.TestCase):
     def _owner(self):
         return PluginInstallationOwner(
             unit_of_work=lambda: _Uow(self.repo, self.audit),
-            evidence=self.evidence, repository=self.repo, audit=self.audit,
+            evidence=self.evidence, archive_evidence=self.archive_evidence,
+            repository=self.repo, audit=self.audit,
         )
 
     def test_records_only_observed_exact_compatible_installation_atomically(self):
@@ -121,11 +140,14 @@ class PluginInstallationOwnerTests(unittest.TestCase):
         self.assertEqual(len(self.repo.validations), 1)
         self.assertEqual(len(self.audit.events), 1)
         self.assertTrue(self.repo.authorized)
+        self.assertEqual(self.archive_evidence.calls, 1)
+        self.assertEqual(self.evidence.calls, 1)
 
     def test_same_id_and_actor_replay_is_idempotent_without_second_audit(self):
         first = self.owner.record(self.command)
         second = self.owner.record(self.command)
         self.assertEqual(first, second)
+        self.assertEqual(self.archive_evidence.calls, 1)
         self.assertEqual(self.evidence.calls, 1)
         self.assertEqual(len(self.repo.validations), 1)
         self.assertEqual(len(self.audit.events), 1)
@@ -138,6 +160,34 @@ class PluginInstallationOwnerTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(PluginInstallationOwnerError, "PLUGIN_INSTALLATION_ID_CONFLICT"):
             self.owner.record(conflict)
+
+    def test_missing_archive_evidence_fails_before_host_probe_or_writes(self):
+        self.archive_evidence.response = None
+        with self.assertRaisesRegex(
+            PluginInstallationOwnerError,
+            "PLUGIN_PACKAGE_ARCHIVE_EVIDENCE_UNAVAILABLE",
+        ):
+            self.owner.record(self.command)
+        self.assertEqual(self.archive_evidence.calls, 1)
+        self.assertEqual(self.evidence.calls, 0)
+        self.assertEqual(self.repo.installations, {})
+        self.assertEqual(self.repo.validations, [])
+        self.assertEqual(self.audit.events, [])
+
+    def test_mismatched_archive_evidence_fails_before_host_probe_or_writes(self):
+        proof = self.archive_evidence.response
+        self.archive_evidence.response = PluginPackageArchiveProof(
+            proof.plugin_package_id, proof.plugin_id_normalized,
+            proof.plugin_version, b"x" * 32, True,
+        )
+        with self.assertRaisesRegex(
+            PluginInstallationOwnerError,
+            "PLUGIN_PACKAGE_ARCHIVE_EVIDENCE_INVALID",
+        ):
+            self.owner.record(self.command)
+        self.assertEqual(self.evidence.calls, 0)
+        self.assertEqual(self.repo.installations, {})
+        self.assertEqual(self.audit.events, [])
 
     def test_missing_or_mismatched_package_evidence_fails_closed(self):
         self.evidence.response = PluginInstallationEvidence(

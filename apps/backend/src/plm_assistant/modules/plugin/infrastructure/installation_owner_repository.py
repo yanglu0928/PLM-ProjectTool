@@ -61,6 +61,11 @@ class SqlAlchemyPluginInstallationRepository:
             plugin_id_normalized=row.plugin_id_normalized,
             package_sha256=bytes(row.package_sha256),
             manifest_snapshot=dict(row.manifest_snapshot),
+            plugin_version=row.plugin_version,
+            signature=bytes(row.signature),
+            signer_key_ref=row.signer_key_ref,
+            compatibility_policy_ref=row.compatibility_policy_ref,
+            package_state=row.package_state,
         )
 
     def authorize_owner_inserts(self, transaction: object) -> None:
