@@ -30,6 +30,6 @@
 
 Hosted Windows runner D盘临时根 + 隔离PG18；真实文件系统纯合成内容。覆盖STAGE_ONLY正常提交/无覆盖/hash读回、FINAL_VERIFIED、LINKED_PAIR、安全恢复、NONE/不相关/unsafe拒绝、错误Project/Request/Execution/Document/File/fence、DB/Audit失败后final-only/AVAILABLE重试、精确重放和P33成功终结；backend全量/wheel与父包/A17/A34/A35。只有专项和全链断言通过后P34B才PASS_SCOPE_LIMITED。
 
-## 后续
+## 实施记录（2026-11-05）
 
-此检查未运行任何项目代码，也未证明上述实现已存在。下一步按CR-OUT-030/031编码，并以GitHub hosted验收。
+按本检查与CR-OUT-030/031新增隔离的Output SYSTEM发布协调Owner/Repository，并扩展父包PG18 verifier使用GitHub hosted Windows D盘临时文件系统。未接API、Worker、插件或default composition。代码已准备提交，Hosted验收尚未完成；此文档不代表P34B通过。
