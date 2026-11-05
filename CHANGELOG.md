@@ -1,3 +1,11 @@
+## Unreleased · 2026-11-06（PLG-04-A03：受控本地安装物化，非发行版本）
+
+- 变更：增加未装配的内部Plugin安装物化器；由受信内部调用传入Verified Package和Installation UUID，对签名ZIP重新验证并在服务data_root生成精确UUID安装目录，逐文件Hash核验、同卷no-replace提升和精确重放；Host proof绑定Installation UUID。无Schema/Migration/API/default composition/Worker/插件执行变更。
+- 兼容性：新增内部Host evidence UUID字段且缺省可空，以保持现有Runtime Revalidation Port兼容；Installation Owner记录新安装时必须要求精确UUID匹配。现有业务API与数据库合同不变。
+- 升级：无需DB migration；新目录位于 `plugins/installations/<installation UUID>`。PG/文件系统失败后保留目录供精确重放，不自动覆盖/清理未知目录或staging。
+- 已知问题：正式publisher信任、服务账户data_root ACL、Win11实机与默认装配未验证；无插件执行。Pilot/Gate 3/Release未通过。独立P25仍因hosted initdb.exe 0xC0000135失败。
+- 验证：hosted run [42110700182](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42110700182)，后端4,078项/wheel、前端/build、PG18/pgvector、A17/A34/A35/P24/A50通过；A17 summary含安装物化正向marker和篡改目录零事实marker。P25失败，整体workflow非全绿。结论PASS_SCOPE_LIMITED；用户本机/C盘未运行。详见 `docs/progress/plg-04-a03-host-installation-materialization-result.md`。
+
 ## Unreleased · 2026-11-06（PLG-04-A02：Installation Owner归档证据复验，非发行版本）
 
 - 变更：Installation Owner先通过只读归档证据Port重新核验不可变已登记包身份/版本/哈希/签名/Manifest快照，再要求独立Host安装/兼容证据；失败关闭时不写Installation、RuntimeValidation或Audit。
