@@ -1337,9 +1337,13 @@ def packaged_planversion_probe(**context) -> None:
           f"WBS/requirement/validation={counts}; Review/Round={review[0]}/{round_state[0]}; decisions=0",
           flush=True)
     _plugin_package_import_pg_smoke(context, actor_id=actor)
+    _a02_pg_smoke_completed.append(True)
 
 
 a05["prototype_probe"].__globals__["prototype_probe"] = packaged_planversion_probe
+
+
+_a02_pg_smoke_completed: list[bool] = []
 
 
 if __name__ == "__main__":
@@ -1355,4 +1359,14 @@ if __name__ == "__main__":
     os.environ["PLM_TEST_TEMP_ROOT"] = str(test_temp)
     import tempfile
     tempfile.tempdir = None
-    sys.exit(a05["main"]())
+    exit_code = a05["main"]()
+    if exit_code != 0:
+        sys.exit(exit_code)
+    if _a02_pg_smoke_completed != [True]:
+        raise AssertionError("A02 PostgreSQL installation evidence smoke did not complete")
+    print(
+        "PLG_04_A02_PG18_PASS: exact archive + Host evidence recorded; damaged archive, "
+        "signature mismatch, and missing Host evidence failed closed with zero facts",
+        flush=True,
+    )
+    sys.exit(0)
