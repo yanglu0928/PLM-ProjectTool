@@ -25,9 +25,9 @@ class _Storage:
         self.calls.append(locator)
         return FileContentProof(locator, kwargs["expected_sha256"], kwargs["expected_size"])
 
-    def publish_verified(self, locator, *args, **kwargs):
+    def publish_verified(self, staging, final, *args, **kwargs):
         self.calls.append("publish_verified")
-        return self._proof(locator, **kwargs)
+        return self._proof(final, **kwargs)
 
     def recover_verified_final(self, staging, final, *args, **kwargs):
         self.calls.append("recover_verified_final")
