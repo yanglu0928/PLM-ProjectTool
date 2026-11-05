@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-05（内部云端开发，非发行版本）
+- OUT-01-A01-P32编码前检查通过受限评估：冻结模型已定义 OUT-02 OutputArtifact 与 validation results，但生产ORM/Migration尚缺。按 CR-OUT-028 先实现关系持久化基础；不提前声称成功发布，不新增API、文件/插件执行或写入口。后续依赖 Artifact 一致性发布Owner。P25 initdb阻塞独立保留。
+- 所有代码及数据库验证只在GitHub hosted runner的D盘临时目录执行，不使用用户本机/C盘。
+
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 - OUT-01-A01-P31 按 CR-OUT-027 以 PASS_SCOPE_LIMITED 完成；hosted run [41963052416](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41963052416) 的父包 PostgreSQL 18.6 smoke 验证固定30秒暂态错误回队、attempt耗尽后 Job/Output 原子失败、错worker/旧token/非白名单拒绝及 Audit 故障双Owner回滚。后端全量测试/wheel、前端/build、PG18 sidecar、父包组装、A17、A34通过。父包SHA-256 `61593a1aab3529b09c15baa0231d6723eb1cad337a709db272b6148db2c87e1b`，20,214个payload文件。
 - 同run独立P25 job仍在 `initdb.exe` 数据目录创建前以 Windows `0xC0000135` 失败，真实HTTP/Edge未启动；整体workflow不全绿，P25保持BLOCKED_DIAGNOSTIC。结果见 `docs/progress/out-01-a01-p31-output-retry-result.md`。

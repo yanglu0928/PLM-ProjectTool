@@ -1,3 +1,7 @@
+|Execution Note|OUT-01-A01-P31按CR-OUT-027以PASS_SCOPE_LIMITED完成：hosted run 41963052416 父包PG18 smoke证明30秒暂态错误原子回队、attempt耗尽原子FAILED、错worker/旧token/非白名单拒绝及Audit失败双Owner回滚；后端/wheel、前端/build、父包、A17/A34通过。P25独立initdb 0xC0000135失败，未进入HTTP/Edge。见docs/progress/out-01-a01-p31-output-retry-result.md。仅GitHub runner D盘。|
+|Current WBS|OUT-01-A01-P32：按CR-OUT-028补齐冻结OUT-02 OutputArtifact及validation results的ORM/Migration基础；不接发布Owner/API/插件/文件。|
+|Current WBS Status|P31 PASS_SCOPE_LIMITED。父包临时PG18及A17/A34通过；整体run因P25失败未全绿，P25仍BLOCKED_DIAGNOSTIC。|
+|Next WBS|OUT-01-A01-P32：实现已冻结的Artifact持久化DDL和独立托管PG验收；随后另行评估安全发布Owner。|
 |Execution Note|OUT-01-A01-P31按CR-OUT-027以PASS_SCOPE_LIMITED完成：GitHub hosted run 41963052416 父包PG18 smoke验证暂态失败固定30秒原子回队、attempt耗尽Job/Output原子FAILED、错worker/旧token/非白名单拒绝及Audit故障双Owner回滚。后端全量/wheel、前端/build、父包、A17/A34成功；P25独立initdb 0xC0000135失败，真实HTTP/Edge未启动，整体workflow非全绿。详情见docs/progress/out-01-a01-p31-output-retry-result.md。仅hosted runner D盘运行，未使用本机/C盘。|
 |Current WBS|OUT-01-A01-P32编码前检查：评估Output成功收敛是否具备冻结Artifact/发布事实与Jobs finish Owner所需的安全边界；P25维持BLOCKED_DIAGNOSTIC。|
 |Current WBS Status|OUT-01-A01-P31 PASS_SCOPE_LIMITED；同run父包PG18专项通过，P25为独立失败，不把workflow或Pilot/Gate/Release标为通过。|
