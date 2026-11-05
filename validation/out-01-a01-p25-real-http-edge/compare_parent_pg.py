@@ -6,6 +6,7 @@ import json
 import os
 import re
 import subprocess
+import shutil
 import tempfile
 import zipfile
 from pathlib import Path
@@ -39,6 +40,28 @@ def safe_output(value: str, runner_temp: Path) -> str:
     value = value.replace(str(runner_temp), "<runner-temp>")
     value = re.sub(r"[\x00-\x1f]+", " ", value)
     return value[-900:]
+
+
+def postgres_environment() -> dict[str, str]:
+    env = os.environ.copy()
+    node_executable = shutil.which("node.exe")
+    if not node_executable:
+        return env
+    node_directory = Path(node_executable).resolve().parent
+    retained: list[str] = []
+    for raw in env.get("PATH", "").split(os.pathsep):
+        entry = raw.strip().strip('"')
+        if not entry:
+            retained.append(raw)
+            continue
+        try:
+            matches_node = Path(entry).resolve() == node_directory
+        except OSError:
+            matches_node = False
+        if not matches_node:
+            retained.append(raw)
+    env["PATH"] = os.pathsep.join(retained)
+    return env
 
 
 def main() -> int:
@@ -109,7 +132,7 @@ def main() -> int:
     result = subprocess.run(
         [str(initdb), f"--pgdata={data / 'data'}", "--username=poc_admin",
          "--auth=trust", "--encoding=UTF8", "--locale=C"],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
+        env=postgres_environment(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
         errors="replace", timeout=180, check=False)
     report = {
         "status": "DIFFERENTIAL_DIAGNOSTIC",
