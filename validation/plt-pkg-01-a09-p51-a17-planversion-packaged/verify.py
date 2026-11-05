@@ -983,14 +983,32 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             item for item in files
             if "plugins" in item.parts and "packages" in item.parts
         ]
-        original_storage_files = [
-            item for item in files if item not in plugin_archives
+        plugin_installations = [
+            item for item in files
+            if "plugins" in item.parts and "installations" in item.parts
         ]
+        original_storage_files = [
+            item for item in files
+            if item not in plugin_archives and item not in plugin_installations
+        ]
+        expected_install_files = {
+            "manifest.json", "plugin/main.py", "plugin/data/info.txt",
+        }
+        install_root = (
+            Path(storage_root) / "plugins" / "installations"
+            / installation_command.plugin_installation_id.hex
+        )
+        observed_install_files = {
+            item.relative_to(install_root).as_posix()
+            for item in plugin_installations if install_root in item.parents
+        }
         if (len(original_storage_files) != 3
                 or len(plugin_archives) != 1
-                or plugin_archives[0].read_bytes() != valid_archive):
+                or plugin_archives[0].read_bytes() != valid_archive
+                or observed_install_files != expected_install_files
+                or len(plugin_installations) != len(expected_install_files)):
             raise AssertionError(
-                "A08 worker smoke did not preserve uploads and exact private package bytes"
+                "A08/A03 smoke did not preserve source storage and exact installed package members"
             )
     runtime.dispose()
     print("PLG_01_A08_PACKAGE_IMPORT_PG18_PASS: atomic upload; scoped claim; terminal signature rejection; "
