@@ -54,3 +54,5 @@ PASS_WITH_LIMITATION。Package ORM已包含package_version、hash、Manifest sna
 
 - 2026-11-06 hosted run [42086074649](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42086074649)：A17/PG18正反例探针和clean PG smoke通过，且A34成功；但在入口的直接marker仍被A05 runner的结果采集边界吸收，最终marker列表未显式包含A02专项结果。源码执行到A17 PASS_LIMITED且无异常，但按预定可审计性要求不关闭A02。
 - 进一步修正记录（编码前）：A02成功后置位内存状态；在A05 `runner.smoke()` 返回的结构化结果 `markers` 列表中追加固定A02 PASS标记，并要求该标记确实注入后才允许验证器返回0。保持已有真实Owner/Repository/归档适配器和失败关闭断言不变，仅提升验收记录可见性。
+
+- 2026-11-06 hosted run [42086074649](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42086074649) 的外层 A17 marker 列表仍未接收直接 stdout 摘要；复核 A05 入口确认其最终 artifact 只序列化 `runner.smoke()` 的结构化返回值。本次调整前记录：不再依赖嵌套回调 stdout；包装该次 A05 runner 返回结果，在且仅在 A02 PG18 探针已完整结束后，将专项 PASS marker 加入 `result["markers"]`，并检查注入标志与探针完成标志均为真，否则失败。仅验证器结果采集变更，不触碰产品判断、数据或用户本机。
