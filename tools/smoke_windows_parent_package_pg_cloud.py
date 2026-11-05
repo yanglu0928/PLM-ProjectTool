@@ -1005,6 +1005,15 @@ def main() -> int:
             output_admission_run.stdout.strip().splitlines()[-1])
         if output_job_admission_validation.get("status") != "PASS_SCOPE_LIMITED":
             raise RuntimeError("Output Job admission validation failed")
+        output_lease_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p28-output-lease-proof/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_job_lease_validation = json.loads(
+            output_lease_run.stdout.strip().splitlines()[-1])
+        if output_job_lease_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output Job lease proof validation failed")
         if version != "18.6" or vector_version != "0.8.6":
             raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
                              + version + "/" + vector_version)
@@ -1021,6 +1030,7 @@ def main() -> int:
             "output_list_http_validation": list_http_validation,
             "output_job_claim_validation": output_job_claim_validation,
             "output_job_admission_validation": output_job_admission_validation,
+            "output_job_lease_validation": output_job_lease_validation,
             "plugin_package_schema_validation": plugin_validation,
             "plugin_package_registration_validation": registration_validation,
             "plugin_operation_disable_validation": plugin_disable_validation,
