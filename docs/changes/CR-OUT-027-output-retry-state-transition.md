@@ -25,3 +25,9 @@ worker只能提交白名单代码；不可自选retry flag或delay，不持久�
 - 回滚：移除新Owner/repository/tests/verifier/smoke hook；无数据迁移。
 - 验收：PG18真实lease验证第一次失败转RETRY_WAIT+QUEUED、固定30秒、ref清除、attempt/Audit原子；attempt耗尽转Job/Output FAILED；错worker/stale token/非白名单拒绝；Audit异常回滚。后端全量/wheel、父包PG smoke和hosted全链。
 - 所有执行只用GitHub hosted Windows D盘runner，不用用户本机/C盘；无客户资料、外部API、插件执行或文件生成。P25仍独立BLOCKED_DIAGNOSTIC，不与P31结果混淆。
+
+
+## 首轮 hosted 验收偏差（2026-11-05，修正前登记）
+
+- Run [41961855190](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41961855190) 后端4047 tests/wheel与前端/build通过；父包PG smoke启动PostgreSQL成功并已完成P26-P30 verifier，P31 verifier在导入阶段失败：脚本误引用不存在的旧P30 Repository 模块路径。未执行P31业务断言、未留下验证数据库变更；独立P25仍initdb失败。
+- 修复计划：删除P31 verifier未使用的P30失败Owner/Repository导入，仅保留P31真实重试Owner与仓储；经hosted PG smoke完整验证回队/耗尽/rollback后才关闭P31。
