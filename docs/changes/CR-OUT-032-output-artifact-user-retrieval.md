@@ -53,3 +53,5 @@ Hosted Backend运行4,087项测试，其中2项P36新增测试失败：
 ## 第二轮 P36 Hosted 测试夹具偏差（run 42119917628，修复前记录）
 
 Backend 4,087项中仅 test_factory_wires_request_and_artifact_routes 失败。测试在 FastAPI include_router 后直接遍历 app.routes，当前FastAPI版本仍以延迟组合对象保存路由，因此path字段为None；其余Application、SQL projection、HTTP及前端检查通过。后端失败使wheel及依赖它的父包/PG18 verifier步骤跳过，故真实Repository PG18查询尚未执行。修复：对最终 app.openapi()['paths']断言两个路由。产品代码不改，完成后再次全Hosted验证。
+
+第二轮测试夹具已修正：Windows composition测试现在检查最终FastAPI OpenAPI paths字典，兼容当前版本的延迟router包装。没有变更产品路由或接线。
