@@ -415,7 +415,7 @@ def main() -> int:
             raise AssertionError("exact P34B/P33 success replay changed persisted state")
         altered_publication = OutputArtifactPublication(
             uuid.uuid4(), data["execution"], data["document"], data["version"], data["file"],
-            data["content_hash"], 17, MIME, publication.validations,
+            data["content_hash"], data["size"], MIME, publication.validations,
         )
         try:
             owner.complete(claim, worker_ref="p33-verifier-worker",
