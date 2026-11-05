@@ -290,7 +290,7 @@ def main() -> int:
             retained_job = conn.execute(text(
                 "SELECT count(*) FROM plm.job_jobs WHERE job_id=:job"
             ), {"job":job_id}).scalar_one()
-        if retained_head != "20261105_0232" or tuple(counts)!=(1,1) or retained_job!=1:
+        if retained_head != "20261105_0232" or tuple(counts)!=(1,4) or retained_job!=1:
             raise AssertionError("history refusal changed rows or migration head")
 
         print(json.dumps({
@@ -301,6 +301,7 @@ def main() -> int:
             "empty_database_downgrade_reupgrade":"PASS",
             "history_downgrade_refusal":"PASS",
             "validation_child_append_only":"PASS",
+            "synthetic_validation_result_count":4,
             "artifact_content_immutable":"PASS",
             "owner_write_closed":True,
             "truncate_rejected":True,
