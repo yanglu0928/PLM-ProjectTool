@@ -1,4 +1,5 @@
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
+- OUT-01-A01-P30 按 CR-OUT-026 以 PASS_SCOPE_LIMITED 完成；hosted run [41959590610](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41959590610) 在同一 PG18 transaction 中终结 Job/Output 为 FAILED、释放当前 lease 并写SYSTEM Audit。错worker、旧token、非白名单错误被拒绝，Audit故障双Owner回滚；后端4042 tests/wheel、前端/build、父包PG smoke、A17/A34/A35/A50成功。P25仍独立因initdb 0xC0000135阻塞。无Schema/API/Worker/Plugin/文件生成，且未在本机/C盘运行。结果见 docs/progress/out-01-a01-p30-output-failure-result.md。
 
 - OUT-01-A01-P29 按 CR-OUT-025 新增内部Output生成启动Owner：同事务验证当前Output lease，并将精确绑定的QUEUED请求转为GENERATING、设置execution ref/lock_version及SYSTEM Audit；同执行重放幂等。并发锁顺序已按CR记录统一为Output→Jobs。
 - 新增Owner单测与隔离PostgreSQL hosted verifier；不新增Schema/Migration/API/default挂载，不运行Worker/插件、不生成文件。变更限GitHub hosted Windows 2025 D盘runner，未在用户本机或C盘运行。
