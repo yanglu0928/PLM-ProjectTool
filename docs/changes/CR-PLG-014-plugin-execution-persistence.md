@@ -34,3 +34,9 @@ EnabledOperation是当前启用投影，Disable流程会删除该行并保留不
 
 - run [41968008173](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41968008173) 的后端全量测试运行 4,052 项，恰有2处旧基线断言未跟随本次Schema扩展：Migration head仍期待 `20261104_0230`；metadata历史表豁免清单未包括新增的3张PLG-03表。没有PLG-03业务断言、Migration执行或PG smoke结果，故不能据此判定DDL通过/失败。
 - 修复计划：将Migration head断言更新为 `20261105_0231`，并把3张冻结PLG-03新增表加入metadata schema inventory；不改业务代码、DDL、迁移约束或Scope；随后重跑托管全量。
+
+
+## 第二轮 hosted PG验收偏差（2026-11-05，修复前登记）
+
+- run [41968716925](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41968716925) 的后端全量、前端、wheel及sidecar通过；父包PG smoke在既有 `OUT-01-A01-P01` 迁移Verifier的空库升至head检查处停止，Verifier仍硬编码期待 `20261104_0230`。因此PLG-03独立schema verifier尚未运行，不能据此判断本次Migration的PG行为。P25仍是独立initdb阻断。
+- 修复计划：仅将旧P01 migration verifier的当前head预期更新为 `20261105_0231`，保留原有的up/down/upgrade业务断言，然后重新运行完整Hosted链。不得删减P01验收项或把新head误报为P01的业务变化。
