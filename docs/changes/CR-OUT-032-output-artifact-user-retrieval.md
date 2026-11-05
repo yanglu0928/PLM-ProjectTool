@@ -32,3 +32,7 @@ OutputRequest固定读投影仅返回状态及请求/Job/Execution等引用；�
 ## 验证计划
 
 GitHub hosted Windows Server 2025 D: + 临时 PostgreSQL 18 + 纯合成数据。增加Application/Repository/HTTP权限/异常测试、PG18真实projection断言；前端严格解析、SUCCEEDED下载按钮、其他状态无入口和下载触发测试；后端全量/wheel、前端全量/build。随后运行可独立成功的父包/A17/A34/A35/A50。P25 initdb诊断继续暂停，不能阻止本项，也不能将整体workflow称为全绿。
+
+## P36 Hosted前静态复核偏差（2026-11-06，修复前记录）
+
+新增PG18 verifier helper放置在连字符目录，但P33 smoke verifier用Python模块导入时采用了下划线路径，二者不匹配，预计会在验证器导入阶段失败。此偏差只影响测试接线，不改变产品逻辑或验收范围。修复：将helper移动至名称匹配的下划线目录并统一import，再运行新Hosted全链。
