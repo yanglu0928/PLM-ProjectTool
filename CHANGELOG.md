@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P37第三轮Hosted解析偏差，非发行版本）
+
+- run [42126285195](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42126285195) 的前端测试仍因新用例 `artifactReader` 的换行类型断言解析失败；列表Client断言已修正，但该遗漏使新增suite仍0 tests、其余2,092项通过。已先补记CR-OUT-032，随后统一修正同类fixture语法并重新Hosted验收；P37未通过。
+
 ## Unreleased · 2026-11-06（P37第二轮Hosted解析偏差，非发行版本）
 
 - run [42125753500](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42125753500) 前端suite仍因对象字面量 `as` 类型断言语法失败，204个suite中的其余204通过、2,092项用例通过；typecheck/build未执行。已按CR-OUT-032先记录，改为显式变量类型标注后重新Hosted验收；P37未通过。
