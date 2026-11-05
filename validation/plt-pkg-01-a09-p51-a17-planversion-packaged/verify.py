@@ -382,7 +382,8 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
         PluginPackageImportSpool,
     )
     from plm_assistant.modules.plugin.infrastructure.orm import (
-        PluginPackageImportStagingRow,
+        PluginInstallationRow, PluginPackageImportStagingRow,
+        PluginRuntimeValidationRow,
     )
     from plm_assistant.modules.plugin.infrastructure.package_import_job_queue_repository import (
         SqlAlchemyPluginPackageImportQueueRepository,
@@ -406,6 +407,16 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
     )
     from plm_assistant.modules.plugin.application.package_registration import (
         PluginPackageRegistrationService,
+    )
+    from plm_assistant.modules.plugin.application.installation_owner import (
+        PluginInstallationEvidence, PluginInstallationOwner,
+        RecordPluginInstallationCommand,
+    )
+    from plm_assistant.modules.plugin.infrastructure.installation_owner_repository import (
+        SqlAlchemyPluginInstallationRepository,
+    )
+    from plm_assistant.modules.plugin.infrastructure.package_archive_evidence import (
+        LocalPluginPackageArchiveEvidence,
     )
     from plm_assistant.modules.plugin.application.signature_verifier import (
         PluginPackageSignatureVerifier, TrustedPluginSigner,
@@ -697,7 +708,81 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             if (job_row.state != "SUCCEEDED" or package_row.package_state != "VERIFIED"
                     or package_row.package_sha256 != valid_digest or registered_audits != 1):
                 raise AssertionError("A08 worker Job/package/Audit facts diverged")
+            registered_package_id = package_row.plugin_package_id
             tx.commit()
+
+        class SyntheticInstalledHostEvidence:
+            def inspect_installed_package(self, package):
+                return PluginInstallationEvidence(
+                    plugin_package_id=package.plugin_package_id,
+                    installed_package_sha256=package.package_sha256,
+                    installation_present=True,
+                    compatible=True,
+                    runtime_snapshot={
+                        "schema_version": "1",
+                        "os": "windows-11",
+                        "architecture": "x86_64",
+                        "python_version": "3.13.15",
+                        "dependency_versions": {},
+                    },
+                )
+
+        archive_evidence = LocalPluginPackageArchiveEvidence(
+            storage=storage,
+            inspector=PluginPackageArchiveInspector(
+                PluginManifestParser(),
+                PluginPackageSignatureVerifier(SyntheticSignerResolver()),
+            ),
+        )
+        installation_owner = PluginInstallationOwner(
+            unit_of_work=runtime.unit_of_work,
+            evidence=SyntheticInstalledHostEvidence(),
+            archive_evidence=archive_evidence,
+            repository=SqlAlchemyPluginInstallationRepository(),
+            audit=audit,
+        )
+        installation_command = RecordPluginInstallationCommand(
+            plugin_installation_id=uuid.uuid4(),
+            plugin_package_id=registered_package_id,
+            actor_id=actor_id,
+            trace_id=uuid.uuid4(),
+        )
+        installation = installation_owner.record(installation_command)
+        if (installation.installation_state != "INSTALLED"
+                or installation.plugin_package_id != registered_package_id):
+            raise AssertionError("A02 owner did not record the exact verified package")
+        with runtime.unit_of_work() as tx:
+            installation_row = tx.session.execute(
+                select(PluginInstallationRow).where(
+                    PluginInstallationRow.plugin_installation_id
+                    == installation.plugin_installation_id,
+                )
+            ).scalar_one()
+            validation_count = tx.session.execute(
+                select(func.count()).select_from(PluginRuntimeValidationRow).where(
+                    PluginRuntimeValidationRow.plugin_installation_id
+                    == installation.plugin_installation_id,
+                )
+            ).scalar_one()
+            installation_audits = tx.session.execute(
+                select(func.count()).select_from(AuditEventRow).where(
+                    AuditEventRow.action == "PLUGIN_INSTALLATION_RECORD",
+                    AuditEventRow.target_object_id
+                    == installation.plugin_installation_id,
+                )
+            ).scalar_one()
+            if (installation_row.installation_state != "INSTALLED"
+                    or installation_row.plugin_package_id != registered_package_id
+                    or validation_count != 1 or installation_audits != 1):
+                raise AssertionError(
+                    "A02 PostgreSQL installation/runtime-validation/Audit facts diverged"
+                )
+            tx.commit()
+        print(
+            "PLG_04_A02_INSTALLATION_OWNER_PG18_PASS: exact signed archive verified; "
+            "synthetic host evidence; installation/runtime validation/Audit persisted",
+            flush=True,
+        )
 
         # Exercise a bounded retry on a transient staging read failure, then
         # restore the exact synthetic file and allow the fenced generation to finish.
