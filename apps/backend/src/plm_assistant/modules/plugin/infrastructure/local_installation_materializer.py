@@ -299,7 +299,9 @@ class LocalPluginInstallationMaterializer:
                         elif stat.S_ISREG(info.st_mode) and info.st_nlink == 1:
                             actual_files.add(relative)
                         else:
-                            raise PluginInstallationMaterializationError()
+                            raise PluginInstallationMaterializationError(
+                                f"PLUGIN_INSTALLATION_TREE_ENTRY_INVALID_{info.st_mode}_{info.st_nlink}_{getattr(info, 'st_file_attributes', 0)}"
+                            )
             if actual_files != set(files) or actual_directories != expected_directories:
                 raise PluginInstallationMaterializationError()
             for relative, (zip_info, expected_digest, expected_size) in files.items():
