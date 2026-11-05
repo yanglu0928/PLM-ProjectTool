@@ -64,3 +64,7 @@ P36按范围PASS_SCOPE_LIMITED，最终证据及限制见docs/progress/out-01-a0
 ## P37 前端实现候选（2026-11-06）
 
 已新增输出Artifact引用同源Client、SUCCEEDED状态下载入口及加载/安全错误提示；在导航前验证固定项目、请求、文档版本及内容route。仅改前端，无后端/API/Schema变化。正式Platform trust仍未建立；用户侧真实下载未验证。
+
+## P37 首轮 Hosted 前端解析偏差（run 42124943609，修复前记录）
+
+GitHub hosted 前端全量测试中，`OutputRequestListView.spec.ts:99` 无法转换：对象字面量后换行再写 `as unknown as OutputRequestListClient`，转换器报告“Expected a semicolon…”。全量统计为 2,092 tests passed、1 个 suite failed；该suite未执行，typecheck/build因测试失败跳过。此为新测试夹具的类型断言换行语法错误，不是产品运行断言失败；P37不能通过。修复方案限于将对象断言包入括号或合并为合法表达式，不改产品逻辑、API或验收范围；之后完整Hosted重跑。
