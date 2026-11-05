@@ -522,3 +522,6 @@
 - P34源码审计发现普通上传版本Owner明确拒绝GENERATED_ARTIFACT，P33又要求AVAILABLE DocumentVersion既存；按CR-OUT-031拆分P34A系统生成版本Owner与P34B本地Storage发布协调。仅记录源码证据，尚无代码验收，不视为PASS。后续项目代码仅使用GitHub hosted D盘/云端沙箱，用户本机与C盘不运行。
 
 - OUT-01-A01-P34A编码前检查按CR-OUT-031为PASS_WITH_LIMITATION：Migration 0022来源引用与DocumentVersion触发器支持无Schema调整实现OUTPUT_GENERATION来源；实现/PG18验收待完成。
+## Unreleased · 2026-11-05（P34A Owner候选）
+- 新增内部SYSTEM-owned Generated Artifact DocumentVersion Owner及SQLAlchemy Repository：按OutputRequest→Job Claim→Execution→FileObject→Document顺序验证；以最终已AVAILABLE FileObject创建不可变DocumentVersion/source ref、推进latest pointer并同事务写Audit。无Schema/API/default composition接线。
+- run [42030014722](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42030014722) Backend全量测试/wheel成功，定向fake-port单测包含事务回滚/锁序断言；全链父包PG smoke/A17/A34/A35成功。PG smoke未执行P34A Repository，故本WBS未PASS，下一步加真实PostgreSQL 18专项断言。P25独立initdb 0xC0000135失败，Windows Pilot/Gate/Release不变。仅GitHub hosted D盘运行。

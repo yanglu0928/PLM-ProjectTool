@@ -27,6 +27,12 @@ from plm_assistant.modules.output.application.complete_generation import (
 from plm_assistant.modules.output.infrastructure.complete_generation_repository import (
     SqlAlchemyOutputGenerationCompletionRepository,
 )
+from plm_assistant.modules.document.application.generated_artifact_version import (
+    GeneratedDocumentVersion, OutputGeneratedDocumentVersionOwner,
+)
+from plm_assistant.modules.document.infrastructure.generated_artifact_version_repository import (
+    SqlAlchemyOutputGeneratedDocumentVersionRepository,
+)
 from plm_assistant.modules.platform.infrastructure.migration import upgrade_database
 
 
@@ -144,16 +150,6 @@ def _seed(dsn: str, *, data: dict) -> None:
             "(document_id,scope,project_id,document_category,title,original_display_name,"
             "created_by) VALUES (%(document)s,'PROJECT',%(project)s,'GENERATED_ARTIFACT',"
             "'Synthetic verifier output','synthetic-output.docx',%(user)s)", data)
-        conn.execute(
-            "INSERT INTO plm.doc_document_versions "
-            "(document_version_id,document_id,scope,project_id,version_no,file_object_id,"
-            "content_sha256,size_bytes,detected_mime,source_metadata,created_by,"
-            "availability_state,integrity_checked_at) VALUES (%(version)s,%(document)s,"
-            "'PROJECT',%(project)s,1,%(file)s,%(content_hash)s,17,%(mime)s,'{}'::jsonb,"
-            "%(user)s,'AVAILABLE',statement_timestamp())", data)
-        conn.execute(
-            "UPDATE plm.doc_documents SET latest_version_ref=%(version)s,"
-            "effective_version_ref=%(version)s WHERE document_id=%(document)s", data)
         conn.execute("RESET session_replication_role")
 
 
@@ -223,7 +219,7 @@ def main() -> int:
             or not re.fullmatch(r"[0-9]{1,12}", args.run_id)
             or temp.drive.casefold() != "d:"):
         raise ValueError("hosted Windows PostgreSQL and D-drive runner temp required")
-    database = "plm_outp33_" + args.run_id[-10:]
+    database = "plm_outp34a_" + args.run_id[-10:]
     admin_dsn = f"postgresql://postgres@127.0.0.1:{args.port}/postgres"
     dsn = f"postgresql://postgres@127.0.0.1:{args.port}/{database}"
     engine = None
@@ -250,11 +246,12 @@ def main() -> int:
         }
         data["trace_text"] = str(data["trace"])
         data["execution"] = uuid.uuid5(data["job"], "output-generation:7")
+        data["version"] = uuid.uuid5(data["execution"], "generated-document-version:" + str(data["file"]))
         data["payload"] = json.dumps({
             "output_request_id":str(data["request"]),
             "context_snapshot_id":str(data["snapshot"]),
         }, separators=(",",":"))
-        data["locator"] = "generated/" + str(data["file"]) + ".docx"
+        data["locator"] = "projects/" + data["project"].hex + "/objects/" + data["file"].hex[:2] + "/" + data["file"].hex
         _seed(dsn, data=data)
         claim = ClaimedJob(
             data["job"], "OUTPUT_GENERATE", "PROJECT", data["project"],
@@ -273,6 +270,42 @@ def main() -> int:
         uow = _UnitOfWork(engine)
         jobs = SqlAlchemyJobLeaseRepository()
         repository = SqlAlchemyOutputGenerationCompletionRepository()
+        generated_owner = OutputGeneratedDocumentVersionOwner(
+            unit_of_work=uow, jobs=jobs,
+            repository=SqlAlchemyOutputGeneratedDocumentVersionRepository(),
+            audit=AuditService(SqlAlchemyAuditRepository()),
+            system_actor_id=data["user"],
+        )
+        generated_publication = GeneratedDocumentVersion(
+            document_id=data["document"], document_version_id=data["version"],
+            file_object_id=data["file"], plugin_execution_id=data["execution"],
+            sha256=data["content_hash"], size_bytes=17, media_type=MIME,
+        )
+        generated_facts = generated_owner.commit(
+            claim, worker_ref="p33-verifier-worker", publication=generated_publication)
+        replayed_generated = generated_owner.commit(
+            claim, worker_ref="p33-verifier-worker", publication=generated_publication)
+        with psycopg.connect(dsn) as conn:
+            generated_state = conn.execute(
+                "SELECT d.latest_version_ref, v.version_no, v.availability_state, "
+                "s.source_kind, s.source_object_id, s.source_version_id, "
+                "count(a.audit_event_id) "
+                "FROM plm.doc_documents d JOIN plm.doc_document_versions v "
+                "ON v.document_id=d.document_id JOIN plm.doc_version_source_refs s "
+                "ON s.document_version_id=v.document_version_id LEFT JOIN plm.aud_events a "
+                "ON a.target_version_id=v.document_version_id "
+                "AND a.action='OUTPUT_GENERATED_DOCUMENT_VERSION_CREATED' "
+                "WHERE d.document_id=%s GROUP BY d.latest_version_ref,v.version_no,"
+                "v.availability_state,s.source_kind,s.source_object_id,s.source_version_id",
+                (data["document"],),
+            ).fetchone()
+        if (generated_facts.changed is not True or replayed_generated.changed is not False
+                or generated_facts.document_version_id != data["version"]
+                or generated_state != (
+                    data["version"], 1, "AVAILABLE", "OUTPUT_GENERATION",
+                    data["request"], data["execution"], 1
+                )):
+            raise AssertionError("P34A PostgreSQL commit/replay/Audit evidence mismatch")
         fail_audit = _FailAudit()
         owner = OutputGenerationCompletionOwner(
             unit_of_work=uow, jobs=jobs, repository=repository,

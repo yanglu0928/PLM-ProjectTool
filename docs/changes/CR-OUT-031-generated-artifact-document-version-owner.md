@@ -31,3 +31,7 @@ GitHub hosted Windows Server 2025 D盘临时目录 + 隔离PostgreSQL 18、纯�
 ## P34A编码前检查结果
 
 DM-03 Migration 0022的source ref字段允许OUTPUT_GENERATION/OUT-01并可绑定OutputRequest和PluginExecution；DocumentVersion insert trigger规定AVAILABLE FileObject、ACTIVE Project及latest+1顺序。无Schema/API变更方案可执行。具体锁序、字段映射与验收见docs/progress/out-01-a01-p34a-generated-version-precheck.md。当前仅通过编码前检查，不是代码验收。
+
+## P34A Owner代码候选与当前验证缺口
+
+提交f703c593新增内部SYSTEM Version Owner/SQLAlchemy Repository；116afed26增加单测，180e2b50与39178964补充输入类型及SYSTEM Audit original_actor_id=原请求用户。GitHub hosted run 42030014722后端全量测试/wheel成功，父包PG smoke/A17/A34/A35成功。该父包PG smoke仍使用旧P33预置版本夹具，没有调用P34A Repository，因此只能记为“代码候选+后端回归通过”，P34A暂不PASS。已准备将P33 shared smoke fixture改为从空DocumentVersion状态通过P34A创建再进入P33，以形成同一PG18隔离库的真实事务验收；run 42030014722内P25因initdb.exe 0xC0000135失败，保持独立BLOCKED_DIAGNOSTIC。
