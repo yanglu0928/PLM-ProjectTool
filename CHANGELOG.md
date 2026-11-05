@@ -558,3 +558,8 @@
 
 - 新增Output文件发布Owner恢复调度单测，覆盖STAGE_ONLY、FINAL_VERIFIED、LINKED_PAIR与不安全/未知形态失败关闭，并验证AVAILABLE final和定位不匹配的Storage调用边界。验证仅安排在GitHub hosted Windows D盘；当前尚未通过，P34B未关闭。
 - run [42047066825](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42047066825) 的父包PG18 smoke正常STAGE_ONLY发布、P34A/P33事务及故障回滚/重放断言通过；Backend全量/wheel成功。P25独立失败、A34当时尚运行，不构成整体Workflow全绿。
+
+
+## Unreleased · 2026-11-05（P34B恢复单测首轮夹具偏差，未通过）
+
+- run [42050570499](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42050570499) Backend 4067项中新增STAGE_ONLY单测因fake把publish_verified的staging定位符误当最终Proof而失败；父包PG18 smoke因依赖跳过，P34B无复验结论。偏差已记录，修正测试替身后重跑；产品代码未因本次失败而变更。
