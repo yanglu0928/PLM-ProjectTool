@@ -47,3 +47,5 @@ Hosted Backend运行4,087项测试，其中2项P36新增测试失败：
 2. Windows组合测试检查APIRouter.include_router前的包装路由对象.path；当前FastAPI包装对象此时path为None，route需在FastAPI app实际include后检查。
 
 前端测试/build、PG18 sidecar重建、A17 harness syntax通过。后端失败导致wheel及后继PG18父包/A17/A34作业跳过。本轮P36不通过，尚无真实Repository PG18验证结论。修复范围仅为测试期望与检查位置，产品实现不改，随后重新运行完整Hosted workflow。
+
+修复执行：只改两项测试。删除多余的DOCX字面bind期待；组合路由测试改在APIRouter被FastAPI接纳后检查最终path。没有改产品查询/权限代码；待Hosted全链复验。

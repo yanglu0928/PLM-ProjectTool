@@ -21,7 +21,9 @@ class OutputReadCompositionTests(unittest.TestCase):
             license_guard=guard, session_access=session_access,
         )
         self.assertIsInstance(router, APIRouter)
-        paths = {getattr(item, "path", None) for item in router.routes}
+        composed = FastAPI()
+        composed.include_router(router)
+        paths = {getattr(item, "path", None) for item in composed.routes}
         self.assertIn(
             "/api/v1/projects/{project_id}/output-requests/{output_request_id}", paths,
         )

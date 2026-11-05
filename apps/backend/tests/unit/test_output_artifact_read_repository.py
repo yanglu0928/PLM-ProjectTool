@@ -52,7 +52,7 @@ class OutputArtifactReadRepositoryTests(unittest.TestCase):
         self.assertIn("doc_document_versions.availability_state =", sql)
         self.assertIn("doc_file_objects.file_state =", sql)
         self.assertIn("doc_documents.document_category =", sql)
-        self.assertEqual(set(compiled.params.values()), {project, request, "SUCCEEDED", "DOCX",
+        self.assertEqual(set(compiled.params.values()), {project, request, "SUCCEEDED",
             "AVAILABLE", "PROJECT", "GENERATED_ARTIFACT", "ACTIVE",
             "PERSISTENT", "DOCUMENT"})
 
