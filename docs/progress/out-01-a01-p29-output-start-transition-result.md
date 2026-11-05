@@ -20,3 +20,5 @@ CR-OUT-025初稿按Jobs→Output锁定；并发取消路径按Output→Jobs锁�
 ## 验收边界
 
 云端Hosted Windows Server 2025，runner临时目录D盘；验收使用隔离合成PostgreSQL。验证当前尚未完成，不将预期当作通过。P25 initdb 0xC0000135问题保持独立，不将其作为P29结论依据。真实Worker/受控服务账号、正式信任和Windows 11新设备验收不在本WBS内。
+
+- 第二轮 hosted run 41949611412 的PG smoke进入Verifier后发现2个fixture被按5个变量解包；已先记CR-OUT-025，修复为两个显式fixture索引。P29 Owner行为仍待下一轮运行，当前不标PASS。
