@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-05（P34编码前检查，非发行版本）
+
+- 按 CR-OUT-030 完成本地Storage→OutputArtifact一致性编码前检查，结论PASS_WITH_LIMITATION。ADR-008已有流式Hash/大小校验、同卷不可覆盖提升、提升后复验和文件身份边界；新增协调层必须在短PostgreSQL事务外做文件I/O，并把final-only/linked-pair窗口留给受限恢复，不得盲删文件。
+- 无代码、Schema/Migration、API、安装包或生产装配变化；源码只读检查通过 GitHub，未在用户本机/C盘执行。
+- 下一步：核查DocumentVersion创建/发布和恢复Audit完整路径，然后实现内部未装配的输出文件发布协调Owner，并在GitHub hosted Windows runner D:及隔离PG18验收。
+- 已知限制：P25 initdb 0xC0000135仍独立阻断；Windows 11 Pilot、Gate 3与正式Release未通过。
+
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 
 - OUT-01-A01-P33 按 CR-OUT-029 以 PASS_SCOPE_LIMITED 完成。Hosted run [42013184586](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42013184586) 的父包PG18 smoke通过首次 Artifact/OutputRequest/Job/Audit 同事务成功、Audit失败全回滚、错误Document引用拒绝、四项校验追加、相同成功Claim重放保持原结果且不新增记录、改动后的重放拒绝；后端全量/wheel、前端/build、父包组装、A17、A34通过。
