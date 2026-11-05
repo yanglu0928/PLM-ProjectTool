@@ -153,6 +153,35 @@ def _seed(dsn: str, *, data: dict) -> None:
         conn.execute("RESET session_replication_role")
 
 
+
+def _eligibility_report(dsn: str, data: dict, publication: OutputArtifactPublication,
+                        claim: ClaimedJob) -> dict:
+    with psycopg.connect(dsn) as conn:
+        row = conn.execute(
+            "SELECT "
+            "EXISTS (SELECT 1 FROM plm.plg_executions WHERE "
+            "plugin_execution_id=%s AND output_request_id=%s AND project_id=%s "
+            "AND job_id=%s AND attempt_no=%s AND execution_state='SUCCEEDED' "
+            "AND result_manifest_ref IS NOT NULL AND result_fingerprint IS NOT NULL), "
+            "EXISTS (SELECT 1 FROM plm.doc_file_objects WHERE file_object_id=%s "
+            "AND scope='PROJECT' AND project_id=%s AND file_state='AVAILABLE' "
+            "AND sha256=%s AND size_bytes=%s AND detected_mime=%s), "
+            "EXISTS (SELECT 1 FROM plm.doc_documents WHERE document_id=%s "
+            "AND document_category='GENERATED_ARTIFACT' AND scope='PROJECT' "
+            "AND project_id=%s AND document_state='ACTIVE'), "
+            "EXISTS (SELECT 1 FROM plm.doc_document_versions WHERE "
+            "document_version_id=%s AND document_id=%s AND scope='PROJECT' "
+            "AND project_id=%s AND file_object_id=%s AND content_sha256=%s "
+            "AND size_bytes=%s AND detected_mime=%s AND availability_state='AVAILABLE')",
+            (data["execution"],data["request"],data["project"],data["job"],
+             claim.attempt_no,data["file"],data["project"],data["content_hash"],
+             publication.size_bytes,publication.media_type,data["document"],data["project"],
+             data["version"],data["document"],data["project"],data["file"],
+             data["content_hash"],publication.size_bytes,publication.media_type),
+        ).fetchone()
+    return dict(zip(("plugin_execution","file_object","document","document_version"),row))
+
+
 def _state(dsn: str, data: dict) -> dict:
     with psycopg.connect(dsn) as conn:
         return {
@@ -276,8 +305,18 @@ def main() -> int:
             unit_of_work=uow, jobs=jobs, repository=repository,
             audit=AuditService(SqlAlchemyAuditRepository()), system_actor_id=data["user"],
         )
-        facts = owner.complete(claim, worker_ref="p33-verifier-worker",
-                               publication=publication)
+        try:
+            facts = owner.complete(claim, worker_ref="p33-verifier-worker",
+                                   publication=publication)
+        except OutputGenerationCompletionError as exc:
+            print(json.dumps({
+                "status":"DIAGNOSTIC_ONLY",
+                "owner_error_code":exc.code,
+                "repository_eligibility_predicates":_eligibility_report(
+                    dsn, data, publication, claim,
+                ),
+            },sort_keys=True),flush=True)
+            raise
         final = _state(dsn, data)
         if (facts.request_state != "SUCCEEDED" or facts.artifact_state != "AVAILABLE"
                 or final != {
