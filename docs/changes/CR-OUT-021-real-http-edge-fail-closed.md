@@ -127,3 +127,11 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - 同run后端测试/wheel、前端测试/构建、PG18/pgvector sidecar重建、嵌入式后端组装、父包候选、父包PG18.6/pgvector0.8.6生命周期、A35、A17和A34均成功。此处仅作独立作业结果，不能替代P25真实HTTP/Edge验收。
 - PATH对照未改变结果，依既有止猜测条件不再改动P25环境变量。按STATUS已登记的下一步，对剩余Output/Worker trust boundary进行独立盘点：当前Jobs generic claim可覆盖`OUTPUT_GENERATE`，而现有明确的Plugin Worker只做包验证且不执行插件；因此先为Output生成作业建立严格Owner专属claim边界，不接通或执行插件。该路线切换与接受范围见`OUT-01-A01-P26`编码前检查。
 - 所有运行均在GitHub hosted Windows Server 2025 runner的D盘临时区；用户本机/C盘未运行项目程序、代码或测试。没有客户数据、外部API调用、插件执行或输出文件生成。
+
+
+## 第十四轮 hosted 证据与包内 PostgreSQL 对照计划（实施前登记，2026-11-05）
+
+- Run [41953529123](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41953529123) 的 P25 仍在 initdb.exe 建库前以 3221225781 / 0xC0000135 失败，数据目录不存在；没有启动真实 HTTP、Edge 或执行数据库写入。hosted 诊断记录了 initdb/postgres 及递归依赖共 15 个模块，普通/延迟导入缺失列表为空，System32 VC/UCRT 项存在，Application Error 事件为空。另有同轮父包PG生命周期 smoke 成功，证明该runner作业中的另一份包内PG可以运行，但目前尚未与P25重建sidecar逐文件比较。
+- 环境参数、TEMP/TMP、stdin、调用参数和普通/延迟依赖诊断已多轮无效；停止继续调整环境变量。根据此前登记的止猜测条件，下一项仅增加基于同run、provenance校验的父包候选与P25 sidecar的 PostgreSQL 文件指纹/版本及安全初始化对照。先检查两个候选的相对路径与SHA-256，摘要只保留相对DLL/EXE文件名、hash、版本和错误码，不上传PG数据文件或完整日志；父包候选须验证commit/run/release_eligible=false，所有解包和数据目录都留在D盘RUNNER_TEMP。
+- 对照不得降低P25门槛或伪造发行信任：仅当已通过父包smoke的候选运行形状可在同一P25进程中复现、并能定位sidecar与父包二进制/布局差异时，才据证据选择后续最小修复；两者若内容完全相同仍失败，记录阻塞并转向独立WBS。任何PostgreSQL启动仅限一次性合成库；无HTTP/Edge请求则不声称P25通过。
+- 风险/范围：只改P25 hosted 验收夹具与诊断，暂不改产品API、Schema/Migration、Publisher信任或安装包。迁移无；回滚删除对照输入/脚本并恢复单sidecar job；运行失败时保留D盘临时数据。验证：GitHub hosted Windows Server 2025上完成二进制/版本差异检查及同进程最小生命周期对照，成功后再运行真实HTTP+Edge失败关闭全链。无客户数据、秘密、外部API、插件执行、输出文件或C盘/用户本机执行。
