@@ -22,3 +22,9 @@
 - 回滚：删除专属service/repository入口和对应测试即可；数据库无变更。
 - 验证：unit测试输入校验；Hosted PG18用synthetic Output Job检验有效proof、错worker/旧token/其他Owner拒绝和DB时间过期拒绝。后端全量与父包PG smoke在GitHub hosted runner D盘运行。
 - 不涉及客户数据、正式Publisher key、外部调用、生产写入或本机/C盘运行。
+
+
+## 首轮 hosted 偏差（修复前记录）
+
+- Run [41943117073](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41943117073) 后端4,031 tests/wheel、前端/build、父包组装、A35和A17通过；P25仍失败。PG18 lifecycle smoke在P28过期租约用例中，由于验证器把 lease_expires_at 改到了 acquired_at 之前，违反数据库不变量 ck_job_leases__valid，导致该PG验证器失败。不是产品逻辑失败。
+- 修复：合成过期lease同时将 acquired_at 设为当前DB时间之前两秒、lease_expires_at设为之前一秒，并同步Job到期时间，保持 expires_at > acquired_at 且真正过期。仅修改临时合成数据，重跑全链；不可放松数据库约束。
