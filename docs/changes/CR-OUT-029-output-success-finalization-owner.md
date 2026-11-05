@@ -76,3 +76,10 @@ Hosted run [42004860834](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42008628972](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42008628972) 的父包PG18 smoke成功；P33已证明首次成功原子提交、当前有效claim/文件与项目绑定、四项校验、错Document拒绝及Audit失败全回滚，结果范围为PASS_SCOPE_LIMITED。随后按本CR DoD逐项审阅发现：本轮Verifier及Owner单测都没有对成功终态后的同一成功提交做重放断言；当前Owner在请求已成功/lease已释放后会走非活动Claim/状态拒绝，不能据已有证据声称“重复提交幂等”。因此本WBS整体仍未关闭，不能把有限的初次提交证明扩大为完整验收。
 
 修复计划：保持Output→Jobs锁顺序和内部/默认未装配边界，设计只读重放路径：仅当相同OutputRequest、Project、PluginExecution、已成功Job/已释放对应Lease及完全相同Artifact/DocumentVersion/FileObject/Hash/四项验证/Audit首次结果全部匹配时，返回原成功Facts且不增加Artifact/validation/Audit；任一差异或其他claim仍拒绝。先补单测与隔离PG18重复调用前后行数/结果断言，再跑hosted全链。如果证明需要突破冻结API/Schema或无法安全辨别同一首次结果，停在此处并提出具体CR，不放宽约束。
+
+
+## P33重放实现首轮后端回归失败（修复前，2026-11-05）
+
+Hosted run [42011878789](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42011878789) 的前端、PG18 sidecar、Python运行时、A17语法及P24/A50通过；后端全量测试失败，其余下游任务被跳过。GitHub诊断服务对该job日志连续返回HTTP 502，未能取得失败断言。复核新加单测发现一个确定的测试期望错误：首调Facts标记`changed=True`，成功重放Facts按合同标记`changed=False`，测试却要求整个Facts对象完全相等。生产实现是否还有其他问题待重新跑全量后确认，不能把代码审阅当作运行证据。
+
+修复计划：测试比较稳定业务结果字段相同、重放`changed=False`且持久状态/审计/写调用计数不变；不改生产实现。重新运行托管全链和P33 PG18 verifier，继续查出任何剩余失败。若诊断日志仍不可取，利用失败摘要与定向Hosted CI信息，不在本机执行代码。
