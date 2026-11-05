@@ -62,3 +62,10 @@ Hosted run [41999961492](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42002678699](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42002678699) 后端全量/wheel、前端/build、PG18 sidecar、嵌入式运行时、父包组装、A17/A35/A50/P24均通过；P33隔离PG18 verifier仍在预期成功Owner调用处返回 `OUTPUT_COMPLETION_NOT_ELIGIBLE`，事务失败关闭。此次新增资格谓词检查写到子进程stdout，但父包smoke包装器仅把子进程stderr尾段放入失败日志，故确切谓词结果未进入可见验收日志。没有Owner/数据库变更，P33仍未通过。P25仍独立因initdb退出3221225781/0xC0000135，未启动HTTP/Edge。
 
 修复计划：只将同一无敏感布尔资格诊断输出到stderr，使现有父包装器能保留原因；不改任何业务Owner/Repository、Schema或数据。再次hosted验收，根据谓词结果再判断只修夹具或Owner条件；保留Audit失败全回滚、错Document拒绝和成功事务三组断言。
+
+
+## P33当前Job Claim夹具trace_id不一致（修复前，2026-11-05）
+
+Hosted run [42004860834](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42004860834) 的完整后端/wheel、前端/build、PG18 sidecar、嵌入式运行时、Windows父包、A17/A35/A50/P24均通过；P33 PG18 verifier报告PluginExecution、FileObject、Document、DocumentVersion四项精确Repository资格谓词均为true，但Owner仍在当前claim比较处拒绝。源码定位为 `Jobs.check_output_claim(...)` 返回值与调用claim要求全字段相同。verifier的合成Job `trace_id` 使用了独立uuid `trace_text`，而OutputRequest与调用claim使用另一个trace uuid，故属于夹具与P29一致性前置不匹配；Owner正确失败关闭，尚无成功提交，P33未通过。P25继续独立因initdb 0xC0000135受阻。
+
+修复计划：仅令合成Job `trace_id` 与同一合成OutputRequest/Claim的 `data["trace"]` 一致；保留其余模型、Owner/Repository及数据库不变。加强verifier断言，确保Audit失败场景确实到达Audit端口，随后验证错Document拒绝、成功三方原子完成、四项validation、Audit同事务及全量测试。继续仅GitHub hosted runner D:。
