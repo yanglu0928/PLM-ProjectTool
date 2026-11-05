@@ -552,3 +552,9 @@
 
 ## 2026-11-05 · P34B编码前检查
 - PASS_WITH_LIMITATION：确认不得复用Document USER文件发布服务；采用Output SYSTEM专用协调Owner，在不持DB锁的情况下执行Storage hash/同卷提升，之后短事务重核fence与文件事实，再调用P34A/P33。恢复仅允许STAGE_ONLY、FINAL_VERIFIED、LINKED_PAIR；未知形态不动文件。无Schema/API/默认组合变化。尚未编码，见docs/progress/out-01-a01-p34b-storage-publication-precheck.md。
+
+
+## Unreleased · 2026-11-05（P34B恢复分支定向测试，待云端复验）
+
+- 新增Output文件发布Owner恢复调度单测，覆盖STAGE_ONLY、FINAL_VERIFIED、LINKED_PAIR与不安全/未知形态失败关闭，并验证AVAILABLE final和定位不匹配的Storage调用边界。验证仅安排在GitHub hosted Windows D盘；当前尚未通过，P34B未关闭。
+- run [42047066825](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42047066825) 的父包PG18 smoke正常STAGE_ONLY发布、P34A/P33事务及故障回滚/重放断言通过；Backend全量/wheel成功。P25独立失败、A34当时尚运行，不构成整体Workflow全绿。
