@@ -49,3 +49,7 @@ Hosted Backend运行4,087项测试，其中2项P36新增测试失败：
 前端测试/build、PG18 sidecar重建、A17 harness syntax通过。后端失败导致wheel及后继PG18父包/A17/A34作业跳过。本轮P36不通过，尚无真实Repository PG18验证结论。修复范围仅为测试期望与检查位置，产品实现不改，随后重新运行完整Hosted workflow。
 
 修复执行：只改两项测试。删除多余的DOCX字面bind期待；组合路由测试改在APIRouter被FastAPI接纳后检查最终path。没有改产品查询/权限代码；待Hosted全链复验。
+
+## 第二轮 P36 Hosted 测试夹具偏差（run 42119917628，修复前记录）
+
+Backend 4,087项中仅 test_factory_wires_request_and_artifact_routes 失败。测试在 FastAPI include_router 后直接遍历 app.routes，当前FastAPI版本仍以延迟组合对象保存路由，因此path字段为None；其余Application、SQL projection、HTTP及前端检查通过。后端失败使wheel及依赖它的父包/PG18 verifier步骤跳过，故真实Repository PG18查询尚未执行。修复：对最终 app.openapi()['paths']断言两个路由。产品代码不改，完成后再次全Hosted验证。

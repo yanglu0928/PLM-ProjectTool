@@ -1,3 +1,4 @@
+|Execution Note|2026-11-06 P36第二轮Hosted run 42119917628：Backend 4,087 tests中仅Windows组合路由测试夹具失败。FastAPI新版在include_router后仍以延迟router包装项存储路径，app.routes不直接给出具体path；需以最终OpenAPI paths验证。这是测试检查点错误，Application/Repository/HTTP其余P36测试通过；后端失败导致wheel/父包PG18/A17/A34跳过。CR-OUT-032已先记录，改用app.openapi paths后重跑。P36未PASS。|
 |Execution Note|2026-11-06 P36首轮两个测试断言偏差已按CR-OUT-032记录并修正：移除不应存在的DOCX bind参数期待；在FastAPI include后检查Windows组合router路径。产品逻辑不变，当前等待完整Hosted复验。|
 |Execution Note|2026-11-06 OUT-01-A01-P36首次Hosted run 42118811778失败：Backend 4,087 tests中2项新测试断言错误；SQL参数断言将列间等值比较误计为DOCX字面参数，Windows组合测试在include_router之前读取APIRouter包装对象的path。前端/build、PG sidecar和A17 harness syntax通过；依赖后端的wheel/父包/A17/A34等跳过。偏差已先记CR-OUT-032；仅修测试断言再重跑。P36未PASS。|
 |Execution Note|2026-11-06 P36 verifier import接线已修正：helper迁至Python可导入的下划线目录，P33 PG18 verifier按匹配模块路径导入。此项已同步GitHub，等待修正后的Hosted验证；不改变产品范围。|
@@ -14,7 +15,7 @@
 |Execution Note|P33首轮 hosted run [41992151148](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41992151148)：前端/build、runner边界检查通过；新增成功Owner单测因Audit outcome枚举应为SUCCESS而传SUCCEEDED失败，整个UOW回滚。已先登记CR-OUT-029，仅修接线及测试期望后重跑。P33未关闭；P25维持独立BLOCKED_DIAGNOSTIC。|
 |Execution Note|OUT-01-A01-P32 按 CR-OUT-028 完成并以 PASS_SCOPE_LIMITED 关闭；hosted run [41988323089](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41988323089) 的 P32 PG18 verifier、父包PG smoke、后端/wheel、前端/build、A17、A34通过。父包SHA-256 ad37ffd0b7fc6b59968ecb2b10f2e8cddc9f3431c9851e70a0e03c221d1440e2，20,216 files。P25独立 initdb.exe 0xC0000135 失败、未启动真实HTTP/Edge，整体workflow非全绿。仅GitHub hosted D盘运行；无文件生成/插件执行/客户数据。见docs/progress/out-01-a01-p32-output-artifact-result.md。|
 |Current WBS|OUT-01-A01-P36：实现项目授权的OutputArtifact固定引用读取API；保持冻结既有详情/列表响应、无Schema变化。|
-|Current WBS Status|P36测试断言已修正并提交，Hosted后端全量/wheel、真实PG18及父包/A17等复验待完成。|
+|Current WBS Status|P36第2轮Hosted后端4,087项中仅1项新增组合测试断言错误；其余产品/API及前端等通过。修正测试位置后重跑完整验收，P36未PASS。|
 |Execution Note|2026-11-05 OUT-01-A01-P34源码审计确认普通上传DocumentVersion Owner拒绝GENERATED_ARTIFACT且要求FileObject AVAILABLE；P33要求AVAILABLE DocumentVersion已存在。按CR-OUT-031将P34拆为P34A系统生成版本Owner、P34B Storage发布协调。仅只读GitHub源码核查，尚未编码；后续代码/测试只在GitHub hosted D盘或云端沙箱运行。P25仍独立BLOCKED_DIAGNOSTIC，Pilot/Gate/Release不变。|
 |Execution Note|2026-11-05 P34A编码前检查PASS_WITH_LIMITATION：Frozen 0022 source ref字段可承载OUTPUT_GENERATION来源，插入触发器要求AVAILABLE FileObject/Active Project/严格latest+1版本顺序；拟采用请求/Job Claim/Execution/File/Document锁序，SYSTEM Audit与版本/source ref同事务。未编码，下一步进入Owner实现与hosted PG18验收。|
 |Execution Note|P34A Owner及定向单测已提交；run 42030014722 backend全量测试/wheel、父包PG18 smoke、A17/A34/A35均成功。该run未调用P34A SQLAlchemy Repository，故P34A仍待专项PG18事务验证；P25独立initdb 0xC0000135失败。详情见docs/progress/out-01-a01-p34a-generated-version-implementation.md。|
