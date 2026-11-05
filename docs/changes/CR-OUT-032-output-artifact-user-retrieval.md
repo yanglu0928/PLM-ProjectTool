@@ -38,3 +38,12 @@ GitHub hosted Windows Server 2025 D: + 临时 PostgreSQL 18 + 纯合成数据。
 新增PG18 verifier helper放置在连字符目录，但P33 smoke verifier用Python模块导入时采用了下划线路径，二者不匹配，预计会在验证器导入阶段失败。此偏差只影响测试接线，不改变产品逻辑或验收范围。修复：将helper移动至名称匹配的下划线目录并统一import，再运行新Hosted全链。
 
 修复已实施：helper改放到可导入的下划线目录，P33 verifier更新为同一路径的绝对包导入。等新的Hosted run确认，无产品逻辑改动。
+
+## 首轮 P36 Hosted 验收偏差（run 42118811778，修复前记录）
+
+Hosted Backend运行4,087项测试，其中2项P36新增测试失败：
+
+1. Repository SQL参数集合断言把两个数据库列之间的输出类型等值比较误计为DOCX bind参数；产品查询使用受控列关系，测试错误多期待一个字面参数。
+2. Windows组合测试检查APIRouter.include_router前的包装路由对象.path；当前FastAPI包装对象此时path为None，route需在FastAPI app实际include后检查。
+
+前端测试/build、PG18 sidecar重建、A17 harness syntax通过。后端失败导致wheel及后继PG18父包/A17/A34作业跳过。本轮P36不通过，尚无真实Repository PG18验证结论。修复范围仅为测试期望与检查位置，产品实现不改，随后重新运行完整Hosted workflow。
