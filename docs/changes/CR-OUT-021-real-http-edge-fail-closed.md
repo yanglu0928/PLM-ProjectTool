@@ -171,3 +171,10 @@ P25 的 runner-temp 输入校验、PG sidecar provenance、依赖清单/语法�
 本次已把P25/父包对照命令改为smoke相同的 `poc_admin`、`--auth=trust`、`--encoding=UTF8`、`--locale=C`，并保留原始PATH；但父包initdb对照和P25实际initdb仍均以 `0xC0000135`、空stdout/stderr、未创建数据目录退出。与此同时同run `Clean extraction and temporary PostgreSQL lifecycle smoke` 成功，P25与父包的D盘输入摘要/sidecar一致。这证明命令参数差异并非充分解释，尚未定位根因。
 
 当前两个任务的显著环境差异之一是P25为Edge显式运行 `setup-node`，其PATH包含Node目录；成功的父包PG smoke未设置Node。此前Node路径过滤曾与不同initdb参数一起尝试，不能隔离该因果因素。下一轮实施唯一变量：在P25的PG child环境及同run父包差异脚本中移除Node安装目录PATH，同时保持本次smoke命令/用户/数据目录/其他环境不变；摘要仅报告过滤是否发生和计数。若仍失败，则不再认为Node PATH是充分根因，转向逐项导出成功 smoke 与 P25 的非敏感环境变量差异，不扩展产品代码。
+
+
+## Run 42022786436 Node PATH 单变量结果与 runner 对照计划（变更前记录，2026-11-05）
+
+精确 smoke 参数下，P25 与其D盘父包对照均从原始PATH中移除Node目录后仍以 `3221225781 / 0xC0000135` 退出；摘要确认未建数据目录且无服务日志。同run独立父包PG smoke成功，故Node PATH删除不是充分修复。该次Hosted run的后端、wheel、前端/build、PG sidecar、嵌入式运行时和父包组装成功；P25仍BLOCKED_DIAGNOSTIC，不改变Pilot/Gate/Release结论。
+
+源码比较发现当前成功的PG smoke job没有执行 `actions/setup-node`，P25 job会执行Node 24。为识别任务级 runner 环境差异，下一次只在成功的 `smoke-parent-postgresql` job加入与P25相同的 `actions/setup-node@v4, node-version=24`，不改P25命令或sidecar。若其仍通过，则继续比较安全白名单内的环境变量名称/非敏感配置；若失败，Node安装对照成立，再进一步仅隔离其环境影响。新对照仍只用合成数据库和D盘临时目录。
