@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-05（P33 PG verifier fixture偏差）
+- Hosted run [41995972249](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41995972249) 后端/wheel、前端/build、PG sidecar、父包及P24/A50成功；新增P33 PostgreSQL verifier在合成source refs SQL字符串转义处SyntaxError，未执行P33 DB验收。已先记录CR-OUT-029；改为参数化JSONB fixture 后复验。
+
 ## Unreleased · 2026-11-05（P33首轮Hosted偏差）
 - OUT-01-A01-P33 首轮run [41992151148](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41992151148) 中新增成功Owner用例发现Audit outcome枚举接线错误（传SUCCEEDED，而冻结Audit契约要求SUCCESS）；整体变更被SYSTEM_UNAVAILABLE收敛并回滚。先记CR-OUT-029，再仅修Audit outcome及测试期望，重新全量托管验收。没有本机代码运行或持久化副作用。
 

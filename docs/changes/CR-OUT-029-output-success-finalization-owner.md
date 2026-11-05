@@ -34,3 +34,10 @@ PASS_WITH_LIMITATION：本地源码/基线通过GitHub branch只读核对；新�
 Hosted run [41992151148](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41992151148) 的新增P33应用层测试发现审计契约接线错误：`AuditEventDraft.outcome`只允许`SUCCESS/DENIED/FAILED`，Owner传入了`SUCCEEDED`。失败在SYSTEM AuditDraft构造时发生，事务上下文回滚了Output、Artifact、Job、Lease及Audit，无持久化副作用；其余后端4,057项通过，新增P33用例1项失败，前端/build与runner路径检查通过。此次验证不代表P33通过。
 
 修复方案：状态字段继续使用业务终态`SUCCEEDED`；仅Audit outcome改为`SUCCESS`，并同步测试期望。不得改Audit枚举或公开API，不扩大范围。重跑全量Hosted workflow并确认回滚断言仍通过。
+
+
+## P33 PG18 verifier 首轮偏差登记（修复前，2026-11-05）
+
+Hosted run [41995972249](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41995972249) 后端全量/wheel、前端/build、PG sidecar、父包组装及P24/A50均成功；父包PG18 smoke运行到P33 verifier入口时，在合成fixture SQL字面量包含未转义JSON双引号处出现Python `SyntaxError`，P33数据库及Owner验收代码尚未执行。不能视为P33失败或通过。
+
+修复计划：将ContextSnapshot/OutputRequest的source refs移为参数化JSONB输入，避免测试SQL字符串转义；只改验证器fixture，不改Owner/Repository/Schema。随后重跑完整Hosted全链和P33事务验收。
