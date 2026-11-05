@@ -26,12 +26,15 @@ class _Storage:
         return FileContentProof(locator, kwargs["expected_sha256"], kwargs["expected_size"])
 
     def publish_verified(self, locator, *args, **kwargs):
+        self.calls.append("publish_verified")
         return self._proof(locator, **kwargs)
 
     def recover_verified_final(self, staging, final, *args, **kwargs):
+        self.calls.append("recover_verified_final")
         return self._proof(final, **kwargs)
 
     def recover_linked_pair(self, staging, final, *args, **kwargs):
+        self.calls.append("recover_linked_pair")
         return self._proof(final, **kwargs)
 
     def verify_content(self, locator, **kwargs):
@@ -75,15 +78,16 @@ class GeneratedFileRecoveryDispatchTests(unittest.TestCase):
 
     def test_safe_recovery_shapes_dispatch_to_exact_storage_operation(self):
         cases = {
-            "STAGE_ONLY": ("publish_verified", ["inspect", "final"]),
-            "FINAL_VERIFIED": ("recover_verified_final", ["inspect", "final"]),
-            "LINKED_PAIR": ("recover_linked_pair", ["inspect", "final"]),
+            "STAGE_ONLY": ("publish_verified", ["inspect", "publish_verified", "final"]),
+            "FINAL_VERIFIED": ("recover_verified_final", ["inspect", "recover_verified_final", "final"]),
+            "LINKED_PAIR": ("recover_linked_pair", ["inspect", "recover_linked_pair", "final"]),
         }
         for shape, (_, expected_calls) in cases.items():
             with self.subTest(shape=shape):
                 storage = _Storage(shape)
                 proof = self.owner(storage)._prove_and_promote(self.snapshot, self.publication)
                 self.assertEqual(proof.locator, "final")
+                self.assertIn(shape.lower(), expected_calls[1])
                 self.assertEqual(storage.calls, expected_calls)
 
     def test_unknown_unrelated_and_unsafe_shapes_fail_closed(self):
