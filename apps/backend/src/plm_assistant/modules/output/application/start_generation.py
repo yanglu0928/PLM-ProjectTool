@@ -31,8 +31,12 @@ class OutputGenerationStartFacts:
 
 
 class OutputGenerationStartRepositoryPort(Protocol):
+    def lock_candidate(self, transaction: object, *, claim: ClaimedJob,
+                       execution_id: uuid.UUID) -> OutputGenerationStartFacts: ...
+
     def start_generation(self, transaction: object, *, claim: ClaimedJob,
-                         execution_id: uuid.UUID) -> OutputGenerationStartFacts: ...
+                         execution_id: uuid.UUID, expected_lock_version: int
+                         ) -> OutputGenerationStartFacts: ...
 
 
 class OutputGenerationJobProofPort(Protocol):
@@ -41,7 +45,7 @@ class OutputGenerationJobProofPort(Protocol):
 
 
 class OutputGenerationStartOwner:
-    """The caller transaction covers lease proof, Output state, and audit append."""
+    """Output row lock, current Jobs lease proof, state and audit share one UOW."""
 
     def __init__(self, *, unit_of_work: Callable[[], object],
                  jobs: OutputGenerationJobProofPort,
@@ -55,11 +59,21 @@ class OutputGenerationStartOwner:
 
     def start(self, claim: ClaimedJob, *, worker_ref: str) -> OutputGenerationStartFacts:
         request_id, snapshot_id, trace_id = self._validate_claim(claim, worker_ref)
-        execution_id = uuid.uuid5(
-            claim.job_id, "output-generation:" + str(claim.fencing_token),
-        )
+        execution_id = uuid.uuid5(claim.job_id, "output-generation:" + str(claim.fencing_token))
         try:
             with self._uow() as transaction:
+                # Match Output cancellation's Output -> Jobs lock order to avoid deadlocks.
+                candidate = self._repo.lock_candidate(
+                    transaction, claim=claim, execution_id=execution_id,
+                )
+                if (type(candidate) is not OutputGenerationStartFacts
+                        or candidate.output_request_id != request_id
+                        or candidate.context_snapshot_id != snapshot_id
+                        or candidate.job_id != claim.job_id
+                        or candidate.project_id != claim.project_id
+                        or candidate.execution_id != execution_id
+                        or candidate.state not in {"QUEUED", "GENERATING"}):
+                    raise OutputGenerationStartError()
                 current = self._jobs.check_output_claim(
                     transaction, job_id=claim.job_id,
                     fencing_token=claim.fencing_token, worker_ref=worker_ref,
@@ -69,8 +83,16 @@ class OutputGenerationStartOwner:
                         or current.project_id != claim.project_id
                         or current.payload_refs != claim.payload_refs):
                     raise OutputGenerationStartError()
+                if candidate.state == "GENERATING":
+                    if candidate.changed:
+                        raise OutputGenerationStartError()
+                    transaction.commit()
+                    return candidate
+                if candidate.changed or candidate.lock_version < 0:
+                    raise OutputGenerationStartError()
                 facts = self._repo.start_generation(
                     transaction, claim=current, execution_id=execution_id,
+                    expected_lock_version=candidate.lock_version,
                 )
                 if (type(facts) is not OutputGenerationStartFacts
                         or facts.output_request_id != request_id
@@ -78,19 +100,18 @@ class OutputGenerationStartOwner:
                         or facts.job_id != claim.job_id
                         or facts.project_id != claim.project_id
                         or facts.state != "GENERATING"
-                        or facts.execution_id != execution_id):
+                        or facts.execution_id != execution_id or not facts.changed):
                     raise OutputGenerationStartError()
-                if facts.changed:
-                    self._audit.append(transaction, AuditEventDraft(
-                        trace_id=trace_id, event_scope="PROJECT",
-                        target_project_id=facts.project_id, actor_type="SYSTEM",
-                        actor_id=self._system_actor_id,
-                        original_actor_id=facts.requested_by,
-                        actor_hint_digest=None, action="OUTPUT_GENERATION_STARTED",
-                        outcome="SUCCESS", target_owner_module="output",
-                        target_object_type="OUT-01", target_object_id=facts.output_request_id,
-                        before_state="QUEUED", after_state="GENERATING",
-                    ))
+                self._audit.append(transaction, AuditEventDraft(
+                    trace_id=trace_id, event_scope="PROJECT",
+                    target_project_id=facts.project_id, actor_type="SYSTEM",
+                    actor_id=self._system_actor_id,
+                    original_actor_id=facts.requested_by,
+                    actor_hint_digest=None, action="OUTPUT_GENERATION_STARTED",
+                    outcome="SUCCESS", target_owner_module="output",
+                    target_object_type="OUT-01", target_object_id=facts.output_request_id,
+                    before_state="QUEUED", after_state="GENERATING",
+                ))
                 transaction.commit()
                 return facts
         except OutputGenerationStartError:
