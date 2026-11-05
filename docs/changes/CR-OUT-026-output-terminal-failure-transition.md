@@ -26,3 +26,9 @@
 - 回滚：移除Owner、Repository、测试/验证器及 smoke hook；无数据迁移。
 - 验收：单元正负用例；同一PG18 transaction真实验活动lease、绑定/错worker/stale token拒绝、Job与Output同时FAILED、单条SYSTEM Audit、Audit异常两侧全回滚；后端全量测试/wheel、前端/build、父包PG smoke及A17/A34/A35/A50 hosted回归。
 - 限制：无插件/外部API/文件输出/客户数据；仅GitHub hosted Windows Server 2025 D盘RUNNER_TEMP。P25 0xC0000135仍独立未通过，不能借P30结果宣称P25/Pilot/Gate/Release通过。
+
+
+## 首轮 hosted 验收偏差（2026-11-05，修正前登记）
+
+- Run [41958856962](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41958856962) 后端4042项测试中仅新增的 P30 正向单测失败，另外5项P30边界单测通过；失败发生在AuditEventDraft校验，未调用真实数据库且 fake UOW已回滚。首轮实现把Audit outcome使用为 `FAILURE`，而仓库冻结Audit合同仅接受 `SUCCESS`、`DENIED`、`FAILED`。
+- 修复计划：仅将P30 Audit outcome改成冻结合同中的 `FAILED`，并同步单位/PG验收期望值；不放宽Audit校验、不改合同或生产逻辑。随后重新执行后端全量测试、wheel、同父包PG smoke及云端全链。P30和P25均不得在未通过前标记PASS。
