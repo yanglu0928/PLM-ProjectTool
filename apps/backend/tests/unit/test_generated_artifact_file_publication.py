@@ -82,12 +82,12 @@ class GeneratedFileRecoveryDispatchTests(unittest.TestCase):
             "FINAL_VERIFIED": ("recover_verified_final", ["inspect", "recover_verified_final", "final"]),
             "LINKED_PAIR": ("recover_linked_pair", ["inspect", "recover_linked_pair", "final"]),
         }
-        for shape, (_, expected_calls) in cases.items():
+        for shape, (expected_method, expected_calls) in cases.items():
             with self.subTest(shape=shape):
                 storage = _Storage(shape)
                 proof = self.owner(storage)._prove_and_promote(self.snapshot, self.publication)
                 self.assertEqual(proof.locator, "final")
-                self.assertIn(shape.lower(), expected_calls[1])
+                self.assertIn(expected_method, storage.calls)
                 self.assertEqual(storage.calls, expected_calls)
 
     def test_unknown_unrelated_and_unsafe_shapes_fail_closed(self):
