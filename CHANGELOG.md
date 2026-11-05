@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P37首轮Hosted解析偏差，非发行版本）
+
+- run [42124943609](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42124943609) 前端全量测试2092项通过，但新增 `OutputRequestListView.spec.ts` suite因对象字面量后的换行类型断言语法错误未能解析；typecheck/build未执行，P37不通过。偏差先记录CR-OUT-032，计划只修测试夹具语法后在GitHub hosted重跑；未在本机/C盘运行。
+
 ## Unreleased · 2026-11-06（OUT-01-A01-P37：输出历史受控下载入口候选，非发行版本）
 
 - 变更：新增同源OutputArtifact引用读取Client；仅SUCCEEDED请求显示“下载文件”，通过P36授权API取得固定DocumentVersion引用，严格校验Project/Request/UUID/Hash/大小/MIME/内容路径后导航到现有Document下载route。失败不导航、不自动重试。
