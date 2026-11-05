@@ -28,17 +28,22 @@ class GeneratedFilePublicationError(RuntimeError):
 
 
 @dataclass(frozen=True, slots=True)
-class GeneratedFileSnapshot:
+class GeneratedFileRequestFacts:
     output_request_id: uuid.UUID
     project_id: uuid.UUID
     job_id: uuid.UUID
     execution_id: uuid.UUID
-    document_id: uuid.UUID
-    file_object_id: uuid.UUID
     requested_by: uuid.UUID
     trace_id: uuid.UUID
     request_state: str
     request_lock_version: int
+
+
+@dataclass(frozen=True, slots=True)
+class GeneratedFileSnapshot:
+    request: GeneratedFileRequestFacts
+    document_id: uuid.UUID
+    file_object_id: uuid.UUID
     file_state: str
     file_lock_version: int
     storage_locator: str
@@ -65,8 +70,11 @@ class GeneratedFilePublicationJobsPort(Protocol):
 
 
 class GeneratedFilePublicationRepositoryPort(Protocol):
-    def lock_candidate(self, transaction: object, *, claim: ClaimedJob,
-                       publication: OutputArtifactPublication) -> GeneratedFileSnapshot: ...
+    def lock_request(self, transaction: object, *, claim: ClaimedJob,
+                     publication: OutputArtifactPublication) -> GeneratedFileRequestFacts: ...
+    def snapshot(self, transaction: object, *, claim: ClaimedJob,
+                 publication: OutputArtifactPublication,
+                 request: GeneratedFileRequestFacts) -> GeneratedFileSnapshot: ...
     def mark_available(self, transaction: object, *, claim: ClaimedJob,
                        publication: OutputArtifactPublication,
                        expected: GeneratedFileSnapshot,
@@ -74,12 +82,7 @@ class GeneratedFilePublicationRepositoryPort(Protocol):
 
 
 class OutputGeneratedFilePublicationOwner:
-    """Promote verified bytes, publish FileObject, then invoke version and Output owners.
-
-    Storage work is deliberately outside PostgreSQL transactions. A lease that
-    expires after promotion leaves verified recoverable bytes, never an
-    unverified AVAILABLE row.
-    """
+    """Promote verified bytes, publish FileObject, then invoke version and Output owners."""
 
     def __init__(self, *, unit_of_work: Callable[[], object],
                  jobs: GeneratedFilePublicationJobsPort,
@@ -108,37 +111,38 @@ class OutputGeneratedFilePublicationOwner:
                 or publication.plugin_execution_id != uuid.uuid5(
                     claim.job_id, "output-generation:" + str(claim.fencing_token))):
             raise GeneratedFilePublicationError()
-
         try:
             with self._uow() as tx:
-                snapshot = self._repo.lock_candidate(
+                request = self._repo.lock_request(
                     tx, claim=claim, publication=publication)
-                self._validate_snapshot(snapshot, claim, request_id, publication)
-                if snapshot.request_state == "GENERATING":
+                self._validate_request(request, claim, request_id, publication)
+                if request.request_state == "GENERATING":
                     self._check_claim(tx, claim, worker_ref)
-                elif snapshot.request_state != "SUCCEEDED":
+                elif request.request_state != "SUCCEEDED":
                     raise GeneratedFilePublicationError()
+                snapshot = self._repo.snapshot(
+                    tx, claim=claim, publication=publication, request=request)
+                self._validate_snapshot(snapshot, claim, publication)
                 tx.commit()
 
             proof = self._prove_and_promote(snapshot, publication)
-            if snapshot.request_state == "SUCCEEDED":
+            if request.request_state == "SUCCEEDED":
                 completion = self._completion_owner.complete(
                     claim, worker_ref=worker_ref, publication=publication)
                 return GeneratedFilePublicationFacts(
-                    request_id, snapshot.project_id, snapshot.document_id,
-                    snapshot.file_object_id, proof, completion)
+                    request_id, claim.project_id, publication.document_id,
+                    publication.file_object_id, proof, completion)
 
             with self._uow() as tx:
-                current = self._repo.lock_candidate(
+                current_request = self._repo.lock_request(
                     tx, claim=claim, publication=publication)
-                self._validate_snapshot(current, claim, request_id, publication)
+                self._validate_request(current_request, claim, request_id, publication)
                 self._check_claim(tx, claim, worker_ref)
-                if current != snapshot:
-                    # A concurrent exact publisher may have completed the file
-                    # state transition. Repository permits only exact replay.
-                    if not (current.file_state == "AVAILABLE"
-                            and self._same_binding(current, snapshot)):
-                        raise GeneratedFilePublicationError()
+                current = self._repo.snapshot(
+                    tx, claim=claim, publication=publication, request=current_request)
+                self._validate_snapshot(current, claim, publication)
+                if not self._same_binding(current, snapshot):
+                    raise GeneratedFilePublicationError()
                 available = self._repo.mark_available(
                     tx, claim=claim, publication=publication,
                     expected=current, system_actor_id=self._system_actor_id)
@@ -147,13 +151,13 @@ class OutputGeneratedFilePublicationOwner:
                     raise GeneratedFilePublicationError()
                 if current.file_state != "AVAILABLE":
                     self._audit.append(tx, AuditEventDraft(
-                        trace_id=snapshot.trace_id, event_scope="PROJECT",
-                        target_project_id=snapshot.project_id, actor_type="SYSTEM",
+                        trace_id=request.trace_id, event_scope="PROJECT",
+                        target_project_id=request.project_id, actor_type="SYSTEM",
                         actor_id=self._system_actor_id,
-                        original_actor_id=snapshot.requested_by,
+                        original_actor_id=request.requested_by,
                         actor_hint_digest=None, action="OUTPUT_GENERATED_FILE_PUBLISHED",
                         outcome="SUCCESS", target_owner_module="document",
-                        target_object_type="DOC-01", target_object_id=snapshot.document_id,
+                        target_object_type="DOC-01", target_object_id=publication.document_id,
                         target_version_id=None, reason_code=None,
                         before_state="STAGED", after_state="AVAILABLE"))
                 tx.commit()
@@ -169,8 +173,8 @@ class OutputGeneratedFilePublicationOwner:
             completion = self._completion_owner.complete(
                 claim, worker_ref=worker_ref, publication=publication)
             return GeneratedFilePublicationFacts(
-                request_id, snapshot.project_id, snapshot.document_id,
-                snapshot.file_object_id, proof, completion)
+                request_id, claim.project_id, publication.document_id,
+                publication.file_object_id, proof, completion)
         except GeneratedFilePublicationError:
             raise
         except (GeneratedVersionError, JobLeaseError, IdempotencyError):
@@ -210,25 +214,32 @@ class OutputGeneratedFilePublicationOwner:
                 snapshot.staging_locator, snapshot.final_locator,
                 expected_sha256=publication.sha256, expected_size=publication.size_bytes,
                 max_bytes=134217728)
-        # NONE, invalid, unrelated, and unsafe files are never overwritten or
-        # deleted by this owner.
         raise GeneratedFilePublicationError("OUTPUT_STORAGE_RECOVERY_REQUIRED")
 
     @staticmethod
+    def _validate_request(request: GeneratedFileRequestFacts, claim: ClaimedJob,
+                          request_id: uuid.UUID,
+                          publication: OutputArtifactPublication) -> None:
+        if (type(request) is not GeneratedFileRequestFacts
+                or request.output_request_id != request_id
+                or request.project_id != claim.project_id
+                or request.job_id != claim.job_id
+                or request.execution_id != publication.plugin_execution_id
+                or request.request_state not in {"GENERATING", "SUCCEEDED"}
+                or request.request_lock_version < 1):
+            raise GeneratedFilePublicationError()
+
+    @staticmethod
     def _validate_snapshot(snapshot: GeneratedFileSnapshot, claim: ClaimedJob,
-                           request_id: uuid.UUID,
                            publication: OutputArtifactPublication) -> None:
         if (type(snapshot) is not GeneratedFileSnapshot
-                or snapshot.output_request_id != request_id
-                or snapshot.project_id != claim.project_id
-                or snapshot.job_id != claim.job_id
-                or snapshot.execution_id != publication.plugin_execution_id
+                or snapshot.request.job_id != claim.job_id
+                or snapshot.request.project_id != claim.project_id
                 or snapshot.document_id != publication.document_id
                 or snapshot.file_object_id != publication.file_object_id
                 or snapshot.sha256 != publication.sha256
                 or snapshot.size_bytes != publication.size_bytes
                 or snapshot.media_type != publication.media_type
-                or snapshot.request_state not in {"GENERATING", "SUCCEEDED"}
                 or snapshot.file_state not in {"STAGED", "AVAILABLE"}
                 or snapshot.storage_locator not in {
                     snapshot.staging_locator, snapshot.final_locator}):
@@ -237,17 +248,18 @@ class OutputGeneratedFilePublicationOwner:
     @staticmethod
     def _same_binding(left: GeneratedFileSnapshot,
                       right: GeneratedFileSnapshot) -> bool:
-        return (left.output_request_id == right.output_request_id
-                and left.project_id == right.project_id
-                and left.job_id == right.job_id
-                and left.execution_id == right.execution_id
+        return (left.request == right.request
                 and left.document_id == right.document_id
                 and left.file_object_id == right.file_object_id
+                and left.staging_locator == right.staging_locator
+                and left.final_locator == right.final_locator
                 and left.sha256 == right.sha256
                 and left.size_bytes == right.size_bytes
                 and left.media_type == right.media_type
-                and left.staging_locator == right.staging_locator
-                and left.final_locator == right.final_locator)
+                and (left.file_state == right.file_state
+                     or (left.file_state == "STAGED"
+                         and right.file_state == "AVAILABLE"
+                         and right.storage_locator == right.final_locator)))
 
     def _check_claim(self, tx: object, claim: ClaimedJob, worker_ref: str) -> None:
         current = self._jobs.check_output_claim(
