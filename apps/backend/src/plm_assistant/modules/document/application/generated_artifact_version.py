@@ -96,6 +96,8 @@ class OutputGeneratedDocumentVersionOwner:
                 claim, worker_ref)
         except Exception:
             raise GeneratedVersionError() from None
+        if type(publication) is not GeneratedDocumentVersion:
+            raise GeneratedVersionError("VALIDATION_FAILED")
         expected_execution = uuid.uuid5(
             claim.job_id, "output-generation:" + str(claim.fencing_token))
         expected_version = uuid.uuid5(
