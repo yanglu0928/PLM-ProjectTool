@@ -408,9 +408,10 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
     from plm_assistant.modules.plugin.application.package_registration import (
         PluginPackageRegistrationService,
     )
+    from dataclasses import replace
     from plm_assistant.modules.plugin.application.installation_owner import (
         PluginInstallationEvidence, PluginInstallationOwner,
-        RecordPluginInstallationCommand,
+        PluginInstallationOwnerError, RecordPluginInstallationCommand,
     )
     from plm_assistant.modules.plugin.infrastructure.installation_owner_repository import (
         SqlAlchemyPluginInstallationRepository,
@@ -781,6 +782,156 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
         print(
             "PLG_04_A02_INSTALLATION_OWNER_PG18_PASS: exact signed archive verified; "
             "synthetic host evidence; installation/runtime validation/Audit persisted",
+            flush=True,
+        )
+
+        def assert_no_installation_fact(command, *, label: str) -> None:
+            with runtime.unit_of_work() as tx:
+                installation_count = tx.session.execute(
+                    select(func.count()).select_from(PluginInstallationRow).where(
+                        PluginInstallationRow.plugin_installation_id
+                        == command.plugin_installation_id,
+                    )
+                ).scalar_one()
+                validation_count = tx.session.execute(
+                    select(func.count()).select_from(PluginRuntimeValidationRow).where(
+                        PluginRuntimeValidationRow.plugin_installation_id
+                        == command.plugin_installation_id,
+                    )
+                ).scalar_one()
+                audit_count = tx.session.execute(
+                    select(func.count()).select_from(AuditEventRow).where(
+                        AuditEventRow.action == "PLUGIN_INSTALLATION_RECORD",
+                        AuditEventRow.target_object_id
+                        == command.plugin_installation_id,
+                    )
+                ).scalar_one()
+                if (installation_count, validation_count, audit_count) != (0, 0, 0):
+                    raise AssertionError(
+                        f"A02 {label} failure left Installation/validation/Audit facts"
+                    )
+                tx.commit()
+
+        class CountingSyntheticHostEvidence:
+            def __init__(self, *, available: bool) -> None:
+                self.available = available
+                self.calls = 0
+
+            def inspect_installed_package(self, package):
+                self.calls += 1
+                if not self.available:
+                    return None
+                return PluginInstallationEvidence(
+                    plugin_package_id=package.plugin_package_id,
+                    installed_package_sha256=package.package_sha256,
+                    installation_present=True,
+                    compatible=True,
+                    runtime_snapshot={
+                        "schema_version": "1", "os": "windows-11",
+                        "architecture": "x86_64", "python_version": "3.13.15",
+                        "dependency_versions": {},
+                    },
+                )
+
+        archive_locator = storage.plugin_package_locators(
+            package_id=registered_package_id,
+        )[1]
+        archive_path = Path(storage_root).joinpath(*archive_locator.split("/"))
+        original_archive = archive_path.read_bytes()
+
+        # A damaged private archive must fail before the synthetic host is queried.
+        damaged_command = RecordPluginInstallationCommand(
+            uuid.uuid4(), registered_package_id, actor_id, uuid.uuid4(),
+        )
+        archive_path.write_bytes(
+            original_archive[:-1] + bytes((original_archive[-1] ^ 0x01,))
+        )
+        damaged_host = CountingSyntheticHostEvidence(available=True)
+        try:
+            damaged_owner = PluginInstallationOwner(
+                unit_of_work=runtime.unit_of_work,
+                evidence=damaged_host,
+                archive_evidence=archive_evidence,
+                repository=SqlAlchemyPluginInstallationRepository(),
+                audit=audit,
+            )
+            try:
+                damaged_owner.record(damaged_command)
+            except PluginInstallationOwnerError as exc:
+                if exc.code != "PLUGIN_PACKAGE_ARCHIVE_EVIDENCE_UNAVAILABLE":
+                    raise
+            else:
+                raise AssertionError("A02 accepted a corrupted private archive")
+        finally:
+            archive_path.write_bytes(original_archive)
+        if damaged_host.calls != 0:
+            raise AssertionError("A02 queried host evidence before archive integrity passed")
+        assert_no_installation_fact(damaged_command, label="damaged archive")
+
+        # A wrong signature value from the locked Package projection must be
+        # rejected by the real archive verifier before any Host probe or write.
+        class MismatchedSignatureRepository:
+            def __init__(self, delegate) -> None:
+                self._delegate = delegate
+
+            def __getattr__(self, name):
+                return getattr(self._delegate, name)
+
+            def find_verified_package(self, transaction, *, package_id):
+                package = self._delegate.find_verified_package(
+                    transaction, package_id=package_id,
+                )
+                return replace(package, signature=b"x" * 64) if package else None
+
+        signature_command = RecordPluginInstallationCommand(
+            uuid.uuid4(), registered_package_id, actor_id, uuid.uuid4(),
+        )
+        signature_host = CountingSyntheticHostEvidence(available=True)
+        signature_owner = PluginInstallationOwner(
+            unit_of_work=runtime.unit_of_work,
+            evidence=signature_host,
+            archive_evidence=archive_evidence,
+            repository=MismatchedSignatureRepository(
+                SqlAlchemyPluginInstallationRepository(),
+            ),
+            audit=audit,
+        )
+        try:
+            signature_owner.record(signature_command)
+        except PluginInstallationOwnerError as exc:
+            if exc.code != "PLUGIN_PACKAGE_ARCHIVE_EVIDENCE_UNAVAILABLE":
+                raise
+        else:
+            raise AssertionError("A02 accepted an archive with a mismatched signature")
+        if signature_host.calls != 0:
+            raise AssertionError("A02 queried host evidence before signature verification")
+        assert_no_installation_fact(signature_command, label="signature mismatch")
+
+        # A valid archive still cannot replace independent Host installation evidence.
+        host_command = RecordPluginInstallationCommand(
+            uuid.uuid4(), registered_package_id, actor_id, uuid.uuid4(),
+        )
+        missing_host = CountingSyntheticHostEvidence(available=False)
+        host_owner = PluginInstallationOwner(
+            unit_of_work=runtime.unit_of_work,
+            evidence=missing_host,
+            archive_evidence=archive_evidence,
+            repository=SqlAlchemyPluginInstallationRepository(),
+            audit=audit,
+        )
+        try:
+            host_owner.record(host_command)
+        except PluginInstallationOwnerError as exc:
+            if exc.code != "PLUGIN_INSTALLATION_EVIDENCE_UNAVAILABLE":
+                raise
+        else:
+            raise AssertionError("A02 treated archive presence as installation evidence")
+        if missing_host.calls != 1:
+            raise AssertionError("A02 did not require its independent Host evidence")
+        assert_no_installation_fact(host_command, label="missing host evidence")
+        print(
+            "PLG_04_A02_FAIL_CLOSED_PG18_PASS: damaged archive, mismatched signature, "
+            "and missing host evidence left zero Installation/validation/Audit facts",
             flush=True,
         )
 
