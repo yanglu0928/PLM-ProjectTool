@@ -143,3 +143,10 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - 同run父包完整独立 smoke `Clean extraction and temporary PostgreSQL lifecycle smoke` 为success，A17/A34/A35/A50亦成功；因此同一候选在不同Windows hosted job可启动，而P25 job无法启动。证据把差异收窄为任务执行环境/装载上下文，不能归因PG文件内容。多轮系统/DLL/环境探针已无解释力；暂停P25猜测式修复，保留P25为BLOCKED_DIAGNOSTIC，必须之后在能启动该包PG的同一受控作业组合中重试真实HTTP/Edge门槛。
 - 本轮仅新增P25诊断比较脚本与workflow输入，验证该脚本源代码在GitHub hosted执行；不改产品代码、API、Schema或DB。P25专用job失败，主workflow不全绿；前后端、PG sidecar/父包组装、父包PG smoke及其他列明作业通过。没有生成客户数据、外部调用、插件执行、输出文件或C盘运行。
 - 按“阻塞转向不受影响WBS”，暂停P25并进入CR-OUT-026/OUT-01-A01-P30：实现活动Output lease下不可重试失败的Job/Output原子终态收敛。仍使用已通过的同run父包PG smoke承载隔离PG验证，不把其结果当P25通过。用户本机/C盘代码和测试执行始终为零。
+
+
+## Run 42017800786 hosted differential result (2026-11-05)
+
+P25 的 runner-temp 输入校验、PG sidecar provenance、依赖清单/语法检查及“同run父包PostgreSQL启动对照”步骤均成功；父包与 sidecar 的 1,627 个 PostgreSQL payload 文件 SHA-256 一致。但对照中的父包 initdb 与 P25 initdb 都以 `3221225781 / 0xC0000135` 退出，均未创建数据目录；P25 受限摘要确认 PG 目录为空、无服务日志、`pg_ctl` 指向目录不存在。静态依赖扫描未发现缺失项，系统错误事件为空；真实 API、Edge POST 和业务写入均未发生。故本轮排除“父包/sidecar payload差异”，未提供可据以修复的系统装载根因，不能将P25标为通过。
+
+本次结果不支持继续重复相同 initdb 参数/PATH/目录对照。下一步从既有 P25 父包临时数据库 smoke 与 P25 harness 的**进程启动上下文/实际二进制装载环境**差异读取配置和实现，并设计一个会区分假设的最小 hosted probe；偏差/修复仍先记本CR再运行。不要强制清理任何未知临时PG进程或数据目录；本次 runner 已报告 initdb 未创建目录。继续保持仅D盘 hosted执行。
