@@ -1,7 +1,7 @@
 # CR-PLG-017：受控 Plugin 本地安装物化与精确宿主复验
 
 - 日期：2026-11-06
-- 状态：已登记；编码前检查完成，待实施与Hosted验收
+- 状态：实施中；首轮Hosted复验发现并已登记Windows目录枚举证据差异，修正后重跑
 - WBS：PLG-04-A03
 - 关联：CR-PLG-007、CR-PLG-008、CR-PLG-012、CR-PLG-016；Gate 2冻结PLG Package/Installation模型和Plugin subprocess边界
 - 执行边界：只在GitHub hosted Windows runner D盘或云端沙箱；用户本机/C盘禁止运行
@@ -45,3 +45,10 @@ GitHub hosted Windows runner D盘临时数据根和隔离PG18，只用synthetic 
 ## 编码前澄清（2026-11-06）
 
 在产品实现开始前补明证据契约：`PluginInstallationEvidence` 必须携带 `plugin_installation_id`，Owner须逐项匹配本次command的Installation UUID；仅Host adapter读取目录时带ID、而proof不回显ID不足以避免错目录证明。正向/错误ID/不存在目录测试均覆盖该绑定。该内部DTO强化属于本CR范围，不改DB/API。
+
+
+## 首轮Hosted复验偏差（2026-11-06，run 42104195641）
+
+- Windows Server 2025 hosted runner上，`DirEntry.stat(follow_symlinks=False)` 对新建普通文件返回 `st_mode=33206`、归档属性32且 `st_nlink=0`，使 materializer 把普通文件误判为无效类型；后端全套4078项中仅3项物化器用例失败。改为对枚举到的目标调用 `Path.lstat()` 获取完整本机文件状态，继续拒绝链接/reparse与多硬链接，不放宽安全断言。
+- 新增证据字段对既有 Runtime Revalidation Host port 的兼容：`plugin_installation_id` 缺省可空；仅 `PluginInstallationOwner.record` 本次传入installation ID时强制逐字匹配，既有重验证不记录新的Installation ID。
+- 该run未到wheel、PG18、A17；A03/A02均未验收。首轮改动已先记录，需通过修正后完整hosted run再判断。
