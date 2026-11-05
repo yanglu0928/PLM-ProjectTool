@@ -1,7 +1,7 @@
 # CR-PLG-017：受控 Plugin 本地安装物化与精确宿主复验
 
 - 日期：2026-11-06
-- 状态：实施中；首轮Hosted复验发现并已登记Windows目录枚举证据差异，修正后重跑
+- 状态：PASS_SCOPE_LIMITED；PLG-04-A03专属Hosted验收完成（run 42110700182）；整体workflow因独立P25失败仍非全绿
 - WBS：PLG-04-A03
 - 关联：CR-PLG-007、CR-PLG-008、CR-PLG-012、CR-PLG-016；Gate 2冻结PLG Package/Installation模型和Plugin subprocess边界
 - 执行边界：只在GitHub hosted Windows runner D盘或云端沙箱；用户本机/C盘禁止运行
@@ -66,3 +66,10 @@ GitHub hosted Windows runner D盘临时数据根和隔离PG18，只用synthetic 
 - A03物化器单测及PG18正向安装、UUID绑定和篡改后零事实拒绝均已通过；A08 PG18探针也通过。A17由于只设置A02完成标志，未设置A03完成标志，在最终结构化summary包装器处错误拒绝已完成的A03探针。
 - 该问题属于探针完成标志漏接，不影响实际PG18断言；需将A03标志与A03 PG18断言的成功位置绑定，并仅在A02与A03两组断言均完成后输出summary marker。修复后再跑完整托管工作流。
 - 同run其他结果：后端/前端、clean PG18、父包与A34均通过；P25独立 `initdb.exe 0xC0000135`诊断仍失败。A03尚未关闭。
+
+
+## 最终验收（2026-11-06）
+
+PLG-04-A03以 `PASS_SCOPE_LIMITED` 完成。GitHub hosted run [42110700182](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42110700182) 的 A17 job [127545475249](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42110700182) 在D盘临时根运行；结构化summary含 `PLG_04_A03_PG18_PASS` 与 `PLG_04_A03_TAMPERED_HOST_ZERO_FACTS_PG18_PASS`。真实PG18断言覆盖签名合成包逐成员物化、Owner Installation/RuntimeValidation/Audit记录，以及成员改写时无事实落库。后端4,078项/wheel、前端/build、A17语法、clean parent PG18/pgvector、嵌入式运行时/parent assembly、A35、P24/A50、A34通过。P25仍以initdb.exe 0xC0000135失败，整体workflow非全绿。
+
+完整结果：`docs/progress/plg-04-a03-host-installation-materialization-result.md`。本WBS没有验证Windows 11实机、正式信任、服务账户ACL、默认组合或插件执行；Pilot/Gate 3/正式Release仍未通过。
