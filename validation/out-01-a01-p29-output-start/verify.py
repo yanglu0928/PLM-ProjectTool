@@ -168,7 +168,7 @@ def main() -> int:
 
         queue = JobLeaseService(unit_of_work=runtime.unit_of_work,
                                 repository=SqlAlchemyJobLeaseRepository())
-        wrong_worker, stale_token, mismatch_claim, valid, audit_failure = fixture
+        valid, audit_failure = fixture
         worker = "p29-output-worker"
         claims = {}
         for item in (valid, audit_failure):
