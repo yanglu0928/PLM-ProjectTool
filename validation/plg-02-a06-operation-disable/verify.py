@@ -210,6 +210,7 @@ def main() -> int:
     database = "plg06_" + args.run_id[-10:]
     admin_dsn = _dsn("postgres", args.port)
     runtime = None
+    archive_temp = None
     created = False
     result = {
         "status": "PENDING",
@@ -256,33 +257,33 @@ def main() -> int:
         runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
         if runner_temp.drive.upper() != "D:":
             raise RuntimeError("A06 synthetic archive verification must stay on hosted D-drive temp")
-        with tempfile.TemporaryDirectory(
+        archive_temp = tempfile.TemporaryDirectory(
             prefix="plg06-archive-", dir=runner_temp,
-        ) as archive_root:
-            archive_storage = LocalFileStorage(Path(archive_root))
-            archive_storage.store_plugin_package_archive(
-                package_id=package.plugin_package_id,
-                archive_bytes=payload,
-                expected_sha256=package.package_sha256,
-                expected_size=len(payload),
-            )
-            archive_evidence = LocalPluginPackageArchiveEvidence(
-                storage=archive_storage,
-                inspector=PluginPackageArchiveInspector(
-                    PluginManifestParser(),
-                    PluginPackageSignatureVerifier(_Resolver(public_key)),
-                ),
-            )
-            installer = PluginInstallationOwner(
-                unit_of_work=runtime.unit_of_work,
-                evidence=_InstalledEvidence(),
-                archive_evidence=archive_evidence,
-                repository=SqlAlchemyPluginInstallationRepository(),
-                audit=audit,
-            )
-            installation = installer.record(RecordPluginInstallationCommand(
-                installation_id, package.plugin_package_id, actor_id, uuid.uuid4(),
-            ))
+        )
+        archive_storage = LocalFileStorage(Path(archive_temp.name))
+        archive_storage.store_plugin_package_archive(
+            package_id=package.plugin_package_id,
+            archive_bytes=payload,
+            expected_sha256=package.package_sha256,
+            expected_size=len(payload),
+        )
+        archive_evidence = LocalPluginPackageArchiveEvidence(
+            storage=archive_storage,
+            inspector=PluginPackageArchiveInspector(
+                PluginManifestParser(),
+                PluginPackageSignatureVerifier(_Resolver(public_key)),
+            ),
+        )
+        installer = PluginInstallationOwner(
+            unit_of_work=runtime.unit_of_work,
+            evidence=_InstalledEvidence(),
+            archive_evidence=archive_evidence,
+            repository=SqlAlchemyPluginInstallationRepository(),
+            audit=audit,
+        )
+        installation = installer.record(RecordPluginInstallationCommand(
+            installation_id, package.plugin_package_id, actor_id, uuid.uuid4(),
+        ))
         if installation.installation_state != "INSTALLED":
             raise AssertionError("synthetic Installation fact did not start INSTALLED")
 
@@ -551,6 +552,8 @@ def main() -> int:
     finally:
         if runtime is not None:
             runtime.dispose()
+        if archive_temp is not None:
+            archive_temp.cleanup()
         if created:
             _drop_database(admin_dsn, database)
 
