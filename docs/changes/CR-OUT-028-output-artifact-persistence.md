@@ -45,3 +45,9 @@ AVAILABLE额外守卫：物理CHECK要求Artifact进入AVAILABLE前，受控摘�
 
 - run [41981257687](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41981257687) 后端全量/wheel、前端/build、父包组装成功；P32 verifier已通过0232升级、既有哨兵保留查询、关系约束/支持候选键/保护触发器存在性、Owner关闭、无效状态和缺失FK负例。单独执行`TRUNCATE out_artifacts`时，PostgreSQL先因子表`out_artifact_validation_results`的FK返回`FeatureNotSupported`，未调用根表TRUNCATE guard，导致verifier将预期保护误认成失败。不能据此判定P32失败或通过；其余升降重/历史验收未执行到。
 - 修复计划：将根、子表放入同一条不使用CASCADE的TRUNCATE负例，使数据库进入两个表的保护触发器后验证拒绝；保持独立子表TRUNCATE测试和产品DDL不变，随后重跑Hosted全链。P25仍为独立问题。
+
+
+## 第三轮 P32 hosted 缺陷（2026-11-05，修复前登记）
+
+- run [41983022536](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41983022536) 的后端、前端与父包组装通过；P32 verifier通过Migration、候选键/FK、关闭写、状态/外键负例及根子表合并TRUNCATE保护。合成Artifact触发器验证子表append时出现`record "new" has no field "output_request_id"`：PL/pgSQL把根表字段比较写在复合布尔条件中，子表trigger调用时被求值，属真实触发器缺陷。P32未通过，后续四项验证尚未运行。
+- 修复计划：按`TG_TABLE_NAME`做嵌套分支，仅在`out_artifacts`分支访问根表字段；validation child分支只允许受GUC保护的INSERT。无状态/API/Schema范围变化，随后重跑Hosted全链。P25仍独立失败。

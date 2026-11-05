@@ -464,3 +464,7 @@
 
 ## Unreleased · 2026-11-05（P32第二轮验证器夹具偏差）
 - run [41981257687](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41981257687) 中P32 verifier通过Migration升级和关系/写守卫存在性后，单表TRUNCATE在PostgreSQL外键检查阶段拒绝，未触发自定义TRUNCATE保护断言。该负例夹具范围问题已先记CR-OUT-028；产品DDL未改，修正为根/子表同语句且不使用CASCADE后重跑。P32尚未关闭，P25独立失败。
+
+
+## Unreleased · 2026-11-05（P32第三轮发现触发器缺陷）
+- run [41983022536](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41983022536) 中迁移/约束/owner closed/TRUNCATE验证推进至Artifact validation child insert，发现trigger函数因PL/pgSQL复合布尔条件跨表字段求值而失败。该产品触发器缺陷先记CR-OUT-028，尚无P32通过结论；修复后重跑。P25独立失败。
