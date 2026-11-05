@@ -224,7 +224,7 @@ def main():
                 "SELECT action,outcome,before_state,after_state,actor_type,actor_id,original_actor_id "
                 "FROM plm.aud_events WHERE target_object_id=:request "
                 "AND action IN ('OUTPUT_GENERATION_RETRY_SCHEDULED',"
-                "'OUTPUT_GENERATION_RETRY_EXHAUSTED') ORDER BY created_at"),
+                "'OUTPUT_GENERATION_RETRY_EXHAUSTED') "),
                 {"request": retry_item[1]}).all()
             event_exhausted = tx.session.execute(text(
                 "SELECT action,outcome,before_state,after_state,actor_type,actor_id,original_actor_id "
