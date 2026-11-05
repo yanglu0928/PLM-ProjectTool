@@ -120,7 +120,7 @@ class OutputGenerationCompletionOwnerTests(unittest.TestCase):
                          ("SUCCEEDED","RELEASED"))
         event=self.world.state["audit"][0]
         self.assertEqual((event.action,event.outcome,event.before_state,event.after_state),
-                         ("OUTPUT_GENERATION_SUCCEEDED","SUCCEEDED","GENERATING","SUCCEEDED"))
+                         ("OUTPUT_GENERATION_SUCCEEDED","SUCCESS","GENERATING","SUCCEEDED"))
         self.assertEqual((event.actor_id,event.original_actor_id),
                          (self.world.system_id,self.world.requester_id))
 

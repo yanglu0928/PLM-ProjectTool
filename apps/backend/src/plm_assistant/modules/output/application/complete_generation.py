@@ -178,7 +178,7 @@ class OutputGenerationCompletionOwner:
                     target_project_id=facts.project_id, actor_type="SYSTEM",
                     actor_id=self._system_actor_id, original_actor_id=facts.requested_by,
                     actor_hint_digest=None, action="OUTPUT_GENERATION_SUCCEEDED",
-                    outcome="SUCCEEDED", target_owner_module="output",
+                    outcome="SUCCESS", target_owner_module="output",
                     target_object_type="OUT-01", target_object_id=facts.output_request_id,
                     before_state="GENERATING", after_state="SUCCEEDED",
                 ))
