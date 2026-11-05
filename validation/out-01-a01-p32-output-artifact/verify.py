@@ -84,7 +84,7 @@ def main() -> int:
         created = True
         upgrade_database(url, "20261105_0231")
         engine = create_engine(url)
-        job_id, trace_id = uuid.uuid4(), uuid.uuid4()
+        job_id, trace_id = uuid.uuid4(), str(uuid.uuid4())
         idem = "outp32-migration-" + args.run_id[-10:]
         with engine.begin() as conn:
             conn.execute(text(
