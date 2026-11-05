@@ -276,10 +276,10 @@ class OutputArtifactRow(Base):
             name="ck_out_artifacts__publish_time"),
         CheckConstraint(
             "artifact_state <> 'AVAILABLE' OR "
-            "(validation_summary->>'format_code'='PASSED' "
-            "AND validation_summary->>'structure_code'='PASSED' "
-            "AND validation_summary->>'hash_code'='PASSED' "
-            "AND validation_summary->>'content_code'='PASSED')",
+            "(validation_summary->>'format_code' IS NOT DISTINCT FROM 'PASSED' "
+            "AND validation_summary->>'structure_code' IS NOT DISTINCT FROM 'PASSED' "
+            "AND validation_summary->>'hash_code' IS NOT DISTINCT FROM 'PASSED' "
+            "AND validation_summary->>'content_code' IS NOT DISTINCT FROM 'PASSED')",
             name="ck_out_artifacts__available_validated",
         ),
         CheckConstraint("octet_length(artifact_sha256)=32",
