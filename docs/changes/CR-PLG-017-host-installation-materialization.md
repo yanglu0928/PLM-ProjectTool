@@ -1,7 +1,7 @@
 # CR-PLG-017：受控 Plugin 本地安装物化与精确宿主复验
 
 - 日期：2026-11-06
-- 状态：编码前已登记；PLG-04-A03实施与Hosted验收中
+- 状态：已登记；编码前检查完成，待实施与Hosted验收
 - WBS：PLG-04-A03
 - 关联：CR-PLG-007、CR-PLG-008、CR-PLG-012、CR-PLG-016；Gate 2冻结PLG Package/Installation模型和Plugin subprocess边界
 - 执行边界：只在GitHub hosted Windows runner D盘或云端沙箱；用户本机/C盘禁止运行
