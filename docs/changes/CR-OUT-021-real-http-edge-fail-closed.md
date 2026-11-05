@@ -135,3 +135,11 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 - 环境参数、TEMP/TMP、stdin、调用参数和普通/延迟依赖诊断已多轮无效；停止继续调整环境变量。根据此前登记的止猜测条件，下一项仅增加基于同run、provenance校验的父包候选与P25 sidecar的 PostgreSQL 文件指纹/版本及安全初始化对照。先检查两个候选的相对路径与SHA-256，摘要只保留相对DLL/EXE文件名、hash、版本和错误码，不上传PG数据文件或完整日志；父包候选须验证commit/run/release_eligible=false，所有解包和数据目录都留在D盘RUNNER_TEMP。
 - 对照不得降低P25门槛或伪造发行信任：仅当已通过父包smoke的候选运行形状可在同一P25进程中复现、并能定位sidecar与父包二进制/布局差异时，才据证据选择后续最小修复；两者若内容完全相同仍失败，记录阻塞并转向独立WBS。任何PostgreSQL启动仅限一次性合成库；无HTTP/Edge请求则不声称P25通过。
 - 风险/范围：只改P25 hosted 验收夹具与诊断，暂不改产品API、Schema/Migration、Publisher信任或安装包。迁移无；回滚删除对照输入/脚本并恢复单sidecar job；运行失败时保留D盘临时数据。验证：GitHub hosted Windows Server 2025上完成二进制/版本差异检查及同进程最小生命周期对照，成功后再运行真实HTTP+Edge失败关闭全链。无客户数据、秘密、外部API、插件执行、输出文件或C盘/用户本机执行。
+
+
+## 第十四轮 hosted 结果与阻塞转向（2026-11-05）
+
+- Run [41956565929](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41956565929) 中P25新增对照成功执行：同一commit/run的父包验证通过，父包记录的PG archive SHA与sidecar SHA一致；从两份包读取并对比了1,627个PostgreSQL payload文件，路径集合及SHA-256完全一致，无差异。P25同一Windows runner进程从父包路径独立执行initdb，仍以3221225781/0xC0000135失败，输出无额外错误，data目录未创建；随后sidecar路径也重复相同失败。真实HTTP/Edge仍未执行。
+- 同run父包完整独立 smoke `Clean extraction and temporary PostgreSQL lifecycle smoke` 为success，A17/A34/A35/A50亦成功；因此同一候选在不同Windows hosted job可启动，而P25 job无法启动。证据把差异收窄为任务执行环境/装载上下文，不能归因PG文件内容。多轮系统/DLL/环境探针已无解释力；暂停P25猜测式修复，保留P25为BLOCKED_DIAGNOSTIC，必须之后在能启动该包PG的同一受控作业组合中重试真实HTTP/Edge门槛。
+- 本轮仅新增P25诊断比较脚本与workflow输入，验证该脚本源代码在GitHub hosted执行；不改产品代码、API、Schema或DB。P25专用job失败，主workflow不全绿；前后端、PG sidecar/父包组装、父包PG smoke及其他列明作业通过。没有生成客户数据、外部调用、插件执行、输出文件或C盘运行。
+- 按“阻塞转向不受影响WBS”，暂停P25并进入CR-OUT-026/OUT-01-A01-P30：实现活动Output lease下不可重试失败的Job/Output原子终态收敛。仍使用已通过的同run父包PG smoke承载隔离PG验证，不把其结果当P25通过。用户本机/C盘代码和测试执行始终为零。
