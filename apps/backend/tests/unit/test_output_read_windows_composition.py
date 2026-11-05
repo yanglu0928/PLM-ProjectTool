@@ -13,7 +13,7 @@ from plm_assistant.entrypoints.windows_output_read import (
 
 
 class OutputReadCompositionTests(unittest.TestCase):
-    def test_factory_wires_output_read_service_with_project_scope(self):
+    def test_factory_wires_request_and_artifact_routes(self):
         runtime = Mock()
         sessions, origins, guard, session_access = object(), object(), object(), object()
         router = create_windows_output_request_read_router(
@@ -21,10 +21,14 @@ class OutputReadCompositionTests(unittest.TestCase):
             license_guard=guard, session_access=session_access,
         )
         self.assertIsInstance(router, APIRouter)
-        route = next(item for item in router.routes
-                     if getattr(item, "path", None) ==
-                     "/api/v1/projects/{project_id}/output-requests/{output_request_id}")
-        self.assertEqual(route.methods, {"GET"})
+        paths = {getattr(item, "path", None) for item in router.routes}
+        self.assertIn(
+            "/api/v1/projects/{project_id}/output-requests/{output_request_id}", paths,
+        )
+        self.assertIn(
+            "/api/v1/projects/{project_id}/output-requests/{output_request_id}/artifact",
+            paths,
+        )
 
     def test_missing_runtime_dependency_fails_closed(self):
         with self.assertRaises(ProductionOutputReadStartupError):

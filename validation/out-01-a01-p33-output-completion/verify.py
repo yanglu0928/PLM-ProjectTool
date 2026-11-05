@@ -17,6 +17,8 @@ from sqlalchemy.orm import Session
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps/backend/src"))
+sys.path.insert(0, str(ROOT))
+from validation.out_01_a01_p36_artifact_read.verify import verify_available_artifact_reference
 
 from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
@@ -426,6 +428,12 @@ def main() -> int:
             raise AssertionError("altered P33 replay was accepted")
         if _state(dsn, data) != final:
             raise AssertionError("altered P33 replay changed persisted state")
+        artifact_reference_validation = verify_available_artifact_reference(
+            engine, project_id=data["project"], output_request_id=data["request"],
+            output_artifact_id=facts.artifact_id, document_id=data["document"],
+            document_version_id=data["version"], content_sha256=data["content_hash"],
+            size_bytes=data["size"],
+        )
         print(json.dumps({
             "status":"PASS_SCOPE_LIMITED",
             "postgresql":"18.x hosted temporary database",
@@ -441,6 +449,7 @@ def main() -> int:
             "audit_event_persisted_in_same_transaction":True,
             "exact_success_replay_idempotent":"PASS",
             "altered_success_replay_rejected":"PASS",
+            "output_artifact_user_reference_validation":artifact_reference_validation,
             "synthetic_storage_file_created":True,"plugin_executed":False,
             "customer_data":False,"production_write_open":False,
         },sort_keys=True))

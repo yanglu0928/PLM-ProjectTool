@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-06（OUT-01-A01-P36：OutputArtifact固定引用读取候选，非发行版本）
+
+- 变更：新增受项目授权的独立Artifact引用读取Application/Repository/HTTP及Windows Output read opt-in composition。仅SUCCEEDED请求、AVAILABLE Artifact、ACTIVE GENERATED_ARTIFACT Document及AVAILABLE固定DocumentVersion/FileObject的完整关系可返回；内容仍走受保护Document下载URL。
+- 兼容性：无数据库Schema/Migration；既有OUTPUT_REQUEST_GET/LIST响应未改变；默认login-only应用未挂载。
+- 已知限制：Windows正式License trust源仍阻塞Platform服务装配；前端下载入口尚未实施；Artifact引用URL需在Document下载路由已装配的受保护Platform模式使用。没有Win11实机、用户下载或Pilot证据。
+- 验证：待GitHub hosted Windows D盘后端全量/wheel、前端/build及父包PG18验证；失败或跳过项以run结果为准。本项暂为实现候选，未标PASS。详见 CR-OUT-032。
+
 ## Unreleased · 2026-11-06（PLG-04-A03：受控本地安装物化，非发行版本）
 
 - 变更：增加未装配的内部Plugin安装物化器；由受信内部调用传入Verified Package和Installation UUID，对签名ZIP重新验证并在服务data_root生成精确UUID安装目录，逐文件Hash核验、同卷no-replace提升和精确重放；Host proof绑定Installation UUID。无Schema/Migration/API/default composition/Worker/插件执行变更。
