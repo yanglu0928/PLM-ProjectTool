@@ -1,4 +1,9 @@
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
+- OUT-01-A01-P31 按 CR-OUT-027 以 PASS_SCOPE_LIMITED 完成；hosted run [41963052416](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41963052416) 的父包 PostgreSQL 18.6 smoke 验证固定30秒暂态错误回队、attempt耗尽后 Job/Output 原子失败、错worker/旧token/非白名单拒绝及 Audit 故障双Owner回滚。后端全量测试/wheel、前端/build、PG18 sidecar、父包组装、A17、A34通过。父包SHA-256 `61593a1aab3529b09c15baa0231d6723eb1cad337a709db272b6148db2c87e1b`，20,214个payload文件。
+- 同run独立P25 job仍在 `initdb.exe` 数据目录创建前以 Windows `0xC0000135` 失败，真实HTTP/Edge未启动；整体workflow不全绿，P25保持BLOCKED_DIAGNOSTIC。结果见 `docs/progress/out-01-a01-p31-output-retry-result.md`。
+- 兼容/升级：仅GitHub hosted Windows Server 2025、D盘临时数据；不是发行安装包或Windows 11设备验收。无Schema/Migration/API/default挂载变化、无产品服务、插件、文件生成或客户数据操作；Pilot/Gate 3/Release仍NOT_READY。
+
+## Unreleased · 2026-11-05（内部云端验证，非发行版本）
 - OUT-01-A01-P30 按 CR-OUT-026 以 PASS_SCOPE_LIMITED 完成；hosted run [41959590610](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41959590610) 在同一 PG18 transaction 中终结 Job/Output 为 FAILED、释放当前 lease 并写SYSTEM Audit。错worker、旧token、非白名单错误被拒绝，Audit故障双Owner回滚；后端4042 tests/wheel、前端/build、父包PG smoke、A17/A34/A35/A50成功。P25仍独立因initdb 0xC0000135阻塞。无Schema/API/Worker/Plugin/文件生成，且未在本机/C盘运行。结果见 docs/progress/out-01-a01-p30-output-failure-result.md。
 
 - OUT-01-A01-P29 按 CR-OUT-025 新增内部Output生成启动Owner：同事务验证当前Output lease，并将精确绑定的QUEUED请求转为GENERATING、设置execution ref/lock_version及SYSTEM Audit；同执行重放幂等。并发锁顺序已按CR记录统一为Output→Jobs。

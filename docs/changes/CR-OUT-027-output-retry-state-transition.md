@@ -3,7 +3,7 @@
 - 日期：2026-11-05
 - 阶段/WBS：Phase 2 Platform Core / OUT-01-A01-P31
 - 来源：P30已完成不可重试失败原子收敛；retryable Job失败仍未与Output generation state统一
-- 状态：编码前检查 PASS_WITH_LIMITATION，可实施
+- 状态：PASS_SCOPE_LIMITED（GitHub hosted PG18 验收通过；P25独立阻塞不纳入本WBS）
 - 基线：冻结 Jobs retry/failure Owner 与 OutputRequest状态；无Schema/Migration/API/default挂载变化
 
 ## 决策
@@ -31,3 +31,11 @@ worker只能提交白名单代码；不可自选retry flag或delay，不持久�
 
 - Run [41961855190](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41961855190) 后端4047 tests/wheel与前端/build通过；父包PG smoke启动PostgreSQL成功并已完成P26-P30 verifier，P31 verifier在导入阶段失败：脚本误引用不存在的旧P30 Repository 模块路径。未执行P31业务断言、未留下验证数据库变更；独立P25仍initdb失败。
 - 修复计划：删除P31 verifier未使用的P30失败Owner/Repository导入，仅保留P31真实重试Owner与仓储；经hosted PG smoke完整验证回队/耗尽/rollback后才关闭P31。
+
+
+## 最终验收结果（2026-11-05）
+
+- hosted run [41963052416](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41963052416) 的父包临时 PostgreSQL smoke 中，P31 retry verifier 为 PASS_SCOPE_LIMITED：瞬态错误固定30秒退避并原子回队；attempt耗尽时Job/Output原子失败；错worker/旧token/非白名单/自由文本拒绝；Audit失败回滚两个Owner。
+- 同run后端全量测试/wheel、前端/build、PG18 sidecar、Windows父包、A17及A34通过；父包摘要 SHA-256 为 `61593a1aab3529b09c15baa0231d6723eb1cad337a709db272b6148db2c87e1b`。
+- P25独立job仍于initdb.exe数据目录创建前以0xC0000135失败，真实HTTP/Edge未执行；这不改变独立P31 verifier证据，但本workflow不全绿。详见 `docs/progress/out-01-a01-p31-output-retry-result.md`。
+- 本WBS无Schema/Migration/API变化，不执行插件、不生成文件、不外发客户数据。仅hosted Windows Server 2025 D盘验收，不代表Win11实机、Pilot、Gate 3或Release。
