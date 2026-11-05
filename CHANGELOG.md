@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-05（内部云端验证，非发行版本）
+
+- OUT-01-A01-P33 按 CR-OUT-029 以 PASS_SCOPE_LIMITED 完成。Hosted run [42013184586](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42013184586) 的父包PG18 smoke通过首次 Artifact/OutputRequest/Job/Audit 同事务成功、Audit失败全回滚、错误Document引用拒绝、四项校验追加、相同成功Claim重放保持原结果且不新增记录、改动后的重放拒绝；后端全量/wheel、前端/build、父包组装、A17、A34通过。
+- 重放只接受同一Project/OutputRequest/PluginExecution/Artifact/DocumentVersion/FileObject/Hash/四项校验及已完成Job与已释放原Lease，返回原Facts且不增加Audit或validation历史；其他claim或变更引用失败关闭。无Schema/Migration/API/default composition变化。
+- 兼容/升级：无数据库迁移、冻结API或部署升级变化。仅在GitHub hosted Windows Server 2025 D盘临时PG18与合成数据验证，不启动产品API/Worker/插件，不写本地文件，无客户数据。生产Publisher仍未装配。
+- 已知问题：同run独立P25仍因initdb.exe 0xC0000135失败，真实P25 HTTP/Edge未验证，整体workflow非全绿；Windows 11 Pilot、Gate 3与正式Release未通过。下一项按ADR-008开展OUT-01-A01-P34编码前检查。结果见 docs/progress/out-01-a01-p33-output-success-finalization-result.md。
+
 ## Unreleased · 2026-11-05（P33 PG fixture状态偏差）
 - Hosted run [41997886517](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41997886517) 后端/wheel、前端/build、PG18/pgvector、父包、A17之前置前序verifiers通过；P33 PG18 verifier的合成请求以 lock_version=0 进入 GENERATING，被Owner正确失败关闭。已先记CR-OUT-029，仅把fixture修正为P29启动后有效值1，再重跑。
 

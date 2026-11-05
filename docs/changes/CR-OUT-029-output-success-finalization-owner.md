@@ -2,7 +2,7 @@
 
 - 日期：2026-11-05
 - 阶段/WBS：Phase 2 Platform Core / OUT-01-A01-P33
-- 状态：PRECHECK_COMPLETE；实施待按本CR进行
+- 状态：PASS_SCOPE_LIMITED；hosted验收按本CR完成
 - 基线：Gate 2冻结的 OutputRequest、Job、PluginExecution、OutputArtifact V1；遵循CR-OUT-028/Migration 0232。
 - 目的：在独立插件执行与文档暂存写入尚未接入前，建立内部、默认未装配的成功终结Owner，使已由受信验证器准备的引用和四项受控校验结果能够以同一事务完成Artifact可用、Request成功、Job成功及Audit。
 
@@ -83,3 +83,15 @@ Hosted run [42008628972](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42011878789](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42011878789) 的前端、PG18 sidecar、Python运行时、A17语法及P24/A50通过；后端全量测试失败，其余下游任务被跳过。GitHub诊断服务对该job日志连续返回HTTP 502，未能取得失败断言。复核新加单测发现一个确定的测试期望错误：首调Facts标记`changed=True`，成功重放Facts按合同标记`changed=False`，测试却要求整个Facts对象完全相等。生产实现是否还有其他问题待重新跑全量后确认，不能把代码审阅当作运行证据。
 
 修复计划：测试比较稳定业务结果字段相同、重放`changed=False`且持久状态/审计/写调用计数不变；不改生产实现。重新运行托管全链和P33 PG18 verifier，继续查出任何剩余失败。若诊断日志仍不可取，利用失败摘要与定向Hosted CI信息，不在本机执行代码。
+
+
+## P33最终 hosted 验收（2026-11-05）
+
+Run [42013184586](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42013184586) 的父包 PostgreSQL 18 smoke 在同一隔离事务路径验证：
+- 首次发布：Artifact AVAILABLE、OutputRequest/Job SUCCEEDED、Lease RELEASED、Attempt完成及SYSTEM Audit原子提交。
+- Audit写入故障：Artifact/校验/Output/Job/Lease/Attempt/Audit整体回滚。
+- 错Document引用及变更后的成功重放拒绝且行数不变；四项validation各一条。
+- 同一已成功Claim与完全相同发布元数据的重放返回原成功Facts（changed=false），Artifact/Validation/Audit及Job状态不变。
+- 全量后端测试/wheel、前端测试/build、PG18 sidecar、父包组装、A17/A34及P24/A50通过。P25独立initdb 0xC0000135失败导致整体workflow标记failure；该失败不纳入P33结论。
+
+结果：P33 PASS_SCOPE_LIMITED。该结论仅证明Hosted Windows Server 2025/D盘临时PG18及合成引用；无客户数据、实际文件生成、插件执行、API/default composition或生产Publisher开放。无Schema/Migration/API变更。后续文件存储发布、原子移动/恢复和真实目标安装仍需单独WBS验证。详见 docs/progress/out-01-a01-p33-output-success-finalization-result.md。
