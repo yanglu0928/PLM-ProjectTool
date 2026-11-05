@@ -239,7 +239,7 @@ def main() -> int:
                 "WHERE target_object_id=:request AND action='OUTPUT_GENERATION_FAILED'"),
                 {"request": good[1]}).one()
         if tuple(event) != ("SYSTEM", system_actor, requester,
-                            "OUTPUT_GENERATION_FAILED", "FAILURE",
+                            "OUTPUT_GENERATION_FAILED", "FAILED",
                             "GENERATING", "FAILED"):
             raise AssertionError("system failure audit attribution was incorrect")
 
