@@ -9,10 +9,10 @@
 ## 现状/决策
 
 - OutputRequest已有QUEUED、GENERATING状态、job_ref、context_snapshot_id、current_execution_ref和lock_version；没有启动生成的Owner。
-- P28 JobLeaseRepository.check_output_claim只读核验活动Output lease，在同一transaction里可直接被调用；JobLeaseService包装会开自己的UOW，不能用于本次跨Owner原子动作。
-- 取消Owner已示范Output与Jobs共享一个caller UOW。P29采用相同形状：Output Owner在单一UOW中先由Jobs专属proof Port核验job/worker/fencing/attempt/DB到期，再锁定并核对OutputRequest绑定与QUEUED状态，写GENERATING/current_execution_ref/lock_version并追加AuditEvent；任一失败整体回滚。
+- P28 JobLeaseRepository.check_output_claim在同一transaction里可直接核验活动Output lease；JobLeaseService包装会开自己的UOW，不能用于本次跨Owner原子动作。
+- 取消Owner先锁定OutputRequest，再调用Jobs取消命令。初始实现草稿按“先锁Jobs、再锁Output”会与并发取消形成反向锁顺序，存在数据库死锁风险。实施时采用一致的OutputRequest→Jobs lease顺序：Output Owner先在同一UOW锁定并验证精确绑定的QUEUED请求，再由Jobs proof Port检查job/worker/fencing/attempt/DB到期，最后更新OutputRequest并追加AuditEvent。此为原验收边界内的并发安全实现调整；任何失败整笔回滚，不改状态机或冻结Schema。
 - AuditEvent对SYSTEM要求actor_id和original_actor_id。Owner将要求服务组合显式注入server-controlled system_actor_id，original_actor_id取已存requester；不接受HTTP/作业payload指定Actor，不以requester冒充worker。当前没有真实Output Worker/受控服务账户，故Owner只作为内部能力，不自动挂载或执行副作用。
-- 命令携带排队request与snapshot refs，须精确匹配Job payload、request绑定和当前claim；相同execution idempotent replay返回当前GENERATING结果，错token/错request拒绝。完成文件输出与最终SUCCEEDED状态不在本WBS。
+- 命令携带排队request与snapshot refs，须精确匹配Job payload、request绑定与当前claim；相同execution idempotent replay返回当前GENERATING结果，错token/错request拒绝。完成文件输出与最终SUCCEEDED状态不在本WBS。
 - 不得生成文件、启动插件、运行外部调用；不改正式服务账户/Vault、Publisher信任或安装包。
 
 ## 风险/恢复/验证
