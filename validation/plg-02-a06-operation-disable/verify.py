@@ -126,9 +126,10 @@ class _Compatibility:
 
 
 class _InstalledEvidence:
-    def inspect_installed_package(self, package: object):
+    def inspect_installed_package(self, package: object, *, installation_id: uuid.UUID):
         return PluginInstallationEvidence(
-            package.plugin_package_id, package.package_sha256, True, True, dict(_RUNTIME),
+            package.plugin_package_id, package.package_sha256, True, True,
+            dict(_RUNTIME), installation_id,
         )
 
 
