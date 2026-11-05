@@ -46,3 +46,12 @@
 
 - Run [41936428745](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41936428745) 的后端回归通过，新增unittest已纳入；P27 PG smoke在最后的fingerprint篡改负例触发数据库不可变触发器“Output context snapshots are immutable”，验证器因此失败。这证明数据库层不变量有效，不能通过直接更新快照来制造负例。
 - 修正方案：移除PG脚本对不可变ContextSnapshot的UPDATE及对应SQL依赖；保留对错绑snapshot引用、插件禁用/不可信/输出类型不匹配的真实PG拒绝验证，fingerprint篡改保持纯单测验证。重跑 hosted 全链；不放宽数据库约束。
+
+
+## hosted 复验与结论（2026-11-05）
+
+- Run [41940381378](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41940381378) 的后端全量4,027 tests/wheel、前端测试/typecheck/build、PG18/pgvector构建及父包组装成功；A35成功。父包PG smoke中P26 claim与本P27准入均返回PASS_SCOPE_LIMITED。
+- P27 PG证据：正确的 synthetic Job/OutputRequest/ContextSnapshot绑定通过；错绑Snapshot被拒绝；当前Plugin operation disabled、untrusted或不支持DOCX均被拒绝。返回对象不含Context payload；客户数据、插件执行、文件生成、外部API均为false/0，runner_drive=D:。
+- 单测真实由unittest discover执行，后端报告4027 tests。Snapshot指纹破坏用纯单测覆盖；PG验收服从数据库不可变触发器，未修改Snapshot数据。
+- **结论：OUT-01-A01-P27 = PASS_SCOPE_LIMITED。** 结果文档：docs/progress/out-01-a01-p27-output-job-admission-result.md。Run内P25仍独立失败于initdb 0xC0000135，真实HTTP/Edge未执行；Pilot/Gate/Release结论未变化。
+- 下一WBS为Output Worker副作用前的活动租约/fencing证明及状态推进Owner编码前检查。该准入Owner不启动Worker，不代表正式Publisher信任或可执行插件。
