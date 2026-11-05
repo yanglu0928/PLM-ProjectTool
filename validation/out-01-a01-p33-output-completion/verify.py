@@ -62,7 +62,11 @@ class _UnitOfWork:
 
 
 class _FailAudit:
+    def __init__(self):
+        self.called = False
+
     def append(self, transaction, event):
+        self.called = True
         raise RuntimeError("synthetic audit failure")
 
 
@@ -234,7 +238,7 @@ def main() -> int:
             "user": uuid.uuid4(), "project": uuid.uuid4(), "snapshot": uuid.uuid4(),
             "job": uuid.uuid4(), "lease": uuid.uuid4(), "attempt": uuid.uuid4(),
             "request": uuid.uuid4(), "template": uuid.uuid4(), "trace": uuid.uuid4(),
-            "trace_text": str(uuid.uuid4()), "execution": None,
+            "trace_text": None, "execution": None,
             "source_refs": json.dumps(["synthetic-source"], separators=(",",":")),
             "installation": uuid.uuid4(), "package": uuid.uuid4(),
             "file": uuid.uuid4(), "document": uuid.uuid4(), "version": uuid.uuid4(),
@@ -244,6 +248,7 @@ def main() -> int:
             "mime": MIME, "idempotency": "synthetic-p33-job",
             "request_key": "synthetic-p33-request", "expires": datetime.now(timezone.utc)+timedelta(minutes=10),
         }
+        data["trace_text"] = str(data["trace"])
         data["execution"] = uuid.uuid5(data["job"], "output-generation:7")
         data["payload"] = json.dumps({
             "output_request_id":str(data["request"]),
@@ -268,9 +273,10 @@ def main() -> int:
         uow = _UnitOfWork(engine)
         jobs = SqlAlchemyJobLeaseRepository()
         repository = SqlAlchemyOutputGenerationCompletionRepository()
+        fail_audit = _FailAudit()
         owner = OutputGenerationCompletionOwner(
             unit_of_work=uow, jobs=jobs, repository=repository,
-            audit=AuditService(SqlAlchemyAuditRepository()), system_actor_id=data["user"],
+            audit=fail_audit, system_actor_id=data["user"],
         )
         try:
             owner.complete(claim, worker_ref="p33-verifier-worker", publication=publication)
@@ -278,6 +284,8 @@ def main() -> int:
             pass
         else:
             raise AssertionError("synthetic audit failure did not roll back completion")
+        if not fail_audit.called:
+            raise AssertionError("synthetic audit failure was not reached")
 
         after_audit_failure = _state(dsn, data)
         if after_audit_failure != {
