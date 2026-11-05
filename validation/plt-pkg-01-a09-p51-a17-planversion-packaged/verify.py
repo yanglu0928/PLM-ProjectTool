@@ -1359,14 +1359,32 @@ if __name__ == "__main__":
     os.environ["PLM_TEST_TEMP_ROOT"] = str(test_temp)
     import tempfile
     tempfile.tempdir = None
+    runner = a05["p51"]["handover_review"]["base"]["base"]["project"]["base"].base.base
+    original_smoke = runner.smoke
+    marker_state = {"injected": False}
+
+    def smoke_with_a02_structured_marker(*args, **kwargs):
+        result = original_smoke(*args, **kwargs)
+        if _a02_pg_smoke_completed != [True]:
+            raise AssertionError("A02 PG18 probe must complete before the A05 result is accepted")
+        if not isinstance(result, dict):
+            raise AssertionError("A05 smoke result must remain a structured mapping")
+        markers = result.get("markers")
+        if not isinstance(markers, list):
+            raise AssertionError("A05 smoke result has no structured markers list")
+        marker = (
+            "PLG_04_A02_PG18_PASS: exact archive + Host evidence recorded; damaged archive, "
+            "signature mismatch, and missing Host evidence failed closed with zero facts"
+        )
+        if marker not in markers:
+            markers.append(marker)
+        marker_state["injected"] = marker in markers
+        return result
+
+    runner.smoke = smoke_with_a02_structured_marker
     exit_code = a05["main"]()
     if exit_code != 0:
         sys.exit(exit_code)
-    if _a02_pg_smoke_completed != [True]:
-        raise AssertionError("A02 PostgreSQL installation evidence smoke did not complete")
-    print(
-        "PLG_04_A02_PG18_PASS: exact archive + Host evidence recorded; damaged archive, "
-        "signature mismatch, and missing Host evidence failed closed with zero facts",
-        flush=True,
-    )
+    if _a02_pg_smoke_completed != [True] or marker_state["injected"] is not True:
+        raise AssertionError("A02 PG18 evidence marker was not captured in A05 structured output")
     sys.exit(0)
