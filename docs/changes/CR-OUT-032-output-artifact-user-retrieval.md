@@ -68,3 +68,8 @@ P36按范围PASS_SCOPE_LIMITED，最终证据及限制见docs/progress/out-01-a0
 ## P37 首轮 Hosted 前端解析偏差（run 42124943609，修复前记录）
 
 GitHub hosted 前端全量测试中，`OutputRequestListView.spec.ts:99` 无法转换：对象字面量后换行再写 `as unknown as OutputRequestListClient`，转换器报告“Expected a semicolon…”。全量统计为 2,092 tests passed、1 个 suite failed；该suite未执行，typecheck/build因测试失败跳过。此为新测试夹具的类型断言换行语法错误，不是产品运行断言失败；P37不能通过。修复方案限于将对象断言包入括号或合并为合法表达式，不改产品逻辑、API或验收范围；之后完整Hosted重跑。
+
+
+## P37 第二轮 Hosted 测试语法偏差（run 42125753500，修复前记录）
+
+首轮仅加圆括号包裹对象断言后，GitHub hosted frontend suite仍在 `OutputRequestListView.spec.ts:99` 报 `Expected ',' or ')' but found 'as'`，说明当前转换器仍不接受该对象表达式断言形式。其余2,092项通过，失败suite为0 tests，typecheck/build跳过。P37未通过。修复改用显式变量类型 `OutputRequestListClient` 并在属性层提供mock，不改变产品行为/API/验收边界。
