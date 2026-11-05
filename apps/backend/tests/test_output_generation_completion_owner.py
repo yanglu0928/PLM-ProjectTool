@@ -55,7 +55,7 @@ class FakeWorld:
 
     def facts(self, *, changed):
         return OutputGenerationCompletionFacts(
-            self.publication.artifact_id if self.state["artifact"]=="AVAILABLE" else uuid.UUID(int=0),
+            self.publication.artifact_id if self.state["artifact"]=="AVAILABLE" else None,
             self.request_id,self.project_id,self.job_id,self.snapshot_id,self.requester_id,
             self.execution_id,"DOCX",self.state["request"],self.state["artifact"],
             self.state["lock"],changed,
