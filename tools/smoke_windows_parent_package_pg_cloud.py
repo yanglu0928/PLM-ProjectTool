@@ -1023,6 +1023,15 @@ def main() -> int:
             output_start_run.stdout.strip().splitlines()[-1])
         if output_start_validation.get("status") != "PASS_SCOPE_LIMITED":
             raise RuntimeError("Output generation start validation failed")
+        output_failure_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p30-output-failure/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_failure_validation = json.loads(
+            output_failure_run.stdout.strip().splitlines()[-1])
+        if output_failure_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output generation failure validation failed")
         if version != "18.6" or vector_version != "0.8.6":
             raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
                              + version + "/" + vector_version)
@@ -1041,6 +1050,7 @@ def main() -> int:
             "output_job_admission_validation": output_job_admission_validation,
             "output_job_lease_validation": output_job_lease_validation,
             "output_generation_start_validation": output_start_validation,
+            "output_generation_failure_validation": output_failure_validation,
             "plugin_package_schema_validation": plugin_validation,
             "plugin_package_registration_validation": registration_validation,
             "plugin_operation_disable_validation": plugin_disable_validation,
