@@ -164,3 +164,10 @@ P25 的 runner-temp 输入校验、PG sidecar provenance、依赖清单/语法�
 进一步比较当前文件源码（而非历史计划描述）后确认，`tools/smoke_windows_pg18_sidecar.py`通过的启动命令是 `--pgdata=<D:\\Temp child> --username=poc_admin --auth=trust --encoding=UTF8 --locale=C`，并继承原始runner环境；当前P25仍使用 `-D <D:\\Temp child> -U postgres --auth-local=trust --auth-host=trust --no-locale -E UTF8 --debug --no-clean`，且先从PATH删除Node目录。前述“按既有 smoke 精确对齐”的实现并未反映在当前源码。这解释了为什么与父包的差异对照不能代表已通过的 smoke 命令。
 
 **最小可判别调整：** 仅将P25和其父包对照的 initdb 用户、参数及环境继承改为逐项复用已通过 smoke 的启动形状；取消Node PATH过滤，同时保留P25所需的隔离D盘目录、不同loopback端口、临时库名、受限摘要和未初始化时的保留策略。分别记录数据目录仅含临时合成数据。该实验整体验证的是“精确复用已通过的 PG smoke 初始化协议后，P25真实HTTP/Edge是否可继续”，不是产品功能修复；若仍失败再根据新证据选择，不声称当前猜测已确认根因。
+
+
+## Run 42020582422 复验结果与下一单变量（变更前记录，2026-11-05）
+
+本次已把P25/父包对照命令改为smoke相同的 `poc_admin`、`--auth=trust`、`--encoding=UTF8`、`--locale=C`，并保留原始PATH；但父包initdb对照和P25实际initdb仍均以 `0xC0000135`、空stdout/stderr、未创建数据目录退出。与此同时同run `Clean extraction and temporary PostgreSQL lifecycle smoke` 成功，P25与父包的D盘输入摘要/sidecar一致。这证明命令参数差异并非充分解释，尚未定位根因。
+
+当前两个任务的显著环境差异之一是P25为Edge显式运行 `setup-node`，其PATH包含Node目录；成功的父包PG smoke未设置Node。此前Node路径过滤曾与不同initdb参数一起尝试，不能隔离该因果因素。下一轮实施唯一变量：在P25的PG child环境及同run父包差异脚本中移除Node安装目录PATH，同时保持本次smoke命令/用户/数据目录/其他环境不变；摘要仅报告过滤是否发生和计数。若仍失败，则不再认为Node PATH是充分根因，转向逐项导出成功 smoke 与 P25 的非敏感环境变量差异，不扩展产品代码。
