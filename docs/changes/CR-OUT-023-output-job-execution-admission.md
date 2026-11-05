@@ -40,3 +40,9 @@
 
 - 第一次P27全链候选run [41935554958](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41935554958) 的后端job仍显示原4,023 tests。检查workflow后确认后端使用 `python -m unittest discover -s tests -p "test_*.py"`；新增文件最初使用pytest函数，虽被发现文件名匹配，但没有TestCase类，因此其函数用例未实际执行。
 - 修正计划：将同一边界用例改写为 `unittest.TestCase` 并使用 subTest；新的hosted run必须显示后端测试数上升，且PG专项summary通过，之后才可评估P27。该轮不视为P27单测验收。
+
+
+## Hosted PostgreSQL 验证偏差（修复前记录）
+
+- Run [41936428745](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41936428745) 的后端回归通过，新增unittest已纳入；P27 PG smoke在最后的fingerprint篡改负例触发数据库不可变触发器“Output context snapshots are immutable”，验证器因此失败。这证明数据库层不变量有效，不能通过直接更新快照来制造负例。
+- 修正方案：移除PG脚本对不可变ContextSnapshot的UPDATE及对应SQL依赖；保留对错绑snapshot引用、插件禁用/不可信/输出类型不匹配的真实PG拒绝验证，fingerprint篡改保持纯单测验证。重跑 hosted 全链；不放宽数据库约束。
