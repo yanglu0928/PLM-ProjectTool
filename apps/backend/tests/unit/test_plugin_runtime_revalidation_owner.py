@@ -14,8 +14,11 @@ class _Repo:
         self.installation_id=uuid.uuid4();self.package_id=uuid.uuid4()
         self.snapshot={"schema_version":"1","os":"windows-11","architecture":"x86_64",
                        "python_version":"3.13.15","dependency_versions":{"demo":"1.0"}}
-        self.package=InstallablePluginPackage(self.package_id,"synthetic.echo",
-            hashlib.sha256(b"package").digest(),{"schema_version":"plm.plugin.manifest.v1"})
+        self.package=InstallablePluginPackage(
+            self.package_id, "synthetic.echo", hashlib.sha256(b"package").digest(),
+            {"schema_version":"plm.plugin.manifest.v1"}, "1.0.0", b"s"*64,
+            "test-key:revalidation", "host.platforms.v1", "VERIFIED",
+        )
         self.state=state;self.version=4
         self.latest_state="INCOMPATIBLE" if state=="INCOMPATIBLE" else "COMPATIBLE"
         self.latest_snapshot=copy.deepcopy(self.snapshot);self.compatible=compatible
