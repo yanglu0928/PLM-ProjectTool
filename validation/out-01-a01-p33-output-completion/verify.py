@@ -92,7 +92,7 @@ def _seed(dsn: str, *, data: dict) -> None:
             "INSERT INTO plm.out_context_snapshots "
             "(context_snapshot_id,project_id,source_version_refs,context_payload,"
             "context_fingerprint,created_by) VALUES "
-            "(%(snapshot)s,%(project)s,'["synthetic-source"]'::jsonb,"
+            "(%(snapshot)s,%(project)s,%(source_refs)s::jsonb,"
             "'{}'::jsonb,%(context_hash)s,%(user)s)", data)
         conn.execute(
             "INSERT INTO plm.job_jobs "
@@ -115,7 +115,7 @@ def _seed(dsn: str, *, data: dict) -> None:
             "(output_request_id,project_id,output_type,template_version_ref,source_version_refs,"
             "output_policy_ref,plugin_operation,context_snapshot_id,input_fingerprint,"
             "request_state,job_ref,current_execution_ref,idempotency_key,trace_id,requested_by) "
-            "VALUES (%(request)s,%(project)s,'DOCX',%(template)s,'["synthetic-source"]'::jsonb,"
+            "VALUES (%(request)s,%(project)s,'DOCX',%(template)s,%(source_refs)s::jsonb,"
             "'synthetic-policy','synthetic.operation',%(snapshot)s,%(context_hash)s,"
             "'GENERATING',%(job)s,%(execution)s,%(request_key)s,%(trace)s,%(user)s)", data)
         conn.execute(
@@ -206,6 +206,7 @@ def main() -> int:
             "job": uuid.uuid4(), "lease": uuid.uuid4(), "attempt": uuid.uuid4(),
             "request": uuid.uuid4(), "template": uuid.uuid4(), "trace": uuid.uuid4(),
             "trace_text": str(uuid.uuid4()), "execution": None,
+            "source_refs": json.dumps(["synthetic-source"], separators=(",",":")),
             "installation": uuid.uuid4(), "package": uuid.uuid4(),
             "file": uuid.uuid4(), "document": uuid.uuid4(), "version": uuid.uuid4(),
             "context_hash": bytes.fromhex("12"*32),
