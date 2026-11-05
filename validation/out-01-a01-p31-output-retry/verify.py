@@ -21,17 +21,11 @@ from plm_assistant.modules.auth.infrastructure.user_orm import UserRow
 from plm_assistant.modules.jobs.application.lease import JobLeaseService
 from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
 from plm_assistant.modules.jobs.infrastructure.orm import JobLeaseRow, JobRow
-from plm_assistant.modules.output.application.fail_generation import (
-    OutputGenerationFailureError,
-)
 from plm_assistant.modules.output.application.retry_generation import (
     OUTPUT_RETRY_DELAY_SECONDS, OutputGenerationRetryError,
     OutputGenerationRetryOwner,
 )
 from plm_assistant.modules.output.application.start_generation import OutputGenerationStartOwner
-from plm_assistant.modules.output.infrastructure.fail_generation import (
-    SqlAlchemyOutputGenerationFailureRepository,
-)
 from plm_assistant.modules.output.infrastructure.orm import OutputContextSnapshotRow, OutputRequestRow
 from plm_assistant.modules.output.infrastructure.retry_generation_repository import (
     SqlAlchemyOutputGenerationRetryRepository,
