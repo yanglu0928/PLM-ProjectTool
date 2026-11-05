@@ -5,8 +5,10 @@ import argparse
 import hashlib
 import io
 import json
+import os
 import re
 import sys
+import tempfile
 import uuid
 import zipfile
 from pathlib import Path
@@ -45,6 +47,10 @@ from plm_assistant.modules.plugin.application.installation_owner import (
     PluginInstallationOwner,
     RecordPluginInstallationCommand,
 )
+from plm_assistant.modules.plugin.infrastructure.package_archive_evidence import (
+    LocalPluginPackageArchiveEvidence,
+)
+from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.plugin.application.manifest_parser import PluginManifestParser
 from plm_assistant.modules.plugin.application.package_archive_inspector import PluginPackageArchiveInspector
 from plm_assistant.modules.plugin.application.package_registration import (
@@ -247,15 +253,36 @@ def main() -> int:
             payload, signature, _KEY_REF, "synthetic.win11.v1", trace_id, actor_id,
         ))
         installation_id = uuid.uuid4()
-        installer = PluginInstallationOwner(
-            unit_of_work=runtime.unit_of_work,
-            evidence=_InstalledEvidence(),
-            repository=SqlAlchemyPluginInstallationRepository(),
-            audit=audit,
-        )
-        installation = installer.record(RecordPluginInstallationCommand(
-            installation_id, package.plugin_package_id, actor_id, uuid.uuid4(),
-        ))
+        runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
+        if runner_temp.drive.upper() != "D:":
+            raise RuntimeError("A06 synthetic archive verification must stay on hosted D-drive temp")
+        with tempfile.TemporaryDirectory(
+            prefix="plg06-archive-", dir=runner_temp,
+        ) as archive_root:
+            archive_storage = LocalFileStorage(Path(archive_root))
+            archive_storage.store_plugin_package_archive(
+                package_id=package.plugin_package_id,
+                archive_bytes=payload,
+                expected_sha256=package.package_sha256,
+                expected_size=len(payload),
+            )
+            archive_evidence = LocalPluginPackageArchiveEvidence(
+                storage=archive_storage,
+                inspector=PluginPackageArchiveInspector(
+                    PluginManifestParser(),
+                    PluginPackageSignatureVerifier(_Resolver(public_key)),
+                ),
+            )
+            installer = PluginInstallationOwner(
+                unit_of_work=runtime.unit_of_work,
+                evidence=_InstalledEvidence(),
+                archive_evidence=archive_evidence,
+                repository=SqlAlchemyPluginInstallationRepository(),
+                audit=audit,
+            )
+            installation = installer.record(RecordPluginInstallationCommand(
+                installation_id, package.plugin_package_id, actor_id, uuid.uuid4(),
+            ))
         if installation.installation_state != "INSTALLED":
             raise AssertionError("synthetic Installation fact did not start INSTALLED")
 
