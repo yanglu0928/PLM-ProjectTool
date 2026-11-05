@@ -270,6 +270,27 @@ class SqlAlchemyJobLeaseRepository:
             owner_filter=("output", "OUTPUT_GENERATE"),
         )
 
+    def check_output_claim(self, transaction: object, *, job_id: uuid.UUID,
+                           fencing_token: int, worker_ref: str) -> ClaimedJob:
+        """Return a short-lived proof for the exact active Output generation lease."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token,
+                            worker_ref=worker_ref)
+        session = self._session(transaction)
+        job, lease, attempt = self._current(
+            session, job_id, fencing_token, worker_ref,
+        )
+        now = self._now(session)
+        if (job.owner_module != "output" or job.job_type != "OUTPUT_GENERATE"
+                or job.completed_at is not None
+                or job.lease_expires_at is None
+                or job.lease_expires_at != lease.lease_expires_at
+                or job.lease_expires_at <= now
+                or attempt.attempt_no != job.attempt_count
+                or attempt.error_code is not None
+                or attempt.completed_at is not None):
+            raise JobLeaseError("STALE_LEASE")
+        return self._claim(job)
+
     def _claim_next_filtered(self, transaction: object, *, worker_ref: str,
                              lease_seconds: int,
                              owner_filter: tuple[str, str] | None) -> ClaimedJob | None:
