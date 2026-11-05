@@ -157,3 +157,10 @@ P25 的 runner-temp 输入校验、PG sidecar provenance、依赖清单/语法�
 对Run [42017800786](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42017800786) P25失败日志与已知通过的 `tools/smoke_windows_pg18_sidecar.py` 逐行对照后发现，CR前文“复用既有 smoke 执行形状”的表述不准确：P25 的 `postgres_child_environment()` 会从PATH中删除 Node 安装目录，摘要确认 `node_directory_removed=true`；同run父包差异对照也复用了这一过滤环境，所以其initdb失败并未与通过的既有 smoke 形成有效对照。既有 smoke 原样继承 Windows runner PATH，且可以初始化同一套 PG18 sidecar。此结果提供了此前未隔离的可检验差异，虽尚不能证明根因就是 PATH。
 
 **实施前选择：** 移除P25对 Node PATH 项的过滤，让initdb、pg_ctl、psql按既有成功 smoke 继承未修改的 runner PATH；保留D盘独立目录、合成数据库、受限摘要、无客户数据和失败时不强制清理。同步修正父包对照使其采用同样原始PATH。若此单变量对照仍失败，则恢复代码或另立下一项差异，不再重复参数/目录猜测。此次只改Hosted验证harness，不改产品代码/API/Schema、Publisher信任或真实功能状态。
+
+
+## 2026-11-05 实际P25启动命令与已通过smoke不一致（代码调整前登记）
+
+进一步比较当前文件源码（而非历史计划描述）后确认，`tools/smoke_windows_pg18_sidecar.py`通过的启动命令是 `--pgdata=<D:\\Temp child> --username=poc_admin --auth=trust --encoding=UTF8 --locale=C`，并继承原始runner环境；当前P25仍使用 `-D <D:\\Temp child> -U postgres --auth-local=trust --auth-host=trust --no-locale -E UTF8 --debug --no-clean`，且先从PATH删除Node目录。前述“按既有 smoke 精确对齐”的实现并未反映在当前源码。这解释了为什么与父包的差异对照不能代表已通过的 smoke 命令。
+
+**最小可判别调整：** 仅将P25和其父包对照的 initdb 用户、参数及环境继承改为逐项复用已通过 smoke 的启动形状；取消Node PATH过滤，同时保留P25所需的隔离D盘目录、不同loopback端口、临时库名、受限摘要和未初始化时的保留策略。分别记录数据目录仅含临时合成数据。该实验整体验证的是“精确复用已通过的 PG smoke 初始化协议后，P25真实HTTP/Edge是否可继续”，不是产品功能修复；若仍失败再根据新证据选择，不声称当前猜测已确认根因。
