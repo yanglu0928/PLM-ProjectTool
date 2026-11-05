@@ -161,6 +161,20 @@ class PluginInstallationMaterializerTests(unittest.TestCase):
             self.package, installation_id=uuid.uuid4(),
         ))
 
+    def test_modified_member_is_not_accepted_as_an_existing_installation(self) -> None:
+        target = self.materializer.materialize(
+            self.package, installation_id=self.installation_id,
+        )
+        (target / "plugin" / "main.py").write_bytes(b"changed")
+        self.assertIsNone(self.materializer.inspect_installed_package(
+            self.package, installation_id=self.installation_id,
+        ))
+        with self.assertRaises(PluginInstallationMaterializationError):
+            self.materializer.materialize(
+                self.package, installation_id=self.installation_id,
+            )
+        self.assertEqual((target / "plugin" / "main.py").read_bytes(), b"changed")
+
     def test_signed_zip_slip_archive_is_rejected_before_materialization(self) -> None:
         malicious = _archive([
             ("manifest.json", _manifest()),
