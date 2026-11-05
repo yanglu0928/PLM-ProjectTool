@@ -1,3 +1,7 @@
+|Execution Note|2026-11-05 更正P32编码前核查：冻结候选含PLG-03 PluginExecution，但当前分支没有PluginExecution ORM/表/Migration。此缺项使OUT-02依赖的固定Execution FK无法建立；未开始Artifact代码/DDL，CR-OUT-028与P32转BLOCKED_DEPENDENCY，纠正过程与证据已记录。转入PLG-03-A01持久化基础。|
+|Current WBS|PLG-03-A01：按CR-PLG-014实现冻结PluginExecution R-PRJ持久化骨架，生产写入继续关闭、不执行插件。|
+|Current WBS Status|OUT-01-A01-P32因PluginExecution物理Root缺失保持BLOCKED_DEPENDENCY；P25保持BLOCKED_DIAGNOSTIC。|
+|Next WBS|PLG-03-A01：完成编码前核查后实现Execution、result-file、state-event ORM/Migration并托管验收；之后恢复P32 Artifact持久化。|
 |Execution Note|OUT-01-A01-P31按CR-OUT-027以PASS_SCOPE_LIMITED完成：hosted run 41963052416 父包PG18 smoke证明30秒暂态错误原子回队、attempt耗尽原子FAILED、错worker/旧token/非白名单拒绝及Audit失败双Owner回滚；后端/wheel、前端/build、父包、A17/A34通过。P25独立initdb 0xC0000135失败，未进入HTTP/Edge。见docs/progress/out-01-a01-p31-output-retry-result.md。仅GitHub runner D盘。|
 |Current WBS|OUT-01-A01-P32：按CR-OUT-028补齐冻结OUT-02 OutputArtifact及validation results的ORM/Migration基础；不接发布Owner/API/插件/文件。|
 |Current WBS Status|P31 PASS_SCOPE_LIMITED。父包临时PG18及A17/A34通过；整体run因P25失败未全绿，P25仍BLOCKED_DIAGNOSTIC。|

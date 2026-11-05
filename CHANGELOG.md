@@ -1,4 +1,7 @@
 ## Unreleased · 2026-11-05（内部云端开发，非发行版本）
+- P32编码前检查发现冻结模型包含PluginExecution，但当前分支尚无其ORM/表/Migration；OutputArtifact固定Project FK及AVAILABLE一致性条件因此无法实现。原始预检文档有一处把模型定义误写成源码已有实现，已在编码前核对并更正，未产生代码/Schema变化。OUT-01-A01-P32保持BLOCKED_DEPENDENCY并转至PLG-03-A01；按CR-PLG-014先补齐冻结Execution持久化基础。
+
+## Unreleased · 2026-11-05（内部云端开发，非发行版本）
 - OUT-01-A01-P32编码前检查通过受限评估：冻结模型已定义 OUT-02 OutputArtifact 与 validation results，但生产ORM/Migration尚缺。按 CR-OUT-028 先实现关系持久化基础；不提前声称成功发布，不新增API、文件/插件执行或写入口。后续依赖 Artifact 一致性发布Owner。P25 initdb阻塞独立保留。
 - 所有代码及数据库验证只在GitHub hosted runner的D盘临时目录执行，不使用用户本机/C盘。
 
