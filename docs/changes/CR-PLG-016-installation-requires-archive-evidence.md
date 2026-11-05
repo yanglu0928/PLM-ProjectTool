@@ -48,3 +48,6 @@ PASS_WITH_LIMITATION。Package ORM已包含package_version、hash、Manifest sna
 
 - 2026-11-06 hosted run [42080494651](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42080494651) 的后端/前端、父包和A35前置均通过；clean PG smoke中的A06主安装记录先通过，但后续API安装复用同一Owner时，验证器的 `TemporaryDirectory` 已退出，归档证据按预期失败关闭，导致A06后续测试未完成。此为测试夹具生命周期过短，非产品验证器异常。
 - 修复前处置：保留本记录后，将合成归档临时目录延长至整个A06 PG18场景的finally清理点；确保两次Owner记录都使用同一真实归档适配器和受控D盘临时字节。重跑完整Hosted链路。
+
+- 2026-11-06 hosted run [42082726109](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42082726109)：后端/前端、PG18 clean smoke、A17、A35、A34均通过，唯一失败为独立P25的initdb环境诊断。A17候选源码包含A02真实PG Owner/Repository/archive adapter调用与成功/三类失败关闭断言；A17 job成功且无异常，但其嵌套回调的专用marker未进入最终artifact marker列表，降低了专项结果的可见性，故暂不据此关闭A02。
+- 修复前记录：只增强A17 harness结果可见性：在A02子探针成功返回后写入内存完成标志，并在外层A05 runner返回后输出一个受该标志保护的A02摘要marker；不重复调用Owner、不改产品代码或业务判断。重跑Hosted验证并确认artifact/log能显示该专项marker。
