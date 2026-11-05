@@ -8,7 +8,7 @@ from typing import Callable, Protocol
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
 from plm_assistant.modules.jobs.application.lease import ClaimedJob, JobLeaseError
 from plm_assistant.modules.output.application.fail_generation import (
-    OutputGenerationFailureError, OutputGenerationFailureFacts,
+    OutputGenerationFailureError, OutputGenerationFailureFacts, OutputGenerationFailureOwner,
 )
 
 RETRYABLE_OUTPUT_CODES = frozenset({
@@ -63,11 +63,7 @@ class OutputGenerationRetryOwner:
 
     def retry(self, claim: ClaimedJob, *, worker_ref: str, error_code: str
               ) -> OutputGenerationRetryResult:
-        request_id, snapshot_id, trace_id = OutputGenerationFailureError.__module__, None, None
         # Reuse the strict immutable claim parser without exposing failure details.
-        from plm_assistant.modules.output.application.fail_generation import (
-            OutputGenerationFailureOwner,
-        )
         try:
             request_id, snapshot_id, trace_id = OutputGenerationFailureOwner._validate_claim(
                 claim, worker_ref)
