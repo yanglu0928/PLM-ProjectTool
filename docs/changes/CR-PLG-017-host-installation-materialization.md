@@ -59,3 +59,10 @@ GitHub hosted Windows runner D盘临时数据根和隔离PG18，只用synthetic 
 - 后端4,078项/wheel、前端/build、A17 harness语法、clean PG18/pgvector、embedded runtime、parent assembly、P24/A50/A35及A34均通过；A02正向归档/Host事实与A03损坏安装树零PG事实检查均实际通过。
 - A17最后的A08文件清单断言仍使用A08原“归档+对象”计数，未把A03新增的 `plugins/installations/<UUID>` 文件加入预期；因此在A03 PG18探针已通过后，A17后续A08存储盘点断言失败。修正为从精确 `valid_archive` 成员动态推导安装树清单并独立核对原对象/归档计数。该问题只在验证器清单断言，不改业务代码。
 - 独立P25仍因Windows hosted `initdb.exe 0xC0000135`失败；不是A03根因。run整体失败，A03不关闭，Pilot/Gate/Release状态不变。
+
+
+## 第三轮Hosted复验偏差（2026-11-06，run 42107854567）
+
+- A03物化器单测及PG18正向安装、UUID绑定和篡改后零事实拒绝均已通过；A08 PG18探针也通过。A17由于只设置A02完成标志，未设置A03完成标志，在最终结构化summary包装器处错误拒绝已完成的A03探针。
+- 该问题属于探针完成标志漏接，不影响实际PG18断言；需将A03标志与A03 PG18断言的成功位置绑定，并仅在A02与A03两组断言均完成后输出summary marker。修复后再跑完整托管工作流。
+- 同run其他结果：后端/前端、clean PG18、父包与A34均通过；P25独立 `initdb.exe 0xC0000135`诊断仍失败。A03尚未关闭。
