@@ -149,7 +149,10 @@ def main() -> int:
                 update(JobLeaseRow).where(
                     JobLeaseRow.job_id == output_job,
                     JobLeaseRow.fencing_token == claim.fencing_token,
-                ).values(lease_expires_at=past)
+                ).values(
+                    lease_expires_at=past,
+                    acquired_at=past - text("INTERVAL '1 second'"),
+                )
             )
             uow.commit()
         expect_rejected(
