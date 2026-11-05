@@ -30,3 +30,8 @@ P32 暂停：无法在遵守冻结DB外键合同的前提下引用尚未持久�
 
 
 AVAILABLE状态附加约束：数据库要求format、structure、hash、content四个受控验证结果码均为`PASSED)，同时必须设置published_at；Root引用内容在DB层不可改写。写入口仍关闭，状态表达式不构成发布Owner。
+
+
+## 执行结果更正（2026-11-05）
+
+本文件前文记录的是 P32 启动前因 PluginExecution 物理Root缺失而阻断的历史检查。PLG-03-A01 后续完成后，P32 重新执行检查，按 CR-OUT-028 补齐 OutputArtifact ORM/Migration，并于 hosted run [41988323089](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41988323089) 以 `PASS_SCOPE_LIMITED` 完成专项 PG18 验收。详细结论见 [P32验收结果](out-01-a01-p32-output-artifact-result.md)。P25仍为独立 `BLOCKED_DIAGNOSTIC`；Pilot、Gate 3及发行状态未变化。

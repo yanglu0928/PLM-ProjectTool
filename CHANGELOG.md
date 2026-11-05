@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-05（内部云端验证，非发行版本）
+
+- OUT-01-A01-P32 按 CR-OUT-028 以 PASS_SCOPE_LIMITED 完成。Hosted run [41988323089](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41988323089)：P32 PostgreSQL 18专项、父包 PG smoke、后端/wheel、前端测试/typecheck/build、A17/A34成功。Migration 0232验证空库/既有合成数据升级、空库降级重升及历史保护；复合关系、AVAILABLE正反例、只追加/不可变和TRUNCATE保护通过。
+- 兼容/升级：新增冻结OUT-02的 ORM/Migration 0232；只允许数据库元数据，不存正文。生产写入口保持关闭。父包SHA-256 `ad37ffd0b7fc6b59968ecb2b10f2e8cddc9f3431c9851e70a0e03c221d1440e2`，20,216个payload文件。未在用户本机/C盘运行。
+- 已知问题：独立 P25 `initdb.exe` 以 `0xC0000135` 失败，真实 HTTP/Edge 未启动，整体 workflow 非全绿。Pilot/Gate 3/正式Release未通过。详见 `docs/progress/out-01-a01-p32-output-artifact-result.md`。
+
 ## Unreleased · 2026-11-05（内部云端开发，非发行版本）
 - P32编码前检查发现冻结模型包含PluginExecution，但当前分支尚无其ORM/表/Migration；OutputArtifact固定Project FK及AVAILABLE一致性条件因此无法实现。原始预检文档有一处把模型定义误写成源码已有实现，已在编码前核对并更正，未产生代码/Schema变化。OUT-01-A01-P32保持BLOCKED_DEPENDENCY并转至PLG-03-A01；按CR-PLG-014先补齐冻结Execution持久化基础。
 

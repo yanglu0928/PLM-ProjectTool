@@ -2,7 +2,7 @@
 
 - 日期：2026-11-05
 - 阶段/WBS：Phase 2 Platform Core / OUT-01-A01-P32
-- 状态：BLOCKED_DEPENDENCY（未开始编码）
+- 状态：PASS_SCOPE_LIMITED（已完成编码及 hosted PG18 专项验收；生产发布未开放）
 - 基线：Gate 2 冻结 Data Model V1、DB Schema V1 的 OUT-02；SC-01 映射 `out_artifacts` 与 `out_artifact_validation_results`，SC-02 将 OUT-02 定为 M-PRJ。
 - 来源：P31已完成Job/Output重试与失败状态收敛；实现安全成功发布还需要OutputArtifact持久化。
 
@@ -63,3 +63,12 @@ AVAILABLE额外守卫：物理CHECK要求Artifact进入AVAILABLE前，受控摘�
 
 - run [41986547768](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41986547768) 中后端/前端/父包组装通过。P32 verifier已验证0232空库/既有数据升级、复合关系、Owner closed、无效AVAILABLE拒绝、四项完整校验后AVAILABLE允许、validation child append-only、Artifact引用不可变、两表TRUNCATE、降级历史保护等；最后“downgrade拒绝后记录仍保留”断言按`(1 artifact, 1 validation)`计数，而隔离fixture已按4项校验插入4条child，导致计数断言失败。不能据此否定Migration/Owner行为；本项尚未获得完整PASS。
 - 修复计划：仅将fixture历史保留期望调整为Artifact 1条、validation child 4条，保留head与既有Job哨兵断言；重新运行Hosted全链。
+
+
+## 最终验收（2026-11-05）
+
+P32 按本 CR 完成并以 `PASS_SCOPE_LIMITED` 关闭。GitHub hosted run [41988323089](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41988323089) 在 Windows Server 2025 runner 的 D: 临时目录完成全链；父包 PG18专项及 P32 verifier、后端/wheel、前端/build、A17、A34通过。P32专项覆盖空库/既有合成数据升级、空库降级重升、历史降级阻断、Project/Request/Execution/Document/Version/FileObject 复合引用、AVAILABLE 缺项负例/四项校验正例、不可变/append-only/TRUNCATE保护。四条 validation fixture 均计入历史保留断言。父包SHA-256为`ad37ffd0b7fc6b59968ecb2b10f2e8cddc9f3431c9851e70a0e03c221d1440e2`，20,216个payload文件。独立P25仍以`initdb.exe 0xC0000135`失败，未启动真实HTTP/Edge，整体workflow非全绿；不影响P32专项结论，详情见[验收记录](../progress/out-01-a01-p32-output-artifact-result.md)。未写入生产数据库、未生成文件/执行插件或使用客户数据。
+
+## 后续任务边界
+
+下一项 P33 先完成输出成功终结 Owner 的编码前检查和CR；锁顺序沿用 Output → Jobs。Owner 只能在已验证的 Artifact 引用/代码证据齐备时原子完成 Artifact AVAILABLE、OutputRequest SUCCEEDED、Job SUCCEEDED 与 Audit；文件写入、插件子进程和默认生产组合另行处理。
