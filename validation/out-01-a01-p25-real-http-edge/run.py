@@ -135,11 +135,31 @@ def run_checked(args: list[str], *, timeout: int = 180,
 
 
 def postgres_child_environment() -> tuple[dict[str, str], dict[str, object]]:
-    """Match the known-good PostgreSQL smoke by preserving runner PATH."""
-    return os.environ.copy(), {
-        "node_executable_found": shutil.which("node.exe") is not None,
-        "node_directory_removed": False,
-        "path_entries_removed": 0,
+    """Isolate PostgreSQL from the Node distribution DLLs added by setup-node."""
+    env = os.environ.copy()
+    node_executable = shutil.which("node.exe")
+    removed = 0
+    if node_executable:
+        node_directory = Path(node_executable).resolve().parent
+        retained: list[str] = []
+        for raw in env.get("PATH", "").split(os.pathsep):
+            entry = raw.strip().strip('"')
+            if not entry:
+                retained.append(raw)
+                continue
+            try:
+                matches_node = Path(entry).resolve() == node_directory
+            except OSError:
+                matches_node = False
+            if matches_node:
+                removed += 1
+            else:
+                retained.append(raw)
+        env["PATH"] = os.pathsep.join(retained)
+    return env, {
+        "node_executable_found": node_executable is not None,
+        "node_directory_removed": removed > 0,
+        "path_entries_removed": removed,
     }
 
 def start_pg(binary: Path, data: Path, log: Path, port: int,
