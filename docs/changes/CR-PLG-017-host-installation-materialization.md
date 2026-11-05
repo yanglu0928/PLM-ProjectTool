@@ -40,3 +40,8 @@ PLG-04-A02已使InstallationOwner先校验精确已登记ZIP归档，再要求�
 ## 验收
 
 GitHub hosted Windows runner D盘临时数据根和隔离PG18，只用synthetic package/runtime identities。有效包准确安装/重放/PG Owner记录；zip-slip/UNC/drive/duplicate/case collision/symlink/special entry/hash drift/incorrect installation UUID/unknown existing target各失败关闭。验证失败时无Installation/RuntimeValidation/Audit，Owner既有Archive proof和Host evidence仍均必需。完成限定范围后最多PASS_SCOPE_LIMITED；无Win11实机/正式服务ACL/正式publisher trust/插件运行/Gate/Pilot/Release声明。
+
+
+## 编码前澄清（2026-11-06）
+
+在产品实现开始前补明证据契约：`PluginInstallationEvidence` 必须携带 `plugin_installation_id`，Owner须逐项匹配本次command的Installation UUID；仅Host adapter读取目录时带ID、而proof不回显ID不足以避免错目录证明。正向/错误ID/不存在目录测试均覆盖该绑定。该内部DTO强化属于本CR范围，不改DB/API。
