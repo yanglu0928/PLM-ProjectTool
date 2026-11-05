@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-06（OUT-01-A01-P37：输出历史受控下载入口候选，非发行版本）
+
+- 变更：新增同源OutputArtifact引用读取Client；仅SUCCEEDED请求显示“下载文件”，通过P36授权API取得固定DocumentVersion引用，严格校验Project/Request/UUID/Hash/大小/MIME/内容路径后导航到现有Document下载route。失败不导航、不自动重试。
+- 兼容性：无后端/API/Schema/Migration变化；现有输出请求历史读合同不变。
+- 已知限制：正式Platform trust缺失，P36 opt-in route及Document下载route尚无Win11真实会话下载证据；Pilot/Gate 3/Release未通过。
+- 验证：GitHub hosted完整回归待跑；本地/C盘没有运行项目代码。未验收前不标PASS。
+
 ## Unreleased · 2026-11-06（OUT-01-A01-P36：OutputArtifact固定引用读取，非发行版本）
 
 - 变更：新增受项目授权的独立Artifact引用读取Application/Repository/HTTP及Windows Output read opt-in composition。仅SUCCEEDED请求、AVAILABLE Artifact、ACTIVE GENERATED_ARTIFACT Document及AVAILABLE固定DocumentVersion/FileObject的完整关系可返回；内容仍走受保护Document下载URL。

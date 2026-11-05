@@ -59,3 +59,8 @@ Backend 4,087项中仅 test_factory_wires_request_and_artifact_routes 失败。�
 ## P36最终关闭（2026-11-06）
 
 P36按范围PASS_SCOPE_LIMITED，最终证据及限制见docs/progress/out-01-a01-p36-artifact-reference-read-result.md。真实PG18 Repository断言、4,087后端测试/wheel、前端/build、父包PG18 smoke、A17/A34/A35/P24/A50全部通过。整体run 42121003242因独立P25失败而非全绿；正式Platform trust与前端用户下载入口仍未完成。下一项OUT-01-A01-P37。
+
+
+## P37 前端实现候选（2026-11-06）
+
+已新增输出Artifact引用同源Client、SUCCEEDED状态下载入口及加载/安全错误提示；在导航前验证固定项目、请求、文档版本及内容route。仅改前端，无后端/API/Schema变化。正式Platform trust仍未建立；用户侧真实下载未验证。

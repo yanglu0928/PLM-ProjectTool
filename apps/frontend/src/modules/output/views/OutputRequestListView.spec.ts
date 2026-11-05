@@ -3,7 +3,8 @@ import { createMemoryHistory } from "vue-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
-import { OutputRequestListClient, type OutputRequestPage } from "@/modules/output/api/outputRequestListClient";
+import { OutputRequestListClient, type OutputRequestPage, type OutputRequestSummary } from "@/modules/output/api/outputRequestListClient";
+import type { OutputArtifactReadClient, OutputArtifactReference } from "@/modules/output/api/outputArtifactReadClient";
 import OutputRequestListView from "./OutputRequestListView.vue";
 
 const project = "01234567-89ab-4cde-8123-456789abcdef";
@@ -25,15 +26,19 @@ async function session(role: string | null = "PROJECT_MANAGER", restricted = fal
   await client.login("synthetic", "not-a-secret");
   return client;
 }
-async function view(auth: SessionClient, path: string, reader: OutputRequestListClient) {
+async function view(
+  auth: SessionClient, path: string, reader: OutputRequestListClient,
+  artifactReader?: OutputArtifactReadClient, navigate?: (url: string) => void,
+) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(path); await router.isReady();
-  const wrapper = mount(OutputRequestListView, { props: { session: auth, reader },
+  const wrapper = mount(OutputRequestListView, {
+    props: { session: auth, reader, artifactReader, navigate },
     global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
 }
-function page(items: readonly typeof row[], next_cursor: string | null = null): OutputRequestPage {
+function page(items: readonly OutputRequestSummary[], next_cursor: string | null = null): OutputRequestPage {
   return { items, next_cursor, has_more: next_cursor !== null };
 }
 
@@ -84,6 +89,50 @@ describe("OutputRequestListView", () => {
     await flushPromises();
     expect(wrapper.text()).not.toContain(row.output_request_id);
     expect(reader.list).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+  });
+
+  it("shows download only for succeeded rows and navigates only through the authorized same-origin reference", async () => {
+    const succeeded = { ...row, state: "SUCCEEDED" as const,
+      completed_at: "2026-10-19T00:01:00Z" };
+    const reader = { list: vi.fn().mockResolvedValue(page([row, succeeded])) }
+      as unknown as OutputRequestListClient;
+    const reference: OutputArtifactReference = Object.freeze({
+      output_artifact_id: other, output_request_id: succeeded.output_request_id,
+      project_id: project, document_id: "31234567-89ab-4cde-8123-456789abcdef",
+      document_version_id: "41234567-89ab-4cde-8123-456789abcdef",
+      artifact_kind: "DOCX",
+      media_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      content_sha256: "a".repeat(64), size_bytes: 128,
+      content_url: "/api/v1/projects/" + project + "/documents/31234567-89ab-4cde-8123-456789abcdef/versions/41234567-89ab-4cde-8123-456789abcdef/content",
+    });
+    const artifactReader = { get: vi.fn().mockResolvedValue(reference) }
+      as unknown as OutputArtifactReadClient;
+    const navigate = vi.fn();
+    const { wrapper } = await view(await session(),
+      "/projects/" + project + "/output-requests", reader, artifactReader, navigate);
+    expect(wrapper.findAll("button").filter(button => button.text() === "下载文件")).toHaveLength(1);
+    await wrapper.findAll("button").find(button => button.text() === "下载文件")!.trigger("click");
+    await flushPromises();
+    expect(artifactReader.get).toHaveBeenCalledExactlyOnceWith(project, succeeded.output_request_id);
+    expect(navigate).toHaveBeenCalledExactlyOnceWith(reference.content_url);
+    wrapper.unmount();
+  });
+
+  it("does not navigate when artifact lookup fails", async () => {
+    const succeeded = { ...row, state: "SUCCEEDED" as const,
+      completed_at: "2026-10-19T00:01:00Z" };
+    const reader = { list: vi.fn().mockResolvedValue(page([succeeded])) }
+      as unknown as OutputRequestListClient;
+    const artifactReader = { get: vi.fn().mockRejectedValue(new Error("输出文件尚未可用或无权读取。")) }
+      as unknown as OutputArtifactReadClient;
+    const navigate = vi.fn();
+    const { wrapper } = await view(await session(),
+      "/projects/" + project + "/output-requests", reader, artifactReader, navigate);
+    await wrapper.findAll("button").find(button => button.text() === "下载文件")!.trigger("click");
+    await flushPromises();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(wrapper.get('[role="alert"]').text()).toContain("无权读取");
     wrapper.unmount();
   });
 
