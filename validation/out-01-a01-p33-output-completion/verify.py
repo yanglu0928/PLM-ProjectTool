@@ -315,7 +315,7 @@ def main() -> int:
                 "repository_eligibility_predicates":_eligibility_report(
                     dsn, data, publication, claim,
                 ),
-            },sort_keys=True),flush=True)
+            },sort_keys=True),file=sys.stderr,flush=True)
             raise
         final = _state(dsn, data)
         if (facts.request_state != "SUCCEEDED" or facts.artifact_state != "AVAILABLE"
