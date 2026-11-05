@@ -878,6 +878,7 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             "after valid archive proof and left no Installation/validation/Audit",
             flush=True,
         )
+        _a03_pg_smoke_completed.append(True)
 
         class CountingSyntheticHostEvidence:
             def __init__(self, *, available: bool) -> None:
