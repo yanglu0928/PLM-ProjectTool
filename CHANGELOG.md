@@ -570,3 +570,9 @@
 - P34B Storage发布协调按CR-OUT-030/031以PASS_SCOPE_LIMITED完成。run [42051895394](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42051895394) 的Backend 4,067 tests/wheel、前端/build、Windows父包和clean PG18/pgvector smoke通过；Recovery dispatch单测覆盖STAGE_ONLY、FINAL_VERIFIED、LINKED_PAIR精确方法与不安全/未知形态失败关闭。PG smoke验证Storage→FileObject→P34A DocumentVersion/Audit→P33 Artifact/Job完成、P33 Audit失败回滚及精确重放。
 - 同run P25 HTTP/Edge独立失败；A17业务步骤后清理临时锁文件遇Windows EBUSY；A34通过，故整体workflow非全绿。P25仍BLOCKED_DIAGNOSTIC。无Schema/API/default composition/Worker/插件执行变化，无客户数据；局部受限结果不代表生产Output、Windows 11设备、Pilot/Gate/Release通过。
 - 兼容性：无数据库/API升级要求；仅内部分支Owner/测试变更。下一项按STATUS进入P35 Output生产接线编码前检查。
+
+
+## Unreleased · 2026-11-05（P34B最终分支复验）
+
+- 最新文档tip hosted run [42055479870](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42055479870) 再次通过Backend 4,067 tests/wheel、Frontend/build、PG18/pgvector parent smoke、20,223项父包构建、A35、A17和A34。父包 SHA-256 `4000d012666f1de0c5e77234efaa6d8ec6848aa898bd7555d802b93fb829457e`；P34B PG链路重复PASS_SCOPE_LIMITED。
+- 同run唯一失败为独立P25 HTTP/Edge；A17清理锁文件EBUSY未复现。整体workflow非全绿；P25/Pilot/Gate/正式Release保持原状态。
