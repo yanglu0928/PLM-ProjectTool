@@ -178,3 +178,10 @@ P25 的 runner-temp 输入校验、PG sidecar provenance、依赖清单/语法�
 精确 smoke 参数下，P25 与其D盘父包对照均从原始PATH中移除Node目录后仍以 `3221225781 / 0xC0000135` 退出；摘要确认未建数据目录且无服务日志。同run独立父包PG smoke成功，故Node PATH删除不是充分修复。该次Hosted run的后端、wheel、前端/build、PG sidecar、嵌入式运行时和父包组装成功；P25仍BLOCKED_DIAGNOSTIC，不改变Pilot/Gate/Release结论。
 
 源码比较发现当前成功的PG smoke job没有执行 `actions/setup-node`，P25 job会执行Node 24。为识别任务级 runner 环境差异，下一次只在成功的 `smoke-parent-postgresql` job加入与P25相同的 `actions/setup-node@v4, node-version=24`，不改P25命令或sidecar。若其仍通过，则继续比较安全白名单内的环境变量名称/非敏感配置；若失败，Node安装对照成立，再进一步仅隔离其环境影响。新对照仍只用合成数据库和D盘临时目录。
+
+
+## Run 42024740026 Node 24 smoke 对照结果（2026-11-05）
+
+成功的 `smoke-parent-postgresql` job加入 `actions/setup-node@v4,node-version=24` 后，清洁提取的 PostgreSQL/pgvector生命周期 smoke 仍成功；同run P25主流程及父包initdb对照仍因 `0xC0000135` 在数据目录创建前失败。P25摘要无临时数据库文件/日志，Node PATH过滤已发生。故“安装Node 24”及单独Node PATH均不是充分解释，CR-OUT-021近期两轮对该环境问题未能收敛。
+
+决策：停止重复 initdb 旗标/PATH/安装Node对照，P25继续 `BLOCKED_DIAGNOSTIC`，保存各轮合成摘要与现有失败关闭行为。把研发时间转回独立可交付的P34 Output文件发布路径；若后续因P34/Pilot验收必须恢复P25诊断，再先在同一P25 job中运行既有PG smoke helper作进程内对照，并只采集经过允许列表筛选的非敏感环境证据。当前不会把P25描述成通过。
