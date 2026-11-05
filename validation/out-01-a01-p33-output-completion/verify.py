@@ -332,6 +332,26 @@ def main() -> int:
                     "attempt_completed":True,"artifacts":1,"validation_results":4,"audit":1,
                 }):
             raise AssertionError("atomic P33 completion outcome mismatch")
+        replay = owner.complete(claim, worker_ref="p33-verifier-worker",
+                                publication=publication)
+        replay_state = _state(dsn, data)
+        if (replay.artifact_id != facts.artifact_id or replay.request_state != facts.request_state
+                or replay.artifact_state != facts.artifact_state or replay.changed
+                or replay.lock_version != facts.lock_version or replay_state != final):
+            raise AssertionError("exact P33 success replay changed or differed from original result")
+        altered_publication = OutputArtifactPublication(
+            uuid.uuid4(), data["execution"], data["document"], data["version"], data["file"],
+            data["content_hash"], 17, MIME, publication.validations,
+        )
+        try:
+            owner.complete(claim, worker_ref="p33-verifier-worker",
+                           publication=altered_publication)
+        except OutputGenerationCompletionError:
+            pass
+        else:
+            raise AssertionError("altered P33 replay was accepted")
+        if _state(dsn, data) != final:
+            raise AssertionError("altered P33 replay changed persisted state")
         print(json.dumps({
             "status":"PASS_SCOPE_LIMITED",
             "postgresql":"18.x hosted temporary database",
@@ -343,6 +363,8 @@ def main() -> int:
             "audit_failure_full_rollback":"PASS",
             "mismatched_document_rejected":"PASS",
             "audit_event_persisted_in_same_transaction":True,
+            "exact_success_replay_idempotent":"PASS",
+            "altered_success_replay_rejected":"PASS",
             "files_created":False,"plugin_executed":False,
             "customer_data":False,"production_write_open":False,
         },sort_keys=True))

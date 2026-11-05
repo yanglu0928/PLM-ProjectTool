@@ -270,6 +270,37 @@ class SqlAlchemyJobLeaseRepository:
             owner_filter=("output", "OUTPUT_GENERATE"),
         )
 
+    def check_output_success(self, transaction: object, *, job_id: uuid.UUID,
+                             fencing_token: int, worker_ref: str) -> ClaimedJob:
+        """Read the exact completed Output claim for safe completion replay."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token,
+                            worker_ref=worker_ref)
+        session = self._session(transaction)
+        job = session.scalar(select(JobRow).where(
+            JobRow.job_id == job_id,
+        ).with_for_update(of=JobRow))
+        lease = session.scalar(select(JobLeaseRow).where(
+            JobLeaseRow.job_id == job_id,
+            JobLeaseRow.fencing_token == fencing_token,
+        ).with_for_update(of=JobLeaseRow))
+        attempt = session.scalar(select(JobAttemptRow).where(
+            JobAttemptRow.job_id == job_id,
+            JobAttemptRow.fencing_token == fencing_token,
+        ).with_for_update(of=JobAttemptRow))
+        if (job is None or lease is None or attempt is None
+                or job.owner_module != "output" or job.job_type != "OUTPUT_GENERATE"
+                or job.project_id is None or job.state != "SUCCEEDED"
+                or job.fencing_token != fencing_token or job.lease_expires_at is not None
+                or job.completed_at is None
+                or lease.state != "RELEASED" or lease.worker_ref != worker_ref
+                or lease.lease_expires_at <= job.completed_at
+                or lease.acquired_at > job.completed_at
+                or attempt.worker_ref != worker_ref or attempt.attempt_no != job.attempt_count
+                or attempt.completed_at != job.completed_at or attempt.error_code is not None
+                or attempt.started_at > job.completed_at):
+            raise JobLeaseError("STALE_LEASE")
+        return self._claim(job)
+
     def check_output_claim(self, transaction: object, *, job_id: uuid.UUID,
                            fencing_token: int, worker_ref: str) -> ClaimedJob:
         """Return a short-lived proof for the exact active Output generation lease."""

@@ -63,7 +63,13 @@ class FakeWorld:
 
     def lock_candidate(self, transaction, *, claim, execution_id):
         if (claim.job_id!=self.job_id or execution_id!=self.execution_id
-                or self.state["request"]!="GENERATING"):
+                or self.state["request"] not in {"GENERATING","SUCCEEDED"}):
+            raise OutputGenerationCompletionError()
+        return self.facts(changed=False)
+
+    def verify_completed_generation(self, transaction, *, claim, execution_id, publication):
+        if (self.state["request"]!="SUCCEEDED" or self.state["artifact"]!="AVAILABLE"
+                or publication!=self.publication or execution_id!=self.execution_id):
             raise OutputGenerationCompletionError()
         return self.facts(changed=False)
 
@@ -81,6 +87,12 @@ class FakeWorld:
     def check_output_claim(self, transaction, *, job_id, fencing_token, worker_ref):
         if (job_id!=self.job_id or fencing_token!=7 or worker_ref!="worker-1"
                 or self.state["lease"]!="ACTIVE"):
+            raise JobLeaseError("STALE_LEASE")
+        return self.claim
+
+    def check_output_success(self, transaction, *, job_id, fencing_token, worker_ref):
+        if (job_id!=self.job_id or fencing_token!=7 or worker_ref!="worker-1"
+                or self.state["job"]!="SUCCEEDED" or self.state["lease"]!="RELEASED"):
             raise JobLeaseError("STALE_LEASE")
         return self.claim
 
@@ -123,6 +135,21 @@ class OutputGenerationCompletionOwnerTests(unittest.TestCase):
                          ("OUTPUT_GENERATION_SUCCEEDED","SUCCESS","GENERATING","SUCCEEDED"))
         self.assertEqual((event.actor_id,event.original_actor_id),
                          (self.world.system_id,self.world.requester_id))
+
+    def test_exact_success_replay_returns_original_facts_without_writes(self):
+        first=self.owner.complete(self.world.claim,worker_ref="worker-1",
+                                  publication=self.world.publication)
+        before=(self.world.state["request"],self.world.state["artifact"],
+                self.world.state["job"],self.world.state["lease"],
+                len(self.world.state["audit"]),self.world.calls)
+        replay=self.owner.complete(self.world.claim,worker_ref="worker-1",
+                                   publication=self.world.publication)
+        after=(self.world.state["request"],self.world.state["artifact"],
+               self.world.state["job"],self.world.state["lease"],
+               len(self.world.state["audit"]),self.world.calls)
+        self.assertEqual(replay,first)
+        self.assertFalse(replay.changed)
+        self.assertEqual(after,before)
 
     def test_audit_failure_rolls_back_all_four_owners(self):
         self.world.fail_audit=True

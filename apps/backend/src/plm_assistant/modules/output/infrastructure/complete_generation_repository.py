@@ -34,17 +34,129 @@ class SqlAlchemyOutputGenerationCompletionRepository:
                 OutputRequestRow.context_snapshot_id == snapshot_id,
             ).with_for_update(of=OutputRequestRow).execution_options(populate_existing=True)
         )
-        if (row is None or row.request_state != "GENERATING"
-                or row.current_execution_ref != execution_id or row.completed_at is not None):
+        if (row is None or row.current_execution_ref != execution_id):
             raise OutputGenerationCompletionError()
-        existing = session.scalar(select(OutputArtifactRow.output_artifact_id).where(
+        if row.request_state == "GENERATING" and row.completed_at is None:
+            existing = session.scalar(select(OutputArtifactRow.output_artifact_id).where(
+                OutputArtifactRow.plugin_execution_id == execution_id,
+                OutputArtifactRow.project_id == claim.project_id,
+            ).limit(1))
+            if existing is not None:
+                raise OutputGenerationCompletionError()
+            return self._facts(
+                artifact_id=None, row=row, execution_id=execution_id, changed=False,
+            )
+        if row.request_state != "SUCCEEDED" or row.completed_at is None:
+            raise OutputGenerationCompletionError()
+        artifact = session.scalar(select(OutputArtifactRow).where(
+            OutputArtifactRow.output_request_id == request_id,
             OutputArtifactRow.plugin_execution_id == execution_id,
             OutputArtifactRow.project_id == claim.project_id,
-        ).limit(1))
-        if existing is not None:
+        ).with_for_update(of=OutputArtifactRow))
+        if artifact is None or artifact.artifact_state != "AVAILABLE":
             raise OutputGenerationCompletionError()
         return self._facts(
-            artifact_id=None, row=row, execution_id=execution_id, changed=False,
+            artifact_id=artifact.output_artifact_id, row=row,
+            execution_id=execution_id, changed=False,
+        )
+
+    def verify_completed_generation(
+            self, transaction: object, *, claim: ClaimedJob,
+            execution_id: uuid.UUID, publication: OutputArtifactPublication
+    ) -> OutputGenerationCompletionFacts:
+        session = self._session(transaction)
+        request_id = uuid.UUID(claim.payload_refs["output_request_id"])
+        snapshot_id = uuid.UUID(claim.payload_refs["context_snapshot_id"])
+        request = session.scalar(select(OutputRequestRow).where(
+            OutputRequestRow.output_request_id == request_id,
+            OutputRequestRow.project_id == claim.project_id,
+            OutputRequestRow.job_ref == claim.job_id,
+            OutputRequestRow.context_snapshot_id == snapshot_id,
+        ).with_for_update(of=OutputRequestRow).execution_options(populate_existing=True))
+        if (request is None or request.request_state != "SUCCEEDED"
+                or request.current_execution_ref != execution_id
+                or request.completed_at is None
+                or request.output_type not in {"DOCX", "PPTX", "PNG", "JPEG"}
+                or publication.media_type != {
+                    "DOCX":"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    "PPTX":"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    "PNG":"image/png","JPEG":"image/jpeg",
+                }[request.output_type]):
+            raise OutputGenerationCompletionError()
+        execution = session.scalar(select(PluginExecutionRow).where(
+            PluginExecutionRow.plugin_execution_id == execution_id,
+            PluginExecutionRow.output_request_id == request_id,
+            PluginExecutionRow.project_id == claim.project_id,
+            PluginExecutionRow.job_id == claim.job_id,
+            PluginExecutionRow.attempt_no == claim.attempt_no,
+            PluginExecutionRow.execution_state == "SUCCEEDED",
+            PluginExecutionRow.result_manifest_ref.is_not(None),
+            PluginExecutionRow.result_fingerprint.is_not(None),
+        ))
+        if execution is None:
+            raise OutputGenerationCompletionError()
+        artifact = session.scalar(select(OutputArtifactRow).where(
+            OutputArtifactRow.output_artifact_id == publication.artifact_id,
+            OutputArtifactRow.project_id == claim.project_id,
+            OutputArtifactRow.output_request_id == request_id,
+            OutputArtifactRow.plugin_execution_id == execution_id,
+            OutputArtifactRow.document_id == publication.document_id,
+            OutputArtifactRow.document_version_id == publication.document_version_id,
+            OutputArtifactRow.file_object_id == publication.file_object_id,
+            OutputArtifactRow.artifact_kind == request.output_type,
+            OutputArtifactRow.media_type == publication.media_type,
+            OutputArtifactRow.artifact_sha256 == publication.sha256,
+            OutputArtifactRow.size_bytes == publication.size_bytes,
+            OutputArtifactRow.artifact_state == "AVAILABLE",
+        ).with_for_update(of=OutputArtifactRow))
+        if (artifact is None or artifact.published_at is None
+                or artifact.validation_summary != {
+                    "format_code":"PASSED", "structure_code":"PASSED",
+                    "hash_code":"PASSED", "content_code":"PASSED",
+                }):
+            raise OutputGenerationCompletionError()
+        file_object = session.scalar(select(FileObjectRow).where(
+            FileObjectRow.file_object_id == publication.file_object_id,
+            FileObjectRow.scope == "PROJECT", FileObjectRow.project_id == claim.project_id,
+            FileObjectRow.file_state == "AVAILABLE", FileObjectRow.sha256 == publication.sha256,
+            FileObjectRow.size_bytes == publication.size_bytes,
+            FileObjectRow.detected_mime == publication.media_type,
+        ))
+        document = session.scalar(select(DocumentRow).where(
+            DocumentRow.document_id == publication.document_id,
+            DocumentRow.document_category == "GENERATED_ARTIFACT",
+            DocumentRow.scope == "PROJECT", DocumentRow.project_id == claim.project_id,
+            DocumentRow.document_state == "ACTIVE",
+        ))
+        version = session.scalar(select(DocumentVersionRow).where(
+            DocumentVersionRow.document_version_id == publication.document_version_id,
+            DocumentVersionRow.document_id == publication.document_id,
+            DocumentVersionRow.scope == "PROJECT", DocumentVersionRow.project_id == claim.project_id,
+            DocumentVersionRow.file_object_id == publication.file_object_id,
+            DocumentVersionRow.content_sha256 == publication.sha256,
+            DocumentVersionRow.size_bytes == publication.size_bytes,
+            DocumentVersionRow.detected_mime == publication.media_type,
+            DocumentVersionRow.availability_state == "AVAILABLE",
+        ))
+        if file_object is None or document is None or version is None:
+            raise OutputGenerationCompletionError()
+        saved = session.scalars(select(OutputArtifactValidationResultRow).where(
+            OutputArtifactValidationResultRow.output_artifact_id == publication.artifact_id,
+            OutputArtifactValidationResultRow.project_id == claim.project_id,
+        )).all()
+        expected = sorted(
+            (item.code, item.state, item.evidence_fingerprint)
+            for item in publication.validations
+        )
+        actual = sorted(
+            (item.validation_code, item.validation_state, item.evidence_fingerprint)
+            for item in saved
+        )
+        if actual != expected:
+            raise OutputGenerationCompletionError()
+        return self._facts(
+            artifact_id=publication.artifact_id, row=request,
+            execution_id=execution_id, changed=False,
         )
 
     def complete_generation(self, transaction: object, *, claim: ClaimedJob,

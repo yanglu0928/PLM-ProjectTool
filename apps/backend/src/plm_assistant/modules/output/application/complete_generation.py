@@ -100,6 +100,8 @@ class OutputGenerationCompletionRepositoryPort(Protocol):
 class OutputGenerationCompletionJobsPort(Protocol):
     def check_output_claim(self, transaction: object, *, job_id: uuid.UUID,
                            fencing_token: int, worker_ref: str) -> ClaimedJob: ...
+    def check_output_success(self, transaction: object, *, job_id: uuid.UUID,
+                             fencing_token: int, worker_ref: str) -> ClaimedJob: ...
     def finish(self, transaction: object, *, job_id: uuid.UUID,
                fencing_token: int, worker_ref: str) -> ClaimedJob: ...
 
@@ -135,15 +137,39 @@ class OutputGenerationCompletionOwner:
                     transaction, claim=claim, execution_id=publication.plugin_execution_id,
                 )
                 if (type(candidate) is not OutputGenerationCompletionFacts
-                        or candidate.artifact_id is not None
                         or candidate.output_request_id != request_id
                         or candidate.context_snapshot_id != snapshot_id
                         or candidate.job_id != claim.job_id
                         or candidate.project_id != claim.project_id
                         or candidate.execution_id != publication.plugin_execution_id
-                        or candidate.request_state != "GENERATING"
-                        or candidate.artifact_state != "MISSING"
                         or candidate.changed or candidate.lock_version < 1):
+                    raise OutputGenerationCompletionError()
+                if candidate.request_state == "SUCCEEDED":
+                    if (candidate.artifact_id != publication.artifact_id
+                            or candidate.artifact_state != "AVAILABLE"):
+                        raise OutputGenerationCompletionError()
+                    completed = self._jobs.check_output_success(
+                        transaction, job_id=claim.job_id,
+                        fencing_token=claim.fencing_token, worker_ref=worker_ref,
+                    )
+                    if (type(completed) is not ClaimedJob or completed != claim
+                            or completed.job_type != "OUTPUT_GENERATE"
+                            or completed.project_id != claim.project_id
+                            or completed.payload_refs != claim.payload_refs):
+                        raise OutputGenerationCompletionError()
+                    facts = self._repo.verify_completed_generation(
+                        transaction, claim=claim,
+                        execution_id=publication.plugin_execution_id,
+                        publication=publication,
+                    )
+                    if (type(facts) is not OutputGenerationCompletionFacts
+                            or facts != candidate or facts.changed
+                            or facts.artifact_id != publication.artifact_id):
+                        raise OutputGenerationCompletionError()
+                    return facts
+                if (candidate.artifact_id is not None
+                        or candidate.request_state != "GENERATING"
+                        or candidate.artifact_state != "MISSING"):
                     raise OutputGenerationCompletionError()
                 current = self._jobs.check_output_claim(
                     transaction, job_id=claim.job_id,
