@@ -57,3 +57,9 @@ EnabledOperation是当前启用投影，Disable流程会删除该行并保留不
 
 - 在修复PLG-01 current-head检查前，对父包PG smoke显式调用的其余迁移verifier进行源码盘点，发现 `validation/plg-02-a06-operation-disable/verify.py` 的“有历史数据时downgrade拒绝且head不变”断言也将当前head硬编码为 `20261104_0230`。该断言属于PLG-03持久化增加后的兼容验收，未更新会在PLG-01通过后继续中断PG smoke。
 - 修复计划：仅更新上述当前head值到 `20261105_0231`；保留downgrade拒绝、历史保留及其它PLG-02既有断言。此项由源码盘点先行发现，尚无对应运行失败证据；与CR既有真实偏差记录区分。
+
+
+## 第五轮 hosted PG smoke偏差（2026-11-05，修复前登记）
+
+- run [41973267273](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41973267273) 后端全量、前端/build、依赖/父包组装与A35/A17 candidate/P24/A50通过。父包PG smoke依次通过P01迁移链及PLG-01 staging head，到PLG-01空库旧触发器数量断言时失败：验证器用全局 `tgname LIKE 'trg_plg_%'` 统计，固定期望21；新增PLG-03三表提供6个独立保护触发器后结果为27，尚未执行PLG-01后续及PLG-03专项断言。该失败是历史验证器范围耦合，不是触发器错误或Migration通过证据。
+- 修复计划：在PLG-01验证器中明确排除PLG-03三张表，只统计PLG-01/02既有关系上的历史21个guard；PLG-03 6个guard继续由PLG-03专属验证器以精确名字与行为独立检查。保留PLG-01/02原21项断言，不降低阈值、不更改业务DDL；随后重新运行Hosted链。

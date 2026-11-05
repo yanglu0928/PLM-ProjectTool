@@ -91,10 +91,13 @@ def _assert_guards(dsn: str) -> None:
     with psycopg.connect(dsn) as conn:
         actual = conn.execute(
             "SELECT count(*) FROM pg_trigger "
-            "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%'"
+            "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%' "
+            "AND tgrelid::regclass::text NOT IN "
+            "('plm.plg_executions','plm.plg_execution_result_files',"
+            "'plm.plg_execution_state_events')"
         ).fetchone()[0]
     if actual != 21:
-        raise AssertionError(f"expected 21 PLG immutable/truncate/owner guards through 0230, got {actual}")
+        raise AssertionError(f"expected 21 PLG-01/02 immutable/truncate/owner guards, got {actual}")
     with psycopg.connect(dsn) as conn:
         closed = conn.execute(
             "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
