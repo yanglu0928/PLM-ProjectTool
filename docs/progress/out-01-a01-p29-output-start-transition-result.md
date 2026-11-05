@@ -1,8 +1,8 @@
-# OUT-01-A01-P29：Output 生成启动原子事务验证记录（待云端验收）
+# OUT-01-A01-P29：Output 生成启动原子事务验证记录（首轮验收脚本失败，修复后待复验）
 
 - 日期：2026-11-05
 - Change Request：CR-OUT-025
-- 状态：代码及托管验证已提交；GitHub Actions run 41947921582 pending，尚未 PASS
+- 状态：代码已提交；首轮GitHub Actions run 41948211782的父包PG smoke在P29 verifier调用前因结果字典字面量\\n语法错误失败。CR-OUT-025已记录偏差，修复提交8e82c05后等待完整Hosted复验，尚未PASS
 
 ## 实施内容
 
