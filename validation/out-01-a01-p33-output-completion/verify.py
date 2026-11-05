@@ -114,10 +114,10 @@ def _seed(dsn: str, *, data: dict) -> None:
             "INSERT INTO plm.out_output_requests "
             "(output_request_id,project_id,output_type,template_version_ref,source_version_refs,"
             "output_policy_ref,plugin_operation,context_snapshot_id,input_fingerprint,"
-            "request_state,job_ref,current_execution_ref,idempotency_key,trace_id,requested_by) "
+            "request_state,job_ref,current_execution_ref,idempotency_key,trace_id,requested_by,lock_version) "
             "VALUES (%(request)s,%(project)s,'DOCX',%(template)s,%(source_refs)s::jsonb,"
             "'synthetic-policy','synthetic.operation',%(snapshot)s,%(context_hash)s,"
-            "'GENERATING',%(job)s,%(execution)s,%(request_key)s,%(trace)s,%(user)s)", data)
+            "'GENERATING',%(job)s,%(execution)s,%(request_key)s,%(trace)s,%(user)s,1)", data)
         conn.execute(
             "INSERT INTO plm.plg_executions "
             "(plugin_execution_id,project_id,output_request_id,output_context_snapshot_id,"
