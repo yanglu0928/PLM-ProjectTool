@@ -1,8 +1,8 @@
 ## Unreleased · 2026-11-05（内部云端开发，非发行版本）
 
-- OUT-01-A01-P26按CR-OUT-022以PASS_SCOPE_LIMITED完成，结果见 docs/progress/out-01-a01-p26-output-job-claim-result.md。Hosted run [41931429638](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41931429638) 中后端4,023 tests/wheel、前端测试/typecheck/build、PG18/pgvector、父包PG smoke、A17/A34/A35/A50、P24均通过；14 jobs中仅P25失败。PG smoke验证Output专属claim取2项匹配作业，generic claim只取3项非Output作业且保留剩余Output作业为PENDING，fencing正确。
-- P25仍在GitHub hosted Windows runner D盘的initdb数据目录创建前以 0xC0000135 失败；未运行真实HTTP/Edge或业务计数复核。P25、Gate、Pilot、正式Release状态不变。
-- 兼容性/升级：P26仅改内部Jobs claim隔离，无公开API、Schema、Migration、安装包升级或数据迁移。未执行插件、生成文件、客户数据或外部API。开发与验证只在GitHub hosted云端D盘临时区运行；未使用用户本机或C盘。
+- OUT-01-A01-P27按CR-OUT-023以PASS_SCOPE_LIMITED完成。hosted run [41940381378](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41940381378) 后端4,027 tests/wheel、前端测试/typecheck/build、PG18/pgvector与父包PG smoke通过。新Output准入Owner核对Claim、OutputRequest、ContextSnapshot及创建时总input_fingerprint，并复查当前Plugin enabled/trusted/输出格式；错误绑定或能力被撤销时失败关闭。返回不含上下文正文；无Schema/API变化、插件执行、文件生成或外部调用。详情见 docs/progress/out-01-a01-p27-output-job-admission-result.md。
+- 同run P25仍在initdb阶段以 0xC0000135 失败，真实Output HTTP/Edge未执行。Pilot、Gate与正式Release不变。
+- 兼容性/升级：新增内部准入Owner/只读Repository，无Migration、公开API、安装包升级或数据迁移。只在GitHub hosted Windows Server 2025 runner D盘合成PG数据验证；未在用户本机或C盘运行。后续真实Worker仍需活动lease/fencing与正式信任链。
 
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
