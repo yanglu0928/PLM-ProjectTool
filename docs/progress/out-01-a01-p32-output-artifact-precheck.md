@@ -1,28 +1,32 @@
 # OUT-01-A01-P32 编码前检查：OutputArtifact 持久化基础
 
 - 日期：2026-11-05
-- 结论：PASS_WITH_LIMITATION（编码前检查已满足；Artifact ORM/Migration hosted PG18 验收待完成）
+- 结论：BLOCKED_DEPENDENCY；未开始Artifact编码
 - 变更记录：[CR-OUT-028](../changes/CR-OUT-028-output-artifact-persistence.md)
-- 依赖证据：[PLG-03-A01 验收结果](plg-03-a01-execution-persistence-result.md)
 
-## 冻结基线及依赖复核
+## 问题与基线
 
-OutputRequest 已具备固定来源及 Job 状态；OutputArtifact尚无持久化。冻结 Data Model V1/DB Schema V1 (OUT-02) 要求Artifact只在 FileObject、DocumentVersion、PluginExecution、Hash与OutputRequest一致且验证后才可成为AVAILABLE；SC-01映射 `out_artifacts` 和 `out_artifact_validation_results`，SC-02指定M-PRJ。
+OutputRequest 已经具备固定来源及 Job 状态，但尚无关系化的 OutputArtifact 持久化。冻结的 Output 模型要求仅在 FileObject、DocumentVersion、PluginExecution 和 Hash 完整且验证后才可将 OutputArtifact 标为 AVAILABLE。DB Schema V1/SC-01 已映射 OUT-02 根表 `out_artifacts` 与 `out_artifact_validation_results`；SC-02 指定 OUT-02 为 M-PRJ。此实现补齐冻结 Schema，不改变 Gate 2 基线。
 
-PLG-03-A01已在 hosted PG18.6 独立验证通过，创建 `plg_executions`、`plg_execution_result_files`、`plg_execution_state_events`。迁移链和 ORM现已存在稳定Execution Root及PROJECT关系，因此原物理Root缺失阻断解除。P25的Windows `initdb.exe` 诊断仍独立未通过，不能据此推断产品环境兼容。
+源码检查：Output 模块当前仅有 OutputRequest/Context ORM及 P29-P31 状态转移；在现有模块树和 Alembic revisions 中未发现 OutputArtifact 表/Owner。Document ORM 已有 FileObject、DocumentVersion；Plugin ORM 当前没有 PluginExecution ORM或 `plg_executions` 表；Jobs Lease Owner 有受 fencing 保护的 `finish`。PluginExecution只在冻结模型中定义，并非现有实现。
 
-## 单一实现范围与设计
+## 执行边界
 
-按 CR-OUT-028 新增 SQLAlchemy ORM、Alembic `20261105_0232` 和独立迁移验证：
-- M-PRJ root绑定 OutputRequest 与 Project，并以复合 FK绑定同一Project中的 PluginExecution + OutputRequest；关联DocumentVersion、其FileObject、scope/project、SHA-256、字节数与MIME均由复合外键锁定。
-- 在 PLG Execution、DocumentVersion 上增加仅用于支持这些冻结跨Root复合关系的候选唯一键；不得改变其Owner行为/状态或打破既有migration。
-- Artifact仅允许冻结状态 `VALIDATING / AVAILABLE / RESTRICTED / REVOKED`；唯一字节指纹/长度和验证时态须一致。Validation child为append-only，只记录受控校验码、枚举和指纹，不接受客户正文/路径。
-- Artifact root所有写入默认关闭，由专属GUC trigger预留未来Owner边界；Validation只允许同一GUC下插入且拒绝更新/删除。两表阻断TRUNCATE。没有发布Owner/API/worker/文件I/O/plugin执行。
+P32 暂停：无法在遵守冻结DB外键合同的前提下引用尚未持久化的PluginExecution。已将依赖任务转为 PLG-03-A01；待其Root和Migration在hosted PG18通过后，再恢复P32。
 
-## 风险、回滚与验收计划
+## 验收计划和限制
 
-风险为跨Project或错配Request/Execution/DocumentVersion/file/hash以及错误AVAILABLE状态；以复合FK、唯一键、状态与指纹约束、关闭写入守卫和PG18负例覆盖。新迁移降级先检查两表均为空，否则拒绝并保留历史；空库降级/重升必须通过。验证在GitHub hosted Windows Server 2025 runner D:临时目录完成：backend全量/wheel、空库/有既有数据 migration lifecycle、约束与trigger负例、父包PG18 smoke。不得把Artifact基础持久层PASS描述成可生成/发布文件；P25、Pilot、Gate、Release继续分别记状态。
+遵守冻结 M-PRJ/Append-only/复合ProjectId引用、状态白名单和Hash大小限制。托管PG18执行空库升级、既有合成数据升级、空库降级/重升，以及有历史时拒绝降级并留存。全量后端测试/Wheel和父包隔离PG smoke 通过后才标记PASS_SCOPE_LIMITED。
 
-## 先前阻断更正
+不生成文件、不执行插件、不调用外部API、不接客户数据；不代表Artifact发布、真实Output Create、Windows 11设备、Pilot、Gate 3或正式Release已通过。P25现存initdb问题独立保留，不通过削减/模拟它来验收P32。
 
-最初文档把“已在冻结模型定义”误写成“已有Plugin ORM/表实现”。更正前未开始Artifact代码/DDL，也未发生数据库写入。CR-OUT-028先记录缺项，转入PLG-03-A01。PLG-03-A01独立PG18验收完成后，本次重新盘点确认依赖已经满足并恢复P32。
+
+## 更正记录（2026-11-05）
+
+最初文档把“已在冻结模型定义”误写成“已有Plugin ORM/表实现”。对当前分支 `plugin/infrastructure/orm.py`、Migration树与 OutputArtifact AVAILABLE 不变量复核后确认该描述不准确。更正前未开始Artifact代码/DDL，也未触发任何数据库写入。CR-OUT-028同步调整为依赖阻断；先完成PluginExecution持久化基础。
+
+
+编码前补充：`artifact_kind`与OutputRequest的固定`output_type`绑定；GENERATED_ARTIFACT Document、DocumentVersion、PROJECT FileObject、Execution、Request均以复合候选键/FK组成一个不可漂移引用链。Validation摘要只接受受控代码字段，不接纳自由文本。以上仅是冻结字段的物理约束化，不扩展业务范围。
+
+
+AVAILABLE状态附加约束：数据库要求format、structure、hash、content四个受控验证结果码均为`PASSED)，同时必须设置published_at；Root引用内容在DB层不可改写。写入口仍关闭，状态表达式不构成发布Owner。
