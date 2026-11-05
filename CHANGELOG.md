@@ -468,3 +468,7 @@
 
 ## Unreleased · 2026-11-05（P32第三轮发现触发器缺陷）
 - run [41983022536](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41983022536) 中迁移/约束/owner closed/TRUNCATE验证推进至Artifact validation child insert，发现trigger函数因PL/pgSQL复合布尔条件跨表字段求值而失败。该产品触发器缺陷先记CR-OUT-028，尚无P32通过结论；修复后重跑。P25独立失败。
+
+
+## Unreleased · 2026-11-05（P32发现AVAILABLE SQL NULL校验缺口）
+- run [41984648401](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41984648401) 后端/前端与父包组装成功，专项验证发现缺失validation_summary JSON键使CHECK返回NULL并按PostgreSQL规则通过，从而未能阻止合成未验证Artifact进入AVAILABLE。先记CR-OUT-028，修复为NULL安全比较；P32未通过，生产发布能力仍关闭。

@@ -51,3 +51,9 @@ AVAILABLE额外守卫：物理CHECK要求Artifact进入AVAILABLE前，受控摘�
 
 - run [41983022536](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41983022536) 的后端、前端与父包组装通过；P32 verifier通过Migration、候选键/FK、关闭写、状态/外键负例及根子表合并TRUNCATE保护。合成Artifact触发器验证子表append时出现`record "new" has no field "output_request_id"`：PL/pgSQL把根表字段比较写在复合布尔条件中，子表trigger调用时被求值，属真实触发器缺陷。P32未通过，后续四项验证尚未运行。
 - 修复计划：按`TG_TABLE_NAME`做嵌套分支，仅在`out_artifacts`分支访问根表字段；validation child分支只允许受GUC保护的INSERT。无状态/API/Schema范围变化，随后重跑Hosted全链。P25仍独立失败。
+
+
+## 第四轮 P32 hosted 缺陷（2026-11-05，修复前登记）
+
+- run [41984648401](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41984648401) 的后端、前端与父包组装通过；P32 verifier通过迁移/复合关系、owner closed、FK/状态负例、两表TRUNCATE、validation child追加、child不可更新/删除及Artifact引用不可变检查。之后发现无验证摘要时将状态更新为AVAILABLE仍被接受：CHECK表达式对缺失JSON键产生SQL NULL，而PostgreSQL的CHECK把NULL视为通过。此前“验证结果必需”的声明未经成立，不将本轮视为通过。
+- 修复计划：将AVAILABLE的四个必过代码比较改为`IS NOT DISTINCT FROM 'PASSED'`以令NULL明确失败；同步ORM metadata与migration，并保留 verifier 的缺项AVAILABLE负例。无业务Root/API/Owner范围变化，随后重跑完整Hosted链。P25保持独立。
