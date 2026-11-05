@@ -1,4 +1,4 @@
-|Execution Note|2026-11-05 OUT-01-A01-P32 ORM/Migration/verifier代码已提交至功能分支，等待GitHub hosted Windows D盘全链与PG18专项验收；不开放生成/发布Owner、API、文件I/O或插件执行。|
+|Execution Note|P32首轮hosted run [41979765906](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41979765906) 在新verifier的Job哨兵保留查询处因uuid.UUID与TEXT trace_id绑定不匹配中断；Migration 0232已运行至该查询，P32专项未形成结论。偏差已先记CR-OUT-028，当前仅修verifier参数后云端重跑。|\n|Execution Note|2026-11-05 OUT-01-A01-P32 ORM/Migration/verifier代码已提交至功能分支，等待GitHub hosted Windows D盘全链与PG18专项验收；不开放生成/发布Owner、API、文件I/O或插件执行。|
 |Execution Note|2026-11-05 PLG-03-A01依CR-PLG-014完成：hosted run [41974625395](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41974625395) 的PG18.6独立schema verifier为PASS_SCOPE_LIMITED，含既有Job行升级、约束、空库降级重升、历史降级阻断及写关闭/TRUNCATE保护；父包PG smoke、后端/wheel、前端等通过。P25独立initdb 0xC0000135失败，整体run非全绿。无插件执行或客户数据。现恢复P32。详情见docs/progress/plg-03-a01-execution-persistence-result.md。仅GitHub hosted runner D盘。|
 |Current WBS|OUT-01-A01-P32：按CR-OUT-028实现冻结OUT-02 OutputArtifact与validation results ORM/Migration；不接发布Owner/API/插件/文件。|
 |Current WBS Status|PLG-03-A01 PASS_SCOPE_LIMITED；P32编码中，hosted PG18验收待完成；P25仍BLOCKED_DIAGNOSTIC。|

@@ -456,3 +456,7 @@
 - 依赖解除后恢复OUT-01-A01-P32；按CR-OUT-028先更新编码前检查。P32的OUT-02持久层代码已提交，GitHub hosted全链与PG18专项验收待完成；API/发布Owner/文件生成与插件执行继续关闭。
 - 兼容性/运行位置：数据库迁移链计划推进至20261105_0232；只在GitHub hosted Windows runner D:临时目录运行。本机/C盘不运行项目程序或测试。
 - Pilot、Gate 3～7及正式Release状态不变，Windows 11设备与三平台发行未因此通过。
+
+
+## Unreleased · 2026-11-05（P32首轮托管验收未关闭）
+- run [41979765906](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41979765906) 后端全量/wheel、前端/build、嵌入式组装通过；父包PG smoke在P32验证器查询既有合成Job哨兵时因TEXT trace_id错误绑定UUID而停止。该结果不能判定P32约束或Migration验收通过/失败。偏差和仅修验证器参数计划先记CR-OUT-028；等待后续云端全链复验。P25为独立失败，本机/C盘未运行代码。

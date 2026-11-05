@@ -33,3 +33,9 @@
 
 
 AVAILABLE额外守卫：物理CHECK要求Artifact进入AVAILABLE前，受控摘要中的format/structure/hash/content四项均为`PASSED`，且published_at已设置。Root内容引用在触发器中不可变；Owner仅可推进状态/验证摘要/发布时间/lock_version，Validation结果只能追加。这避免仅有任意校验字符串时将未通过文件标成可用。
+
+
+## 首轮 P32 hosted 偏差（2026-11-05，修复前登记）
+
+- Hosted run [41979765906](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41979765906) 的后端全量/wheel、前端/build、父包组装均成功；父包PG smoke已进入P32 verifier。0232升级及新关系安装执行到既有合成Job保留查询；验证器以`uuid.UUID`绑定`job_jobs.trace_id`（数据库类型为TEXT），PG拒绝`text = uuid`比较。该夹具错误导致verifier在约束目录/负例与升降重验前停止，P32结论未定，不能视为通过或DDL失败。P25同run为独立失败。
+- 修复计划：仅将 verifier 的合成`trace_id`参数固定为字符串，使INSERT/保留查询与TEXT schema一致；不改变产品ORM、Migration或验收范围，随后重跑Hosted全链。
