@@ -732,8 +732,19 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             tx.commit()
 
         files = [item for item in Path(storage_root).rglob("*") if item.is_file()]
-        if len(files) != 3:
-            raise AssertionError("A08 worker smoke changed the staged package count")
+        plugin_archives = [
+            item for item in files
+            if "plugins" in item.parts and "packages" in item.parts
+        ]
+        original_storage_files = [
+            item for item in files if item not in plugin_archives
+        ]
+        if (len(original_storage_files) != 3
+                or len(plugin_archives) != 1
+                or plugin_archives[0].read_bytes() != valid_archive):
+            raise AssertionError(
+                "A08 worker smoke did not preserve uploads and exact private package bytes"
+            )
     runtime.dispose()
     print("PLG_01_A08_PACKAGE_IMPORT_PG18_PASS: atomic upload; scoped claim; terminal signature rejection; "
           "verified metadata registration; bounded retry recovery; Audit rollback",

@@ -39,3 +39,10 @@
 GitHub hosted run [42063771396](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42063771396) 中，后端全量测试/wheel、前端/build、PG18 clean parent smoke、离线后端/父包组装、A35、P24与A50通过。A17 packaged flow 在合成验收代码直接构造 `PluginPackageImportWorker` 时失败：新增必需的 `archive_store` Port 未在该验证器构造中注入，日志明确为 `TypeError: PluginPackageImportWorker.__init__() missing 1 required keyword-only argument: 'archive_store'`。因此A17该次不通过，不能把对应的合成 Worker 链路视为已验证；产品 Windows composition 已接入同一 `LocalFileStorage`，后端全量通过。
 
 修复计划：仅在 `validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py` 的合成验证器构造中注入 `archive_store=storage`，用临时data_root验证精确ZIP持久化；保留A17已有的合成信任、Job、DB与Edge断言，随后重跑完整GitHub hosted workflow。无产品行为/Schema/API变更。P25同run仍因initdb.exe退出0xC0000135失败，独立保持BLOCKED_DIAGNOSTIC。
+
+
+## 第二轮 Hosted A17 验收偏差（2026-11-06，修复前登记）
+
+第二轮 hosted run [42067292485](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42067292485) 中，后端全量/wheel、前端/build、PG18 clean parent smoke、A35/P24/A50和父包构建通过；A17 packaged flow已越过首次漏注入，完成合成签名包导入与Worker重试后，因旧验证器断言整个storage_root固定只有3个文件而失败。新增的正确产品行为会在登记成功后另存一个私有 Plugin ZIP，故旧总数断言漏算了该目录，报告“A08 worker smoke changed the staged package count”。该次A17未PASS；不是存储Hash或Worker断言失败。P25仍独立因initdb.exe 0xC0000135失败。
+
+修复计划：保持原有3个上传/存储对象数量语义，额外要求受限 `plugins/packages` 目录下仅有1个归档文件，并逐字节核对它等于合成 `valid_archive`；保留所有现有Job/Audit/签名/重试断言，再重跑完整Hosted workflow。仅更新独立验收器，不调整产品行为和验收阈值。
