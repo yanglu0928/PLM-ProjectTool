@@ -105,8 +105,7 @@ describe("OutputRequestListView", () => {
       content_sha256: "a".repeat(64), size_bytes: 128,
       content_url: "/api/v1/projects/" + project + "/documents/31234567-89ab-4cde-8123-456789abcdef/versions/41234567-89ab-4cde-8123-456789abcdef/content",
     });
-    const artifactReader = { get: vi.fn().mockResolvedValue(reference) }
-      as unknown as OutputArtifactReadClient;
+    const artifactReader = { get: vi.fn().mockResolvedValue(reference) } as unknown as OutputArtifactReadClient;
     const navigate = vi.fn();
     const { wrapper } = await view(await session(),
       "/projects/" + project + "/output-requests", reader, artifactReader, navigate);
@@ -121,10 +120,8 @@ describe("OutputRequestListView", () => {
   it("does not navigate when artifact lookup fails", async () => {
     const succeeded = { ...row, state: "SUCCEEDED" as const,
       completed_at: "2026-10-19T00:01:00Z" };
-    const reader = { list: vi.fn().mockResolvedValue(page([succeeded])) }
-      as unknown as OutputRequestListClient;
-    const artifactReader = { get: vi.fn().mockRejectedValue(new Error("输出文件尚未可用或无权读取。")) }
-      as unknown as OutputArtifactReadClient;
+    const reader = { list: vi.fn().mockResolvedValue(page([succeeded])) } as unknown as OutputRequestListClient;
+    const artifactReader = { get: vi.fn().mockRejectedValue(new Error("输出文件尚未可用或无权读取。")) } as unknown as OutputArtifactReadClient;
     const navigate = vi.fn();
     const { wrapper } = await view(await session(),
       "/projects/" + project + "/output-requests", reader, artifactReader, navigate);
