@@ -1,8 +1,8 @@
 ## Unreleased · 2026-11-05（内部云端开发，非发行版本）
 
-- OUT-01-A01-P27按CR-OUT-023以PASS_SCOPE_LIMITED完成。hosted run [41940381378](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41940381378) 后端4,027 tests/wheel、前端测试/typecheck/build、PG18/pgvector与父包PG smoke通过。新Output准入Owner核对Claim、OutputRequest、ContextSnapshot及创建时总input_fingerprint，并复查当前Plugin enabled/trusted/输出格式；错误绑定或能力被撤销时失败关闭。返回不含上下文正文；无Schema/API变化、插件执行、文件生成或外部调用。详情见 docs/progress/out-01-a01-p27-output-job-admission-result.md。
-- 同run P25仍在initdb阶段以 0xC0000135 失败，真实Output HTTP/Edge未执行。Pilot、Gate与正式Release不变。
-- 兼容性/升级：新增内部准入Owner/只读Repository，无Migration、公开API、安装包升级或数据迁移。只在GitHub hosted Windows Server 2025 runner D盘合成PG数据验证；未在用户本机或C盘运行。后续真实Worker仍需活动lease/fencing与正式信任链。
+- OUT-01-A01-P28按CR-OUT-024以PASS_SCOPE_LIMITED完成。Hosted run [41944746044](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41944746044) 后端4,031 tests/wheel、前端/build、PG18/pgvector及父包PG smoke通过。新增Output专属活动lease proof，正确claim通过，错worker、旧fencing token、非Output owner和过期lease均拒绝；读取proof不改状态。详见 docs/progress/out-01-a01-p28-output-lease-proof-result.md。
+- P25仍在initdb阶段以0xC0000135失败，真实HTTP/Edge未执行；Pilot/Gate/正式Release不变。
+- 兼容/升级：无Schema、Migration、公开API、安装包升级或数据迁移。证明仅在hosted合成PG时点有效，非真实Worker/插件/文件发布验证。只在GitHub hosted runner D盘运行，未使用用户本机/C盘。
 
 
 ## Unreleased · 2026-11-05（内部云端验证，非发行版本）
