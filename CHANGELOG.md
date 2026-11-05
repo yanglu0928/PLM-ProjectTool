@@ -1,3 +1,11 @@
+## Unreleased · 2026-11-06（PLG-04-A02：Installation Owner归档证据复验，非发行版本）
+
+- 变更：Installation Owner先通过只读归档证据Port重新核验不可变已登记包身份/版本/哈希/签名/Manifest快照，再要求独立Host安装/兼容证据；失败关闭时不写Installation、RuntimeValidation或Audit。
+- 兼容性：无Schema/Migration/API、默认组合、生产publisher信任或依赖变化。
+- 升级：无需数据库迁移；历史无归档字节或无独立Host证据的包仍不能产生安装事实。
+- 已知问题：未配置正式publisher trust；未解压、安装或运行插件。P25真实Output Create HTTP/Edge仍被Windows hosted initdb 0xC0000135阻断；Pilot/Gate 3/Release未通过。
+- 验证：GitHub hosted run [42092840314](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42092840314) 后端/wheel、前端/build、clean PG18、A17专项summary marker、A34/A35、P24/A50通过；独立P25失败，故整体workflow非全绿。结论PASS_SCOPE_LIMITED。用户本机/C盘未运行。
+
 ## Unreleased · 2026-11-06（PLG-04-A01：Plugin签名包正文私有持久化）
 
 - 版本：未发行的内部开发候选；不是Pilot或正式Release。
