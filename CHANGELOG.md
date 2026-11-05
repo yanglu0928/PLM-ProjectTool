@@ -1,9 +1,9 @@
-## Unreleased · 2026-11-06（OUT-01-A01-P36：OutputArtifact固定引用读取候选，非发行版本）
+## Unreleased · 2026-11-06（OUT-01-A01-P36：OutputArtifact固定引用读取，非发行版本）
 
 - 变更：新增受项目授权的独立Artifact引用读取Application/Repository/HTTP及Windows Output read opt-in composition。仅SUCCEEDED请求、AVAILABLE Artifact、ACTIVE GENERATED_ARTIFACT Document及AVAILABLE固定DocumentVersion/FileObject的完整关系可返回；内容仍走受保护Document下载URL。
 - 兼容性：无数据库Schema/Migration；既有OUTPUT_REQUEST_GET/LIST响应未改变；默认login-only应用未挂载。
 - 已知限制：Windows正式License trust源仍阻塞Platform服务装配；前端下载入口尚未实施；Artifact引用URL需在Document下载路由已装配的受保护Platform模式使用。没有Win11实机、用户下载或Pilot证据。
-- 验证：待GitHub hosted Windows D盘后端全量/wheel、前端/build及父包PG18验证；失败或跳过项以run结果为准。本项暂为实现候选，未标PASS。详见 CR-OUT-032。
+- 验证：GitHub hosted run [42121003242](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42121003242)中后端4,087项/wheel、前端测试/build、父包PG18新Repository投影、A17/A34/A35/P24/A50均通过。整体workflow仅独立P25 HTTP/Edge失败，故P36为PASS_SCOPE_LIMITED而非整体workflow通过。详见CR-OUT-032与docs/progress/out-01-a01-p36-artifact-reference-read-result.md。
 
 ## Unreleased · 2026-11-06（PLG-04-A03：受控本地安装物化，非发行版本）
 
