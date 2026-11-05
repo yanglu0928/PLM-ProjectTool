@@ -77,7 +77,7 @@ class GeneratedVersionOwnerTests(unittest.TestCase):
         )
         self.facts = GeneratedVersionFacts(
             self.request_id, self.project_id, self.document_id, self.version_id,
-            self.file_id, execution, 1, True,
+            self.file_id, execution, uuid.uuid4(), 1, True,
         )
 
     def _owner(self, *, audit_fail=False):

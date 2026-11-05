@@ -57,6 +57,7 @@ class GeneratedVersionFacts:
     document_version_id: uuid.UUID
     file_object_id: uuid.UUID
     plugin_execution_id: uuid.UUID
+    requested_by: uuid.UUID
     version_no: int
     changed: bool
 
@@ -132,13 +133,14 @@ class OutputGeneratedDocumentVersionOwner:
                         or facts.document_version_id != publication.document_version_id
                         or facts.file_object_id != publication.file_object_id
                         or facts.plugin_execution_id != expected_execution
+                        or type(facts.requested_by) is not uuid.UUID or not facts.requested_by.int
                         or facts.version_no < 1):
                     raise GeneratedVersionError()
                 if facts.changed:
                     self._audit.append(tx, AuditEventDraft(
                         trace_id=trace_id, event_scope="PROJECT",
                         target_project_id=facts.project_id, actor_type="SYSTEM",
-                        actor_id=self._system_actor_id, original_actor_id=None,
+                        actor_id=self._system_actor_id, original_actor_id=facts.requested_by,
                         actor_hint_digest=None,
                         action="OUTPUT_GENERATED_DOCUMENT_VERSION_CREATED",
                         outcome="SUCCESS", target_owner_module="document",

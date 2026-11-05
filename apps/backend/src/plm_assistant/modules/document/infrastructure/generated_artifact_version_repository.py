@@ -144,7 +144,7 @@ class SqlAlchemyOutputGeneratedDocumentVersionRepository:
             return GeneratedVersionFacts(
                 request_id, claim.project_id, document.document_id,
                 existing.document_version_id, publication.file_object_id,
-                execution_id, existing.version_no, False)
+                execution_id, request.requested_by, existing.version_no, False)
 
         artifact = session.scalar(select(OutputArtifactRow.output_artifact_id).where(
             OutputArtifactRow.output_request_id == request_id,
@@ -210,7 +210,7 @@ class SqlAlchemyOutputGeneratedDocumentVersionRepository:
         return GeneratedVersionFacts(
             request_id, claim.project_id, document.document_id,
             publication.document_version_id, publication.file_object_id,
-            execution_id, version_no, True)
+            execution_id, request.requested_by, version_no, True)
 
     @staticmethod
     def _session(transaction: object) -> Session:
