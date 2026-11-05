@@ -51,3 +51,6 @@ PASS_WITH_LIMITATION。Package ORM已包含package_version、hash、Manifest sna
 
 - 2026-11-06 hosted run [42082726109](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42082726109)：后端/前端、PG18 clean smoke、A17、A35、A34均通过，唯一失败为独立P25的initdb环境诊断。A17候选源码包含A02真实PG Owner/Repository/archive adapter调用与成功/三类失败关闭断言；A17 job成功且无异常，但其嵌套回调的专用marker未进入最终artifact marker列表，降低了专项结果的可见性，故暂不据此关闭A02。
 - 修复前记录：只增强A17 harness结果可见性：在A02子探针成功返回后写入内存完成标志，并在外层A05 runner返回后输出一个受该标志保护的A02摘要marker；不重复调用Owner、不改产品代码或业务判断。重跑Hosted验证并确认artifact/log能显示该专项marker。
+
+- 2026-11-06 hosted run [42086074649](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42086074649)：A17/PG18正反例探针和clean PG smoke通过，且A34成功；但在入口的直接marker仍被A05 runner的结果采集边界吸收，最终marker列表未显式包含A02专项结果。源码执行到A17 PASS_LIMITED且无异常，但按预定可审计性要求不关闭A02。
+- 进一步修正记录（编码前）：A02成功后置位内存状态；在A05 `runner.smoke()` 返回的结构化结果 `markers` 列表中追加固定A02 PASS标记，并要求该标记确实注入后才允许验证器返回0。保持已有真实Owner/Repository/归档适配器和失败关闭断言不变，仅提升验收记录可见性。
