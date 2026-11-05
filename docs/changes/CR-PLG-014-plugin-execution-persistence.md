@@ -12,7 +12,7 @@
 
 ## 决策及范围
 
-本WBS只建立冻结PLG-03持久化结构：Execution Root、append-only result-file references与state events，ORM/Alembic/DB约束/索引；约束ProjectId与OutputRequest/Context、PluginInstallation/EnabledOperation及Job关系。没有执行器、文件移动/创建、生产写Owner、API、默认Worker挂载或Plugin subprocess。执行表初始写入保持DB trigger closed；迁移验证夹具仅用隔离合成行。
+本WBS只建立冻结PLG-03持久化结构：Execution Root、append-only result-file references与state events，ORM/Alembic/DB约束/索引；约束ProjectId与OutputRequest/Context、PluginInstallation、不可变PluginPackage/Manifest operation及Job关系；不把历史外键绑定到停用时会删除的可变EnabledOperation记录。后续Execution Admission Owner须在当时验证EnabledOperation状态。没有执行器、文件移动/创建、生产写Owner、API、默认Worker挂载或Plugin subprocess。执行表初始写入保持DB trigger closed；迁移验证夹具仅用隔离合成行。
 
 Result field只保存安全引用/指纹和受控错误码，不存储stdout、完整客户Context、绝对工作路径、traceback、Secret或文件正文。合法生成内容进入Artifact的流程仍必须以后独立核验FileObject/DocumentVersion/PluginExecution/Hash全部一致。
 
@@ -23,3 +23,8 @@ Result field只保存安全引用/指纹和受控错误码，不存储stdout、�
 - 验证状态白名单、时间约束、Attempt/Job幂等唯一语义、复合FK、result-file引用、append-only、TRUNCATE保护和Owner write closed。
 - 后端全量测试/wheel、hosted PostgreSQL 18.6真实Migration/verifier及父包PG smoke；测试通过前不得称Artifact链可用。
 - 仅GitHub hosted Windows runner D盘；无客户数据、Plugin运行或外部API调用。P25仍独立blocked。
+
+
+## 外键设计复核（编码前）
+
+EnabledOperation是当前启用投影，Disable流程会删除该行并保留不可变History。若Execution外键引用EnabledOperation，停用插件将被历史Execution外键阻断，违反既有PLG-02-A06生命周期。故Execution持久化引用稳定的Installation复合身份及不可变Package/Manifest Operation；“创建时仍启用”由后续Execution Admission Owner校验并在事务内固定Execution事实。该设计调整在PLG-03编码开始前记录，不改变冻结模型。

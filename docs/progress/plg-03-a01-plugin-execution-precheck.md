@@ -21,3 +21,8 @@
 由GitHub hosted Windows Server 2025 runner在D盘临时区执行：空库升级、既有合成数据升级、空库降级/重升、有历史降级拒绝、Owner write-closed、项目隔离/Attempt和state event负例，以及后端全量/wheel和父包PG smoke。
 
 本WBS通过只证明持久化Schema，不证明Plugin签名验证、运行隔离、真实插件执行、Artifact发布、Windows 11实机、Pilot、Gate 3或正式Release。P25的initdb问题独立保留。
+
+
+## 外键生命周期复核
+
+PLG-02-A06停用操作会移除当前EnabledOperation行，同时追加不可变History。Execution不得FK到可删除的EnabledOperation，以免历史Execution阻止插件停用。改用FK到Installation稳定身份和不可变Manifest Operation；后续Admission Owner须检查该Operation此刻Enabled并原子创建Execution。该取舍已在CR-PLG-014的编码前复核部分登记。
