@@ -238,7 +238,26 @@ jobs:
           $base = "https://github.com/caddyserver/caddy/releases/download/v2.11.4"
           foreach ($asset in @("windows_amd64.zip", "windows_amd64.sbom", "buildable-artifact.tar.gz", "checksums.txt")) {
             $file = "caddy_2.11.4_$asset"
-            Invoke-WebRequest -Uri "$base/$file" -OutFile (Join-Path $caddyDir $file)
+            $destination = Join-Path $caddyDir $file
+            $partial = "$destination.partial"
+            $attempt = 0
+            while ($true) {
+              $attempt++
+              try {
+                Invoke-WebRequest -Uri "$base/$file" -OutFile $partial -TimeoutSec 90 -ErrorAction Stop
+                if (!(Test-Path -LiteralPath $partial) -or (Get-Item -LiteralPath $partial).Length -eq 0) {
+                  throw "Pinned Caddy download produced an empty asset: $file"
+                }
+                Move-Item -LiteralPath $partial -Destination $destination -Force
+                break
+              } catch {
+                Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
+                if ($attempt -ge 3) { throw }
+                $delay = [int][Math]::Pow(2, $attempt)
+                Write-Host "Caddy asset download attempt $attempt failed; retrying in $delay seconds."
+                Start-Sleep -Seconds $delay
+              }
+            }
           }
           python .\tools\audit_caddy_windows_offline_input.py --input-root $caddyDir --output (Join-Path $caddyDir "caddy-audit.json")
           if ($LASTEXITCODE -ne 0) { throw "Pinned Caddy input audit failed" }
