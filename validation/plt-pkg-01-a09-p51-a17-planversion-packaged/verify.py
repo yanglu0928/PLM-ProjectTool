@@ -419,6 +419,9 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
     from plm_assistant.modules.plugin.infrastructure.package_archive_evidence import (
         LocalPluginPackageArchiveEvidence,
     )
+    from plm_assistant.modules.plugin.infrastructure.local_installation_materializer import (
+        LocalPluginInstallationMaterializer,
+    )
     from plm_assistant.modules.plugin.application.signature_verifier import (
         PluginPackageSignatureVerifier, TrustedPluginSigner,
     )
@@ -712,42 +715,48 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             registered_package_id = package_row.plugin_package_id
             tx.commit()
 
-        class SyntheticInstalledHostEvidence:
-            def inspect_installed_package(self, package, *, installation_id):
-                return PluginInstallationEvidence(
-                    plugin_installation_id=installation_id,
-                    plugin_package_id=package.plugin_package_id,
-                    installed_package_sha256=package.package_sha256,
-                    installation_present=True,
-                    compatible=True,
-                    runtime_snapshot={
-                        "schema_version": "1",
-                        "os": "windows-11",
-                        "architecture": "x86_64",
-                        "python_version": "3.13.15",
-                        "dependency_versions": {},
-                    },
-                )
-
+        installation_inspector = PluginPackageArchiveInspector(
+            PluginManifestParser(),
+            PluginPackageSignatureVerifier(SyntheticSignerResolver()),
+        )
         archive_evidence = LocalPluginPackageArchiveEvidence(
-            storage=storage,
-            inspector=PluginPackageArchiveInspector(
-                PluginManifestParser(),
-                PluginPackageSignatureVerifier(SyntheticSignerResolver()),
-            ),
+            storage=storage, inspector=installation_inspector,
         )
-        installation_owner = PluginInstallationOwner(
-            unit_of_work=runtime.unit_of_work,
-            evidence=SyntheticInstalledHostEvidence(),
-            archive_evidence=archive_evidence,
-            repository=SqlAlchemyPluginInstallationRepository(),
-            audit=audit,
-        )
+        installation_repository = SqlAlchemyPluginInstallationRepository()
+        with runtime.unit_of_work() as tx:
+            installable_package = installation_repository.find_verified_package(
+                tx, package_id=registered_package_id,
+            )
+            if installable_package is None:
+                raise AssertionError("A03 exact verified package disappeared")
+            tx.commit()
         installation_command = RecordPluginInstallationCommand(
             plugin_installation_id=uuid.uuid4(),
             plugin_package_id=registered_package_id,
             actor_id=actor_id,
             trace_id=uuid.uuid4(),
+        )
+        installation_materializer = LocalPluginInstallationMaterializer(
+            storage=storage,
+            inspector=installation_inspector,
+            runtime_snapshot_provider=lambda: {
+                "schema_version": "1",
+                "os": "windows-11",
+                "architecture": "x86_64",
+                "python_version": "3.13.15",
+                "dependency_versions": {},
+            },
+        )
+        installation_materializer.materialize(
+            installable_package,
+            installation_id=installation_command.plugin_installation_id,
+        )
+        installation_owner = PluginInstallationOwner(
+            unit_of_work=runtime.unit_of_work,
+            evidence=installation_materializer,
+            archive_evidence=archive_evidence,
+            repository=installation_repository,
+            audit=audit,
         )
         installation = installation_owner.record(installation_command)
         if (installation.installation_state != "INSTALLED"
@@ -782,7 +791,7 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             tx.commit()
         print(
             "PLG_04_A02_INSTALLATION_OWNER_PG18_PASS: exact signed archive verified; "
-            "synthetic host evidence; installation/runtime validation/Audit persisted",
+            "materialized exact signed members; UUID-bound Host evidence; installation/runtime validation/Audit persisted",
             flush=True,
         )
 
@@ -1346,6 +1355,7 @@ a05["prototype_probe"].__globals__["prototype_probe"] = packaged_planversion_pro
 
 
 _a02_pg_smoke_completed: list[bool] = []
+_a03_pg_smoke_completed: list[bool] = []
 
 
 if __name__ == "__main__":
@@ -1363,12 +1373,12 @@ if __name__ == "__main__":
     tempfile.tempdir = None
     runner = a05["p51"]["handover_review"]["base"]["base"]["project"]["base"].base.base
     original_smoke = runner.smoke
-    marker_state = {"injected": False}
+    marker_state = {"a02": False, "a03": False}
 
-    def smoke_with_a02_structured_marker(*args, **kwargs):
+    def smoke_with_plugin_installation_markers(*args, **kwargs):
         result = original_smoke(*args, **kwargs)
-        if _a02_pg_smoke_completed != [True]:
-            raise AssertionError("A02 PG18 probe must complete before the A05 result is accepted")
+        if _a02_pg_smoke_completed != [True] or _a03_pg_smoke_completed != [True]:
+            raise AssertionError("A02/A03 PG18 probes must complete before the A05 result is accepted")
         if not isinstance(result, dict):
             raise AssertionError("A05 smoke result must remain a structured mapping")
         markers = result.setdefault("markers", [])
@@ -1380,13 +1390,21 @@ if __name__ == "__main__":
         )
         if marker not in markers:
             markers.append(marker)
-        marker_state["injected"] = marker in markers
+        marker_state["a02"] = marker in markers
+        a03_marker = (
+            "PLG_04_A03_PG18_PASS: signed synthetic package materialized under exact "
+            "installation UUID; full tree revalidated and Owner recorded UUID-bound proof"
+        )
+        if a03_marker not in markers:
+            markers.append(a03_marker)
+        marker_state["a03"] = a03_marker in markers
         return result
 
-    runner.smoke = smoke_with_a02_structured_marker
+    runner.smoke = smoke_with_plugin_installation_markers
     exit_code = a05["main"]()
     if exit_code != 0:
         sys.exit(exit_code)
-    if _a02_pg_smoke_completed != [True] or marker_state["injected"] is not True:
-        raise AssertionError("A02 PG18 evidence marker was not captured in A05 structured output")
+    if (_a02_pg_smoke_completed != [True] or _a03_pg_smoke_completed != [True]
+            or marker_state != {"a02": True, "a03": True}):
+        raise AssertionError("A02/A03 PG18 markers were not captured in A05 structured output")
     sys.exit(0)
