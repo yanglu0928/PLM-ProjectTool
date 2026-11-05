@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-05（P34B重复Hosted下载阻塞，非发行版本）
+
+- Hosted run [42045197675](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42045197675) 的所有前置构建与测试、嵌入后端运行时、A17 harness、P24/A50通过；父包在固定Caddy 2.11.4输入下载第二次遇到HTTP 504，PG18 smoke/P34B skipped。已先记CR-OUT-030/031。
+- 验收工作流仅增加该固定资产下载的最多3次退避重试；所有既有固定版本和完整离线校验保持不变。产品代码验收仍未完成。
+
 ## Unreleased · 2026-11-05（P34B首轮PG18接线失败，非发行版本）
 
 - Hosted run [42042776664](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42042776664)：父包和Clean PG18 smoke启动成功；P34B verifier在导入应用Owner时因其提交版本缺少Repository新增的GeneratedFileRequestFacts而ImportError，Storage/P34A/P33验收未执行，不代表业务断言失败或P34B通过。先记CR-OUT-030/031，已定位为提交接线落后于Repository接口，修复后云端重验。
