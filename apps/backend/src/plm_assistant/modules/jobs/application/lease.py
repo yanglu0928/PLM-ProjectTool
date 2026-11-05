@@ -78,6 +78,8 @@ class JobLeaseRepositoryPort(Protocol):
                                   lease_seconds: int) -> ClaimedJob | None: ...
     def claim_next_output(self, transaction: object, *, worker_ref: str,
                           lease_seconds: int) -> ClaimedJob | None: ...
+    def check_output_claim(self, transaction: object, *, job_id: uuid.UUID,
+                           fencing_token: int, worker_ref: str) -> ClaimedJob: ...
     def heartbeat(self, transaction: object, *, job_id: uuid.UUID,
                   fencing_token: int, worker_ref: str, lease_seconds: int) -> None: ...
     def pulse_parse(self, transaction: object, *, job_id: uuid.UUID,
@@ -184,6 +186,23 @@ class JobLeaseService:
             result = self._repository.claim_next_output(
                 tx, worker_ref=worker_ref, lease_seconds=lease_seconds,
             )
+            tx.commit()
+            return result
+
+    def check_output_claim(self, *, job_id: uuid.UUID, fencing_token: int,
+                           worker_ref: str) -> ClaimedJob:
+        self._validate_worker(worker_ref)
+        if type(job_id) is not uuid.UUID or not job_id.int:
+            raise JobLeaseError("INVALID_JOB_ID")
+        if type(fencing_token) is not int or fencing_token < 1:
+            raise JobLeaseError("INVALID_FENCING_TOKEN")
+        with self._unit_of_work() as tx:
+            result = self._repository.check_output_claim(
+                tx, job_id=job_id, fencing_token=fencing_token,
+                worker_ref=worker_ref,
+            )
+            if type(result) is not ClaimedJob:
+                raise JobLeaseError("INCONSISTENT_LEASE")
             tx.commit()
             return result
 
