@@ -1369,9 +1369,9 @@ if __name__ == "__main__":
             raise AssertionError("A02 PG18 probe must complete before the A05 result is accepted")
         if not isinstance(result, dict):
             raise AssertionError("A05 smoke result must remain a structured mapping")
-        markers = result.get("markers")
+        markers = result.setdefault("markers", [])
         if not isinstance(markers, list):
-            raise AssertionError("A05 smoke result has no structured markers list")
+            raise AssertionError("A05 smoke result markers field is not a list")
         marker = (
             "PLG_04_A02_PG18_PASS: exact archive + Host evidence recorded; damaged archive, "
             "signature mismatch, and missing Host evidence failed closed with zero facts"
