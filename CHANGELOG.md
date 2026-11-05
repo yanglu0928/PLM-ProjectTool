@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-05（P33 PG fixture状态偏差）
+- Hosted run [41997886517](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41997886517) 后端/wheel、前端/build、PG18/pgvector、父包、A17之前置前序verifiers通过；P33 PG18 verifier的合成请求以 lock_version=0 进入 GENERATING，被Owner正确失败关闭。已先记CR-OUT-029，仅把fixture修正为P29启动后有效值1，再重跑。
+
 ## Unreleased · 2026-11-05（P33 PG verifier fixture偏差）
 - Hosted run [41995972249](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41995972249) 后端/wheel、前端/build、PG sidecar、父包及P24/A50成功；新增P33 PostgreSQL verifier在合成source refs SQL字符串转义处SyntaxError，未执行P33 DB验收。已先记录CR-OUT-029；改为参数化JSONB fixture 后复验。
 

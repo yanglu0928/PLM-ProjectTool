@@ -41,3 +41,10 @@ Hosted run [41992151148](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [41995972249](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41995972249) 后端全量/wheel、前端/build、PG sidecar、父包组装及P24/A50均成功；父包PG18 smoke运行到P33 verifier入口时，在合成fixture SQL字面量包含未转义JSON双引号处出现Python `SyntaxError`，P33数据库及Owner验收代码尚未执行。不能视为P33失败或通过。
 
 修复计划：将ContextSnapshot/OutputRequest的source refs移为参数化JSONB输入，避免测试SQL字符串转义；只改验证器fixture，不改Owner/Repository/Schema。随后重跑完整Hosted全链和P33事务验收。
+
+
+## P33 PG18 fixture前置状态偏差登记（修复前，2026-11-05）
+
+Hosted run [41997886517](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41997886517) 的P33 verifier已通过脚本编译、全量后端/wheel、前端/build、PG sidecar、父包组装及前序PG verifiers；在P33第一次调用成功Owner时，应用层拒绝candidate。根因是verifier直接插入 `request_state='GENERATING'`，但未模拟 P29 状态转移必须递增的 `lock_version=1`（默认值仍为0）。Owner在任何发布/终结写入前正确失败关闭，事务无业务状态变更；这属于测试夹具与冻结前置状态不一致，不能视为Owner缺陷或P33通过。
+
+修复计划：仅在合成OutputRequest fixture中显式设`lock_version=1`，符合当前有效P29生成启动事实；保留其他SQL/Owner/Schema不变，重跑全链与PG18成功/回滚断言。
