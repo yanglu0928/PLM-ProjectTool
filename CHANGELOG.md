@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-05（P34B云端实现，验收待执行）
+
+- 按CR-OUT-030/031新增未装配的Output SYSTEM发布Owner/Repository：短事务核验Request和Job fence，事务外验证并无覆盖提升文件，再事务内写FileObject AVAILABLE/FileStateEvent/SYSTEM Audit，之后依次委托P34A和P33；恢复只允许已验证STAGE_ONLY、FINAL_VERIFIED、LINKED_PAIR。
+- 扩展隔离PG18父包verifier：从D盘RUNNER_TEMP中的合成STAGED文件出发，检查存储提升、P34A/P33链、P33 Audit故障回滚边界及精确重放。没有调用产品API/Worker/插件或默认组合。
+- 无Schema/Migration/API/依赖/发行包变化；无客户数据或本机代码运行。此项仍待GitHub hosted验收，不能视为P34B通过。P25仍独立BLOCKED_DIAGNOSTIC；Pilot/Gate 3/正式Release未通过。
+
 ## Unreleased · 2026-11-05（P25 Node 24环境对照，非发行版本）
 
 - Run [42024740026](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42024740026) 中前后端测试/build、PG18 sidecar、运行时和父包组装、A35通过；加入Node 24后的父包PG18/pgvector lifecycle smoke仍成功。P25及父包initdb对照继续0xC0000135、无数据目录/日志，未启动真实HTTP/Edge。P25维持BLOCKED_DIAGNOSTIC，详见CR-OUT-021。
