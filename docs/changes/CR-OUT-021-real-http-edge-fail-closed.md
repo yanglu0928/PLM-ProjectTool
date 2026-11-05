@@ -150,3 +150,10 @@ P19验证了真实Windows Create HTTP组合在Publisher manifest空时失败关�
 P25 的 runner-temp 输入校验、PG sidecar provenance、依赖清单/语法检查及“同run父包PostgreSQL启动对照”步骤均成功；父包与 sidecar 的 1,627 个 PostgreSQL payload 文件 SHA-256 一致。但对照中的父包 initdb 与 P25 initdb 都以 `3221225781 / 0xC0000135` 退出，均未创建数据目录；P25 受限摘要确认 PG 目录为空、无服务日志、`pg_ctl` 指向目录不存在。静态依赖扫描未发现缺失项，系统错误事件为空；真实 API、Edge POST 和业务写入均未发生。故本轮排除“父包/sidecar payload差异”，未提供可据以修复的系统装载根因，不能将P25标为通过。
 
 本次结果不支持继续重复相同 initdb 参数/PATH/目录对照。下一步从既有 P25 父包临时数据库 smoke 与 P25 harness 的**进程启动上下文/实际二进制装载环境**差异读取配置和实现，并设计一个会区分假设的最小 hosted probe；偏差/修复仍先记本CR再运行。不要强制清理任何未知临时PG进程或数据目录；本次 runner 已报告 initdb 未创建目录。继续保持仅D盘 hosted执行。
+
+
+## 差异对照修正：PG子进程 PATH 过滤（变更前记录，2026-11-05）
+
+对Run [42017800786](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42017800786) P25失败日志与已知通过的 `tools/smoke_windows_pg18_sidecar.py` 逐行对照后发现，CR前文“复用既有 smoke 执行形状”的表述不准确：P25 的 `postgres_child_environment()` 会从PATH中删除 Node 安装目录，摘要确认 `node_directory_removed=true`；同run父包差异对照也复用了这一过滤环境，所以其initdb失败并未与通过的既有 smoke 形成有效对照。既有 smoke 原样继承 Windows runner PATH，且可以初始化同一套 PG18 sidecar。此结果提供了此前未隔离的可检验差异，虽尚不能证明根因就是 PATH。
+
+**实施前选择：** 移除P25对 Node PATH 项的过滤，让initdb、pg_ctl、psql按既有成功 smoke 继承未修改的 runner PATH；保留D盘独立目录、合成数据库、受限摘要、无客户数据和失败时不强制清理。同步修正父包对照使其采用同样原始PATH。若此单变量对照仍失败，则恢复代码或另立下一项差异，不再重复参数/目录猜测。此次只改Hosted验证harness，不改产品代码/API/Schema、Publisher信任或真实功能状态。
