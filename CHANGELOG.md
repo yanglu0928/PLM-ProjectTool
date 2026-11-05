@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-05（P25托管诊断，非发行版本）
+
+- Run [42017800786](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42017800786) 中后端/wheel、前端/build、PG18 sidecar、父包组装、A17准备与A35交接成功；P25与同run父包PG initdb均以0xC0000135在数据目录创建前失败，真实HTTP/Edge未启动。
+- 1,627个PG payload文件与sidecar完全一致，目录无数据/服务日志，静态依赖扫描无缺项；该证据未确认系统装载根因。P25继续BLOCKED_DIAGNOSTIC，详细差异和下一探针记录于CR-OUT-021。
+- 不涉及产品代码、Schema、API、安装包或业务数据；仅GitHub hosted D盘运行。
+
 ## Unreleased · 2026-11-05（P34编码前检查，非发行版本）
 
 - 按 CR-OUT-030 完成本地Storage→OutputArtifact一致性编码前检查，结论PASS_WITH_LIMITATION。ADR-008已有流式Hash/大小校验、同卷不可覆盖提升、提升后复验和文件身份边界；新增协调层必须在短PostgreSQL事务外做文件I/O，并把final-only/linked-pair窗口留给受限恢复，不得盲删文件。
