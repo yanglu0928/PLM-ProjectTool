@@ -516,3 +516,7 @@
 
 ## Unreleased · 2026-11-05（P32第五轮计数夹具偏差）
 - run [41986547768](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41986547768) 通过AVAILABLE NULL安全负例、4项通过正例、子表append-only和历史拒绝降级；最终夹具保留断言预期child=1，但实际四项校验fixture写入4条，导致P32未关闭。偏差先记CR-OUT-028，修正为4后重跑。
+
+
+## Unreleased · 2026-11-05（P34发布Owner前置拆分）
+- P34源码审计发现普通上传版本Owner明确拒绝GENERATED_ARTIFACT，P33又要求AVAILABLE DocumentVersion既存；按CR-OUT-031拆分P34A系统生成版本Owner与P34B本地Storage发布协调。仅记录源码证据，尚无代码验收，不视为PASS。后续项目代码仅使用GitHub hosted D盘/云端沙箱，用户本机与C盘不运行。
