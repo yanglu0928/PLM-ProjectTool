@@ -1059,6 +1059,15 @@ def main() -> int:
             output_artifact_schema_run.stdout.strip().splitlines()[-1])
         if output_artifact_schema_validation.get("status") != "PASS_SCOPE_LIMITED":
             raise RuntimeError("OutputArtifact persistence schema validation failed")
+        output_completion_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p33-output-completion/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_completion_validation = json.loads(
+            output_completion_run.stdout.strip().splitlines()[-1])
+        if output_completion_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output generation completion validation failed")
         if version != "18.6" or vector_version != "0.8.6":
             raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
                              + version + "/" + vector_version)
@@ -1081,6 +1090,7 @@ def main() -> int:
             "output_generation_retry_validation": output_retry_validation,
             "plugin_execution_schema_validation": plugin_execution_schema_validation,
             "output_artifact_schema_validation": output_artifact_schema_validation,
+            "output_generation_completion_validation": output_completion_validation,
             "plugin_package_schema_validation": plugin_validation,
             "plugin_package_registration_validation": registration_validation,
             "plugin_operation_disable_validation": plugin_disable_validation,
