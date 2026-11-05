@@ -107,9 +107,8 @@ def main() -> int:
     data = Path(tempfile.mkdtemp(prefix="plm-out-p25-parent-data-", dir=runner_temp))
     initdb = extract_root / "payload" / "pgsql" / "bin" / "initdb.exe"
     result = subprocess.run(
-        [str(initdb), "-D", str(data / "data"), "-U", "postgres",
-         "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8",
-         "--debug", "--no-clean"],
+        [str(initdb), f"--pgdata={data / 'data'}", "--username=poc_admin",
+         "--auth=trust", "--encoding=UTF8", "--locale=C"],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
         errors="replace", timeout=180, check=False)
     report = {
