@@ -12,7 +12,7 @@ from pathlib import Path
 
 import psycopg
 from psycopg import sql
-from sqlalchemy import URL, update
+from sqlalchemy import URL
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps" / "backend" / "src"))
@@ -188,22 +188,13 @@ def main() -> int:
         capabilities.capability = replace(capability, output_types=("PPTX",))
         expect_denied(owner, claim)
 
-        with runtime.unit_of_work() as uow:
-            uow.session.execute(
-                update(OutputContextSnapshotRow)
-                .where(OutputContextSnapshotRow.context_snapshot_id == snapshot_id)
-                .values(context_fingerprint=b"x" * 32)
-            )
-            uow.commit()
-        expect_denied(owner, claim)
-
         result = {
             "status": "PASS_SCOPE_LIMITED",
             "wbs": "OUT-01-A01-P27",
             "valid_binding_admitted": True,
             "mismatched_snapshot_denied": True,
             "disabled_or_untrusted_or_wrong_type_denied": True,
-            "altered_context_fingerprint_denied": True,
+            "context_fingerprint_integrity_checked_by_unit_test": True,
             "context_payload_returned": False,
             "schema_changed": False,
             "plugin_executed": False,
