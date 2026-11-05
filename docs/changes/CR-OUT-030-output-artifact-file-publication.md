@@ -1,7 +1,7 @@
 # CR-OUT-030：输出制品的本地文件发布与一致性
 
 - 日期：2026-11-05
-- 状态：已登记；P34 编码前检查完成，尚未编码
+- 状态：已按CR-OUT-031拆分；P34源码审计完成，P34A尚未编码
 - 来源：OUT-01-A01-P34，承接 CR-OUT-029 明确保留的真实 Storage 发布后续任务
 - 基线：ADR-008、冻结 DM-03/OUT-02、P32 Migration 0232、P33 PASS_SCOPE_LIMITED
 
@@ -32,3 +32,8 @@ C. 改为对象存储、数据库大对象或新队列：超出现行架构，�
 ## 执行门槛
 
 P34编码前检查必须先确认 FileObject/DocumentVersion 提交顺序、Document发布Owner与恢复能力、Output生成Claim身份和锁序，以及Storage locator语义。若现有状态不允许无Schema变更安全表达恢复，停止P34实现并转向独立非阻断任务，按持续授权提出最小兼容CR；不得伪造AVAILABLE或回滚删除不明文件。
+
+
+## 2026-11-05 源码审计补充
+
+审计确认普通DocumentVersion上传Owner拒绝GENERATED_ARTIFACT，并要求FileObject已AVAILABLE；P33也要求AVAILABLE DocumentVersion已存在。Output缺少SYSTEM生成来源的版本创建Owner，因此直接Storage协调无法满足P34目标。依CR-OUT-031将实现拆为P34A Generated Artifact DocumentVersion提交Owner与P34B Storage发布协调。此为P34前置接口缺失的追溯修订，冻结Schema/API/default composition仍不变，未开始编码或标PASS。
