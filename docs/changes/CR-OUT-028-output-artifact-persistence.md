@@ -57,3 +57,9 @@ AVAILABLE额外守卫：物理CHECK要求Artifact进入AVAILABLE前，受控摘�
 
 - run [41984648401](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41984648401) 的后端、前端与父包组装通过；P32 verifier通过迁移/复合关系、owner closed、FK/状态负例、两表TRUNCATE、validation child追加、child不可更新/删除及Artifact引用不可变检查。之后发现无验证摘要时将状态更新为AVAILABLE仍被接受：CHECK表达式对缺失JSON键产生SQL NULL，而PostgreSQL的CHECK把NULL视为通过。此前“验证结果必需”的声明未经成立，不将本轮视为通过。
 - 修复计划：将AVAILABLE的四个必过代码比较改为`IS NOT DISTINCT FROM 'PASSED'`以令NULL明确失败；同步ORM metadata与migration，并保留 verifier 的缺项AVAILABLE负例。无业务Root/API/Owner范围变化，随后重跑完整Hosted链。P25保持独立。
+
+
+## 第五轮 P32 hosted 验证器偏差（2026-11-05，修复前登记）
+
+- run [41986547768](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41986547768) 中后端/前端/父包组装通过。P32 verifier已验证0232空库/既有数据升级、复合关系、Owner closed、无效AVAILABLE拒绝、四项完整校验后AVAILABLE允许、validation child append-only、Artifact引用不可变、两表TRUNCATE、降级历史保护等；最后“downgrade拒绝后记录仍保留”断言按`(1 artifact, 1 validation)`计数，而隔离fixture已按4项校验插入4条child，导致计数断言失败。不能据此否定Migration/Owner行为；本项尚未获得完整PASS。
+- 修复计划：仅将fixture历史保留期望调整为Artifact 1条、validation child 4条，保留head与既有Job哨兵断言；重新运行Hosted全链。

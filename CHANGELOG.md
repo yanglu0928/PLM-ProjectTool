@@ -472,3 +472,7 @@
 
 ## Unreleased · 2026-11-05（P32发现AVAILABLE SQL NULL校验缺口）
 - run [41984648401](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41984648401) 后端/前端与父包组装成功，专项验证发现缺失validation_summary JSON键使CHECK返回NULL并按PostgreSQL规则通过，从而未能阻止合成未验证Artifact进入AVAILABLE。先记CR-OUT-028，修复为NULL安全比较；P32未通过，生产发布能力仍关闭。
+
+
+## Unreleased · 2026-11-05（P32第五轮计数夹具偏差）
+- run [41986547768](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41986547768) 通过AVAILABLE NULL安全负例、4项通过正例、子表append-only和历史拒绝降级；最终夹具保留断言预期child=1，但实际四项校验fixture写入4条，导致P32未关闭。偏差先记CR-OUT-028，修正为4后重跑。
