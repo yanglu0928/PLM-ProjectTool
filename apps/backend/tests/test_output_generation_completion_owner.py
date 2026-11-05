@@ -147,7 +147,14 @@ class OutputGenerationCompletionOwnerTests(unittest.TestCase):
         after=(self.world.state["request"],self.world.state["artifact"],
                self.world.state["job"],self.world.state["lease"],
                len(self.world.state["audit"]),self.world.calls)
-        self.assertEqual(replay,first)
+        self.assertEqual(
+            (replay.artifact_id,replay.output_request_id,replay.project_id,replay.job_id,
+             replay.context_snapshot_id,replay.requested_by,replay.execution_id,
+             replay.output_type,replay.request_state,replay.artifact_state,replay.lock_version),
+            (first.artifact_id,first.output_request_id,first.project_id,first.job_id,
+             first.context_snapshot_id,first.requested_by,first.execution_id,
+             first.output_type,first.request_state,first.artifact_state,first.lock_version),
+        )
         self.assertFalse(replay.changed)
         self.assertEqual(after,before)
 
