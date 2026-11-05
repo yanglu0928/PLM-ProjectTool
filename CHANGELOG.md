@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-05（P25 Node 24环境对照，非发行版本）
+
+- Run [42024740026](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42024740026) 中前后端测试/build、PG18 sidecar、运行时和父包组装、A35通过；加入Node 24后的父包PG18/pgvector lifecycle smoke仍成功。P25及父包initdb对照继续0xC0000135、无数据目录/日志，未启动真实HTTP/Edge。P25维持BLOCKED_DIAGNOSTIC，详见CR-OUT-021。
+- 暂停重复PATH与启动参数对照，研发切回不依赖P25的OUT-01-A01-P34；无产品代码/Schema/API变化。只在GitHub hosted D盘执行。
+
 ## Unreleased · 2026-11-05（P25托管诊断，非发行版本）
 
 - Run [42017800786](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42017800786) 中后端/wheel、前端/build、PG18 sidecar、父包组装、A17准备与A35交接成功；P25与同run父包PG initdb均以0xC0000135在数据目录创建前失败，真实HTTP/Edge未启动。
