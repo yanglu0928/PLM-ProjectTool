@@ -48,3 +48,10 @@ Hosted run [41995972249](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [41997886517](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41997886517) 的P33 verifier已通过脚本编译、全量后端/wheel、前端/build、PG sidecar、父包组装及前序PG verifiers；在P33第一次调用成功Owner时，应用层拒绝candidate。根因是verifier直接插入 `request_state='GENERATING'`，但未模拟 P29 状态转移必须递增的 `lock_version=1`（默认值仍为0）。Owner在任何发布/终结写入前正确失败关闭，事务无业务状态变更；这属于测试夹具与冻结前置状态不一致，不能视为Owner缺陷或P33通过。
 
 修复计划：仅在合成OutputRequest fixture中显式设`lock_version=1`，符合当前有效P29生成启动事实；保留其他SQL/Owner/Schema不变，重跑全链与PG18成功/回滚断言。
+
+
+## P33 PG18成功路径资格拒绝（修复前，2026-11-05）
+
+Hosted run [41999961492](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41999961492) 的P33 verifier编译、全量后端/wheel、前端/build、PG18 sidecar重建、嵌入式Python及Windows父包组装、A17候选投影、A35、A50和P24通过。父包PG18 smoke启动临时库并完成迁移，随后预期成功的Owner调用返回 `OUTPUT_COMPLETION_NOT_ELIGIBLE`，本轮尚未提交Artifact/验证记录/Output/Job/Audit写入；P33暂不能通过。原因尚未定位，不能先验归咎Owner或测试夹具。P25仍独立在initdb以3221225781/0xC0000135退出并保留无法判定停止状态的D盘临时PG数据，属于已知独立阻断。
+
+修复计划：只在一次性verifier数据库增加无客户数据的发布前置引用谓词检查，逐项确认PluginExecution、FileObject、Document、DocumentVersion符合Owner查询条件；输出不含敏感数据的布尔断言/缺失阶段，定位是fixture或Owner predicate。若夹具与既有持久化契约不一致，只修fixture并重跑；若现有Owner谓词与冻结模型不一致，才调整Owner并补单测。无条件清理不确定状态数据，当前runner已结束，不触及本机。修复后重跑完整hosted验证。
