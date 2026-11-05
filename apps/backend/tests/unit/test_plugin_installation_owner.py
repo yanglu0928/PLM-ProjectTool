@@ -71,15 +71,20 @@ class _ArchiveEvidence:
 class _Evidence:
     def __init__(self, repo):
         self.repo = repo
-        self.response = PluginInstallationEvidence(
-            repo.package_id, repo.package.package_sha256, True, True,
-            {"schema_version":"1", "os":"windows-11", "architecture":"x86_64",
-             "python_version":"3.13.15", "dependency_versions":{"example":"1.2.3"}},
-        )
+        self.installation_id = None
+        self.response = None
         self.calls = 0
 
-    def inspect_installed_package(self, _package):
+    def inspect_installed_package(self, _package, *, installation_id):
         self.calls += 1
+        self.installation_id = installation_id
+        if self.response is None:
+            self.response = PluginInstallationEvidence(
+                self.repo.package_id, self.repo.package.package_sha256, True, True,
+                {"schema_version":"1", "os":"windows-11", "architecture":"x86_64",
+                 "python_version":"3.13.15", "dependency_versions":{"example":"1.2.3"}},
+                installation_id,
+            )
         return self.response
 
 
@@ -142,6 +147,20 @@ class PluginInstallationOwnerTests(unittest.TestCase):
         self.assertTrue(self.repo.authorized)
         self.assertEqual(self.archive_evidence.calls, 1)
         self.assertEqual(self.evidence.calls, 1)
+        self.assertEqual(self.evidence.installation_id, self.command.plugin_installation_id)
+
+    def test_wrong_installation_id_fails_closed(self):
+        self.evidence.response = PluginInstallationEvidence(
+            self.repo.package_id, self.repo.package.package_sha256, True, True,
+            {"schema_version":"1", "os":"windows-11", "architecture":"x86_64",
+             "python_version":"3.13.15", "dependency_versions":{}},
+            uuid.uuid4(),
+        )
+        with self.assertRaisesRegex(PluginInstallationOwnerError, "PLUGIN_INSTALLATION_EVIDENCE_INVALID"):
+            self.owner.record(self.command)
+        self.assertEqual(self.repo.installations, {})
+        self.assertEqual(self.repo.validations, [])
+        self.assertEqual(self.audit.events, [])
 
     def test_same_id_and_actor_replay_is_idempotent_without_second_audit(self):
         first = self.owner.record(self.command)
@@ -194,6 +213,7 @@ class PluginInstallationOwnerTests(unittest.TestCase):
             self.repo.package_id, b"x" * 32, True, True,
             {"schema_version":"1", "os":"windows-11", "architecture":"x86_64",
              "python_version":"3.13.15", "dependency_versions":{}},
+            self.command.plugin_installation_id,
         )
         with self.assertRaisesRegex(PluginInstallationOwnerError, "PLUGIN_INSTALLATION_EVIDENCE_INVALID"):
             self.owner.record(self.command)
@@ -205,7 +225,7 @@ class PluginInstallationOwnerTests(unittest.TestCase):
         evidence = self.evidence.response
         self.evidence.response = PluginInstallationEvidence(
             evidence.plugin_package_id, evidence.installed_package_sha256, True, False,
-            evidence.runtime_snapshot,
+            evidence.runtime_snapshot, evidence.plugin_installation_id,
         )
         with self.assertRaisesRegex(PluginInstallationOwnerError, "PLUGIN_RUNTIME_INCOMPATIBLE"):
             self.owner.record(self.command)
@@ -225,6 +245,7 @@ class PluginInstallationOwnerTests(unittest.TestCase):
         snapshot["install_path"] = "D:\\plugins\\example"
         self.evidence.response = PluginInstallationEvidence(
             evidence.plugin_package_id, evidence.installed_package_sha256, True, True, snapshot,
+            evidence.plugin_installation_id,
         )
         with self.assertRaisesRegex(PluginInstallationOwnerError, "PLUGIN_INSTALLATION_EVIDENCE_INVALID"):
             self.owner.record(self.command)
