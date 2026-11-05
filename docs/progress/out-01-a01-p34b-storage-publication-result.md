@@ -31,3 +31,8 @@
 同一run中独立P25真实Output Create HTTP/Edge作业仍失败；A17 packaged flow在业务链检查后清理临时文件时遇Windows EBUSY锁文件，未影响P34B父包PG18 smoke；A34成功。整个workflow因此不是全绿，P25继续BLOCKED_DIAGNOSTIC。该局部受限结论不代表Output生产装配、客户文件生成、Win11实机、Pilot、Gate 3或Release通过。
 
 无数据库Schema/Migration、冻结API、默认组合、Worker或插件执行变化；无客户数据外发。
+
+
+## 最终分支复验
+
+文档同步后的hosted run [42055479870](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42055479870)再次验证后端4,067 tests/wheel、Frontend/build、父包、clean PG18/pgvector smoke、A35、A17和A34成功；PG verifier重复输出P34B链路PASS_SCOPE_LIMITED。最终父包20,223项，SHA-256 `4000d012666f1de0c5e77234efaa6d8ec6848aa898bd7555d802b93fb829457e`。同run仅独立P25 HTTP/Edge失败；故P34B局部完成成立，整体Workflow非全绿，P25/Pilot/Gate/Release状态未改变。上一run A17 EBUSY没有在最终复验中复现。
