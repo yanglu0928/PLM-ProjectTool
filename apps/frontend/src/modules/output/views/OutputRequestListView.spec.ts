@@ -95,8 +95,8 @@ describe("OutputRequestListView", () => {
   it("shows download only for succeeded rows and navigates only through the authorized same-origin reference", async () => {
     const succeeded = { ...row, state: "SUCCEEDED" as const,
       completed_at: "2026-10-19T00:01:00Z" };
-    const reader = { list: vi.fn().mockResolvedValue(page([row, succeeded])) }
-      as unknown as OutputRequestListClient;
+    const reader = ({ list: vi.fn().mockResolvedValue(page([row, succeeded])) }
+      as unknown as OutputRequestListClient);
     const reference: OutputArtifactReference = Object.freeze({
       output_artifact_id: other, output_request_id: succeeded.output_request_id,
       project_id: project, document_id: "31234567-89ab-4cde-8123-456789abcdef",
