@@ -123,7 +123,7 @@ class OutputGenerationFailureOwnerTests(unittest.TestCase):
                          ("FAILED", "RELEASED"))
         event = self.world.state["audit"][0]
         self.assertEqual((event.action, event.outcome, event.before_state, event.after_state),
-                         ("OUTPUT_GENERATION_FAILED", "FAILURE", "GENERATING", "FAILED"))
+                         ("OUTPUT_GENERATION_FAILED", "FAILED", "GENERATING", "FAILED"))
         self.assertEqual((event.actor_id, event.original_actor_id),
                          (self.world.system_id, self.world.requester_id))
 
