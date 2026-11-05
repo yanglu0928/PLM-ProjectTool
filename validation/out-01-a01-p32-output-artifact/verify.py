@@ -242,7 +242,7 @@ def main() -> int:
             "UPDATE plm.out_artifacts SET artifact_sha256=%(sha)s "
             "WHERE output_artifact_id=%(artifact)s",
             params={"sha":bytes.fromhex("44"*32),"artifact":fixture_artifact},
-            message_part="append only", owner_write=True)
+            message_part="content is immutable", owner_write=True)
         _must_fail(dsn,
             "UPDATE plm.out_artifacts SET artifact_state='AVAILABLE',"
             "published_at=statement_timestamp(),lock_version=1 "

@@ -16,34 +16,37 @@ _WRITE_GUARD = r"""
 CREATE OR REPLACE FUNCTION plm.guard_output_artifact_owner_write()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-  IF TG_TABLE_NAME = 'out_artifacts'
-     AND current_setting('plm.output_artifact_owner_write', true) = 'on'
-     AND TG_OP = 'INSERT'
-  THEN
-    RETURN NEW;
+  IF TG_TABLE_NAME = 'out_artifacts' THEN
+    IF current_setting('plm.output_artifact_owner_write', true) = 'on' THEN
+      IF TG_OP = 'INSERT' THEN
+        RETURN NEW;
+      END IF;
+      IF TG_OP = 'UPDATE' THEN
+        IF ROW(NEW.project_id, NEW.output_request_id, NEW.plugin_execution_id,
+               NEW.document_id, NEW.document_version_id, NEW.file_object_id,
+               NEW.document_category, NEW.scope, NEW.artifact_kind, NEW.media_type,
+               NEW.artifact_sha256, NEW.size_bytes, NEW.created_at)
+           IS NOT DISTINCT FROM
+           ROW(OLD.project_id, OLD.output_request_id, OLD.plugin_execution_id,
+               OLD.document_id, OLD.document_version_id, OLD.file_object_id,
+               OLD.document_category, OLD.scope, OLD.artifact_kind, OLD.media_type,
+               OLD.artifact_sha256, OLD.size_bytes, OLD.created_at)
+        THEN
+          RETURN NEW;
+        END IF;
+        RAISE EXCEPTION 'OutputArtifact content is immutable';
+      END IF;
+    END IF;
+    RAISE EXCEPTION 'OutputArtifact persistence is owner controlled and append only';
+  ELSIF TG_TABLE_NAME = 'out_artifact_validation_results' THEN
+    IF current_setting('plm.output_artifact_owner_write', true) = 'on'
+       AND TG_OP = 'INSERT'
+    THEN
+      RETURN NEW;
+    END IF;
+    RAISE EXCEPTION 'OutputArtifact validation history is append only';
   END IF;
-  IF TG_TABLE_NAME = 'out_artifacts'
-     AND current_setting('plm.output_artifact_owner_write', true) = 'on'
-     AND TG_OP = 'UPDATE'
-     AND ROW(NEW.project_id, NEW.output_request_id, NEW.plugin_execution_id,
-             NEW.document_id, NEW.document_version_id, NEW.file_object_id,
-             NEW.document_category, NEW.scope, NEW.artifact_kind, NEW.media_type,
-             NEW.artifact_sha256, NEW.size_bytes, NEW.created_at)
-         IS NOT DISTINCT FROM
-         ROW(OLD.project_id, OLD.output_request_id, OLD.plugin_execution_id,
-             OLD.document_id, OLD.document_version_id, OLD.file_object_id,
-             OLD.document_category, OLD.scope, OLD.artifact_kind, OLD.media_type,
-             OLD.artifact_sha256, OLD.size_bytes, OLD.created_at)
-  THEN
-    RETURN NEW;
-  END IF;
-  IF TG_TABLE_NAME = 'out_artifact_validation_results'
-     AND current_setting('plm.output_artifact_owner_write', true) = 'on'
-     AND TG_OP = 'INSERT'
-  THEN
-    RETURN NEW;
-  END IF;
-  RAISE EXCEPTION 'OutputArtifact persistence is owner controlled and append only';
+  RAISE EXCEPTION 'OutputArtifact persistence guard rejected an unknown relation';
 END; $$;
 
 CREATE OR REPLACE FUNCTION plm.reject_output_artifact_truncate()
