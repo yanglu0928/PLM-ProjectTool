@@ -167,7 +167,7 @@ class SqlAlchemyOutputGenerationCompletionRepository:
     def _facts(artifact_id: uuid.UUID | None, row: OutputRequestRow,
                execution_id: uuid.UUID, *, changed: bool) -> OutputGenerationCompletionFacts:
         return OutputGenerationCompletionFacts(
-            artifact_id or uuid.UUID(int=0), row.output_request_id, row.project_id,
+            artifact_id, row.output_request_id, row.project_id,
             row.job_ref, row.context_snapshot_id, row.requested_by, execution_id,
             row.output_type, row.request_state, "MISSING" if artifact_id is None else "AVAILABLE",
             row.lock_version, changed,

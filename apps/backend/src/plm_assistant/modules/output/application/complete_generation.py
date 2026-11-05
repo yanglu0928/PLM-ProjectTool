@@ -63,7 +63,9 @@ class OutputArtifactPublication:
             raise OutputGenerationCompletionError()
         codes = tuple(item.code for item in self.validations
                       if type(item) is OutputValidationEvidence)
-        if len(codes) != len(_VALIDATION_CODES) or set(codes) != set(_VALIDATION_CODES):
+        if (len(self.validations) != len(_VALIDATION_CODES)
+                or len(codes) != len(_VALIDATION_CODES)
+                or set(codes) != set(_VALIDATION_CODES)):
             raise OutputGenerationCompletionError("OUTPUT_VALIDATION_FAILED")
         hash_evidence = next(item for item in self.validations if item.code == "HASH_CHECK")
         if hash_evidence.evidence_fingerprint != self.sha256:
