@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-05（P34B首轮Hosted外部下载阻塞，非发行版本）
+
+- Hosted run [42040802059](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42040802059)：后端全量/wheel、前端/build、PG18 sidecar、嵌入式后端及A17/A34/A35/P24/A50前序验证通过；父包组装下载固定Caddy 2.11.4资产时收到504 Gateway Time-out。父包PG smoke及P34B verifier被跳过，不能记P34B通过或失败。
+- 已先记录CR-OUT-030/031；保持版本和校验不变，重启托管验证确认是否为暂态外部下载问题。未在本机运行代码/测试。
+
 ## Unreleased · 2026-11-05（P34B云端实现，验收待执行）
 
 - 按CR-OUT-030/031新增未装配的Output SYSTEM发布Owner/Repository：短事务核验Request和Job fence，事务外验证并无覆盖提升文件，再事务内写FileObject AVAILABLE/FileStateEvent/SYSTEM Audit，之后依次委托P34A和P33；恢复只允许已验证STAGE_ONLY、FINAL_VERIFIED、LINKED_PAIR。
