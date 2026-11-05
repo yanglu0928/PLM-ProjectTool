@@ -457,3 +457,216 @@ class PluginInstallationDisableResultRow(Base):
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"))
+
+
+class PluginExecutionRow(Base):
+    """One project-scoped plugin attempt; persisted results remain staged until validated."""
+
+    __tablename__ = "plg_executions"
+    __table_args__ = (
+        UniqueConstraint("plugin_execution_id", "project_id",
+                         name="uq_plg_executions__id_project"),
+        UniqueConstraint("project_id", "idempotency_key",
+                         name="uq_plg_executions__project_idempotency"),
+        UniqueConstraint("job_id", name="uq_plg_executions__job"),
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_plg_executions__project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["output_request_id", "project_id"],
+            ["plm.out_output_requests.output_request_id",
+             "plm.out_output_requests.project_id"],
+            name="fk_plg_executions__output_project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["output_context_snapshot_id", "project_id"],
+            ["plm.out_context_snapshots.context_snapshot_id",
+             "plm.out_context_snapshots.project_id"],
+            name="fk_plg_executions__context_project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["plugin_installation_id", "plugin_package_id", "plugin_id_normalized"],
+            ["plm.plg_installations.plugin_installation_id",
+             "plm.plg_installations.plugin_package_id",
+             "plm.plg_installations.plugin_id_normalized"],
+            name="fk_plg_executions__installation_package", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["plugin_package_id", "operation_id"],
+            ["plm.plg_manifest_operations.plugin_package_id",
+             "plm.plg_manifest_operations.operation_id"],
+            name="fk_plg_executions__manifest_operation", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["job_id"], ["plm.job_jobs.job_id"],
+            name="fk_plg_executions__job", ondelete="NO ACTION"),
+        CheckConstraint(
+            "char_length(operation_id) BETWEEN 1 AND 255 "
+            "AND operation_id = btrim(operation_id)",
+            name="ck_plg_executions__operation"),
+        CheckConstraint("attempt_no > 0",
+                        name="ck_plg_executions__attempt"),
+        CheckConstraint("octet_length(context_fingerprint) = 32",
+                        name="ck_plg_executions__context_hash"),
+        CheckConstraint(
+            "execution_state IN ('PENDING','RUNNING','SUCCEEDED','FAILED','CANCELLED')",
+            name="ck_plg_executions__state"),
+        CheckConstraint("lock_version >= 0",
+                        name="ck_plg_executions__lock_version"),
+        CheckConstraint(
+            "char_length(idempotency_key) BETWEEN 1 AND 200 "
+            "AND idempotency_key = btrim(idempotency_key)",
+            name="ck_plg_executions__idempotency"),
+        CheckConstraint(
+            "(execution_state='PENDING' AND started_at IS NULL AND completed_at IS NULL) OR "
+            "(execution_state='RUNNING' AND started_at IS NOT NULL AND completed_at IS NULL) OR "
+            "(execution_state IN ('SUCCEEDED','FAILED') AND started_at IS NOT NULL "
+            "AND completed_at IS NOT NULL) OR "
+            "(execution_state='CANCELLED' AND completed_at IS NOT NULL)",
+            name="ck_plg_executions__time_shape"),
+        CheckConstraint(
+            "(error_code IS NULL AND retryable IS NULL) OR "
+            "(execution_state='FAILED' AND error_code IS NOT NULL AND retryable IS NOT NULL "
+            "AND error_code ~ '^[A-Z][A-Z0-9_]{0,63}$')",
+            name="ck_plg_executions__error_shape"),
+        CheckConstraint(
+            "(execution_state='SUCCEEDED' AND result_manifest_ref IS NOT NULL "
+            "AND position(chr(92) in result_manifest_ref) = 0 "
+            "AND result_fingerprint IS NOT NULL "
+            "AND octet_length(result_fingerprint)=32) OR "
+            "(execution_state<>'SUCCEEDED' AND result_manifest_ref IS NULL "
+            "AND result_fingerprint IS NULL)",
+            name="ck_plg_executions__result_shape"),
+        CheckConstraint("isfinite(created_at)", name="ck_plg_executions__created_at"),
+        CheckConstraint("retention_due_at IS NULL OR isfinite(retention_due_at)",
+                        name="ck_plg_executions__retention_due_at"),
+        CheckConstraint("started_at IS NULL OR isfinite(started_at)",
+                        name="ck_plg_executions__started_at"),
+        CheckConstraint("completed_at IS NULL OR isfinite(completed_at)",
+                        name="ck_plg_executions__completed_at"),
+        Index("ix_plg_executions__project_state_created",
+              "project_id", "execution_state", "created_at", "plugin_execution_id"),
+        {"schema": "plm"},
+    )
+
+    plugin_execution_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    output_request_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    output_context_snapshot_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plugin_installation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plugin_package_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plugin_id_normalized: Mapped[str] = mapped_column(Text, nullable=False)
+    operation_id: Mapped[str] = mapped_column(Text, nullable=False)
+    context_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    attempt_no: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(Text, nullable=False)
+    execution_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'PENDING'"))
+    result_manifest_ref: Mapped[str | None] = mapped_column(Text)
+    result_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
+    error_code: Mapped[str | None] = mapped_column(Text)
+    retryable: Mapped[bool | None] = mapped_column(Boolean)
+    started_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6))
+    completed_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6))
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0"))
+    retention_policy_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    retention_due_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6))
+
+
+class PluginExecutionResultFileRow(Base):
+    """Immutable reference to a project-scoped staged FileObject, never file bytes."""
+
+    __tablename__ = "plg_execution_result_files"
+    __table_args__ = (
+        UniqueConstraint("plugin_execution_id", "project_id", "relative_name",
+                         name="uq_plg_exec_result_files__execution_name"),
+        UniqueConstraint("file_object_id", name="uq_plg_exec_result_files__file"),
+        ForeignKeyConstraint(
+            ["plugin_execution_id", "project_id"],
+            ["plm.plg_executions.plugin_execution_id", "plm.plg_executions.project_id"],
+            name="fk_plg_exec_result_files__execution_project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["file_object_id", "file_scope", "project_id"],
+            ["plm.doc_file_objects.file_object_id", "plm.doc_file_objects.scope",
+             "plm.doc_file_objects.project_id"],
+            name="fk_plg_exec_result_files__file_project", ondelete="NO ACTION"),
+        CheckConstraint("file_scope = 'PROJECT'",
+                        name="ck_plg_exec_result_files__scope"),
+        CheckConstraint(
+            "char_length(relative_name) BETWEEN 1 AND 255 "
+            "AND relative_name=btrim(relative_name) "
+            "AND position(chr(92) in relative_name) = 0 "
+            "AND relative_name !~ '(^|/)\\.\\.(/|$)'",
+            name="ck_plg_exec_result_files__relative_name"),
+        CheckConstraint("char_length(media_type) BETWEEN 1 AND 255",
+                        name="ck_plg_exec_result_files__mime"),
+        CheckConstraint("octet_length(sha256) = 32",
+                        name="ck_plg_exec_result_files__sha256"),
+        CheckConstraint("size_bytes >= 0", name="ck_plg_exec_result_files__size"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_plg_exec_result_files__created_at"),
+        Index("ix_plg_exec_result_files__execution",
+              "plugin_execution_id", "project_id", "created_at"),
+        {"schema": "plm"},
+    )
+
+    result_file_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plugin_execution_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    file_object_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    file_scope: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'PROJECT'"))
+    relative_name: Mapped[str] = mapped_column(Text, nullable=False)
+    media_type: Mapped[str] = mapped_column(Text, nullable=False)
+    sha256: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+
+
+class PluginExecutionStateEventRow(Base):
+    """Append-only sanitized PluginExecution lifecycle history."""
+
+    __tablename__ = "plg_execution_state_events"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["plugin_execution_id", "project_id"],
+            ["plm.plg_executions.plugin_execution_id", "plm.plg_executions.project_id"],
+            name="fk_plg_exec_state_events__execution_project", ondelete="NO ACTION"),
+        CheckConstraint(
+            "from_state IS NULL OR from_state IN "
+            "('PENDING','RUNNING','SUCCEEDED','FAILED','CANCELLED')",
+            name="ck_plg_exec_state_events__from_state"),
+        CheckConstraint(
+            "to_state IN ('PENDING','RUNNING','SUCCEEDED','FAILED','CANCELLED')",
+            name="ck_plg_exec_state_events__to_state"),
+        CheckConstraint(
+            "reason_code IS NULL OR reason_code ~ '^[A-Z][A-Z0-9_]{0,63}$'",
+            name="ck_plg_exec_state_events__reason"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_plg_exec_state_events__created_at"),
+        Index("ix_plg_exec_state_events__execution",
+              "plugin_execution_id", "project_id", "created_at",
+              "state_event_id"),
+        {"schema": "plm"},
+    )
+
+    state_event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plugin_execution_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    from_state: Mapped[str | None] = mapped_column(Text)
+    to_state: Mapped[str] = mapped_column(Text, nullable=False)
+    reason_code: Mapped[str | None] = mapped_column(Text)
+    actor_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))

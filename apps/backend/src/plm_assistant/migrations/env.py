@@ -50,7 +50,7 @@ from plm_assistant.modules.prototype.infrastructure import orm as prototype_orm 
 from plm_assistant.modules.solution.infrastructure import orm as solution_orm  # noqa: F401 - register SOL-02/04 tables
 from plm_assistant.modules.plan.infrastructure import orm as plan_orm  # noqa: F401 - register PLN-01 table
 from plm_assistant.modules.output.infrastructure import orm as output_orm  # noqa: F401 - register OUT-01 tables
-from plm_assistant.modules.plugin.infrastructure import orm as plugin_orm  # noqa: F401 - register PLG-01 tables
+from plm_assistant.modules.plugin.infrastructure import orm as plugin_orm  # noqa: F401 - register PLG-01/02/03 tables
 
 
 config = context.config

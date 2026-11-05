@@ -20,6 +20,8 @@ class PluginPackageSchemaTests(unittest.TestCase):
                 "plg_runtime_validations",
                 "plg_enabled_operation_history",
                 "plg_disable_results",
+                "plg_executions", "plg_execution_result_files",
+                "plg_execution_state_events",
             },
             {table.name for table in Base.metadata.tables.values() if table.name.startswith("plg_")},
         )
@@ -43,6 +45,9 @@ class PluginPackageSchemaTests(unittest.TestCase):
             plugin_orm.PluginRuntimeValidationRow.__table__,
             plugin_orm.PluginEnabledOperationHistoryRow.__table__,
             plugin_orm.PluginInstallationDisableResultRow.__table__,
+            plugin_orm.PluginExecutionRow.__table__,
+            plugin_orm.PluginExecutionResultFileRow.__table__,
+            plugin_orm.PluginExecutionStateEventRow.__table__,
         ):
             self.assertTrue(forbidden.isdisjoint({column.name for column in table.columns}))
 
