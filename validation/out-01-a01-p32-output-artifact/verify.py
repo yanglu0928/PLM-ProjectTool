@@ -175,7 +175,7 @@ def main() -> int:
                    expected=errors.CheckViolation, owner_write=True)
         _must_fail(dsn, insert_artifact, params=artifact_values,
                    expected=errors.ForeignKeyViolation, owner_write=True)
-        _must_fail(dsn, "TRUNCATE plm.out_artifacts",
+        _must_fail(dsn, "TRUNCATE plm.out_artifact_validation_results, plm.out_artifacts",
                    message_part="cannot be truncated")
         _must_fail(dsn, "TRUNCATE plm.out_artifact_validation_results",
                    message_part="cannot be truncated")
