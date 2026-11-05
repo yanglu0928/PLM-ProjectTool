@@ -14,3 +14,8 @@
 ## 未解决/验收限制
 
 此记录是编码实现轨迹，不是验收结果。最终状态取决于GitHub hosted全量后端/wheel及父包PG18 smoke。当前验证器覆盖STAGE_ONLY正常路径与P33事务失败恢复；final-only和linked-pair具体Storage分支仍须以托管验收证据为准。P25的initdb 0xC0000135保持独立阻断，Pilot/Gate/Release不变。
+
+
+## 首轮托管验收观察
+
+Run 42042776664 的父包PG18 smoke在P34B verifier应用模块导入处失败，原因是应用Owner提交的接口版本落后于Repository；没有执行Storage或数据库Owner断言。该项先登记CR后修复，P34B未通过。
