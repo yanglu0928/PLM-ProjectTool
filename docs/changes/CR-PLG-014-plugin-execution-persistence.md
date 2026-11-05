@@ -28,3 +28,9 @@ Result field只保存安全引用/指纹和受控错误码，不存储stdout、�
 ## 外键设计复核（编码前）
 
 EnabledOperation是当前启用投影，Disable流程会删除该行并保留不可变History。若Execution外键引用EnabledOperation，停用插件将被历史Execution外键阻断，违反既有PLG-02-A06生命周期。故Execution持久化引用稳定的Installation复合身份及不可变Package/Manifest Operation；“创建时仍启用”由后续Execution Admission Owner校验并在事务内固定Execution事实。该设计调整在PLG-03编码开始前记录，不改变冻结模型。
+
+
+## 首轮 hosted 验收偏差（2026-11-05，修复前登记）
+
+- run [41968008173](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41968008173) 的后端全量测试运行 4,052 项，恰有2处旧基线断言未跟随本次Schema扩展：Migration head仍期待 `20261104_0230`；metadata历史表豁免清单未包括新增的3张PLG-03表。没有PLG-03业务断言、Migration执行或PG smoke结果，故不能据此判定DDL通过/失败。
+- 修复计划：将Migration head断言更新为 `20261105_0231`，并把3张冻结PLG-03新增表加入metadata schema inventory；不改业务代码、DDL、迁移约束或Scope；随后重跑托管全量。
