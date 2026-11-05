@@ -45,3 +45,6 @@ PASS_WITH_LIMITATION。Package ORM已包含package_version、hash、Manifest sna
 
 - 2026-11-06 hosted run [42075989085](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42075989085) 的A17 PlanVersion Edge/PG流程通过，但父包clean PostgreSQL smoke在既有 `validation/plg-02-a06-operation-disable/verify.py` 调用Owner时停在构造阶段：接口新增必需 `archive_evidence`，该旧验证器仍未注入；因此本轮A06后续PG断言被跳过，不能据此称该验证器或全workflow通过。
 - 修复前处理：先保留此偏差记录，再只调整A06合成验证器：将本轮刚登记的签名ZIP保存到RUNNER_TEMP下的临时私有存储，使用真实只读归档校验适配器注入Owner；不改变A06产品逻辑或生产主机证据语义。重跑托管完整验收。
+
+- 2026-11-06 hosted run [42080494651](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42080494651) 的后端/前端、父包和A35前置均通过；clean PG smoke中的A06主安装记录先通过，但后续API安装复用同一Owner时，验证器的 `TemporaryDirectory` 已退出，归档证据按预期失败关闭，导致A06后续测试未完成。此为测试夹具生命周期过短，非产品验证器异常。
+- 修复前处置：保留本记录后，将合成归档临时目录延长至整个A06 PG18场景的finally清理点；确保两次Owner记录都使用同一真实归档适配器和受控D盘临时字节。重跑完整Hosted链路。
