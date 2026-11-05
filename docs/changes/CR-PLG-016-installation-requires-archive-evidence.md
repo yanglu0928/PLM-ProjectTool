@@ -1,7 +1,7 @@
 # CR-PLG-016：安装事实要求归档内容复验
 
 - 日期：2026-11-06
-- 状态：已登记，PLG-04-A02编码与Hosted验收中
+- 状态：PASS_SCOPE_LIMITED（PLG-04-A02 Owner与托管专项验收完成；P25独立诊断仍阻塞）
 - WBS：PLG-04-A02
 - 来源：PLG-04-A01 PASS_SCOPE_LIMITED后的安装事实接线核查
 - 适用基线：Gate 2冻结PLG Package/Installation模型；承接CR-PLG-007、CR-PLG-009、CR-PLG-015
@@ -59,3 +59,10 @@ PASS_WITH_LIMITATION。Package ORM已包含package_version、hash、Manifest sna
 
 - 2026-11-06 hosted run [42089880164](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42089880164)：A02真实PG18探针已输出有效归档+Host evidence成功，以及损坏归档/签名失配/缺Host evidence三类零事实失败关闭marker；随后A17包装器失败，因为A05 `runner.smoke()` 返回的结构化dict没有 `markers` 字段，先前直接索取既存列表不符合真实返回契约。失败仅在测试汇总层，非产品Owner或PG断言失败。
 - 修复前记录：在A05返回dict中创建验证专用 `markers` 列表并追加A02专项marker，让A05现有JSON序列化输出该证据；同步将 `PLG_04_A02_PG18_PASS` 纳入外层A17 cloud validator的必需marker及摘要过滤，确保缺失即失败、出现时进入summary artifact。只改变托管验收证据采集，不更改产品逻辑、业务事实、包数据或信任。
+
+
+## PLG-04-A02 验收结论
+
+- 2026-11-06 GitHub hosted run [42092840314](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42092840314)：后端全量测试/wheel、前端测试/build、PG18/pgvector sidecar、embedded runtime/父包重建、clean parent PG18 smoke、A35候选交接、A34离线替换/显式手动恢复演练、P24/A50通过；A17 job成功，结构化结果artifact含 `PLG_04_A02_PG18_PASS`。A17 PG18日志证实精确归档+独立合成Host evidence才写入Installation/RuntimeValidation/Audit；损坏归档、签名失配和缺Host evidence各自失败关闭且零事实写入。结论仅 `PASS_SCOPE_LIMITED`。
+- 同一run的独立 P25 job 仍因 Windows hosted `initdb.exe` 返回 `3221225781 (0xC0000135)`、无 stdout/stderr 且未创建数据目录而失败；未启动真实 HTTP/Edge，未改变A02专项结论，但使workflow整体非全绿。按既有 `CR-OUT-021` 诊断边界保留，不将其归因于A02。
+- 不改变Schema/Migration/API、默认装配、正式publisher trust或插件执行；无客户数据、本机/C盘运行或真实安装。Gate 3、Pilot、正式Release仍未通过。
