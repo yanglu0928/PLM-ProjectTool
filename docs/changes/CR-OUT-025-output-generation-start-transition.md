@@ -4,7 +4,7 @@
 - 来源：P28活动lease proof完成后，补齐Output Worker真正开始副作用前的队列状态推进
 - 阶段/WBS：Phase 2 Platform Core / OUT-01-A01-P29
 - 类型：Output内部Owner + Jobs当前lease proof同事务组合；不改Schema/Migration/API/default composition
-- 状态：编码前检查 PASS_WITH_LIMITATION，可实施
+- 状态：PASS_SCOPE_LIMITED（GitHub hosted Windows Server 2025/D盘runner；真实Worker/Plugin执行不在本项范围）
 
 ## 现状/决策
 
@@ -14,6 +14,12 @@
 - AuditEvent对SYSTEM要求actor_id和original_actor_id。Owner将要求服务组合显式注入server-controlled system_actor_id，original_actor_id取已存requester；不接受HTTP/作业payload指定Actor，不以requester冒充worker。当前没有真实Output Worker/受控服务账户，故Owner只作为内部能力，不自动挂载或执行副作用。
 - 命令携带排队request与snapshot refs，须精确匹配Job payload、request绑定与当前claim；相同execution idempotent replay返回当前GENERATING结果，错token/错request拒绝。完成文件输出与最终SUCCEEDED状态不在本WBS。
 - 不得生成文件、启动插件、运行外部调用；不改正式服务账户/Vault、Publisher信任或安装包。
+
+## 最终验收结果
+
+- 完整hosted run [41953529123](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41953529123)：P29隔离PostgreSQL 18.6 verifier为PASS_SCOPE_LIMITED；父包PG smoke/A17/A34/A35/A50均成功，独立P25 HTTP/Edge仍因initdb 0xC0000135失败，不影响本Owner数据库验证。后端4036 tests/wheel、前端/build、PG18/pgvector通过。
+- PG18证据：当前Output lease及精确Request/Project/Snapshot绑定成功；错worker、前序正fencing token、错request拒绝；GENERATING/current_execution_ref/lock_version及SYSTEM Audit原子写入；同执行重放不重复Audit；Audit故障全回滚；Job维持RUNNING，lease proof本身无Job状态副作用。
+- 运行位置：GitHub hosted Windows Server 2025，D盘RUNNER_TEMP；隔离合成PG。无客户数据、外部API、插件执行或输出文件。无Schema/Migration/API/default组合变化。Windows 11真实设备、真实Output Worker、受控服务身份、正式信任及Pilot/Gate/Release不因此通过。
 
 ## 云端验收偏差记录
 
