@@ -74,7 +74,7 @@ class PluginInstallationEvidence:
     installation_present: bool
     compatible: bool
     runtime_snapshot: dict = field(repr=False)
-    plugin_installation_id: uuid.UUID
+    plugin_installation_id: uuid.UUID | None = None
 
 
 class PluginInstalledPackageEvidencePort(Protocol):
