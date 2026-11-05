@@ -84,7 +84,7 @@ def _assert_output_tables(dsn: str, expected: bool) -> None:
 
 
 def _assert_plugin_installation_tables(dsn: str, expected: bool) -> None:
-    tables = ("plg_installations", "plg_enabled_operations", "plg_runtime_validations", "plg_enabled_operation_history")
+    tables = ("plg_installations", "plg_enabled_operations", "plg_runtime_validations", "plg_enabled_operation_history", "plg_executions", "plg_execution_result_files", "plg_execution_state_events")
     with psycopg.connect(dsn) as conn:
         found = [conn.execute("SELECT to_regclass(%s)", ("plm." + name,)).fetchone()[0]
                  for name in tables]
@@ -156,7 +156,8 @@ def _assert_plugin_installation_contract(dsn: str) -> None:
                 conn.execute(
                     "TRUNCATE plm.plg_installations, plm.plg_enabled_operations, "
                     "plm.plg_runtime_validations, plm.plg_enabled_operation_history, "
-                    "plm.plg_disable_results"
+                    "plm.plg_disable_results, plm.plg_executions, "
+                    "plm.plg_execution_result_files, plm.plg_execution_state_events"
                 )
         except errors.RaiseException:
             pass
