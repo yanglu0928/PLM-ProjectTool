@@ -131,7 +131,8 @@ def main() -> int:
                 "OUT_01_A01_P05_REQUIREMENT_FIXED_SOURCE_PG_PASS",
                 "OUT_01_A01_P07_BUILTIN_TEMPLATE_REGISTRY_PASS",
                 "OUT_01_A01_P09_BUILTIN_POLICY_REGISTRY_PASS",
-                "PLG_04_A02_PG18_PASS")
+                "PLG_04_A02_PG18_PASS",
+                "PLG_04_A03_PG18_PASS")
     if completed.returncode or any(marker not in output for marker in required):
         raise RuntimeError("A17 packaged flow did not pass: " + output[-12000:])
 
