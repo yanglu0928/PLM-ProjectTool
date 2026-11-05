@@ -290,7 +290,7 @@ class LocalPluginInstallationMaterializer:
                 with os.scandir(directory) as children:
                     for child in children:
                         relative = f"{prefix}/{child.name}" if prefix else child.name
-                        info = child.stat(follow_symlinks=False)
+                        info = Path(child.path).lstat()
                         if _is_reparse(info):
                             raise PluginInstallationMaterializationError()
                         if stat.S_ISDIR(info.st_mode):
@@ -299,9 +299,7 @@ class LocalPluginInstallationMaterializer:
                         elif stat.S_ISREG(info.st_mode) and info.st_nlink == 1:
                             actual_files.add(relative)
                         else:
-                            raise PluginInstallationMaterializationError(
-                                f"PLUGIN_INSTALLATION_TREE_ENTRY_INVALID_{info.st_mode}_{info.st_nlink}_{getattr(info, 'st_file_attributes', 0)}"
-                            )
+                            raise PluginInstallationMaterializationError()
             if actual_files != set(files) or actual_directories != expected_directories:
                 raise PluginInstallationMaterializationError()
             for relative, (zip_info, expected_digest, expected_size) in files.items():
