@@ -51,3 +51,9 @@ EnabledOperation是当前启用投影，Disable流程会删除该行并保留不
 ## 验收环境
 
 仅 GitHub hosted Windows runner D盘临时目录运行；不在用户本机/C盘执行代码。无客户数据、外发、插件执行或生产写入。
+
+
+## Hosted PG verifier cross-check before next run（2026-11-05，修复前登记）
+
+- 在修复PLG-01 current-head检查前，对父包PG smoke显式调用的其余迁移verifier进行源码盘点，发现 `validation/plg-02-a06-operation-disable/verify.py` 的“有历史数据时downgrade拒绝且head不变”断言也将当前head硬编码为 `20261104_0230`。该断言属于PLG-03持久化增加后的兼容验收，未更新会在PLG-01通过后继续中断PG smoke。
+- 修复计划：仅更新上述当前head值到 `20261105_0231`；保留downgrade拒绝、历史保留及其它PLG-02既有断言。此项由源码盘点先行发现，尚无对应运行失败证据；与CR既有真实偏差记录区分。
