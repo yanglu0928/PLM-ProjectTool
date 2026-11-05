@@ -20,6 +20,8 @@
 - 首轮hosted run 41948211782：后端4036项/wheel、前端/build、PG18/pgvector等相关前置成功；父包PG smoke在解析阶段失败，定位为工具脚本结果字典含字面量\\n，Python语法错误，尚未执行新P29 verifier。
 - 影响仅为验收未完成，不是产品路径失败。先修复smoke脚本拼接并再次执行完整hosted工作流；保留首轮失败记录。P25独立0xC0000135失败仍不归因P29。
 
+- 第二轮hosted run 41949611412：全量后端4036 tests/wheel、前端/build、sidecar及父包组装通过；父包PG smoke已进入P29 verifier，但因验收fixture将2个输出组误按5个变量解包而失败，业务Owner尚未执行。偏差范围仅是Verifier夹具；修复为明确选取两个fixture索引并保留全部负向校验，再完整重跑hosted链。
+
 ## 风险/恢复/验证
 
 - 风险：UOW提交后实际Worker副作用仍可能因租约过期/撤销而不能开始；副作用边界必须再次proof/fencing，不能把GENERATING状态视为授权。
