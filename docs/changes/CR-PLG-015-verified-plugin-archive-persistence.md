@@ -33,3 +33,9 @@
 - Hosted PostgreSQL 18.6 + 合成签名 ZIP 验证 Worker 从 staging 到私有正文，再重试精确完成且 metadata/Audit 不重复；生产 signer 为空不得误判为正式信任。
 - GitHub hosted Windows Server 2025 D 盘执行后端全量测试/wheel、前端/build、父包/PG smoke/A17/A34/A35/A50既有链；P25 独立阻断按其状态报告。
 - 最高结论为 PASS_SCOPE_LIMITED。无客户数据、外部 API/数据外发、插件执行、生产写入或不可恢复操作；不代表 Windows 11 实机、Gate、Pilot 或 Release 通过。
+
+## 首轮 Hosted 验收偏差（2026-11-06，修复前登记）
+
+GitHub hosted run [42063771396](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42063771396) 中，后端全量测试/wheel、前端/build、PG18 clean parent smoke、离线后端/父包组装、A35、P24与A50通过。A17 packaged flow 在合成验收代码直接构造 `PluginPackageImportWorker` 时失败：新增必需的 `archive_store` Port 未在该验证器构造中注入，日志明确为 `TypeError: PluginPackageImportWorker.__init__() missing 1 required keyword-only argument: 'archive_store'`。因此A17该次不通过，不能把对应的合成 Worker 链路视为已验证；产品 Windows composition 已接入同一 `LocalFileStorage`，后端全量通过。
+
+修复计划：仅在 `validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py` 的合成验证器构造中注入 `archive_store=storage`，用临时data_root验证精确ZIP持久化；保留A17已有的合成信任、Job、DB与Edge断言，随后重跑完整GitHub hosted workflow。无产品行为/Schema/API变更。P25同run仍因initdb.exe退出0xC0000135失败，独立保持BLOCKED_DIAGNOSTIC。

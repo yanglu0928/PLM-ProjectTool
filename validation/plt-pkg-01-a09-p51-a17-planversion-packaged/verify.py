@@ -652,6 +652,7 @@ def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> No
             lease_repository=worker_repo,
             source=SqlAlchemyPluginPackageImportSource(),
             storage=storage,
+            archive_store=storage,
             registration=registration_service,
             license_guard=license_guard,
             worker_ref="a08-pg18-smoke-worker",
