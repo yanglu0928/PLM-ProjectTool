@@ -37,3 +37,6 @@ P34编码前检查必须先确认 FileObject/DocumentVersion 提交顺序、Docu
 ## 2026-11-05 源码审计补充
 
 审计确认普通DocumentVersion上传Owner拒绝GENERATED_ARTIFACT，并要求FileObject已AVAILABLE；P33也要求AVAILABLE DocumentVersion已存在。Output缺少SYSTEM生成来源的版本创建Owner，因此直接Storage协调无法满足P34目标。依CR-OUT-031将实现拆为P34A Generated Artifact DocumentVersion提交Owner与P34B Storage发布协调。此为P34前置接口缺失的追溯修订，冻结Schema/API/default composition仍不变，未开始编码或标PASS。
+## P34A/P34B拆分执行状态
+
+依CR-OUT-031，P34A Generated Artifact DocumentVersion Owner已由hosted run 42033255833父包PG18 smoke验证并以PASS_SCOPE_LIMITED关闭：无版本初态提交、来源与Document指针、SYSTEM Audit、精确重放及随后P33成功终结均通过。原CR余项已明确转为P34B：真实本地Storage提升/Hash复验与final-only/linked-pair/unknown恢复协调；P34B仍未编码。P25 0xC0000135仍独立阻塞。

@@ -525,3 +525,6 @@
 ## Unreleased · 2026-11-05（P34A Owner候选）
 - 新增内部SYSTEM-owned Generated Artifact DocumentVersion Owner及SQLAlchemy Repository：按OutputRequest→Job Claim→Execution→FileObject→Document顺序验证；以最终已AVAILABLE FileObject创建不可变DocumentVersion/source ref、推进latest pointer并同事务写Audit。无Schema/API/default composition接线。
 - run [42030014722](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42030014722) Backend全量测试/wheel成功，定向fake-port单测包含事务回滚/锁序断言；全链父包PG smoke/A17/A34/A35成功。PG smoke未执行P34A Repository，故本WBS未PASS，下一步加真实PostgreSQL 18专项断言。P25独立initdb 0xC0000135失败，Windows Pilot/Gate/Release不变。仅GitHub hosted D盘运行。
+## 2026-11-05 · OUT-01-A01-P34A PASS_SCOPE_LIMITED
+- run [42033255833](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42033255833)：后端全量/wheel、前端/build、PG18/pgvector sidecar、clean parent PG18 smoke、父包组装、A17、A34、A35、P24、A50成功。PG18 smoke以无DocumentVersion的GENERATED_ARTIFACT Document/AVAILABLE FileObject起始，执行P34A Owner，核对Version/source ref/latest pointer/SYSTEM Audit，精确重放不新增Audit，再由P33成功终结Owner验证既有端到端事务；P34A结论PASS_SCOPE_LIMITED。
+- 同run独立P25仍因initdb.exe exit 3221225781/0xC0000135及未创建数据目录而失败，P25真实HTTP/Edge未执行，整体workflow未全绿。未改变Pilot/Gate/Release状态。

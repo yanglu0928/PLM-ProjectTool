@@ -1,7 +1,7 @@
 # CR-OUT-031：Generated Artifact DocumentVersion 的受控创建前置
 
 - 日期：2026-11-05
-- 状态：已登记；P34A编码前检查PASS_WITH_LIMITATION，Owner实现及托管验收待完成
+- 状态：P34A PASS_SCOPE_LIMITED（run 42033255833）；P34B Storage协调待实施
 - 来源：OUT-01-A01-P34；承接CR-OUT-030
 - 适用基线：ADR-008、冻结DM-03/OUT-02、Migration 0220～0232、Document FileObject/DocumentVersion Owner、P33成功终结Owner
 - 执行限制：只允许GitHub hosted/云端沙箱；不得在用户本机或C盘运行项目代码
@@ -35,3 +35,8 @@ DM-03 Migration 0022的source ref字段允许OUTPUT_GENERATION/OUT-01并可绑�
 ## P34A Owner代码候选与当前验证缺口
 
 提交f703c593新增内部SYSTEM Version Owner/SQLAlchemy Repository；116afed26增加单测，180e2b50与39178964补充输入类型及SYSTEM Audit original_actor_id=原请求用户。GitHub hosted run 42030014722后端全量测试/wheel成功，父包PG smoke/A17/A34/A35成功。该父包PG smoke仍使用旧P33预置版本夹具，没有调用P34A Repository，因此只能记为“代码候选+后端回归通过”，P34A暂不PASS。已准备将P33 shared smoke fixture改为从空DocumentVersion状态通过P34A创建再进入P33，以形成同一PG18隔离库的真实事务验收；run 42030014722内P25因initdb.exe 0xC0000135失败，保持独立BLOCKED_DIAGNOSTIC。
+## P34A验收关闭
+
+父包PG18 verifier现以无DocumentVersion初态调用P34A Owner，再进入既有P33完成验证。run 42033255833的clean extraction/temporary PostgreSQL lifecycle smoke成功，表示P34A完整事务断言通过：SYSTEM生成DocumentVersion、OUTPUT_GENERATION source ref、latest pointer、SYSTEM Audit与首次提交同事务；精确claim重放稳定且不重复Audit；随后P33原子终结正常。后端全量/wheel、前端/build、PG18 sidecar、父包/A17/A34/A35/P24/A50均成功。P34A按范围PASS_SCOPE_LIMITED。
+
+该run整体仅因独立P25 initdb.exe exit 3221225781/0xC0000135失败而非全绿；P25未启动真实HTTP/Edge，不影响P34A隔离数据库结论。下一项P34B复用现有Storage发布原语做staged→final协调与受限恢复，不开放API/Worker/default composition。
