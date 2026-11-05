@@ -1,7 +1,7 @@
 # CR-OUT-031：Generated Artifact DocumentVersion 的受控创建前置
 
 - 日期：2026-11-05
-- 状态：已登记；按P34编码前源码审计拆分执行
+- 状态：已登记；P34A编码前检查PASS_WITH_LIMITATION，Owner实现及托管验收待完成
 - 来源：OUT-01-A01-P34；承接CR-OUT-030
 - 适用基线：ADR-008、冻结DM-03/OUT-02、Migration 0220～0232、Document FileObject/DocumentVersion Owner、P33成功终结Owner
 - 执行限制：只允许GitHub hosted/云端沙箱；不得在用户本机或C盘运行项目代码
@@ -27,3 +27,7 @@
 ## 验证计划
 
 GitHub hosted Windows Server 2025 D盘临时目录 + 隔离PostgreSQL 18、纯合成数据。先做P34A单元与PG事务验收（首次提交、精确重放、错Project/Request/Execution/Document/File/Hash、旧fencing、并发、Audit失败全回滚、历史不可变和Migration保持不变），再做P34B真实Storage边界（同卷、hash/size、无覆盖、final-only/linked-pair/unknown恢复分类及故障注入）。全量后端/wheel、前端/build、既有父包验证仍须通过。P25 0xC0000135独立阻塞不视作P34失败或通过；Win11/Pilot/Gate/Release状态不变。
+
+## P34A编码前检查结果
+
+DM-03 Migration 0022的source ref字段允许OUTPUT_GENERATION/OUT-01并可绑定OutputRequest和PluginExecution；DocumentVersion insert trigger规定AVAILABLE FileObject、ACTIVE Project及latest+1顺序。无Schema/API变更方案可执行。具体锁序、字段映射与验收见docs/progress/out-01-a01-p34a-generated-version-precheck.md。当前仅通过编码前检查，不是代码验收。
