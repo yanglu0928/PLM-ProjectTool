@@ -3,6 +3,7 @@
 - OUT-01-A01-P29 按 CR-OUT-025 新增内部Output生成启动Owner：同事务验证当前Output lease，并将精确绑定的QUEUED请求转为GENERATING、设置execution ref/lock_version及SYSTEM Audit；同执行重放幂等。并发锁顺序已按CR记录统一为Output→Jobs。
 - 新增Owner单测与隔离PostgreSQL hosted verifier；不新增Schema/Migration/API/default挂载，不运行Worker/插件、不生成文件。变更限GitHub hosted Windows 2025 D盘runner，未在用户本机或C盘运行。
 - 首轮 hosted run 41948211782：后端4036 tests/wheel、前端/build、PG18/pgvector通过；父包 smoke 在P29 verifier前因结果字典字面量\\n语法错误失败。已记录CR-OUT-025并修复工具脚本，等待完整重验；此结果不代表P29通过。
+- 第二轮 hosted run 41949611412 的PG smoke verifier在启动业务断言前因2个合成fixture被按5个变量解包失败；偏差已记CR并修复，等待完整复验。
 - 验收状态：GitHub Actions全链/PG18 verifier待完成；未通过前不标记P29完成。Pilot/Gate/正式Release仍NOT_READY。
 
 ## Unreleased · 2026-11-05（内部云端开发，非发行版本）
