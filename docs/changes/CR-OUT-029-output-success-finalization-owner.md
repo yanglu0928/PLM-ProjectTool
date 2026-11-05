@@ -69,3 +69,10 @@ Hosted run [42002678699](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42004860834](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42004860834) 的完整后端/wheel、前端/build、PG18 sidecar、嵌入式运行时、Windows父包、A17/A35/A50/P24均通过；P33 PG18 verifier报告PluginExecution、FileObject、Document、DocumentVersion四项精确Repository资格谓词均为true，但Owner仍在当前claim比较处拒绝。源码定位为 `Jobs.check_output_claim(...)` 返回值与调用claim要求全字段相同。verifier的合成Job `trace_id` 使用了独立uuid `trace_text`，而OutputRequest与调用claim使用另一个trace uuid，故属于夹具与P29一致性前置不匹配；Owner正确失败关闭，尚无成功提交，P33未通过。P25继续独立因initdb 0xC0000135受阻。
 
 修复计划：仅令合成Job `trace_id` 与同一合成OutputRequest/Claim的 `data["trace"]` 一致；保留其余模型、Owner/Repository及数据库不变。加强verifier断言，确保Audit失败场景确实到达Audit端口，随后验证错Document拒绝、成功三方原子完成、四项validation、Audit同事务及全量测试。继续仅GitHub hosted runner D:。
+
+
+## P33成功重放验收缺口（修复前，2026-11-05）
+
+Hosted run [42008628972](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42008628972) 的父包PG18 smoke成功；P33已证明首次成功原子提交、当前有效claim/文件与项目绑定、四项校验、错Document拒绝及Audit失败全回滚，结果范围为PASS_SCOPE_LIMITED。随后按本CR DoD逐项审阅发现：本轮Verifier及Owner单测都没有对成功终态后的同一成功提交做重放断言；当前Owner在请求已成功/lease已释放后会走非活动Claim/状态拒绝，不能据已有证据声称“重复提交幂等”。因此本WBS整体仍未关闭，不能把有限的初次提交证明扩大为完整验收。
+
+修复计划：保持Output→Jobs锁顺序和内部/默认未装配边界，设计只读重放路径：仅当相同OutputRequest、Project、PluginExecution、已成功Job/已释放对应Lease及完全相同Artifact/DocumentVersion/FileObject/Hash/四项验证/Audit首次结果全部匹配时，返回原成功Facts且不增加Artifact/validation/Audit；任一差异或其他claim仍拒绝。先补单测与隔离PG18重复调用前后行数/结果断言，再跑hosted全链。如果证明需要突破冻结API/Schema或无法安全辨别同一首次结果，停在此处并提出具体CR，不放宽约束。
