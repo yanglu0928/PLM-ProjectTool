@@ -73,3 +73,8 @@ GitHub hosted 前端全量测试中，`OutputRequestListView.spec.ts:99` 无法�
 ## P37 第二轮 Hosted 测试语法偏差（run 42125753500，修复前记录）
 
 首轮仅加圆括号包裹对象断言后，GitHub hosted frontend suite仍在 `OutputRequestListView.spec.ts:99` 报 `Expected ',' or ')' but found 'as'`，说明当前转换器仍不接受该对象表达式断言形式。其余2,092项通过，失败suite为0 tests，typecheck/build跳过。P37未通过。修复改用显式变量类型 `OutputRequestListClient` 并在属性层提供mock，不改变产品行为/API/验收边界。
+
+
+## P37 第三轮 Hosted 测试语法偏差（run 42126285195，修复前记录）
+
+上一轮改正列表 Client 的换行断言后，测试仍在 `OutputRequestListView.spec.ts:109` 失败。日志定位到同一新增用例中的 `artifactReader` 对象字面量后，仍将 `as unknown as OutputArtifactReadClient` 放在下一行。其余2,092项用例通过，但该suite为0 tests，typecheck/build未运行。前一修复遗漏这一独立断言；现在先记录，再统一检查并修正该文件全部同型断言。没有产品逻辑/API/安全策略变化；P37未通过。
