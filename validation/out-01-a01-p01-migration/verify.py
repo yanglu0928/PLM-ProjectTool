@@ -154,7 +154,8 @@ def _assert_plugin_installation_contract(dsn: str) -> None:
         try:
             with conn.transaction():
                 conn.execute(
-                    "TRUNCATE plm.plg_installations, plm.plg_enabled_operations, "
+                    "TRUNCATE plm.out_artifact_validation_results, plm.out_artifacts, "
+                    "plm.plg_installations, plm.plg_enabled_operations, "
                     "plm.plg_runtime_validations, plm.plg_enabled_operation_history, "
                     "plm.plg_disable_results, plm.plg_executions, "
                     "plm.plg_execution_result_files, plm.plg_execution_state_events"
@@ -563,7 +564,7 @@ def main() -> int:
         empty_url = _database_url(empty_db, args.port)
         empty_dsn = _dsn(empty_db, args.port)
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261105_0231":
+        if _revision(empty_dsn) != "20261105_0232":
             raise AssertionError("empty upgrade did not reach schema head")
         _assert_output_tables(empty_dsn, True)
         _assert_plugin_installation_tables(empty_dsn, True)
@@ -577,7 +578,7 @@ def main() -> int:
             job_fk = conn.execute("SELECT count(*) FROM pg_constraint WHERE conname='fk_out_output_requests__job'").fetchone()[0]
         if closed != 2 or job_fk != 0: raise AssertionError("0221 downgrade contract mismatch")
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261105_0231": raise AssertionError("owner re-upgrade failed")
+        if _revision(empty_dsn) != "20261105_0232": raise AssertionError("owner re-upgrade failed")
         with psycopg.connect(empty_dsn) as conn:
             closed = conn.execute("SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('trg_out_context_snapshots__owner_closed','trg_out_output_requests__owner_closed')").fetchone()[0]
             job_fk = conn.execute("SELECT count(*) FROM pg_constraint WHERE conname='fk_out_output_requests__job'").fetchone()[0]
@@ -589,7 +590,7 @@ def main() -> int:
         _assert_output_tables(empty_dsn, False)
         _assert_plugin_installation_tables(empty_dsn, False)
         upgrade_database(empty_url, "head")
-        if _revision(empty_dsn) != "20261105_0231": raise AssertionError("full re-upgrade failed")
+        if _revision(empty_dsn) != "20261105_0232": raise AssertionError("full re-upgrade failed")
         _assert_output_tables(empty_dsn, True)
         _assert_plugin_installation_tables(empty_dsn, True)
         result["empty_database_downgrade_reupgrade"] = "PASS"
@@ -626,7 +627,7 @@ def main() -> int:
                 (package_id,),
             )
         upgrade_database(existing_url, "head")
-        if _revision(existing_dsn) != "20261105_0231":
+        if _revision(existing_dsn) != "20261105_0232":
             raise AssertionError("existing database upgrade did not reach schema head")
         _assert_output_tables(existing_dsn, True)
         _assert_plugin_installation_tables(existing_dsn, True)
@@ -669,7 +670,7 @@ def main() -> int:
                 raise
         else:
             raise AssertionError("PLG-02 migration allowed downgrade with installation history")
-        if _revision(existing_dsn) != "20261105_0231":
+        if _revision(existing_dsn) != "20261105_0232":
             raise AssertionError("blocked PluginInstallation downgrade changed migration revision")
         with psycopg.connect(existing_dsn) as conn:
             history_after = conn.execute(history_query).fetchone()

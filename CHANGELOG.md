@@ -453,6 +453,6 @@
 
 ## Unreleased · 2026-11-05（PLG-03-A01托管验收；P32恢复，非发行版本）
 - PLG-03-A01 PluginExecution持久化基础通过GitHub hosted run [41974625395](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41974625395) 的PG18.6独立schema verifier，结论PASS_SCOPE_LIMITED。全链同轮后端/wheel、前端/build、父包PG18 smoke成功；P25独立initdb 0xC0000135失败，故workflow非全绿。未执行插件、未产生文件、无客户数据。
-- 依赖解除后恢复OUT-01-A01-P32；按CR-OUT-028先更新编码前检查。P32仅实现OUT-02持久层，API/发布Owner/文件生成与插件执行继续关闭，托管验收待完成。
+- 依赖解除后恢复OUT-01-A01-P32；按CR-OUT-028先更新编码前检查。P32的OUT-02持久层代码已提交，GitHub hosted全链与PG18专项验收待完成；API/发布Owner/文件生成与插件执行继续关闭。
 - 兼容性/运行位置：数据库迁移链计划推进至20261105_0232；只在GitHub hosted Windows runner D:临时目录运行。本机/C盘不运行项目程序或测试。
 - Pilot、Gate 3～7及正式Release状态不变，Windows 11设备与三平台发行未因此通过。

@@ -466,6 +466,8 @@ class PluginExecutionRow(Base):
     __table_args__ = (
         UniqueConstraint("plugin_execution_id", "project_id",
                          name="uq_plg_executions__id_project"),
+        UniqueConstraint("plugin_execution_id", "output_request_id", "project_id",
+                         name="uq_plg_executions__id_request_project"),
         UniqueConstraint("project_id", "idempotency_key",
                          name="uq_plg_executions__project_idempotency"),
         UniqueConstraint("job_id", name="uq_plg_executions__job"),

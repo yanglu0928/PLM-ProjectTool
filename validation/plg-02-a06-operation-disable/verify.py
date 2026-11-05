@@ -486,7 +486,7 @@ def main() -> int:
                 current_revision = conn.execute(
                     "SELECT version_num FROM plm.alembic_version"
                 ).fetchone()[0]
-            if current_revision != "20261105_0231":
+            if current_revision != "20261105_0232":
                 raise AssertionError("A08 downgrade refusal changed migration head")
         else:
             raise AssertionError("A08 result-bearing downgrade was not refused")
