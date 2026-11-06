@@ -28,6 +28,7 @@ class FixedOutputSourceAdapter:
         project_id: uuid.UUID, source_version_ref: uuid.UUID,
     ) -> FixedSourceVersion | None:
         found: list[FixedSourceVersion] = []
+        denied = []
         try:
             projection = self._requirements.read_output_source(
                 transaction, actor_id=actor_id, project_id=project_id,
@@ -44,7 +45,7 @@ class FixedOutputSourceAdapter:
                 ))
         except RequirementVersionReadError as error:
             if error.code != "RESOURCE_NOT_FOUND":
-                raise
+                denied.append(error)
 
         try:
             projection = self._plans.read_output_source(
@@ -62,6 +63,12 @@ class FixedOutputSourceAdapter:
                 ))
         except PlanVersionReadError as error:
             if error.code != "RESOURCE_NOT_FOUND":
-                raise
+                denied.append(error)
 
-        return found[0] if len(found) == 1 else None
+        if len(found) == 1:
+            return found[0]
+        if found:
+            return None
+        if denied:
+            raise denied[0]
+        return None
