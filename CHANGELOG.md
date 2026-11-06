@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（CR-PKG-014：A17 Caddy启动诊断编码前记录）
+- P40 hosted live Edge 下载、P39/P24/A50/P25/A34及基础构建通过；同轮 A17 因 Caddy 在 HTTPS readiness 前退出且 stderr 被 DEVNULL 丢弃而失败，根因未知。按 CR-PKG-014 先记录，仅改 Hosted Harness 捕获 owned D 盘临时日志并输出固定脱敏分类/退出码；不上传原始内容，不改产品/API/DB/安装器。待 Hosted 复验。
+
 ## Unreleased · 2026-11-06（P40 hosted real Edge download limited pass；A17启动诊断待补）
 - Hosted run [42243433283](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42243433283)：P40同进程 live FastAPI/临时PG18/Storage/Edge验收job成功并上传摘要；P39、P24、A50、P25、A34与前后端基础构建检查亦成功。结论限隔离合成数据 Hosted D:。
 - 同run独立A17 packaged flow在/health/ready前退出，捕获结果只有stderr unavailable，根因未确认。按CR-OUT-035先记录；下一步对A17增加有界脱敏stderr/exit-code诊断。没有正式信任、Windows 11实机、Pilot、Gate或Release结论。
