@@ -219,3 +219,8 @@ run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - 因两臂结果一致，PATH过滤不是充分原因。此前同一job的parent-package smoke成功，但它使用另一个initdb调用profile（`-D`, `-U postgres`, `--auth-local=trust`, `--auth-host=trust`, `--no-locale`, `-E UTF8`），而P25使用 `--pgdata`, `--username=poc_admin`, `--auth=trust`, `--encoding=UTF8`, `--locale=C`。此前证据没有在同一个解包二进制路径下对这两个profile做比较。
 - 下一步按本CR先记录一个明确差异：同一initdb路径、原始PATH、同一D盘runner-temp父目录，分别运行上列两个既有profile；只记录退出码、输出字节数及PG_VERSION存在布尔。两profile差异视为一个“命令profile”变量组；如结果不同，再拆解用户/auth/locale旗标，不能直接归因单一旗标。不得改生产harness行为或宣称P25通过。
 - run [42162415883](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42162415883)其余jobs成功，P25单job失败使整体workflow结论为failure；P25/Pilot/Gate/Release状态不变。
+
+
+## P25 initdb 命令 profile 对照实现候选（2026-11-06）
+
+按 `docs/progress/out-01-a01-p25-command-profile-precheck.md`，扩展同一P25父包PG比较器：对相同已校验、已解包的initdb二进制，在未修改runner PATH的相同进程环境下分别执行P25参数组和parent-package smoke既有参数组，各自使用全新RUNNER_TEMP目录。仅摘要固定profile代号、exit code、stdout/stderr字节数及PG_VERSION布尔；不记录PATH/环境值、错误文本或库内容。不改变实际P25步骤、产品/Schema/API/安装包。代码候选等待Hosted验证。
