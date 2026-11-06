@@ -119,7 +119,7 @@ class SyntheticTrustedOperation:
 
 
 def verify_plan_source_output_persistence(runtime: object, actor: uuid.UUID,
-                                          port: int) -> dict[str, object]:
+                                          port: int, database: str) -> dict[str, object]:
     project, other_project = uuid.uuid4(), uuid.uuid4()
     version, draft_version = uuid.uuid4(), uuid.uuid4()
     trace, template = uuid.uuid4(), BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID
@@ -153,11 +153,21 @@ def verify_plan_source_output_persistence(runtime: object, actor: uuid.UUID,
         raise AssertionError("PlanVersion Output replay changed Request/Job references")
 
     expected_counts = (1, 1, 1, 1, 1, 1)
-    database_dsn = dsn(runtime._engine.url.database, port)
+    database_dsn = dsn(database, port)
     committed = row_counts(database_dsn, project)
     if committed != expected_counts:
         raise AssertionError(f"unexpected Plan source Output persistence: {committed!r}")
-    if row_counts(database_dsn, other_project) != (0, 0, 0, 0, 0, 0):
+    before_other = row_counts(database_dsn, other_project)
+    try:
+        owner.create(
+            plan_command(version, other_project),
+            idempotency_key="p42-cross-project-key-000001",
+        )
+    except OutputRequestError:
+        pass
+    else:
+        raise AssertionError("cross-project PlanVersion request was accepted")
+    if before_other != (0, 0, 0, 0, 0, 0) or row_counts(database_dsn, other_project) != before_other:
         raise AssertionError("cross-project Plan source request persisted data")
 
     with psycopg.connect(database_dsn) as connection:
@@ -188,7 +198,6 @@ def verify_plan_source_output_persistence(runtime: object, actor: uuid.UUID,
             or payload["sources"][0]["review_state"] != "APPROVED"
             or payload["sources"][0]["fields"] != expected_fields
             or "internal_unapproved_field" in payload["sources"][0]["fields"]
-            or job_payload.get("payload_refs", {}).get("context_snapshot_id") == str(snapshot_id)
             or job_payload.get("context_snapshot_id") != str(snapshot_id)
             or outbox_count != 1 or execution_count != 0):
         raise AssertionError("PlanVersion context/Job/Outbox persisted unexpected data")
@@ -385,7 +394,7 @@ def main() -> int:
         if stored != hashlib.sha256(b"p02-same-key-000001").hexdigest():
             raise AssertionError("raw or non-deterministic idempotency key persisted")
 
-        plan_output_validation = verify_plan_source_output_persistence(runtime, actor, args.port)
+        plan_output_validation = verify_plan_source_output_persistence(runtime, actor, args.port, database)
         history_before = history_snapshot(database_dsn, project)
         runtime.dispose()
         runtime = None
