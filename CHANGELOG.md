@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P40首轮Hosted Harness偏差）
+- run [42232610178](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42232610178) 前端全量/构建与P39 harness语法通过；Edge已完成有效下载和字节/hash检查，但 Harness 在跨项目负例诊断字段写入时引用未初始化的summary，P39回归未关闭、P40未形成结论。偏差已先记CR-OUT-035；后续仅把结果布尔值移入summary对象初始化，保留其他断言并全链Hosted复验。无产品代码/API/Schema改动。
+
 ## Unreleased · 2026-11-06（OUT-01-A01-P40编码前检查）
 - 已核实P39 Hosted Edge保存验收为PASS_SCOPE_LIMITED（run 42156574221）；最终文档tip全链run 42224244339 success。P38服务端真实PG18/HTTP与P39浏览器下载仍是分层验收，不能声称同一实时服务端到浏览器端到端。
 - 按CR-OUT-035完成P40编码前检查：新增Hosted-only实时FastAPI loopback + PG18/Storage + Edge下载组合验收；仅合成数据、无正式trust/客户数据/插件执行。不改产品API、Schema或默认挂载。尚未实现与验收，Pilot/Gate/Release保持NOT_READY。

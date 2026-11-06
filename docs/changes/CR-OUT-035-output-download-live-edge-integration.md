@@ -26,3 +26,9 @@ P38和P39分别通过了服务端持久层/内容流与浏览器下载保存，�
 - 验证：Windows Hosted D盘运行隔离PG18/pgvector及ASGI loopback+Edge；全链后端/前端/wheel/父包及A17/A34/A35/P24/P39/A50回归，Secret扫描。失败时逐项保留证据，P40不标通过。
 - 回滚：移除P40专属验收脚本与workflow接线，恢复前一状态；生产接口、迁移、业务事实不受影响。
 - 客观缺项继续记录：Windows 11设备实测、正式Publisher/License trust、真实生成/插件执行、离线安装与升级、Gate 3/UAT/Release仍未完成。
+
+
+## P39 hosted regression found during P40 implementation (run 42232610178, fix not yet applied)
+
+- The full frontend tests/build and P39 harness syntax check succeeded. Real Edge then completed the valid row's Artifact GET, Document content GET and exact saved-file byte/hash assertions. The Harness subsequently threw `ReferenceError: Cannot access 'summary' before initialization` when adding a diagnostic flag before the summary object was declared; the cross-project negative assertion did not finish, so this run is a P39 regression and P40 is not accepted.
+- Evidence points to the new Harness summary assignment order only; no backend route or product code failure is indicated. Before changing code, record the minimal correction: move the two P40 summary booleans into the final summary object, leave the request/UI/data assertions unchanged, then rerun the Hosted workflow. No product/API/Schema/Trust changes.
