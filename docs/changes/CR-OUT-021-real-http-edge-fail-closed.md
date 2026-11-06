@@ -343,3 +343,9 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - 最新Hosted全链的后端/前端/PG sidecar/Windows父包及P24/P39/A50正常通过。其余 job 最终状态以Run记录为准。
 
 **下一步实施前决策：** 对Node代理捕获的error.message仅在进程内做固定关键词映射（F​ETCH_FAILED、CONNECTION_REFUSED、CONNECTION_RESET、TIMEOUT、DNS_FAILURE、SOCKET_ERROR、REQUEST_CONFIG、OTHER）；只写类别，不保留原始message、stack或原因对象。仍固定返回503，真实API成功验收保持单POST/422/VALIDATION_FAILED/无成功回执与DB不变。不得用输出文本或Message推断业务根因。
+
+
+## P25内存异常消息归一候选已实施（2026-11-06，Hosted待验证）
+
+- Node代理在捕获时只对异常message进行内存关键词匹配，输出FETCH_FAILED/CONNECTION_REFUSED/CONNECTION_RESET/TIMEOUT/DNS_FAILURE/SOCKET_ERROR/REQUEST_CONFIG/OTHER之一；原文、stack及cause对象不落盘、不入日志。原生name/code仍做白名单分类；返回固定503不变。
+- Python摘要接收有限枚举并保持单POST/422/VALIDATION_FAILED/无回执/DB快照严格要求。候选已同步功能分支，Hosted复验待跑。
