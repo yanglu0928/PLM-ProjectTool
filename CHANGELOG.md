@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-06（OUT-01-A01-P39 PASS_SCOPE_LIMITED；P25转同作业PG smoke差分）
+
+- run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42156574221)：P39 Hosted Windows Server 2025 Edge实际保存合成附件，长度50字节、SHA-256匹配；FAILED行无下载入口，跨项目引用在内容GET前拒绝。P39 PASS_SCOPE_LIMITED，详见 `docs/progress/out-01-a01-p39-edge-download-result.md`。真实FastAPI/PG链路为分层证据，正式trust/Win11实机/真实产品进程未验。
+- 整体workflow仍因独立P25 initdb `0xC0000135`失败而未全绿。CR-OUT-021与P25编码前检查先记录下一单变量：在P25同一Hosted job运行既有父包PG18 smoke helper，再按其结果继续；未将P25、Pilot、Gate或Release标通过。没有客户数据、外部API、插件或本机/C盘代码运行。
+
 ## Unreleased · 2026-11-06（P39 fetch已调用但未到达本地Harness，未通过）
 
 - run [42147565204](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42147565204)：P39 wrapper记录到Artifact固定引用GET调用，但CDP Network事件和Node服务端没有该请求，UI显示安全错误；没有HTTP响应、Document请求或Edge下载。P39未通过，传输原因未确定。已先按CR-OUT-034记录，准备只增加归一化fetch拒绝类型诊断，不记录错误message、查询参数或认证/正文。

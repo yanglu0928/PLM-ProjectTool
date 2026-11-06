@@ -185,3 +185,10 @@ P25 的 runner-temp 输入校验、PG sidecar provenance、依赖清单/语法�
 成功的 `smoke-parent-postgresql` job加入 `actions/setup-node@v4,node-version=24` 后，清洁提取的 PostgreSQL/pgvector生命周期 smoke 仍成功；同run P25主流程及父包initdb对照仍因 `0xC0000135` 在数据目录创建前失败。P25摘要无临时数据库文件/日志，Node PATH过滤已发生。故“安装Node 24”及单独Node PATH均不是充分解释，CR-OUT-021近期两轮对该环境问题未能收敛。
 
 决策：停止重复 initdb 旗标/PATH/安装Node对照，P25继续 `BLOCKED_DIAGNOSTIC`，保存各轮合成摘要与现有失败关闭行为。把研发时间转回独立可交付的P34 Output文件发布路径；若后续因P34/Pilot验收必须恢复P25诊断，再先在同一P25 job中运行既有PG smoke helper作进程内对照，并只采集经过允许列表筛选的非敏感环境证据。当前不会把P25描述成通过。
+
+
+## 2026-11-06 同一 P25 job 复用父包 PG smoke（实施前记录）
+
+run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42156574221) 中P39已通过Hosted Edge保存合同，但P25仍在initdb启动前以 `0xC0000135` 失败。既有父包临时PG18 smoke在独立job通过；CR-OUT-021既有决策要求恢复P25时，先在P25同一job运行该helper，再采集白名单环境证据。本次编码前检查见 `docs/progress/out-01-a01-p25-same-job-smoke-precheck.md`。
+
+**实施前决策：** 在P25输入完整性/语法/provenance检查之后、原有父包与sidecar initdb差分之前，使用完全相同的父包ZIP与verification-summary，在唯一RUNNER_TEMP/D盘子目录运行既有 `tools/smoke_windows_parent_package_pg_cloud.py`。不改其命令参数、不修改生产代码或服务；helper失败则该job立即停止，成功才进入既有P25差分/HTTP/Edge流程。结果将区分“同job PG smoke已失败”与“同job smoke成功但P25后续仍失败”；仍不把诊断当成P25通过。数据只为一次性合成临时PG。回滚仅删除该工作流步骤及本次文档。

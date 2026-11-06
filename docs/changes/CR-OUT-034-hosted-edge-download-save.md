@@ -109,3 +109,10 @@ run [42152467241](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 已在提交57865990中按上述记录将OutputArtifactReadClient的fetcher改为局部函数调用，并增加检查接收者未绑定的Frontend单测。run [42154634914](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42154634914)中Frontend全量测试与构建成功；但P39 Edge Harness失败于通用CDP Runtime.evaluate异常“Uncaught”，诊断状态未捕获clientProbe，Node仅见登录/历史请求，没有Artifact/Document GET或下载事件。故无法判断真实点击是否已触发，也不能称产品修复已验收。偏差先记：下一Harness-only变更为受限stage标签（login/history/button-probe/mouse-click/alert/download）和异常class类别，并保留CDP message-free，不添加业务代码或请求数据；之后Hosted重新检查产品点击。
 
 run [42154634914](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42154634914)其余Backend/wheel、PG18/pgvector、Frontend/build、嵌入式Python与Windows父包、PG18生命周期烟测、A17/A34/A35/P24/A50成功。独立P25仍因initdb.exe 3221225781/0xC0000135失败；整体workflow不全绿。Pilot/Gate/Release不变。
+
+
+## P39最终 Hosted Edge结果：PASS_SCOPE_LIMITED（run 42156574221，2026-11-06）
+
+在提交 `5cb5c8114c314895212462dec4c045c65141a720` 的完整Hosted run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42156574221) 中，P39 job成功：Windows Server 2025上的实际Edge从同run production dist进入输出历史；仅SUCCEEDED合成行显示下载入口；点击后请求固定Artifact引用并获得Document attachment；Edge保存文件与预置50字节负载长度及SHA-256 `90130db205e86ba6bec3b8a2d90161db16b34f27226ceca67e206aa8eb923437`完全匹配。FAILED输出无下载入口；跨项目Artifact引用返回安全失败，内容URL没有被请求。此前P39的产品端fetch receiver修复和受限Harness stage诊断均被此次实际保存链路验收。
+
+范围：PASS_SCOPE_LIMITED，仅证明Hosted Edge同源合成浏览器合同及安全失败边界；P38的FastAPI/PG18真实route证据仍是分层验证，二者不是同一真实产品进程端到端。没有正式Publisher/License trust、Win11设备、生产后端进程或客户数据。P25仍在initdb前以 `0xC0000135`退出，因此本workflow整体仍failure、P25仍BLOCKED_DIAGNOSTIC、Pilot/Gate/Release不变。下一项按CR-OUT-021及P25编码前检查，先在P25同一Hosted job运行既有父包PG smoke helper，不重复猜测参数。
