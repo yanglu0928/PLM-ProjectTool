@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25连通性前置探针待实施）
+- run [42184707119](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42184707119)：除P25外托管全链成功；P25 Node代理返回503且没有FastAPI上游状态，安全异常分类OTHER/UNKNOWN，DB快照相同、无成功回执。
+- CR-OUT-021下一步增加只读/openapi.json状态探针，丢弃正文，只辨别Node→FastAPI连通性与POST封装阶段；P25仍未通过。
+
 ## Unreleased · 2026-11-06（P25代理异常内存归一候选，Hosted复验待定）
 - 对Node代理捕获的异常message仅在内存中映射固定类别，原文/stack不记录；Edge固定收到503。严格真实HTTP、回执及DB快照验收不变。候选尚未Hosted验证。
 
