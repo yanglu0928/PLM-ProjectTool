@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P39 CDP诊断未发现Artifact请求，非通过）
+
+- run [42146593192](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42146593192)：Node及CDP网络观察仅有登录/输出历史GET；成功行按钮enabled并被点击后出现前端安全错误，但无Artifact/Document请求、network failure或未捕获异常。P39仍未通过；结论仅限Harness缺少请求前证据。已先记CR-OUT-034，增加不记录凭证/body的fetch/AbortController计数后再Hosted诊断。
+
 ## Unreleased · 2026-11-06（P39增加去敏浏览器网络诊断，待Hosted复验）
 
 - 按CR-OUT-034先记录run [42145821433](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42145821433)现象后，为P39 harness增加CDP Network/Runtime观察。只记录API路径/method、网络失败类型和异常类/短文本，不记录Cookie、Headers或正文。此诊断只用于区分浏览器请求前失败与服务路由问题，产品代码不变，P39仍未通过。

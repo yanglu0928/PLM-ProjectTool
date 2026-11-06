@@ -59,3 +59,8 @@ Hosted P39 node --check及provenance通过。Edge成功渲染含三行的输出�
 ## P39第三轮诊断候选
 
 已按run 42145821433证据增强独立测试harness：启用CDP Network/Runtime，日志限定为API pathname/method、network failure type/errorText及异常class/短text，不采集请求认证信息、Cookie、Headers或body。等待Hosted结果明确“fetch未触发、浏览器阻断或服务器未收到”中的实际原因后，再选择最小修复。未改产品代码。
+
+
+## P39 third Hosted diagnostic still shows no Artifact fetch (run 42146593192, not passed)
+
+Hosted run [42146593192](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42146593192) repeated: frontend route loaded, successful row enabled, CDP mouse click shows the generic safe error, but Network events and Node server logs contain only login and output-history GET; no Artifact or content request, no Network.loadingFailed and no uncaught Runtime exception. This narrows the failure to a synchronous/asynchronous client-side rejection before an observable fetch, but does not identify its input. P39 remains failed. Before changing any product code, next harness-only step wraps global fetch and AbortController to count whether OutputArtifactReadClient reaches getJson/fetch; logs will contain only safe API pathname/method and counts, no auth material or body.
