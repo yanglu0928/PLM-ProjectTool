@@ -1,3 +1,4 @@
+|Execution Note|2026-11-06 同步审计发现ba44e1e文档tree基于旧文件快照，当前树遗漏f62f292中P25 Harness候选；已先按CR-OUT-021记录。下一提交以当前ba44e1e tree为基准，从f62f292恢复Node/Python Harness并修复代理局部entry作用域，保持前向历史且不force push；Hosted重验前不标PASS。|
 |Execution Note|2026-11-06 P25真实代理阻断根因已由源码静态检查定位：realbackend分支在外层server callback引用api()局部变量 entry，导致fetch前ReferenceError（Hosted run 42215360624的UPSTREAM尝试=false与之吻合）。已先记CR-OUT-021，下一项只从req.__p24Entry绑定本地entry修复Harness作用域；尚待Hosted证明，P25仍BLOCKED。|
 |Execution Note|2026-11-06 P25探针路径修正和代理阶段诊断候选已按CR-OUT-021实施：OpenAPI探针换为既有只读 /health/live 且严格检查200/JSON/UP；代理只记录固定阶段和upstream尝试布尔值，无原始异常/正文/凭据。产品API/DB未改，Hosted复验待跑，P25仍BLOCKED。|
 |Execution Note|2026-11-06 P25 run 42212193585：Node→FastAPI /openapi.json 返回404/JSON，因为应用明确禁用OpenAPI/docs；这是有效HTTP回应，不是网络失败证据。真实Output代理仍503且无上游状态，DB快照相同、无成功回执，P25未通过。CR-OUT-021先记路径修正：改用既有只读 /health/live，并增加固定代理阶段枚举，保持真实422/单POST/无回执与DB不变严格标准。|

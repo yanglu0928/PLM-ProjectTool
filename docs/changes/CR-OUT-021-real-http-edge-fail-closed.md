@@ -391,3 +391,11 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - 源码静态检查定位Harness作用域错误：`entry` 在 `api(req,url)` 函数内声明，但realbackend代理分支在外层HTTP server callback中直接读写 `entry`，未从 `req.__p24Entry` 取出；因此条件满足后、调用 `fetch()` 前即触发ReferenceError，并被安全503 catch捕获。此为高置信源码根因，尚待修复后Hosted运行证明。
 - 选择的最小修复：仅在P25的realbackend代理分支将当前请求记录绑定为局部 `const entry=req.__p24Entry`，继续使用已有固定阶段/请求尝试诊断。无生产端点、业务/API、DB、权限或信任改动。
 - 回滚：撤回此Harness单行绑定；无数据迁移。Hosted验证须证明上游请求真正发生，且仍满足真实422/VALIDATION_FAILED、单POST、正确UI、无回执/重试、DB不变和清理成功。Secret检查后在GitHub Hosted Windows D盘重跑。
+
+
+### 2026-11-06：Git tree 基准偏差及前向恢复计划（恢复实施前记录）
+
+- 发现：在 `ba44e1e` 文档记录提交中，Git tree 以较旧 `e41db0f` 文件树为基准，而提交父节点是较新的 `f62f292`；因此该提交虽保留父历史，却未把 `f62f292` 的 P25 Harness 代码纳入当前目录树。上一轮Hosted run仍引用 `f62f292`，不受该后续树状态影响。
+- 风险：当前分支树暂时退回了健康探针/阶段诊断代码；若继续直接修单行作用域，会遗漏前一提交代码并让验证结果失配。
+- 方案：从已存在提交 `f62f292` 恢复完整的两份 P25 Harness 文件（Node与Python），在同一Node文件加入 `req.__p24Entry` 局部绑定修复，再以当前分支 `ba44e1e` 为父节点和tree基准创建正常快进提交。保留全部Git历史，不force push。
+- 验证/回滚：GitHub Hosted复验将以恢复后的同一commit执行；若验证失败，继续前向修正，不移动/覆盖远端历史。Secret检查仅针对恢复文件；仅Hosted Windows D盘执行。

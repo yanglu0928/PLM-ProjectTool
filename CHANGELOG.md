@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P25同步tree基准偏差，修复计划）
+- 检查发现提交 ba44e1e 的文件tree基于旧快照，当前分支树遗漏父提交 f62f292 的P25 Harness诊断候选。按CR-OUT-021先记录，准备从已提交f62f292恢复Node/Python Harness并修正代理entry作用域；仅追加前向提交，不force push，随后Hosted验证。
+
 ## Unreleased · 2026-11-06（P25代理Harness作用域修正，实施前记录）
 - Hosted run [42215360624](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42215360624)：/health/live返回200/JSON/UP；真实Output POST代理在上游尝试前异常，DB快照不变、无回执，D盘清理成功，P25失败。
 - 静态检查确认测试Harness realbackend分支引用了api()函数局部entry，导致fetch前ReferenceError。按CR-OUT-021仅计划从req.__p24Entry绑定代理局部entry；产品API/DB不改，必须Hosted复验。
