@@ -93,3 +93,9 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 
 - 按CR-OUT-021仅在合成Node代理异常中记录error.name固定类别与cause.code白名单；其余映射UNKNOWN。经Python摘要透传仍只含有限码，不含Message/Stack/环境路径。代理异常返回固定503，不回显异常。
 - 真实HTTP成功条件与DB快照顺序保持严格；当前仅候选，需GitHub Hosted独立复验。
+
+
+## Run 42182842169后内存异常文本分类编码前检查（2026-11-06）
+
+- Hosted结论：Node捕获错误名OTHER、底层cause code UNKNOWN；代理安全返回503；真实后端无响应；DB快照一致；UI安全失败无回执。现有结构化指纹不足，不能确定是否为Node fetch连接/请求配置问题。
+- PASS_WITH_LIMITATION：仅在捕获异常的进程内以关键词映射固定类（FETCH_FAILED/CONNECTION_REFUSED/CONNECTION_RESET/TIMEOUT/DNS_FAILURE/SOCKET_ERROR/REQUEST_CONFIG/OTHER），只输出枚举，不记录message/stack。由下一Hosted运行报告真实上游响应是否仍缺失。其余严格验收不变；GitHub Hosted D盘运行。
