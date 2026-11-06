@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P25有界失败诊断候选，Hosted复验待定）
+- 仅调整P25 Hosted Node/Python Harness：错误码输出采用白名单，UI提示归类；预期文案缺失时仍完成数据库后快照，最终仍严格要求HTTP 422、VALIDATION_FAILED、无回执/重试、单POST及数据不变。产品端点/API/Schema/信任不变。尚未Hosted验收，不构成PASS。
+
 ## Unreleased · 2026-11-06（P25真实HTTP响应诊断，待复验）
 - Hosted run [42172719463](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42172719463) 的15 jobs中14个成功。完整包根/data下PostgreSQL和真实Edge→HTTP POST已运行，但HTTP响应为500，页面安全显示通用错误；Harness等待固定提示提前退出，DB前后快照未完成。P25未通过，不能声称数据库未变化。
 - 按CR-OUT-021先记录下一步：Harness仅记录白名单错误码和有限UI类别，即便断言不符也继续DB快照，再严格判定422/单POST/无回执重试/数据不变。产品代码与信任边界不变；仅GitHub Hosted D盘运行。
