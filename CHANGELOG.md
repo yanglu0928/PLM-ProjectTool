@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25真实HTTP响应诊断，待复验）
+- Hosted run [42172719463](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42172719463) 的15 jobs中14个成功。完整包根/data下PostgreSQL和真实Edge→HTTP POST已运行，但HTTP响应为500，页面安全显示通用错误；Harness等待固定提示提前退出，DB前后快照未完成。P25未通过，不能声称数据库未变化。
+- 按CR-OUT-021先记录下一步：Harness仅记录白名单错误码和有限UI类别，即便断言不符也继续DB快照，再严格判定422/单POST/无回执重试/数据不变。产品代码与信任边界不变；仅GitHub Hosted D盘运行。
+
 ## Unreleased · 2026-11-06（P25完整包内data目录与未初始化目录清理修正候选，Hosted复验待跑）
 
 - run [42170525215](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42170525215)已证明完整包PG初始化成功，但真实Harness在其外Runner Temp目录创建data失败。P25合成PG工作目录现迁入同run已验证父包根；状态4仅在数据目录不存在且精确自有目录为空时进行安全清理，保留主initdb错误。无业务代码改动，P25仍BLOCKED_DIAGNOSTIC。
