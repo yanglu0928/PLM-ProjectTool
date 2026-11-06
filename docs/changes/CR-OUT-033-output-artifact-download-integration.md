@@ -1,7 +1,7 @@
 # CR-OUT-033：OutputArtifact到Document内容流的受保护HTTP纵向验收
 
 - 日期：2026-11-06
-- 状态：已批准执行；P38编码前检查PASS_WITH_LIMITATION，待验收
+- 状态：P38实现候选已提交；Hosted PG18/HTTP验收待完成
 - WBS：OUT-01-A01-P38
 - 来源：P37已验证前端下载入口，但Hosted视图测试使用mock；P36验证PG Repository固定引用，没有证明两者经同一HTTP组合实际返回文档字节。
 - 基线：冻结API Contract V1、OUT-02和Document下载合同；CR-OUT-032；不改API/Schema/Migration/default composition/生产trust。
@@ -21,3 +21,8 @@
 ## 验收
 
 Hash/长度/字节完全一致；项目越权、未知/不可用Artifact、内容完整性错误均失败关闭；没有存储定位符进入响应；后端全量/wheel、前端全量/typecheck/build、父包PG18及A17/A34/A35/A50检查通过。整体workflow/P25独立情况如实报告。Win11实机、正式trust、Pilot、Gate或Release不因该合成验收而通过。
+
+
+## P38 Hosted实现候选
+
+已在P33临时PG18父包验证器中增加P38 helper，使用真实OutputArtifact读取Repository、真实DocumentReadService/Repository、PrepareDownloadService、LocalFileStorage及两个HTTP router factory；Session、Project授权摘要和License guard使用仅限合成测试的夹具。实际HTTP贯穿授权Artifact引用到Document流字节，并检查跨项目/未知引用隐藏、Hash/大小/MIME、存储路径不披露及文件被篡改后不返回正文。只写Runner临时目录；未修改生产API、Schema/Migration、默认挂载、正式信任或业务数据。待Hosted run验收后按结果更新。

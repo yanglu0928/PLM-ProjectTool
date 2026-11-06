@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps/backend/src"))
 sys.path.insert(0, str(ROOT))
 from validation.out_01_a01_p36_artifact_read.verify import verify_available_artifact_reference
+from validation.out_01_a01_p38_download_http.verify import verify_output_artifact_download_http
 
 from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
@@ -434,6 +435,9 @@ def main() -> int:
             document_version_id=data["version"], content_sha256=data["content_hash"],
             size_bytes=data["size"],
         )
+        download_http_validation = verify_output_artifact_download_http(
+            engine, data=data, storage_root=storage_root,
+        )
         print(json.dumps({
             "status":"PASS_SCOPE_LIMITED",
             "postgresql":"18.x hosted temporary database",
@@ -450,6 +454,7 @@ def main() -> int:
             "exact_success_replay_idempotent":"PASS",
             "altered_success_replay_rejected":"PASS",
             "output_artifact_user_reference_validation":artifact_reference_validation,
+            "output_artifact_document_download_http_validation":download_http_validation,
             "synthetic_storage_file_created":True,"plugin_executed":False,
             "customer_data":False,"production_write_open":False,
         },sort_keys=True))

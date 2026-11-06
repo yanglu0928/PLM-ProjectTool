@@ -32,3 +32,8 @@
 2. 确认越权、跨项目、未知请求、非AVAILABLE Artifact和内容Hash不一致均不泄露正文或存储位置并失败关闭；query/range等不支持输入仍拒绝。
 3. 全后端/wheel、前端全量/typecheck/build、父包PG18 smoke及A17/A34/A35/A50回归。P25独立失败不伪记P38通过，也不能阻止独立验收。
 4. Secret扫描和GitHub同步后按证据更新STATUS/CHANGELOG/结果文档。未验收前不标PASS。
+
+
+## P38实现候选与验收状态
+
+新增P33父包PG18 verifier helper并在P36固定引用检查后调用。验证采用真实SQLAlchemy OutputArtifact Repository、DocumentReadService/Repository、真实受保护HTTP router factories、PrepareDownloadService和本地内容存储；仅Session/Project授权摘要/License guard为合成测试夹具。测试成功字节、Hash/长度/MIME，跨项目与未知请求404，跨项目内容404，篡改后的物理文件不得流出。GitHub Hosted验收待完成；结果仍非Pilot/真实trust证据。

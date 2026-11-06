@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-06（OUT-01-A01-P38：受保护下载HTTP集成候选，非发行版本）
+
+- 变更：父包PG18 verifier增加真实Artifact引用HTTP到Document受保护内容流的端到端验证，覆盖成功字节/hash/大小/MIME、跨项目与未知引用隐藏、跨项目内容隐藏、篡改文件失败关闭及存储定位不披露。Session/Project/License为合成测试夹具，PG和文件均限Hosted D盘临时目录。
+- 兼容性：无产品API/Schema/Migration/default composition/正式trust变化。P38 Hosted验收待运行，未通过前不标PASS。
+
 ## Unreleased · 2026-11-06（OUT-01-A01-P37：输出历史下载入口，非发行版本）
 
 - 结果：按CR-OUT-032以PASS_SCOPE_LIMITED完成。Hosted run [42126880417](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42126880417)：前端205 suites/2,098 tests/typecheck/build，后端4,087 tests/wheel，父包PG18 P36固定引用权限断言及A17/A34/A35/P24/A50通过。
