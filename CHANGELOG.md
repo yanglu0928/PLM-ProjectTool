@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P39首轮Hosted Edge未触发下载，非通过）
+
+- run [42144778960](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42144778960)：provenance、Node syntax、Edge页面、合成登录和输出历史读取通过；下载动作后无Artifact引用GET/Document内容GET及Edge downloadWillBegin，P39失败关闭且未验收。仅两个API GET出现在摘要，不能判为产品后端缺陷。已先记CR-OUT-034，计划增强按钮状态/点击结果/请求路径诊断后Hosted复验。
+
 ## Unreleased · 2026-11-06（P39 Hosted验收器修正候选，待云端复验）
 
 - 按CR-OUT-034先记录后修复：Node脚本安全服务production dist SPA，request summary限API路径，附件文件名响应头避免转义歧义，fixture使用显式字节数组。修复已同步到分支；node --check和Edge保存结果待当前Hosted run，P39仍Incomplete。
