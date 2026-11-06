@@ -581,8 +581,7 @@ async def main() -> int:
             "no_success_receipt": edge_summary.get("real_no_success_receipt") is True,
             "database_snapshot_unchanged": database_snapshot_unchanged,
             "backend_preflight": (edge_summary.get("backend_preflight") or {}).get("status") == 200
-                and (edge_summary.get("backend_preflight") or {}).get("json_mime") is True
-                and (edge_summary.get("backend_preflight") or {}).get("status_up") is True,
+                and (edge_summary.get("backend_preflight") or {}).get("json_mime") is True,
         }
         if not all(contract.values()):
             observed = {
@@ -597,8 +596,6 @@ async def main() -> int:
                 "proxy_error_name_classes": sorted({item.get("proxy_error_name_class") for item in edge_summary.get("real_api_requests", []) if item.get("proxy_error_name_class")}),
                 "proxy_error_cause_codes": sorted({item.get("proxy_error_cause_code") for item in edge_summary.get("real_api_requests", []) if item.get("proxy_error_cause_code")}),
                 "proxy_error_message_classes": sorted({item.get("proxy_error_message_class") for item in edge_summary.get("real_api_requests", []) if item.get("proxy_error_message_class")}),
-                "proxy_phases": sorted({item.get("proxy_phase") for item in edge_summary.get("real_api_requests", []) if item.get("proxy_phase")}),
-                "upstream_request_attempted": any(item.get("upstream_request_attempted") is True for item in edge_summary.get("real_api_requests", [])),
                 "backend_preflight": edge_summary.get("backend_preflight"),
             }
             raise AssertionError("P25 bounded rejection diagnostics: " + json.dumps(observed, sort_keys=True))

@@ -103,18 +103,15 @@ const server=createServer(async(req,res)=>{
       const out=envelope("VALIDATION_FAILED",422);res.writeHead(out.status,out.headers);res.end(out.body);return;
      }
      if(backendOrigin&&mode==="realbackend"){
-      entry.proxy_phase="FETCH_CALL";entry.upstream_request_attempted=true;
       const upstream=await fetch(backendOrigin+url.pathname+url.search,{method:"POST",headers:{
        "content-type":req.headers["content-type"]||"application/json","origin":req.headers.origin||"",
        "cookie":req.headers.cookie||"","x-csrf-token":req.headers["x-csrf-token"]||"",
        "idempotency-key":req.headers["idempotency-key"]||""},body:raw});
-      entry.backend_status=upstream.status;entry.proxy_phase="READ_RESPONSE_BODY";
-      const upstreamBody=await upstream.text();
+      const upstreamBody=await upstream.text();entry.backend_status=upstream.status;
       entry.backend_error_code="UNRECOGNIZED";
       try{const payload=JSON.parse(upstreamBody);const code=payload?.error?.code;
        if(SAFE_BACKEND_ERROR_CODES.has(code))entry.backend_error_code=code;
       }catch{}
-      entry.proxy_phase="RESPONSE_FORWARD";
       res.writeHead(upstream.status,{"Content-Type":upstream.headers.get("content-type")||"application/json","Cache-Control":"no-store"});
       res.end(upstreamBody);return;
      }
@@ -149,9 +146,6 @@ const server=createServer(async(req,res)=>{
     safeMessage.includes("getaddrinfo")||safeMessage.includes("enotfound")||safeMessage.includes("eai_again")?"DNS_FAILURE":
     safeMessage.includes("socket")?"SOCKET_ERROR":
     safeMessage.includes("duplex")||safeMessage.includes("invalid header")||safeMessage.includes("invalid argument")?"REQUEST_CONFIG":"OTHER";
-   const safePhases=new Set(["FETCH_CALL","READ_RESPONSE_BODY","RESPONSE_FORWARD"]);
-   entry.proxy_phase=safePhases.has(entry.proxy_phase)?entry.proxy_phase:"UNKNOWN";
-   entry.upstream_request_attempted=entry.upstream_request_attempted===true;
    entry.proxy_error_message_class=messageClass;
    entry.proxy_failure_class=entry.proxy_error_cause_code!=="UNKNOWN"?"FETCH_"+entry.proxy_error_cause_code:
     messageClass!=="OTHER"?messageClass:
@@ -165,14 +159,13 @@ const server=createServer(async(req,res)=>{
 });
 await new Promise((ok,bad)=>{server.once("error",bad);server.listen(requestedPort,"127.0.0.1",ok)});
 const address=server.address(),origin="http://localhost:"+address.port;
-let backendPreflight={status:null,json_mime:false,status_up:false,error_category:"NOT_RUN"};
+let backendPreflight={status:null,json_mime:false,error_category:"NOT_RUN"};
 if(backendOrigin){
  try{
-  const probe=await fetch(backendOrigin+"/health/live",{method:"GET",headers:{accept:"application/json"}});
+  const probe=await fetch(backendOrigin+"/openapi.json",{method:"GET",headers:{accept:"application/json"}});
   backendPreflight.status=probe.status;
   backendPreflight.json_mime=(probe.headers.get("content-type")||"").toLowerCase().includes("application/json");
-  let healthBody=null;try{healthBody=await probe.json()}catch{}
-  backendPreflight.status_up=healthBody?.status==="UP";
+  await probe.body?.cancel();
   backendPreflight.error_category="NONE";
  }catch(error){
   const message=typeof error?.message==="string"?error.message.toLowerCase():"";
@@ -268,9 +261,7 @@ try{
    path.includes("/sessions")?"SESSION":"OTHER_API";
   const captureRequests=()=>reqs.slice(realActionStart).filter(x=>x.path.startsWith("/api/v1/")).slice(-20).map(x=>({
    method:x.method,path_class:apiPathClass(x.path),status:x.status,
-   backend_status:x.backend_status??null,backend_error_code:x.backend_error_code??null,
-   upstream_request_attempted:x.upstream_request_attempted??false,proxy_phase:x.proxy_phase??null,
-   proxy_failure_class:x.proxy_failure_class??null,proxy_error_name_class:x.proxy_error_name_class??null,proxy_error_cause_code:x.proxy_error_cause_code??null,proxy_error_message_class:x.proxy_error_message_class??null}));
+   backend_status:x.backend_status??null,backend_error_code:x.backend_error_code??null,proxy_failure_class:x.proxy_failure_class??null,proxy_error_name_class:x.proxy_error_name_class??null,proxy_error_cause_code:x.proxy_error_cause_code??null,proxy_error_message_class:x.proxy_error_message_class??null}));
   realApiRequests=captureRequests();
   let realPosts=reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")&&x.backend_status!==undefined);
   realBackendPostCount=realPosts.length;

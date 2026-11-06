@@ -383,3 +383,11 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - 不变项：产品代码/API/Schema/业务行为未改；仍必须真实POST=1、HTTP422、VALIDATION_FAILED、预期安全UI、无成功/状态回执、DB快照不变和Hosted清理成功。
 - 回滚：如候选引入干扰，撤回本次P25测试夹具变更即可；无数据迁移。
 - 结果：尚待GitHub Hosted复验，P25不得标PASS。
+
+
+### 2026-11-06：P25真实代理异常静态根因确认（修复前记录）
+
+- Hosted run [42215360624](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42215360624) 的 `/health/live` 探针为200/JSON/UP；Output真实POST仍由Harness返回503，`upstream_request_attempted=false`、`proxy_phase=UNKNOWN`，DB快照一致、无回执、D盘清理成功，P25仍未通过。
+- 源码静态检查定位Harness作用域错误：`entry` 在 `api(req,url)` 函数内声明，但realbackend代理分支在外层HTTP server callback中直接读写 `entry`，未从 `req.__p24Entry` 取出；因此条件满足后、调用 `fetch()` 前即触发ReferenceError，并被安全503 catch捕获。此为高置信源码根因，尚待修复后Hosted运行证明。
+- 选择的最小修复：仅在P25的realbackend代理分支将当前请求记录绑定为局部 `const entry=req.__p24Entry`，继续使用已有固定阶段/请求尝试诊断。无生产端点、业务/API、DB、权限或信任改动。
+- 回滚：撤回此Harness单行绑定；无数据迁移。Hosted验证须证明上游请求真正发生，且仍满足真实422/VALIDATION_FAILED、单POST、正确UI、无回执/重试、DB不变和清理成功。Secret检查后在GitHub Hosted Windows D盘重跑。

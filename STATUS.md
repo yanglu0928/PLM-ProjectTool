@@ -1,3 +1,4 @@
+|Execution Note|2026-11-06 P25真实代理阻断根因已由源码静态检查定位：realbackend分支在外层server callback引用api()局部变量 entry，导致fetch前ReferenceError（Hosted run 42215360624的UPSTREAM尝试=false与之吻合）。已先记CR-OUT-021，下一项只从req.__p24Entry绑定本地entry修复Harness作用域；尚待Hosted证明，P25仍BLOCKED。|
 |Execution Note|2026-11-06 P25探针路径修正和代理阶段诊断候选已按CR-OUT-021实施：OpenAPI探针换为既有只读 /health/live 且严格检查200/JSON/UP；代理只记录固定阶段和upstream尝试布尔值，无原始异常/正文/凭据。产品API/DB未改，Hosted复验待跑，P25仍BLOCKED。|
 |Execution Note|2026-11-06 P25 run 42212193585：Node→FastAPI /openapi.json 返回404/JSON，因为应用明确禁用OpenAPI/docs；这是有效HTTP回应，不是网络失败证据。真实Output代理仍503且无上游状态，DB快照相同、无成功回执，P25未通过。CR-OUT-021先记路径修正：改用既有只读 /health/live，并增加固定代理阶段枚举，保持真实422/单POST/无回执与DB不变严格标准。|
 |Execution Note|2026-11-06 P25诊断修正实施前检查：Phase 2 Platform Core；WBS OUT-01-A01-P25；基线为冻结Output Create API和CR-OUT-021；前置全链Hosted及PG/父包通过但P25未通过；仅涉及测试Harness，无生产实体/API/权限修改；验收条件保持真实422/VALIDATION_FAILED、单POST、无成功回执/重试、DB快照一致与清理成功；风险是健康探针仅证明loopback HTTP，不证明代理POST可用；变更可通过回滚Harness恢复。|
