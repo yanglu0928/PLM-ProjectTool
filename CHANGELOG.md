@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25有限API路径诊断，Hosted复验待定）
+- 针对run 42176547201真实后端POST计数为0的证据，仅在P25 realbackend动作窗口记录有限API path class/method/status/upstream status/白名单错误码，不含UUID/query/header/body/message；回执判定限成功受理/创建文案。真实POST、422、VALIDATION_FAILED、无重试/成功回执及DB不变的严格条件继续。
+- 测试Harness候选已同步，尚未Hosted复验，不构成PASS或发行包。
+
 ## Unreleased · 2026-11-06（P25真实后端请求未证实，待路由诊断）
 - run [42176547201](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42176547201)：PG/父包/清理通过，P25 Harness完成数据库前后快照且目标计数相同；但Edge动作窗没有真实后端POST，HTTP状态/错误码为空，故P25失败。UI为提交结果未确认类提示，无成功受理文案。上轮500未证明为后端响应。
 - 按CR-OUT-021，下一步只给realbackend动作窗口增加method/path类别/status脱敏计数，并将回执判定精确为成功文案；不记录ID/query/header/body。真实HTTP422/VALIDATION_FAILED、单次请求、无重试/成功回执和DB不变条件仍严格。
