@@ -11,3 +11,8 @@
 - 安全与回滚：仅D盘RUNNER_TEMP合成临时库，不启动服务、不做业务写入、不调用外部API/插件、不用客户数据/秘密。本机不运行程序。回滚仅还原比较脚本及记录。
 - Secret检查：不新增密钥，不打印PATH或任意环境变量值。
 - 决定：PASS_WITH_LIMITATION，可实施该受限Hosted探针；P25继续BLOCKED_DIAGNOSTIC。
+
+
+## PATH双臂 Hosted 结果与下一项重新检查（run 42162415883）
+
+原PATH和Node过滤PATH在同一解包initdb.exe、相同P25参数下均返回 `0xC0000135`、没有输出或PG_VERSION；PATH过滤不是充分根因。既有完整父包smoke成功，但源码确认它使用不同的initdb命令profile。下一项编码前检查因此只比较两个已存在profile：P25 profile与父包smoke profile；固定同一二进制路径、原PATH、Runner-temp父目录，只改变profile（用户和flags作为一个参数组），不启动server。P25原流程保持不变。

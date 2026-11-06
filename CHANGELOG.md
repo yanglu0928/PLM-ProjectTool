@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25同二进制PATH双臂均失败，命令profile待对照）
+
+- Hosted run [42162415883](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42162415883)：相同解包PG initdb二进制与P25参数，原PATH和移除Node目录PATH都返回0xC0000135、无输出、未建PG_VERSION；不支持PATH过滤为充分根因。同job完整父包PG smoke成功，但用不同initdb profile。下一项按CR-OUT-021固定二进制路径/PATH，仅对照两个既有命令profile。其他jobs通过，P25失败使整体workflow failure。无本机C盘执行/客户数据/外部调用。
+
 ## Unreleased · 2026-11-06（P25同解包二进制 PATH 单变量双臂探针，待Hosted）
 
 - 按CR-OUT-021先记录后修改P25诊断比较器：同一父包PG initdb二进制和完全相同参数，分别运行原PATH与去除Node目录PATH；仅记录固定布尔/退出码/输出长度，无原始环境值和错误文案。仅Hosted D盘合成数据，尚未运行，P25仍BLOCKED_DIAGNOSTIC。

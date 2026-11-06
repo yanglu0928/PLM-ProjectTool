@@ -211,3 +211,11 @@ run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 ## 相同解包 PG 二进制的 PATH 双臂探针实现候选（2026-11-06）
 
 依据本CR上一节和 `docs/progress/out-01-a01-p25-same-binary-path-precheck.md`，仅扩展 `validation/out-01-a01-p25-real-http-edge/compare_parent_pg.py`：同一已校验父包PG payload解包路径中的同一个initdb.exe，以完全一致的P25参数分别执行原PATH与移除Node路径后的PATH；各用独立RUNNER_TEMP子目录。结果只记录Node路径过滤布尔/计数、退出码、stdout/stderr字节数和PG_VERSION存在布尔，不记录原始环境、错误文本或库内容。未改P25真实流程、产品代码/API/Schema。回滚仅还原比较器和对应追踪记录。代码候选等待Hosted Windows验收，尚无结果。
+
+
+## Run 42162415883 PATH 双臂结果：排除PATH过滤为充分原因（2026-11-06）
+
+- P25同一Hosted Windows job中的compare步骤使用同一父包payload解包路径下的同一个 `initdb.exe`、完全相同P25参数及独立D盘数据目录。Node目录过滤PATH删除1项；过滤与原始PATH两臂都返回 `3221225781/0xC0000135`，stdout/stderr均0字节，均未创建 `PG_VERSION`。同run真实P25也失败，未启动HTTP/Edge。PG18.6/pgvector 0.8.6 payload 1,627项与sidecar一致。
+- 因两臂结果一致，PATH过滤不是充分原因。此前同一job的parent-package smoke成功，但它使用另一个initdb调用profile（`-D`, `-U postgres`, `--auth-local=trust`, `--auth-host=trust`, `--no-locale`, `-E UTF8`），而P25使用 `--pgdata`, `--username=poc_admin`, `--auth=trust`, `--encoding=UTF8`, `--locale=C`。此前证据没有在同一个解包二进制路径下对这两个profile做比较。
+- 下一步按本CR先记录一个明确差异：同一initdb路径、原始PATH、同一D盘runner-temp父目录，分别运行上列两个既有profile；只记录退出码、输出字节数及PG_VERSION存在布尔。两profile差异视为一个“命令profile”变量组；如结果不同，再拆解用户/auth/locale旗标，不能直接归因单一旗标。不得改生产harness行为或宣称P25通过。
+- run [42162415883](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42162415883)其余jobs成功，P25单job失败使整体workflow结论为failure；P25/Pilot/Gate/Release状态不变。
