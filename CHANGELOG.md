@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25同解包二进制 PATH 单变量双臂探针，待Hosted）
+
+- 按CR-OUT-021先记录后修改P25诊断比较器：同一父包PG initdb二进制和完全相同参数，分别运行原PATH与去除Node目录PATH；仅记录固定布尔/退出码/输出长度，无原始环境值和错误文案。仅Hosted D盘合成数据，尚未运行，P25仍BLOCKED_DIAGNOSTIC。
+
 ## Unreleased · 2026-11-06（P25同作业父包PG smoke通过，真实HTTP/Edge仍阻断）
 
 - Hosted run [42159992981](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42159992981)：同一P25 job中父包PG18完整烟测成功（PG18.6/pgvector 0.8.6、D盘合成临时库）；1,627个PG payload hash与sidecar相同。过滤Node PATH后的父包initdb对照及P25 initdb仍返回0xC0000135、未创建数据库，真实HTTP/Edge未启动。P25仍BLOCKED_DIAGNOSTIC，整体workflow failure。按CR-OUT-021编码前检查，下一项只在相同解包二进制和参数下比较过滤/未过滤PATH。全程仅Hosted D盘，无客户数据/外部调用/本机C盘执行。

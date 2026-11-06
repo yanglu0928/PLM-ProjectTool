@@ -42,26 +42,33 @@ def safe_output(value: str, runner_temp: Path) -> str:
     return value[-900:]
 
 
-def postgres_environment() -> dict[str, str]:
+def postgres_environment() -> tuple[dict[str, str], dict[str, object]]:
+    """Return a filtered PATH copy plus fixed metadata; never report the PATH value."""
     env = os.environ.copy()
     node_executable = shutil.which("node.exe")
-    if not node_executable:
-        return env
-    node_directory = Path(node_executable).resolve().parent
-    retained: list[str] = []
-    for raw in env.get("PATH", "").split(os.pathsep):
-        entry = raw.strip().strip('"')
-        if not entry:
-            retained.append(raw)
-            continue
-        try:
-            matches_node = Path(entry).resolve() == node_directory
-        except OSError:
-            matches_node = False
-        if not matches_node:
-            retained.append(raw)
-    env["PATH"] = os.pathsep.join(retained)
-    return env
+    removed = 0
+    if node_executable:
+        node_directory = Path(node_executable).resolve().parent
+        retained: list[str] = []
+        for raw in env.get("PATH", "").split(os.pathsep):
+            entry = raw.strip().strip('"')
+            if not entry:
+                retained.append(raw)
+                continue
+            try:
+                matches_node = Path(entry).resolve() == node_directory
+            except OSError:
+                matches_node = False
+            if matches_node:
+                removed += 1
+            else:
+                retained.append(raw)
+        env["PATH"] = os.pathsep.join(retained)
+    return env, {
+        "node_executable_found": node_executable is not None,
+        "node_directory_removed": removed > 0,
+        "path_entries_removed": removed,
+    }
 
 
 def main() -> int:
@@ -127,13 +134,26 @@ def main() -> int:
     common = sorted(set(pg_hashes) | set(sidecar_hashes))
     same = all(pg_hashes.get(name) == sidecar_hashes.get(name) for name in common)
 
-    data = Path(tempfile.mkdtemp(prefix="plm-out-p25-parent-data-", dir=runner_temp))
     initdb = extract_root / "payload" / "pgsql" / "bin" / "initdb.exe"
-    result = subprocess.run(
-        [str(initdb), f"--pgdata={data / 'data'}", "--username=poc_admin",
-         "--auth=trust", "--encoding=UTF8", "--locale=C"],
-        env=postgres_environment(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
-        errors="replace", timeout=180, check=False)
+    command_args = ["--username=poc_admin", "--auth=trust", "--encoding=UTF8", "--locale=C"]
+
+    def run_initdb_probe(label: str, env: dict[str, str]) -> dict[str, object]:
+        work = Path(tempfile.mkdtemp(prefix="plm-out-p25-" + label + "-", dir=runner_temp))
+        data_dir = work / "data"
+        result = subprocess.run(
+            [str(initdb), f"--pgdata={data_dir}", *command_args],
+            env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
+            errors="replace", timeout=180, check=False)
+        return {
+            "exit_code": result.returncode,
+            "stdout_bytes": len(result.stdout.encode("utf-8")),
+            "stderr_bytes": len(result.stderr.encode("utf-8")),
+            "pg_version_created": (data_dir / "PG_VERSION").is_file(),
+        }
+
+    filtered_env, path_filter = postgres_environment()
+    filtered_probe = run_initdb_probe("filtered-path", filtered_env)
+    original_probe = run_initdb_probe("original-path", os.environ.copy())
     report = {
         "status": "DIFFERENTIAL_DIAGNOSTIC",
         "run_id": args.run_id,
@@ -144,9 +164,14 @@ def main() -> int:
             {"path": name, "parent_sha256": pg_hashes.get(name), "sidecar_sha256": sidecar_hashes.get(name)}
             for name in common if pg_hashes.get(name) != sidecar_hashes.get(name)
         ][:80],
-        "parent_candidate_initdb_exit_code": result.returncode,
-        "parent_candidate_initdb_stdout_tail": safe_output(result.stdout, runner_temp),
-        "parent_candidate_initdb_stderr_tail": safe_output(result.stderr, runner_temp),
+        "path_environment_comparison": {
+            "same_extracted_initdb_binary": True,
+            "same_initdb_arguments": True,
+            "node_path_filter": path_filter,
+            "filtered_path": filtered_probe,
+            "original_runner_path": original_probe,
+        },
+        "parent_candidate_initdb_exit_code": filtered_probe["exit_code"],
         "runner_drive": "D:",
         "database_files_uploaded": False,
         "external_api_calls": 0,
@@ -155,8 +180,6 @@ def main() -> int:
     }
     args.output.write_text(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
                            encoding="utf-8")
-    if result.returncode != 0:
-        return 0
     return 0
 
 

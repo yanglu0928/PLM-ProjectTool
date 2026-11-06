@@ -206,3 +206,8 @@ run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - run [42159992981](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42159992981)：P25同一Windows Server 2025 job中，新增既有 `smoke_windows_parent_package_pg_cloud.py` 成功，摘要 `PARENT_PG18_TEMP_LIFECYCLE_PASS_LIMITED`，PostgreSQL 18.6/pgvector 0.8.6、D盘临时库，父包SHA-256 `aae4c268e2e27864139f54a3c553fbf5bb1d1db471a5cb15b465814004dcc857`。随后父包/sidecar对照证明1,627个PG payload路径及hash完全相同，但过滤Node目录PATH的父包直接initdb仍以 `3221225781/0xC0000135`退出；P25同样失败。数据目录未创建，输出空；HTTP/Edge未启动。
 - 完整smoke能在同一job成功，但尚不能证明Node PATH过滤是根因：smoke使用候选原始PG路径、继承未改PATH，initdb用户/参数也不同。下一步按唯一问题做精确单变量：同一解包二进制、相同参数、同job分别用原PATH及只移除Node目录的PATH运行initdb；若两者同结果，不再归因PATH。
 - 后端全量、wheel、前端测试/build、PG侧车/父包、P39、P24、A50、A17/A34/A35等其他jobs成功；P25失败令整体workflow为failure。P25仍BLOCKED_DIAGNOSTIC，不构成Pilot/Gate/Release通过。
+
+
+## 相同解包 PG 二进制的 PATH 双臂探针实现候选（2026-11-06）
+
+依据本CR上一节和 `docs/progress/out-01-a01-p25-same-binary-path-precheck.md`，仅扩展 `validation/out-01-a01-p25-real-http-edge/compare_parent_pg.py`：同一已校验父包PG payload解包路径中的同一个initdb.exe，以完全一致的P25参数分别执行原PATH与移除Node路径后的PATH；各用独立RUNNER_TEMP子目录。结果只记录Node路径过滤布尔/计数、退出码、stdout/stderr字节数和PG_VERSION存在布尔，不记录原始环境、错误文本或库内容。未改P25真实流程、产品代码/API/Schema。回滚仅还原比较器和对应追踪记录。代码候选等待Hosted Windows验收，尚无结果。
