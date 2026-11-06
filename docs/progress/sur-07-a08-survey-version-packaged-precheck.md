@@ -1,0 +1,25 @@
+# SUR-07-A08：固定候选调研问题版本包内验收编码前检查
+
+日期：2026-11-07；状态：编码前检查完成；未执行本次 Hosted 试验。
+
+## WBS 与基线
+
+- 当前阶段：Phase 2 / CR-EXEC-002 Windows 11 Pilot 关键路径；下一 WBS 为 SUR-07-A08。
+- 输入基线：Gate 2 冻结的 /api/v1、CR-EXEC-002、CR-SUR-013、SUR-07-A05/A06/A07 和当前 Windows 非发行候选组装流程。
+- 前置任务：SUR-07-A07 已完成 Survey version create 页面与前端回归；Hosted run 42248236859 的 A17 packaged PlanVersion/HTTPS/PG、P40 live download及父包完整构建通过。P40 startup preflight 同时确认正式公钥/License trust、DB credential reference、service ACL、TLS 尚未验证，正式 Pilot 仍受阻。
+- 输入文件：既有 validation/sur-07-a08-survey-version-packaged/verify.py 与 run-survey-version-edge.mjs，已有但尚未接入本分支 Hosted job；候选来源为同 run assemble-a17-current-app-candidate。
+
+## 编码前检查
+
+|项目|结论|
+|---|---|
+|涉及模块/实体|仅新增 Hosted 验收工作流接线和受限证据归档；运行既有页面。测试实体为 Project/Document/HandoverAnalysis/Survey/SurveyVersion/Review/Audit/幂等 Receipt，全部合成、一次性。|
+|API|仅使用已有 Survey Handover Source GET、SurveyVersion Create/Validate/Submit Review 和 Review read/decision API；不更改冻结 API、业务逻辑或 schema。|
+|权限|合成 ProjectManager 创建 DRAFT；合成受指派 Reviewer 审查；非指派项目成员只读并无决定控件；匿名、错误项目、错误角色、过期 License 均应拒绝。服务端仍是最终授权与来源重证方。|
+|验收标准|从同 run 的当前非发行包中，在 Hosted Windows Server 2025 D:\ 临时目录使用真实 Edge + HTTPS + 隔离 PG18 执行：批准交接固定来源 + 实际面对面访谈注释的 MANUAL 来源生成 DRAFT；问题/目标部门/来源快照一致；同操作号重放仅一版本/Audit/Receipt；版本校验、提交评审和固定版本导航通过；未授权和 License 过期拒绝且无额外写入；进程/Vault/临时根清理。只可标 PASS_LIMITED。|
+|风险|既有 verifier 复用较早交接/调研夹具，集成失败可能来自 stale UI selectors 或 fixture，而非产品。需按安全摘要定位，不能以单元测试代替 Edge，也不能将合成客户 Reviewer 决策写为真人客户确认。|
+|本次变更范围|仅把已存在 A08 verifier 接到新的独立 Hosted job，下载同 run A17 candidate；原始日志/凭据/客户数据不上传，summary 仅固定结果标记/IDs/布尔值。无 Migration、API 或产品代码变化。|
+|回滚|移除该 Hosted job 与证据进度；保留旧源码、既有 A07 页面/客户端和 A17 结果，不改变父包或生产系统。|
+|数据边界|只用新建一次性 Hosted D:\ temp、合成用户/项目/文档/交接/调查内容；不外发客户数据、不调用外部AI、不执行插件。|
+
+编码前结论：PASS_WITH_LIMITATION。持续授权允许在现有 scope 内将 verifier 接入 Hosted workflow；无须等待人工确认。实施前先提交本检查与 STATUS/CHANGELOG，再接线并由 GitHub Hosted Windows runner 验证。

@@ -42,3 +42,8 @@ GitHub Hosted run [42248236859](https://github.com/yanglu0928/PLM-ProjectTool/ac
 - 不改产品 API、Schema、权限、服务账号和正式 trust；无 migration。
 - 不接触客户资料，不外发外部服务；合成 identities/PG only。
 - Windows 11 实机、正式 Publisher/TLS/License来源、生产 ACL、完整客户业务 UAT、Gate 与发行仍未验。
+
+
+## 当前下一项核实（2026-11-07）
+
+复核分支状态发现 SUR-07-A07 已有页面与验收记录 PASS（2026-10-25）；上一条 CR-PKG-014 结果段曾误把已完成 A07 作为 Next，现按证据更正为 SUR-07-A08。A08 packaged verifier 与 Edge 驱动已存在，但尚无 progress 结果文件，也未接入 Hosted workflow，因此不得把代码存在等同于包内验收完成。
