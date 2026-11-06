@@ -773,6 +773,54 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+
+  run-out-p39-edge-download:
+    name: P39 hosted Edge output history file download
+    needs: [frontend]
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Download same-run frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p39-frontend
+      - name: Verify same-run frontend provenance and runner temp
+        shell: pwsh
+        run: |
+          $temp = (Resolve-Path $env:RUNNER_TEMP).Path
+          if ([IO.Path]::GetPathRoot($temp).TrimEnd('\') -ne "D:") { throw "P39 requires D: runner temp" }
+          $dist = Join-Path $env:RUNNER_TEMP "plm-out-p39-frontend"
+          $manifest = Get-Content -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Raw | ConvertFrom-Json
+          if ($manifest.source_commit -ne $env:GITHUB_SHA -or [string]$manifest.workflow_run -ne $env:GITHUB_RUN_ID -or $manifest.release_eligible -ne $false) { throw "P39 Edge frontend artifact provenance mismatch" }
+          if (-not (Test-Path (Join-Path $dist "index.html"))) { throw "P39 frontend artifact incomplete" }
+          Remove-Item -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Force
+      - name: Verify P39 hosted Edge harness syntax
+        shell: pwsh
+        run: |
+          node --check validation/out-01-a01-p39-edge-download/run.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P39 Edge harness syntax failed" }
+      - name: Run synthetic download through hosted Edge on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $summary = Join-Path $env:RUNNER_TEMP "plm-out-p39-edge-summary.json"
+          $downloads = Join-Path $env:RUNNER_TEMP "plm-out-p39-edge-downloads"
+          node validation/out-01-a01-p39-edge-download/run.mjs --dist (Join-Path $env:RUNNER_TEMP "plm-out-p39-frontend") --summary-out $summary --download-dir $downloads
+          if ($LASTEXITCODE -ne 0) { throw "P39 hosted Edge download acceptance failed" }
+      - name: Upload P39 synthetic Edge evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-out-p39-edge-download-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p39-edge-summary.json
+          if-no-files-found: error
+          retention-days: 14
   run-out-p25-real-http-edge:
     name: P25 real Output Create HTTP failure closed in hosted Edge
     needs: [frontend, rebuild-pg18-sidecar, assemble-parent-candidate]

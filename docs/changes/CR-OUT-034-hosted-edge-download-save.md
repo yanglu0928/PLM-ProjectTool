@@ -26,3 +26,8 @@
 ## 决定
 
 PASS_WITH_LIMITATION：P39可以进入Hosted Edge harness实现；验收仍限浏览器同源下载合同，不冒充P38实时服务或正式产品信任。按持续授权直接执行并将所有实际偏差先记CR-OUT-034。
+
+
+## P39 Hosted实现候选
+
+新增独立Edge验证器和Hosted Windows job，复用同run production frontend；合成HTTP fixture返回严格Artifact引用及attachment响应，由Edge实际下载到D盘Runner临时目录，并独立读取落盘文件校验字节/Hash/长度。负例覆盖FAILED行无下载入口及跨项目引用被前端严格客户端拒绝、未请求内容URL。未连接真实FastAPI/PG；与P38分层证据，不宣称同进程端到端。待Hosted验收。

@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-06（OUT-01-A01-P39：Hosted Edge下载候选，非发行版本）
+
+- 新增独立Hosted Windows Edge验证器和Workflow job，复用同run production frontend，在合成同源HTTP fixture下执行输出历史SUCCEEDED行→Artifact引用→Document attachment保存；验收将比对Edge实际保存字节、Hash及长度，并验证FAILED行无下载按钮、跨项目引用在内容请求前被拒绝。
+- 限制：该候选使用合成API/文件，不通过PostgreSQL或实时FastAPI；P38真实HTTP路由证据单独保留。P39尚待Hosted运行，不能标PASS；无正式trust、Win11设备或发行结论。
+
 ## Unreleased · 2026-11-06（OUT-01-A01-P38受限通过，非发行版本）
 
 - P38按CR-OUT-033以PASS_SCOPE_LIMITED完成，Hosted run [42139905574](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42139905574)：父包PG18真实Artifact引用与Document下载路由/Repository/Storage验证授权引用、字节/Hash/长度/MIME、跨项目隐藏及损坏文件失败关闭；后端4,087 tests/wheel、前端205 suites/2,098 tests/typecheck/build、A17/A34/A35/P24/A50成功。

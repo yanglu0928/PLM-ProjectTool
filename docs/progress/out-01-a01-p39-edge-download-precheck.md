@@ -26,3 +26,8 @@
 ## 决定
 
 PASS_WITH_LIMITATION：P39可以进入Hosted Edge harness实现；验收仍限浏览器同源下载合同，不冒充P38实时服务或正式产品信任。按持续授权直接执行并将所有实际偏差先记CR-OUT-034。
+
+
+## P39实现候选与验收状态
+
+已新增独立Hosted Edge runner及Windows 2025 workflow job，复用当前run production dist；合成同源fixture支持登录、输出历史、固定Artifact引用和Document attachment。保存文件将与预设合成负载逐字节、长度和SHA-256比对，跨项目引用在请求内容URL前被拒绝。浏览器profile/下载仅RUNNER_TEMP（D盘）并由finally清理。尚未运行Hosted验收，保持Incomplete。
