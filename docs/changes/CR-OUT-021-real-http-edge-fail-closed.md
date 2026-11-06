@@ -291,3 +291,12 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 
 - Node Harness现在只保留七个协议错误码白名单，否则归类UNRECOGNIZED；页面提示归类为有限UI类别，不保留正文/异常文案。预期固定版本提示缺失时不再提前终止；Node写结构化诊断，Python先执行after DB snapshot，再严格检查422、VALIDATION_FAILED、预期安全提示、单POST、无回执和计数不变。失败诊断只含状态/枚举/布尔。
 - 仅修改P25 Hosted测试设施，不改产品端点、Schema/API、Publisher信任或插件执行；等待本次提交的Hosted全链独立验收，P25仍BLOCKED_DIAGNOSTIC。
+
+
+## Run 42176547201：数据库快照恢复，但真实后端 POST 未证实（2026-11-06）
+
+- P25 Hosted全链的父包/PG smoke、运行根对照、Node Harness语法及D盘always清理通过；独立Backend/Frontend/PG sidecar/父包/A17/A34等结果需按workflow最终状态记录。
+- 新Harness完成后快照，Output/Job/Audit/Idempotency目标计数与请求前相同；Edge UI提示归类为SAFE_SUBMISSION_UNCONFIRMED，没有成功受理文案。但Harness观测到真实后端POST为0、HTTP状态和错误码为空，所以不能把该快照当成真实API负例验证。P25失败关闭验收未通过。
+- 这是对421727“POST 500”事实解释的修正：原记录中的500是旧Harness记录到的客户端请求状态，但未证明由真实Output HTTP组合返回；本轮上游计数为0，需以新证据排除。此前422 request_completed事件仍不可关联。
+
+**下一步实施前决策：** 仅对真实UI动作期间的Node合成API轨迹增加脱敏类别汇总：method、固定path class、HTTP status及是否存在upstream status，不记录路径ID、query、头、正文、错误消息。定位是否POST绕过预期同源桥接。将无回执检查定义为页面是否出现成功受理/成功创建文案，而非要求整个ARIA status区域不存在；仍需恰好一个请求到达真实后端并收到422/VALIDATION_FAILED、无自动重试、无成功回执、DB snapshot不变，否则失败。
