@@ -11,9 +11,11 @@ from plm_assistant.modules.output.application.resolve_context import (
 )
 from plm_assistant.modules.output.infrastructure.builtin_template_registry import (
     BUILTIN_REQUIREMENT_DOCX_TEMPLATE_VERSION_ID,
+    BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID,
 )
 
 BUILTIN_REQUIREMENT_DOCX_POLICY_REF = "output.policy.requirement-docx.v1"
+BUILTIN_PLAN_DOCX_POLICY_REF = "output.policy.plan-docx.v1"
 
 _BUILTIN_POLICIES = (
     OutputPolicyVersion(
@@ -31,6 +33,21 @@ _BUILTIN_POLICIES = (
         }),
         max_sources=4,
         max_context_bytes=8192,
+    ),
+    OutputPolicyVersion(
+        policy_ref=BUILTIN_PLAN_DOCX_POLICY_REF,
+        allowed_template_versions=(BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID,),
+        allowed_output_types=("DOCX",),
+        allowed_plugin_operations=("word.generate",),
+        allowed_review_states=("APPROVED",),
+        fields_by_source_kind=MappingProxyType({
+            "PLAN_VERSION": (
+                "version_no", "wbs_items", "dependencies", "milestones",
+                "exclusions",
+            ),
+        }),
+        max_sources=1,
+        max_context_bytes=262_144,
     ),
 )
 
@@ -77,11 +94,33 @@ class BuiltinOutputPolicyRegistry:
             and type(item.allowed_review_states) is tuple
             and item.allowed_review_states == ("APPROVED",)
             and isinstance(item.fields_by_source_kind, Mapping)
-            and dict(item.fields_by_source_kind) == {
-                "REQUIREMENT_VERSION": (
-                    "title", "statement", "acceptance_criteria",
-                ),
-            }
+            and (
+                (
+                    item.policy_ref == BUILTIN_REQUIREMENT_DOCX_POLICY_REF
+                    and item.allowed_template_versions == (
+                        BUILTIN_REQUIREMENT_DOCX_TEMPLATE_VERSION_ID,
+                    )
+                    and dict(item.fields_by_source_kind) == {
+                        "REQUIREMENT_VERSION": (
+                            "title", "statement", "acceptance_criteria",
+                        ),
+                    }
+                )
+                or (
+                    item.policy_ref == BUILTIN_PLAN_DOCX_POLICY_REF
+                    and item.allowed_template_versions == (
+                        BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID,
+                    )
+                    and dict(item.fields_by_source_kind) == {
+                        "PLAN_VERSION": (
+                            "version_no", "wbs_items", "dependencies",
+                            "milestones", "exclusions",
+                        ),
+                    }
+                    and item.max_sources == 1
+                    and item.max_context_bytes <= 262_144
+                )
+            )
             and type(item.max_sources) is int and 1 <= item.max_sources <= 4
             and type(item.max_context_bytes) is int
             and 256 <= item.max_context_bytes <= 8192
