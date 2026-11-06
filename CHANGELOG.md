@@ -702,3 +702,8 @@
 
 - 最新文档tip hosted run [42055479870](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42055479870) 再次通过Backend 4,067 tests/wheel、Frontend/build、PG18/pgvector parent smoke、20,223项父包构建、A35、A17和A34。父包 SHA-256 `4000d012666f1de0c5e77234efaa6d8ec6848aa898bd7555d802b93fb829457e`；P34B PG链路重复PASS_SCOPE_LIMITED。
 - 同run唯一失败为独立P25 HTTP/Edge；A17清理锁文件EBUSY未复现。整体workflow非全绿；P25/Pilot/Gate/正式Release保持原状态。
+
+
+## Unreleased · 2026-11-06（P39第五轮 Hosted fetch transport诊断，未通过）
+
+- run [42148130637](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42148130637) 的P39 job失败：前端path-only trace显示调用Artifact引用GET，AbortController计数从2增至3；CDP Network及合成server仍未观察到该请求，无内容GET/Edge保存。P39未通过。Frontend测试/build、PG18侧车重建、A17 D盘边界及A50成功；检查时Backend job仍运行，不将整体说成全绿。按CR-OUT-034先记录下一诊断，仅输出fetch rejection固定归一类别，禁止记录message、参数、认证或正文。产品API/Schema/信任未改。

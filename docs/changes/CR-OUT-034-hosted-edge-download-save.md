@@ -73,3 +73,7 @@ Hosted run [42146593192](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## P39第四轮Hosted已触达fetch但传输未到server（run 42147565204，未通过）
 
 run [42147565204](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42147565204)中Harness包裹window.fetch的path-only trace记录到GET /api/v1/projects/{syntheticProject}/output-requests/{syntheticRequest}/artifact；CDP Network无该请求，Node server也未收到。前端显示安全错误，P39仍未通过；证据说明严格客户端已越过本地UUID前置并调用fetch，但浏览器到本地合成server的传输行为仍未查明。下一步按CR-OUT-034在fetch wrapper只记录Promise拒绝的error name及固定归一类别（Abort/TypeError/Other），不输出message、URL参数、Cookie/Header/body；再Hosted观察。产品API/代码未改。
+
+## P39第五轮Hosted fetch拒绝诊断（run 42148130637，未通过）
+
+Hosted run [42148130637](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42148130637)复现Artifact引用未到达浏览器Network/合成服务器；UI显示安全提示。页面侧path-only fetch trace包含预期Artifact GET，AbortController计数由2增至3，未有内容GET或Edge下载，P39仍未通过。Frontend测试/build、PG18 sidecar重建、A17 D盘边界和A50通过；后端全量测试在检查时仍运行，不能据此声称整轮完整通过。偏差先记于本节；下一步只增加原生fetch Promise rejection的固定类别统计（Abort/TypeError/Other），不记录错误message、查询参数、认证信息或正文，然后在Hosted复验。产品API/Schema/信任未改。
