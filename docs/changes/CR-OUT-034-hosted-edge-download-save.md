@@ -97,3 +97,8 @@ Hosted run [42149813781](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## P39第八轮诊断计划：signal 与基础同源网络对照
 
 run 42149813781已确认点击触发的Artifact fetch归一拒绝类别为TypeError。为区分浏览器基础fetch/同源服务与请求AbortSignal/选项，下一修正仅限Hosted harness：在不记录敏感值的前提下采集点击请求同源布尔、signal存在/有效/已abort布尔、credentials/cache/redirect白名单及Accept是否符合预期；捕获产品点击的通用错误后，用明确标记的查询参数对同一合成Artifact引用执行无signal与新建AbortSignal的原生fetch对照，结果只保存拒绝类别或HTTP状态和MIME。诊断GET不作为产品点击或下载验收；产品必须经原点击路径下载成功才可PASS。无生产前后端修改。
+
+
+## P39第八轮Hosted对照支持Artifact fetch接收者绑定缺陷（run 42152467241，尚未修复）
+
+run [42152467241](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42152467241)中产品点击请求路径确认origin_matches=true、signal_present/valid=true、signal_aborted=false，credentials=same-origin、cache=no-store、redirect=error、Accept正确；原生fetch Promise仍为TypeError，未到达CDP/服务端。失败后分离执行的无signal与有效AbortSignal同源对照GET均返回200/application/json。源码对照发现OutputArtifactReadClient.getJson()以对象属性形式调用this.fetcher(path, options)，而已工作的OutputRequestListClient.get()先赋值const fetcher=this.fetcher后以局部函数调用。由此推断Artifact默认原生fetch收到客户端实例作为this，导致浏览器Web API TypeError；这是源码差异+Hosted对照支持的高置信根因，仍须修复后的真实Edge验收证明。偏差先记后实施：只把Artifact client fetcher复制到局部常量并以局部函数调用，保持GET选项、timeout、错误映射和fixture不变；更新/补充单测确认注入fetcher调用，跑全量Frontend与Hosted Edge P39。无API/Schema/Migration变化；回滚仅还原该client一处调用。
