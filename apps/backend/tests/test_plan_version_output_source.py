@@ -294,3 +294,24 @@ def test_plan_output_resolver_rejects_unapproved_plan_version():
 
     with pytest.raises(OutputRequestError):
         resolver.resolve("tx", actor_id=actor, command=command)
+
+
+def test_composite_adapter_does_not_mask_other_owner_permission():
+    actor, project, version = _id(), _id(), _id()
+    plan = PlanOutputSourceProjection(
+        plan_version_id=version, project_id=project, version_state="APPROVED",
+        fields={"version_no": 2},
+    )
+    adapter = FixedOutputSourceAdapter(
+        requirements=_RequirementReader(
+            error=RequirementVersionReadError("AUTH_ACCESS_DENIED"),
+        ),
+        plans=_PlanReader(plan),
+    )
+
+    result = adapter.read_authorized_fixed_version(
+        "tx", actor_id=actor, project_id=project, source_version_ref=version,
+    )
+
+    assert result is not None
+    assert result.source_kind == "PLAN_VERSION"
