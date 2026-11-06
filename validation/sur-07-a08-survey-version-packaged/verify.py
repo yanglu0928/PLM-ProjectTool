@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import runpy
 import subprocess
@@ -310,6 +311,18 @@ def main() -> int:
             + str(initdb_probe.returncode) + ", output="
         )
     mark_stage("STAGE_INITDB_PROBE_PASS")
+    target_root = args.target
+    if (target_root.parent.resolve(strict=True) != temp or not str(target_root).isascii()
+            or not target_root.name.startswith("plm-install-rehearsal-target-")
+            or target_root.exists() or target_root.is_symlink()):
+        raise ValueError("target rehearsal root rejected")
+    original_path = os.environ.get("PATH", "")
+    os.environ["PATH"] = os.pathsep.join((
+        str(target_root / "runtime" / "pgsql" / "bin"),
+        str(target_root / "runtime" / "pgsql" / "lib"),
+        original_path,
+    ))
+    mark_stage("BUNDLED_PG_DLL_PATH_READY")
     runner = handover_review["base"]["base"]["project"]["base"].base.base
     mark_stage("PACKAGED_SMOKE_START")
     try:

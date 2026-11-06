@@ -14,3 +14,8 @@ Hosted run [42276408517](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## 验证、风险与回滚
 
 Hosted Windows Server 2025 D盘同run非发行候选，继续运行完整 PG18、真实Edge/HTTPS、SurveyVersion业务流程、权限及License拒绝。安全摘要仍只允许固定阶段/marker/exit码。若0xC0000135消失但后续失败，按新证据单独处理；不得用version probe替代PG初始化。回滚仅删除PATH前置两项；本机/C盘不运行项目代码。
+
+
+## 实施记录
+
+已在A08 verify.py中验证目标根为 temp 的直属、ASCII、既有 rehearsal target 前缀和不存在，再将其 runtime/pgsql/bin 与 runtime/pgsql/lib 作为PATH前置项，原PATH末项保留。stage只读探针仍先按原PATH执行，便于区分candidate binary启动与target完整PG初始化；后续Hosted复验待完成。未修改产品或共享smoke工具。

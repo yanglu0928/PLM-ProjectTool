@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-037 PATH 调整已实施）
+- A08 verifier在候选 staging --version成功后，对下一步 smoke 使用的 target 路径执行所有权预检，并将同run target/runtime/pgsql/bin 与 lib 前置到Python进程PATH，保留原值；预计可让PG子进程解析包内DLL。只改A08验证Harness，不改父包内容/产品/业务验收。
+- GitHub Hosted Windows Server 2025 D盘完整复验待结果；不宣称问题解决或PASS。
+
 ## Unreleased · 2026-11-07（CR-EXEC-037：A08 显式加入包内 PostgreSQL DLL 搜索目录）
 - run [42276408517](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42276408517) 中已验签候选staging的 initdb.exe --version 探针成功；后续smoke安装布局的完整initdb仍返回3221225781/0xC0000135。A08失败stage是PACKAGED_SMOKE_START，故只读探针已经通过。故障位于target layout完整初始化调用上下文；尚无具体DLL缺失证据。
 - 先登记后，仅在A08隔离验收进程PATH前置同run target内 runtime/pgsql/bin 和 runtime/pgsql/lib，使子进程能按嵌入式布局找到依赖。保留原始PG初始化、Edge和License门槛，不改产品/API/包。Hosted D盘重验。
