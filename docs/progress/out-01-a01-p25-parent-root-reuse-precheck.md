@@ -80,3 +80,10 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 
 - 只修改Node Harness：Output POST代理异常映射固定类别；TypeError→FETCH_TYPE_ERROR，其他→PROXY_EXCEPTION；Edge得到固定503 SYSTEM_UNAVAILABLE Envelope，不再返回异常字符串。动作轨迹只包含方法/path class/status/upstream status/白名单error code/代理异常类别。
 - Python异常摘要也保留相同有限字段；严格成功判定不变，DB快照先执行。本候选尚未Hosted验证；不代表真实API通过。
+
+
+## Run 42180790760后底层错误指纹编码前检查（2026-11-06）
+
+- 新结果：真实UI Output Create POST到达Node，Node安全返回503，有限类别PROXY_EXCEPTION；没有backend_status/error_code。UI为SAFE_SERVICE_UNAVAILABLE，无成功状态/文案；请求前后数据库目标计数相同。Node/PG清理正常。P25仍未证明请求到达FastAPI。
+- 结论PASS_WITH_LIMITATION：仅增加代理错误指纹白名单（error.name固定分类与cause.code有限枚举），不记录任何错误message/stack/URL/环境变量。继续固定503，不再尝试猜测代理/端口根因；下轮证据决策。
+- 同run P39 CDP evaluation异常及A17 lockfile EBUSY为独立Harness问题，需分项记录，不与P25混淆。Hosted D盘继续执行；本机/C盘不运行。
