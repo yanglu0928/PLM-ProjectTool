@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-06（P25完整包根initdb通过，Harness改用已验证布局；Hosted复验待跑）
+
+- run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42166973706)：完整父包提取根下P25 profile initdb成功并创建PG_VERSION；PG-only compare和P25侧车Harness仍0xC0000135。其他15个jobs成功，P25真实HTTP/Edge未启动。
+- 按CR-OUT-021记录：P25专用helper保留本次已验证的完整包提取根，Harness逐文件核对sidecar与嵌入式PG payload后从完整根运行；job always清理D盘临时根。此为Hosted验证布局修正，不声称已定位DLL根因，不改产品逻辑。代码候选将由GitHub Hosted复验。
+
 ## Unreleased · 2026-11-06（P25 full-package vs PG-only 布局探针候选，待Hosted）
 
 - 根据CR-OUT-021，compare脚本在PG-only根跑P25 initdb profile；同作业父包smoke helper新增仅P25启用的可选诊断，在完整parent extraction root用同一P25 profile/runner PATH运行。只写D盘临时合成目录并保留退出码、输出长度与PG_VERSION布尔。代码候选待Hosted Windows复验；生产Harness与业务逻辑不变。

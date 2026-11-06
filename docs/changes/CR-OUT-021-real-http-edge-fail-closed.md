@@ -237,3 +237,16 @@ run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 ## P25 完整父包 vs PG-only 布局差分实现候选（2026-11-06）
 
 编码前检查见 `docs/progress/out-01-a01-p25-full-layout-precheck.md`。实现仅添加parent package smoke helper可选参数 `--p25-initdb-profile-diagnostic`，仅P25 workflow调用该flag；helper在完整候选解包根执行一次P25 profile initdb，单独新数据目录、原始runner环境，记录固定profile/超时/退出码/输出字节数/PG_VERSION布尔。常规parent PG smoke默认不执行此附加探针。compare脚本在PG-only extraction root保留相同P25 profile对照。无客户数据/产品API/Schema/安装包变化。失败并不冒充P25通过；回滚仅移除flag及比较器代码。
+
+
+## Run 42166973706 完整父包根 P25 initdb 成功，PG-only 根失败（变更前决策，2026-11-06）
+
+- Hosted run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42166973706) 同一P25 job中的 parent smoke helper，在其已校验的完整父包提取根以P25 profile执行 initdb，exit code=0、生成PG_VERSION；随后 compare的PG-only提取根及真实P25 Harness侧车提取根仍以 0xC0000135、零输出失败。完整包PG payload与sidecar的1,627个文件路径/Hash一致。整轮15/16 jobs成功，P25失败，HTTP/Edge尚未启动。
+- 证据表明执行根布局/上下文影响加载结果；目前不声称已精确定位DLL或系统加载器原因。当前Harness不必要地从sidecar另建PG-only根，因此与完整候选包运行布局不一致。
+
+**实施前决策：** P25专用parent smoke helper仅在带有P25诊断flag时可选择保留已验证的完整父包提取根；清除helper自己的临时PG数据后，将该根路径及受限smoke摘要传给P25 Harness。Harness须核对Run/Commit、父包smoke PASS、完整根P25 initdb exit 0/PG_VERSION=true，并把sidecar清单逐文件Hash与完整根 payload/pgsql 比较；然后从该完整根运行真实P25 PG/HTTP/Edge合成流程。workflow在P25后增加always清理步骤，严格限制到本次D盘RUNNER_TEMP直系命名目录。compare仍保留PG-only失败证据作基线；不改生产API、Schema、安装包或信任设置。
+
+- 验证：同run Hosted Windows Server 2025/D盘执行；失败必须维持P25 BLOCKED_DIAGNOSTIC。成功也仅能报告真实HTTP失败关闭的PASS_SCOPE_LIMITED，不能推断Pilot/Gate/Release通过。
+- 风险：保留的完整候选包短暂增加D盘临时占用；由always清理并在Harness finally双重清理。若异常终止，Hosted runner销毁临时盘，无本机遗留。回滚：删除P25保留flag/传参/复用路径与always清理步骤，恢复侧车独立解包。
+- Secret/隐私：仅非发行同run包、合成DB和合成Project，不上传PATH、错误文本、客户正文或数据库文件；产物仅固定摘要。
+- 结论：编码前检查PASS_WITH_LIMITATION，进入单WBS Harness/workflow修正；P25仍BLOCKED_DIAGNOSTIC。
