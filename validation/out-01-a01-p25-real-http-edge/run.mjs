@@ -129,7 +129,16 @@ const server=createServer(async(req,res)=>{
   try{await stat(file)}catch{file=join(dist,"index.html")}
   const body=await readFile(file);
   res.writeHead(200,{"Content-Type":mime[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});res.end(body);
- }catch(error){res.writeHead(500,{"Content-Type":"text/plain"});res.end(String(error))}
+ }catch(error){
+  const entry=req.__p24Entry;
+  if(mode==="realbackend"&&entry?.method==="POST"&&entry?.path.endsWith("/output-requests")){
+   entry.proxy_failure_class=error?.name==="TypeError"?"FETCH_TYPE_ERROR":"PROXY_EXCEPTION";
+   const out=envelope("SYSTEM_UNAVAILABLE",503);
+   if(!res.headersSent){res.writeHead(out.status,out.headers);res.end(out.body)}else res.destroy();
+   return;
+  }
+  res.writeHead(500,{"Content-Type":"text/plain"});res.end("SYNTHETIC_HARNESS_ERROR");
+ }
 });
 await new Promise((ok,bad)=>{server.once("error",bad);server.listen(requestedPort,"127.0.0.1",ok)});
 const address=server.address(),origin="http://localhost:"+address.port;
@@ -217,7 +226,7 @@ try{
    path.includes("/sessions")?"SESSION":"OTHER_API";
   const captureRequests=()=>reqs.slice(realActionStart).filter(x=>x.path.startsWith("/api/v1/")).slice(-20).map(x=>({
    method:x.method,path_class:apiPathClass(x.path),status:x.status,
-   backend_status:x.backend_status??null,backend_error_code:x.backend_error_code??null}));
+   backend_status:x.backend_status??null,backend_error_code:x.backend_error_code??null,proxy_failure_class:x.proxy_failure_class??null}));
   realApiRequests=captureRequests();
   let realPosts=reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")&&x.backend_status!==undefined);
   realBackendPostCount=realPosts.length;
