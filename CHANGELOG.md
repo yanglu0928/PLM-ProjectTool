@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-07（CR-EXEC-042：Output 生产组合信任边界检查）
+
+- OUT-01-A01-P43源码检查以PASS_WITH_LIMITATION完成：默认Login/只读组合不开放Output Create，显式Platform Write组合才挂写路由；真实组合接Plan/Requirement Owner、Output Resolver与Plugin capability repository。
+- 包内publisher manifest当前有效但 `keys=[]`；真实Plugin capability需唯一operation、启用installation、兼容runtime、SIGNED_PACKAGE_VALID及ACTIVE signer。空信任清单下不能形成可信操作，Output Resolver应拒绝。
+- 未修改代码、schema/API、信任清单或发行配置；不注入测试信任/密钥，不执行插件或生成文件。详情见`docs/changes/CR-EXEC-042-output-production-trust-precheck.md`与`docs/progress/out-01-a01-p43-output-trust-precheck.md`。
+- 下一项P44在Hosted PG18验证实际capability读层于空manifest下拒绝Output请求且零写入，继续保持D盘云端运行。
+
 ## Unreleased · 2026-11-07（CR-EXEC-041：PlanVersion Output 事务持久化）
 
 - OUT-01-A01-P42在Hosted PG18合成数据库中通过 `PASS_SCOPE_LIMITED`：真实 `TrustedOutputContextResolver` / `OutputRequestService` 将APPROVED PlanVersion白名单快照原子持久化至OutputRequest、ContextSnapshot、Job/Outbox、Audit与幂等收据；同Key重放保持唯一结果，DRAFT及跨Project拒绝且零写入，plugin execution count=0。
