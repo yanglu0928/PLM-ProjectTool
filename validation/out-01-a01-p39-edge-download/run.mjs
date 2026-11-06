@@ -32,7 +32,7 @@ const ids={
  template:"c1234567-89ab-4cde-8123-456789abcdef"
 };
 const csrf="c".repeat(64), trace=ids.actor;
-const payload=Buffer.from("PLM hosted synthetic attachment only\\nP39 browser download byte fixture\\x00\\x01\\x02\\xff","utf8");
+const payload=Buffer.from([0x50,0x4c,0x4d,0x20,0x73,0x79,0x6e,0x74,0x68,0x65,0x74,0x69,0x63,0x20,0x61,0x74,0x74,0x61,0x63,0x68,0x6d,0x65,0x6e,0x74,0x20,0x6f,0x6e,0x6c,0x79,0x0a,0x50,0x33,0x39,0x20,0x62,0x79,0x74,0x65,0x20,0x66,0x69,0x78,0x74,0x75,0x72,0x65,0x00,0x01,0x02,0xff]);
 const digest=createHash("sha256").update(payload).digest("hex");
 const mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const reqs=[], now="2026-11-06T00:00:00Z";
@@ -41,13 +41,13 @@ function item(id,state,requestedAt){return {
  source_version_refs:[ids.version],output_policy_ref:"output.policy.requirement-docx.v1",
  plugin_operation:"word.generate",context_snapshot_ref:ids.snapshot,context_fingerprint:"d".repeat(64),
  state,job_ref:ids.actor,execution_ref:null,generation_no:1,requested_at:requestedAt,
- completed_at:state==="SUCCEEDED"?now:null,etag:"\\"v1\\""
+ completed_at:state==="SUCCEEDED"?now:null,etag:'"v1"'
 }}
 function envelope(data,status=200){return {status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"},body:JSON.stringify(status>=400?{error:{code:data},trace_id:trace}:{data,trace_id:trace})}}
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url||"/","http://localhost");
- const entry={method:req.method||"GET",path:url.pathname,query:url.search,status:null};
- reqs.push(entry);res.on("finish",()=>entry.status=res.statusCode);
+ const entry=url.pathname.startsWith("/api/")?{method:req.method||"GET",path:url.pathname,query:url.search,status:null}:null;
+ if(entry){reqs.push(entry);res.on("finish",()=>entry.status=res.statusCode)}
  try{
   if(url.pathname==="/api/v1/auth/login"&&req.method==="POST"){
    let body="";for await(const chunk of req)body+=chunk;
@@ -86,11 +86,17 @@ const server=createServer(async(req,res)=>{
   }
   if(url.pathname==="/api/v1/projects/"+ids.project+"/documents/"+ids.document+"/versions/"+ids.version+"/content"&&req.method==="GET"){
    res.writeHead(200,{"Content-Type":mime,"Content-Length":String(payload.length),
-    "Content-Disposition":"attachment; filename=\\"document-"+ids.version+".bin\\"",
+    "Content-Disposition":'attachment; filename="document-' + ids.version + '.bin"',
     "X-Content-Type-Options":"nosniff","Cache-Control":"no-store"});
    res.end(payload);return;
   }
-  const out=envelope("RESOURCE_NOT_FOUND",404);res.writeHead(out.status,out.headers);res.end(out.body);
+  if(url.pathname.startsWith("/api/")){const out=envelope("RESOURCE_NOT_FOUND",404);res.writeHead(out.status,out.headers);res.end(out.body);return}
+  let pathname=decodeURIComponent(url.pathname);if(pathname==="/"||pathname==="/login")pathname="/index.html";
+  let file=resolve(dist,"."+pathname);if(file!==dist&&!file.startsWith(dist+sep))throw new Error("static path escape");
+  try{if(!(await stat(file)).isFile())file=join(dist,"index.html")}catch{file=join(dist,"index.html")}
+  const body=await readFile(file);
+  const types={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".png":"image/png",".woff2":"font/woff2",".json":"application/json"};
+  res.writeHead(200,{"Content-Type":types[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});res.end(body);
  }catch(error){res.writeHead(500,{"Content-Type":"text/plain"});res.end("synthetic hosted route failed: "+String(error))}
 });
 await new Promise((ok,bad)=>{server.once("error",bad);server.listen(0,"127.0.0.1",ok)});

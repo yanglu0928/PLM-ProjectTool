@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P39 Hosted验收器修正候选，待云端复验）
+
+- 按CR-OUT-034先记录后修复：Node脚本安全服务production dist SPA，request summary限API路径，附件文件名响应头避免转义歧义，fixture使用显式字节数组。修复已同步到分支；node --check和Edge保存结果待当前Hosted run，P39仍Incomplete。
+
 ## Unreleased · 2026-11-06（P39 Hosted验收器静态接线遗漏，修复前记录）
 
 - 源码复核发现P39候选Synthetic server尚未服务production dist静态SPA，request summary将包含非API资源；与Content-Disposition转义风险一并先记CR-OUT-034，未将静态发现表述为已运行失败。下一步仅补server静态回退和限定API请求记录，Hosted node --check/Edge验收待跑。

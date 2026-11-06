@@ -36,3 +36,8 @@ PASS_WITH_LIMITATION：P39可以进入Hosted Edge harness实现；验收仍限�
 ## P39首次静态复核发现的验收器源码偏差（修正前记录）
 
 P39候选提交后，GitHub源码复核发现Node harness的Content-Disposition文件名字面量在嵌入引号前保留了双重反斜杠，可能导致JavaScript语法错误。尚未以Hosted node --check确认，也未把该静态风险描述成运行失败；P39未通过。修正前先记录：下一提交只改验证器字符串字面量并改用显式字节数组表达合成负载，随后以Hosted node --check和Edge实际落盘Hash/长度结果判定。产品代码、API、Schema及生产信任边界不变。静态复核又确认两处同属P39验收器接线遗漏：新Node server当前没有把同run dist内容作为静态SPA返回，且记录器会把前端静态资源请求误收为API请求；按现有Edge harness边界，P39无法加载页面并会误报外部路径断言。均未运行验证，P39仍Incomplete。计划一并只修独立harness：恢复安全dist内静态资源读取/SPA回退，限定API请求记录范围，并用字节数组构造附件fixture，然后执行Hosted语法与浏览器保存验收。
+
+
+## P39验收器修复候选（偏差先记录后实施）
+
+根据上述修正前记录，仅修改P39 harness：dist内文件安全解析并对SPA路由回退index；静态资源不计入API请求日志；Content-Disposition用单引号常量拼接版本文件名；使用显式byte array保证fixture包含NUL和0xFF字节。生产前后端未改。待Hosted node --check及Edge保存/拒绝路径验证。
