@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from plm_assistant.entrypoints.output_requirement_source_adapter import (
-    RequirementOutputSourceAdapter,
+from plm_assistant.entrypoints.output_fixed_source_adapter import (
+    FixedOutputSourceAdapter,
 )
 from plm_assistant.modules.auth.infrastructure.project_read_access import (
     SqlAlchemyProjectReadAccess,
@@ -58,6 +58,12 @@ from plm_assistant.modules.project.application.authorization import (
 from plm_assistant.modules.project.infrastructure.authorization_repository import (
     SqlAlchemyProjectAuthorizationRepository,
 )
+from plm_assistant.modules.plan.application.read_plan_version import (
+    PlanVersionReadService,
+)
+from plm_assistant.modules.plan.infrastructure.plan_version_read_repository import (
+    SqlAlchemyPlanVersionReadRepository,
+)
 from plm_assistant.modules.requirement.application.read_versions import (
     RequirementVersionReadService,
 )
@@ -90,13 +96,22 @@ def create_windows_output_request_create_router(
             authorization=authorization,
             repository=SqlAlchemyRequirementVersionReadRepository(),
         )
+        plan_reads = PlanVersionReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard,
+            authorization=authorization,
+            repository=SqlAlchemyPlanVersionReadRepository(),
+        )
         operation_reader = PluginOperationCapabilityReader(
             SqlAlchemyPluginOperationCapabilityRepository(
                 PackagedPluginSignerResolver(),
             ),
         )
         resolver = TrustedOutputContextResolver(
-            sources=RequirementOutputSourceAdapter(requirement_reads),
+            sources=FixedOutputSourceAdapter(
+                requirements=requirement_reads, plans=plan_reads,
+            ),
             templates=BuiltinOutputTemplateRegistry(),
             policies=BuiltinOutputPolicyRegistry(),
             operations=PluginOperationRegistryAdapter(operation_reader),
