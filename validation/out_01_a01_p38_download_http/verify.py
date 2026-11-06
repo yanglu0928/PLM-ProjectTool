@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
+import json
 import uuid
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
@@ -145,69 +147,106 @@ def verify_output_artifact_download_http(engine, *, data: dict,
         sessions=sessions, downloads=download, origins=origins,
     ))
 
-    with TestClient(app) as client:
-        cookies = {"plm_session": token.hex()}
-        reference_path = (
-            f"/api/v1/projects/{project_id}/output-requests/{request_id}/artifact"
-        )
-        reference_response = client.get(reference_path, cookies=cookies)
-        if reference_response.status_code != 200:
-            raise AssertionError("authorized Artifact reference HTTP read failed")
-        reference = reference_response.json()
-        expected_content_path = (
-            f"/api/v1/projects/{project_id}/documents/{document_id}"
-            f"/versions/{version_id}/content"
-        )
-        if (reference.get("content_url") != expected_content_path
-                or reference.get("project_id") != str(project_id)
-                or reference.get("output_request_id") != str(request_id)
-                or reference.get("document_id") != str(document_id)
-                or reference.get("document_version_id") != str(version_id)
-                or reference.get("content_sha256") != data["content_hash"].hex()
-                or reference.get("size_bytes") != data["size"]
-                or data["locator"] in reference_response.text
-                or data["final_locator"] in reference_response.text
-                or data["content_bytes"].decode("ascii") in reference_response.text):
-            raise AssertionError("Artifact reference leaked path/body or differed from fixed facts")
+    def get(path: str):
+        messages = []
+        received = False
 
-        hidden_project_path = f"/api/v1/projects/{uuid.uuid4()}/output-requests/{request_id}/artifact"
-        hidden_project = client.get(hidden_project_path, cookies=cookies)
-        unknown_request = client.get(
-            f"/api/v1/projects/{project_id}/output-requests/{uuid.uuid4()}/artifact",
-            cookies=cookies,
+        async def receive():
+            nonlocal received
+            if not received:
+                received = True
+                return {"type": "http.request", "body": b"", "more_body": False}
+            await asyncio.Event().wait()
+
+        async def send(message):
+            messages.append(message)
+
+        raw_path = path.encode("ascii")
+        scope = {
+            "type": "http", "asgi": {"version": "3.0", "spec_version": "2.4"},
+            "http_version": "1.1", "method": "GET", "scheme": "http",
+            "path": path, "raw_path": raw_path, "query_string": b"",
+            "root_path": "", "headers": [
+                (b"host", b"testserver"),
+                (b"cookie", b"plm_session=" + token.hex().encode("ascii")),
+            ],
+            "client": ("hosted-verifier", 41000), "server": ("testserver", 80),
+            "state": {},
+        }
+        async def invoke():
+            await app(scope, receive, send)
+        asyncio.run(invoke())
+        start = next(item for item in messages if item["type"] == "http.response.start")
+        body = b"".join(item.get("body", b"") for item in messages
+                        if item["type"] == "http.response.body")
+        headers = {name.decode("latin1").lower(): value.decode("latin1")
+                   for name, value in start.get("headers", [])}
+        return SimpleNamespace(
+            status_code=start["status"], headers=headers, content=body,
+            text=body.decode("utf-8", "replace"),
         )
-        if hidden_project.status_code != 404 or unknown_request.status_code != 404:
-            raise AssertionError("cross-project or unknown Artifact lookup was not hidden")
 
-        content = client.get(reference["content_url"], cookies=cookies)
-        if (content.status_code != 200 or content.content != data["content_bytes"]
-                or hashlib.sha256(content.content).digest() != data["content_hash"]
-                or content.headers.get("content-type") != data["mime"]):
-            raise AssertionError("Document download HTTP bytes/hash/size/MIME mismatch")
+    reference_path = (
+        f"/api/v1/projects/{project_id}/output-requests/{request_id}/artifact"
+    )
+    reference_response = get(reference_path)
+    if reference_response.status_code != 200:
+        raise AssertionError("authorized Artifact reference HTTP read failed")
+    reference = json.loads(reference_response.text)
+    expected_content_path = (
+        f"/api/v1/projects/{project_id}/documents/{document_id}"
+        f"/versions/{version_id}/content"
+    )
+    if (reference.get("content_url") != expected_content_path
+            or reference.get("project_id") != str(project_id)
+            or reference.get("output_request_id") != str(request_id)
+            or reference.get("document_id") != str(document_id)
+            or reference.get("document_version_id") != str(version_id)
+            or reference.get("content_sha256") != data["content_hash"].hex()
+            or reference.get("size_bytes") != data["size"]
+            or data["locator"] in reference_response.text
+            or data["final_locator"] in reference_response.text
+            or data["content_bytes"].decode("ascii") in reference_response.text):
+        raise AssertionError("Artifact reference leaked path/body or differed from fixed facts")
 
-        hidden_document = client.get(
-            f"/api/v1/projects/{uuid.uuid4()}/documents/{document_id}"
-            f"/versions/{version_id}/content", cookies=cookies,
-        )
-        if hidden_document.status_code != 404 or data["content_bytes"] in hidden_document.content:
-            raise AssertionError("cross-project Document content was not hidden")
+    hidden_project_path = f"/api/v1/projects/{uuid.uuid4()}/output-requests/{request_id}/artifact"
+    hidden_project = get(hidden_project_path)
+    unknown_request = get(
+        f"/api/v1/projects/{project_id}/output-requests/{uuid.uuid4()}/artifact"
+    )
+    if hidden_project.status_code != 404 or unknown_request.status_code != 404:
+        raise AssertionError("cross-project or unknown Artifact lookup was not hidden")
 
-        storage_path = storage_root.joinpath(*data["final_locator"].split("/"))
-        if not storage_path.is_file() or storage_root not in storage_path.parents:
-            raise AssertionError("synthetic storage path escaped isolated runner root")
-        original = storage_path.read_bytes()
-        corrupted = b"X" * len(original)
-        if corrupted == original:
-            corrupted = bytes([original[0] ^ 1]) + original[1:]
-        try:
-            storage_path.write_bytes(corrupted)
-            rejected = client.get(reference["content_url"], cookies=cookies)
-            if (rejected.status_code == 200 or corrupted in rejected.content
-                    or data["locator"] in rejected.text
-                    or data["final_locator"] in rejected.text):
-                raise AssertionError("corrupt content was streamed or its locator disclosed")
-        finally:
-            storage_path.write_bytes(original)
+    content = get(reference["content_url"])
+    if (content.status_code != 200 or content.content != data["content_bytes"]
+            or hashlib.sha256(content.content).digest() != data["content_hash"]
+            or len(content.content) != data["size"]
+            or content.headers.get("content-type") != data["mime"]):
+        raise AssertionError("Document download HTTP bytes/hash/size/MIME mismatch")
+
+    hidden_document = get(
+        f"/api/v1/projects/{uuid.uuid4()}/documents/{document_id}"
+        f"/versions/{version_id}/content"
+    )
+    if hidden_document.status_code != 404 or data["content_bytes"] in hidden_document.content:
+        raise AssertionError("cross-project Document content was not hidden")
+
+    storage_path = storage_root.joinpath(*data["final_locator"].split("/"))
+    if not storage_path.is_file() or storage_root not in storage_path.parents:
+        raise AssertionError("synthetic storage path escaped isolated runner root")
+    original = storage_path.read_bytes()
+    corrupted = b"X" * len(original)
+    if corrupted == original:
+        corrupted = bytes([original[0] ^ 1]) + original[1:]
+    try:
+        storage_path.write_bytes(corrupted)
+        rejected = get(reference["content_url"])
+        if (rejected.status_code == 200 or corrupted in rejected.content
+                or data["locator"] in rejected.text
+                or data["final_locator"] in rejected.text):
+            raise AssertionError("corrupt content was streamed or its locator disclosed")
+    finally:
+        storage_path.write_bytes(original)
 
     return {
         "authorized_reference_http": "PASS",
