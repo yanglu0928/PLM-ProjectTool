@@ -55,3 +55,12 @@ run [42259742947](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/422
 ## CR-EXEC-032 实施状态（2026-11-07）
 
 已修改 A08 测试验收器和 Hosted Workflow：验收器在 smoke、浏览器回调、审批/Edge/过期License边界输出固定阶段枚举；异常时以固定格式给出异常类型、整数 WinError（若有）、最多 8 个清洗后 basename:line。Workflow 只从该格式提取受限字符白名单。A08成功标记、业务断言、同run候选身份校验、D盘边界和owned清理均保留。只改测试设施，不改产品逻辑。静态差异与Secret模式检查已完成；最终 Python/Workflow运行验收由新 GitHub Hosted run 执行，尚待结果。
+
+
+## Hosted 第四轮结果（2026-11-07）
+
+run [42263308077](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42263308077) 中 A08 已通过候选下载/身份、D盘边界和语法检查，但包内 smoke 在任何通过标记前失败。CR-EXEC-032 摘要提供 FileNotFoundError、WinError 2、阶段 PACKAGED_SMOKE_START 与有界调用帧：verify.py:291 → smoke_current_app_packaged_https.py:160 → 同文件:71 → _local.py:670 → _frozen_ntpath_:709。只读源码确认第160行进入 _inputs，第71行要求 stage.resolve(strict=True)；A08之前只传入尚未创建的stage路径。既有A17运行器先通过 extract_verified 对同类候选完整性校验和解包，随后调用相同 smoke。该证据属于A08测试接线遗漏，不是产品缺陷结论；A08仍未通过。
+
+## CR-EXEC-033 实施前修正
+
+仅在A08 verifier使用既有 tools/run_a17_packaged_cloud_validation.py 中的 extract_verified 创建经过候选SHA、清单/路径和逐文件哈希验证的stage；stage名改为 plm-current-app-stage-a08-<run id> 以满足 smoke 的 _inputs 契约。pristine/target仍按隔离 rehearse 工具的 plm-install-rehearsal-* 约束保持全新。之后Hosted完整重跑，不改产品代码或通过标准。

@@ -30,3 +30,8 @@ GitHub Hosted workflow run [42259742947](https://github.com/yanglu0928/PLM-Proje
 ## 实施记录（2026-11-07）
 
 已将上述诊断接入 A08 verifier 与 Workflow：固定枚举阶段覆盖 verifier/temp-root/smoke、浏览器回调、审批夹具、Edge、License expiry；异常摘要不含异常消息和路径，只含异常类、可选整数 WinError、最多 8 个净化 basename:line。Workflow 的诊断正则对字符集与总字段长度作约束，原始临时输出仍不上传并按owned根清理。A08 所有三项通过标记和原业务断言未改。Python/PowerShell运行验收等待下一GitHub Hosted workflow；若诊断后仍失败，按新证据继续记录，不转为产品缺陷推断。
+
+
+## 后续夹具偏差与修正（2026-11-07，CR-EXEC-033）
+
+run 42263308077 的 CR-EXEC-032 安全摘要显示 FileNotFoundError/WinError 2，固定阶段 PACKAGED_SMOKE_START；有界调用帧为 verify.py:291、smoke_current_app_packaged_https.py:160、该文件:71、_local.py:670、净化的 frozen ntpath 帧:709。源码确认 smoke 的 _inputs 要求 stage 已存在，A08 尚未准备；A17既有runner通过 extract_verified 哈希校验并解包相同非发行候选。下一单点仅复用该现有函数并调整stage路径名前缀。验收门槛、产品逻辑和pristine/target清理边界不变；Hosted D盘验证待进行。

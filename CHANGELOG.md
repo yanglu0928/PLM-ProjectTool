@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-033：A08 增加受验 staging 准备）
+- run [42263308077](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42263308077) 的安全诊断为 FileNotFoundError/WinError 2，阶段 PACKAGED_SMOKE_START；调用链定位至 smoke_current_app_packaged_https.py:160 和 _inputs 的 stage.resolve(strict=True)。A08 verifier 传入 stage 路径却未先从候选包校验、解包该目录；既有 A17 runner 使用 extract_verified 执行摘要、路径、清单与逐文件哈希校验并创建 stage。
+- 先登记偏差，再仅将该既有 staging 前置复用到 A08，并改 stage 名以符合 plm-current-app-stage-* 契约；pristine/target保留隔离安装根命名。无产品逻辑/API/Schema变化，Hosted D盘验收待复验。
+
 ## Unreleased · 2026-11-07（CR-EXEC-032 实施：A08 WinError 脱敏诊断）
 - A08 packaged verifier 增加固定流程阶段标记；失败时仅输出异常类、数字 WinError 与最多8个清理后的文件basename:line。Workflow 用严格字符与长度白名单解析该行；不采集错误消息、完整路径、环境、请求/响应或原始日志。
 - 修改范围仅验证器及Hosted Workflow，保持D盘临时根、数据清理、候选哈希和原A08验收标记。代码提交后等待 GitHub Hosted 复验，当前不能判 A08 PASS。
