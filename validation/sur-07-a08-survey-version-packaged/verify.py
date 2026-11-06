@@ -317,7 +317,7 @@ def main() -> int:
         error_message = exc.args[0] if len(exc.args) == 1 and isinstance(exc.args[0], str) else ""
         child_match = re.match(
             r"synthetic packaged migration command failed: ([A-Za-z0-9_.-]{1,80}), "
-            r"exit=(-?\\d{1,10}), output=",
+            r"exit=(-?\d{1,10}), output=",
             error_message,
         )
         if child_match and child_match.group(1).casefold() in {

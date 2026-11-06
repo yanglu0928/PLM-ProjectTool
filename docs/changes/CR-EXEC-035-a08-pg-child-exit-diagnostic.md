@@ -18,3 +18,8 @@ helper异常文本按源码包含可控执行文件basename、数字exit code和
 ## 风险、回滚与验证
 
 即使命令和退出码仍不足解释根因，也可避免危险正文外泄；如有需要再另行按证据设计固定词条分类。回滚仅删除该两字段解析。完整 Hosted Windows Server 2025 D盘运行仍须通过全部既有步骤/标记并清理exact owned root。只用合成数据，不外发客户内容或调用外部AI。
+
+
+## 实施记录
+
+已按CR-EXEC-035在A08 verify.py中匹配helper固定错误前缀，只提取命令basename与有符号整数退出码并将命令限制在PG/python白名单；未读取输出段用于摘要，Workflow regex同步约束字段。实施过程静态复核发现一次正则转义写法不匹配十进制数字，已在本提交前修正为Python raw regex的数字类写法。完整Hosted复验待GitHub Actions。

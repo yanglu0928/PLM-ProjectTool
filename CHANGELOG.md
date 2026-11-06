@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-07（CR-EXEC-035 子进程退出码诊断已实现）
+- A08安全诊断现在从通用migration helper异常文本中仅解析固定命令basename（initdb/pg_ctl/psql/postgres/python）和整数exit code；原始stdout/stderr与异常全文不记录。静态复核修正正则转义，等待GitHub Hosted Windows D盘验证。
+
 ## Unreleased · 2026-11-07（CR-EXEC-035：A08 PG 子进程有界退出诊断）
 - run [42269084207](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42269084207) 中A08已通过staging及PLM_P51_TEMP_ROOT所有权验证，进入 packaged platform-write 的 PG 初始化；initdb.exe子进程在smoke_packaged_pg18_migration.py:_run中失败。调用帧verify.py:301→smoke_current_app_packaged_https.py:226→smoke_packaged_platform_write_https.py:357→smoke_packaged_pg18_migration.py:66。
 - helper异常文本带捕获输出，但A08包装器未打印原文，保持安全；下一步只提取受控命令basename白名单与整数退出码，丢弃stdout/stderr和异常消息。测试设施内诊断，产品代码不变；Hosted D盘复验待完成。
