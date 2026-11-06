@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P39摘要字段顺序回归）
+- run [42242042216](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42242042216)：P39真实Edge有效下载/字节路径完成，但新增负例结果flag在summary对象声明前赋值，引发ReferenceError，导致P39未通过。按CR-OUT-035先记，移除前置赋值并放入最终对象字面量，静态扫描声明顺序后再Hosted全链验证。无产品逻辑变化。
+
 ## Unreleased · 2026-11-06（P40实时下载正路径通过、负例UI期待偏差）
 - run [42238876643](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42238876643)的安全摘要确认P40实际Edge下载访问真实PG18 Artifact/Document routes各200一次、保存成功；未知请求真实404且无内容GET。Harness仅在live 404负例等待合成fixture专用精确alert文案超时。按CR-OUT-035先记录，后续仅让P40断言真实404与任意非空alert，同时保留P39精确提示回归。P40整体未通过，尚待完整负例/清理和全链结果。
 
