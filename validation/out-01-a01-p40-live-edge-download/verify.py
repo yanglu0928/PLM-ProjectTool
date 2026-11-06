@@ -134,7 +134,7 @@ def verify_live_edge_download(engine, *, data: dict, storage_root: Path,
             raise RuntimeError("P40 hosted Edge validation failed; exit="
                                + str(result.returncode))
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
-        requests = summary.get("requests")
+        requests = summary.get("api_requests")
         reference_path = (
             f"/api/v1/projects/{project_id}/output-requests/{data['request']}/artifact"
         )
