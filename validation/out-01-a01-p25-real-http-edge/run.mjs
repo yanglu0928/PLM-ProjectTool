@@ -136,8 +136,19 @@ const server=createServer(async(req,res)=>{
    const safeCodes=new Set(["ECONNREFUSED","ECONNRESET","ETIMEDOUT","ENOTFOUND","EHOSTUNREACH","EPROTO",
     "EAI_AGAIN","UND_ERR_CONNECT_TIMEOUT","UND_ERR_SOCKET","UND_ERR_HEADERS_TIMEOUT","UND_ERR_BODY_TIMEOUT"]);
    entry.proxy_error_name_class=safeNames.get(error?.name)||"OTHER";
-   entry.proxy_error_cause_code=safeCodes.has(error?.cause?.code)?error.cause.code:"UNKNOWN";
+   const causeCode=safeCodes.has(error?.code)?error.code:error?.cause?.code;
+   entry.proxy_error_cause_code=safeCodes.has(causeCode)?causeCode:"UNKNOWN";
+   const safeMessage=typeof error?.message==="string"?error.message.toLowerCase():"";
+   const messageClass=safeMessage.includes("fetch failed")?"FETCH_FAILED":
+    safeMessage.includes("econnrefused")?"CONNECTION_REFUSED":
+    safeMessage.includes("econnreset")?"CONNECTION_RESET":
+    safeMessage.includes("timed out")||safeMessage.includes("timeout")?"TIMEOUT":
+    safeMessage.includes("getaddrinfo")||safeMessage.includes("enotfound")||safeMessage.includes("eai_again")?"DNS_FAILURE":
+    safeMessage.includes("socket")?"SOCKET_ERROR":
+    safeMessage.includes("duplex")||safeMessage.includes("invalid header")||safeMessage.includes("invalid argument")?"REQUEST_CONFIG":"OTHER";
+   entry.proxy_error_message_class=messageClass;
    entry.proxy_failure_class=entry.proxy_error_cause_code!=="UNKNOWN"?"FETCH_"+entry.proxy_error_cause_code:
+    messageClass!=="OTHER"?messageClass:
     entry.proxy_error_name_class==="TYPE_ERROR"?"FETCH_TYPE_ERROR":"PROXY_EXCEPTION";
    const out=envelope("SYSTEM_UNAVAILABLE",503);
    if(!res.headersSent){res.writeHead(out.status,out.headers);res.end(out.body)}else res.destroy();
@@ -232,7 +243,7 @@ try{
    path.includes("/sessions")?"SESSION":"OTHER_API";
   const captureRequests=()=>reqs.slice(realActionStart).filter(x=>x.path.startsWith("/api/v1/")).slice(-20).map(x=>({
    method:x.method,path_class:apiPathClass(x.path),status:x.status,
-   backend_status:x.backend_status??null,backend_error_code:x.backend_error_code??null,proxy_failure_class:x.proxy_failure_class??null,proxy_error_name_class:x.proxy_error_name_class??null,proxy_error_cause_code:x.proxy_error_cause_code??null}));
+   backend_status:x.backend_status??null,backend_error_code:x.backend_error_code??null,proxy_failure_class:x.proxy_failure_class??null,proxy_error_name_class:x.proxy_error_name_class??null,proxy_error_cause_code:x.proxy_error_cause_code??null,proxy_error_message_class:x.proxy_error_message_class??null}));
   realApiRequests=captureRequests();
   let realPosts=reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")&&x.backend_status!==undefined);
   realBackendPostCount=realPosts.length;
