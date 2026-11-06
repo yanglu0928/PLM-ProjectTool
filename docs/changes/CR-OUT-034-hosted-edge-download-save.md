@@ -64,3 +64,7 @@ Hosted P39 node --check及provenance通过。Edge成功渲染含三行的输出�
 ## P39 third Hosted diagnostic still shows no Artifact fetch (run 42146593192, not passed)
 
 Hosted run [42146593192](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42146593192) repeated: frontend route loaded, successful row enabled, CDP mouse click shows the generic safe error, but Network events and Node server logs contain only login and output-history GET; no Artifact or content request, no Network.loadingFailed and no uncaught Runtime exception. This narrows the failure to a synchronous/asynchronous client-side rejection before an observable fetch, but does not identify its input. P39 remains failed. Before changing any product code, next harness-only step wraps global fetch and AbortController to count whether OutputArtifactReadClient reaches getJson/fetch; logs will contain only safe API pathname/method and counts, no auth material or body.
+
+## P39第四轮请求前诊断候选
+
+在合成浏览器页面登录前临时wrap window.fetch与AbortController；只记录API pathname/method及AbortController/fetch调用计数，不保留参数、认证头、Cookie或正文。首轮列表读取后记录基线，点击后若UI安全错误则输出差值和CDP Network/Runtime摘要，以判定严格客户端是否在调用fetch前拒绝。诊断仅为Hosted harness，不改产品源码，等待运行。

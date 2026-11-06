@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P39增加客户端请求前检查点，待Hosted验收）
+
+- 对run [42146593192](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42146593192)的CDP证据（无Artifact request、无网络错误）作CR-OUT-034记录后，P39 Hosted fixture临时包装window.fetch/AbortController，仅收集API路径/method和调用次数，帮助确定严格客户端是否在fetch之前拒绝。认证头、Cookie和body不采集；产品代码不变，尚未验收。
+
 ## Unreleased · 2026-11-06（P39 CDP诊断未发现Artifact请求，非通过）
 
 - run [42146593192](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42146593192)：Node及CDP网络观察仅有登录/输出历史GET；成功行按钮enabled并被点击后出现前端安全错误，但无Artifact/Document请求、network failure或未捕获异常。P39仍未通过；结论仅限Harness缺少请求前证据。已先记CR-OUT-034，增加不记录凭证/body的fetch/AbortController计数后再Hosted诊断。
