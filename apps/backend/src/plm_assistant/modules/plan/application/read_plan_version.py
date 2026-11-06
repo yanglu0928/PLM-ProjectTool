@@ -42,6 +42,16 @@ class PlanVersionSnapshotView:
     snapshot: dict[str, object] = field(repr=False)
 
 
+@dataclass(frozen=True, slots=True)
+class PlanOutputSourceProjection:
+    """Minimal immutable PlanVersion projection owned by Plan for Output."""
+
+    plan_version_id: uuid.UUID
+    project_id: uuid.UUID
+    version_state: str
+    fields: dict[str, object] = field(repr=False)
+
+
 class AccessPort(Protocol):
     def authenticated_user(self, transaction: object, *, session_token: bytes,
                            now: datetime) -> uuid.UUID | None: ...
@@ -55,6 +65,9 @@ class RepositoryPort(Protocol):
     def get_current(self, transaction: object, *, project_id: uuid.UUID,
                     plan_id: uuid.UUID, plan_version_id: uuid.UUID
                     ) -> PlanVersionSnapshotView | None: ...
+    def get_output_source(self, transaction: object, *, project_id: uuid.UUID,
+                          plan_version_id: uuid.UUID
+                          ) -> PlanOutputSourceProjection | None: ...
 
 
 class PlanVersionReadService:
@@ -124,6 +137,45 @@ class PlanVersionReadService:
             raise PlanVersionReadError(error.code) from None
         except RuntimeLicenseError:
             raise PlanVersionReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise PlanVersionReadError() from None
+
+
+    def read_output_source(self, transaction: object, *, actor_id: uuid.UUID,
+                           project_id: uuid.UUID,
+                           plan_version_id: uuid.UUID) -> PlanOutputSourceProjection:
+        """Read one exact PlanVersion in the caller's authorized project transaction."""
+        if (not self._id(actor_id) or not self._id(project_id)
+                or not self._id(plan_version_id) or transaction is None):
+            raise PlanVersionReadError("RESOURCE_NOT_FOUND")
+        try:
+            authorized = self._authorization.require_in_transaction(
+                transaction, user_id=actor_id, project_id=project_id,
+                operation="PLAN_VERSION_GET",
+            )
+            if (authorized.user_id != actor_id
+                    or authorized.project_id != project_id
+                    or authorized.operation != "PLAN_VERSION_GET"):
+                raise PlanVersionReadError("RESOURCE_NOT_FOUND")
+            projection = self._repository.get_output_source(
+                transaction, project_id=project_id,
+                plan_version_id=plan_version_id,
+            )
+            if (type(projection) is not PlanOutputSourceProjection
+                    or projection.project_id != project_id
+                    or projection.plan_version_id != plan_version_id
+                    or type(projection.version_state) is not str
+                    or projection.version_state not in {
+                        "DRAFT", "IN_REVIEW", "APPROVED", "RETURNED",
+                        "SUPERSEDED", "RESTRICTED",
+                    }
+                    or type(projection.fields) is not dict):
+                raise PlanVersionReadError("RESOURCE_NOT_FOUND")
+            return projection
+        except PlanVersionReadError:
+            raise
+        except ProjectAuthorizationError as error:
+            raise PlanVersionReadError(error.code) from None
         except Exception:
             raise PlanVersionReadError() from None
 
