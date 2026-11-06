@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（最终文档tip Hosted重跑全绿）
+- run [42220874670](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42220874670) attempt 2：仅重跑A17后成功；Windows临时lockfile EBUSY未复现，首次失败保留。全链success；P25、A17、A34/A35、后端/前端/PG/父包及P24/P39/A50通过。仅Hosted合成验证，不代表真实trust、Win11本轮实机、Pilot/Gate/正式Release通过。
+
 ## Unreleased · 2026-11-06（最终文档tip A17清理竞争重跑前记录）
 - run [42220874670](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42220874670) 的P25和大多数jobs成功；A17旧多条目Edge验证清理临时lockfile时报Windows EBUSY，导致该job失败。按CR-OUT-021先记后只重跑失败A17 job，不变更成功的P25结论；若复现再记录并修复。
 

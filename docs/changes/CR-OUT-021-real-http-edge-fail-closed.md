@@ -415,3 +415,10 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - A17日志表明其P51-A27旧多条目Edge检查先输出通过标记，清理时随后出现Windows `EBUSY`，无法unlink该验证器自有临时`lockfile`；A17复合任务因脚本返回非零失败。此证据不能证明产品行为失败，也尚不能断定为仅瞬时竞争。
 - 选择最小下一步：仅重跑失败A17 job，不改产品/Harness代码、不重建其他成功jobs。若重跑通过，记录为间歇性清理竞争且保留首次失败；若复现，再按其临时锁生命周期做独立CR-PLT/CR-P51处理。
 - 本失败不撤销run 42217889515的独立P25 PASS_SCOPE_LIMITED。仅GitHub Hosted环境，无本机/C盘运行、无客户数据、无外部调用。
+
+
+### A17 单job复验结果
+
+- run [42220874670](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42220874670) attempt 2仅重跑失败A17 job后通过；该job全部步骤success，全workflow attempt 2为success。
+- 首次attempt的临时lockfile EBUSY未在A17复验中复现，支持“间歇性清理竞争”的有限结论；首次失败记录保留，不回写。
+- P25、A34/A35、A17均在本轮完整Hosted矩阵有成功证据。run不代表Windows 11本轮实机、正式信任或Pilot就绪；不改产品逻辑。
