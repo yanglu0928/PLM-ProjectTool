@@ -31,3 +31,8 @@ PASS_WITH_LIMITATION：P39可以进入Hosted Edge harness实现；验收仍限�
 ## P39 Hosted实现候选
 
 新增独立Edge验证器和Hosted Windows job，复用同run production frontend；合成HTTP fixture返回严格Artifact引用及attachment响应，由Edge实际下载到D盘Runner临时目录，并独立读取落盘文件校验字节/Hash/长度。负例覆盖FAILED行无下载入口及跨项目引用被前端严格客户端拒绝、未请求内容URL。未连接真实FastAPI/PG；与P38分层证据，不宣称同进程端到端。待Hosted验收。
+
+
+## P39首次静态复核发现的验收器源码偏差（修正前记录）
+
+P39候选提交后，GitHub源码复核发现Node harness的Content-Disposition文件名字面量在嵌入引号前保留了双重反斜杠，可能导致JavaScript语法错误。尚未以Hosted node --check确认，也未把该静态风险描述成运行失败；P39未通过。修正前先记录：下一提交只改验证器字符串字面量并改用显式字节数组表达合成负载，随后以Hosted node --check和Edge实际落盘Hash/长度结果判定。产品代码、API、Schema及生产信任边界不变。

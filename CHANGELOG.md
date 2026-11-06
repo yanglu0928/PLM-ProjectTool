@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P39 Hosted验证器静态转义偏差，待云端复验）
+
+- P39候选提交后的静态复核发现附件文件名响应头在Node脚本中的转义可能提前结束字符串，尚未以Hosted node --check确认，也未形成P39通过结果。已先补记CR-OUT-034，拟只修验证器引用字面量和合成字节数组；产品逻辑不变。
+
 ## Unreleased · 2026-11-06（OUT-01-A01-P39：Hosted Edge下载候选，非发行版本）
 
 - 新增独立Hosted Windows Edge验证器和Workflow job，复用同run production frontend，在合成同源HTTP fixture下执行输出历史SUCCEEDED行→Artifact引用→Document attachment保存；验收将比对Edge实际保存字节、Hash及长度，并验证FAILED行无下载按钮、跨项目引用在内容请求前被拒绝。
