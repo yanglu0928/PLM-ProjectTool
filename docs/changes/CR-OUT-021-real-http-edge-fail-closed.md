@@ -307,3 +307,11 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - 按run 42176547201的诊断，realbackend动作窗口新增最多20条合成API请求的固定path class、method、status/upstream status及白名单错误码；不含路径ID/query/认证/header/body/消息。用于确认Create UI动作是否发出了代理路由请求及是否触及真实后端。
 - “无回执”改为检查成功受理/创建文案，不因ARIA status区域存在失败状态而误报回执；Python仍严格要求真实POST=1、422、VALIDATION_FAILED、无成功状态/文案/重试，且DB计数不变。此为验证Harness边界调整，不更改产品与信任。
 - 当前代码与本记录已同步至PR #61功能分支，等待Hosted全链复验；P25仍BLOCKED_DIAGNOSTIC。
+
+
+## Run 42178693259：Edge POST到达Node代理但未获上游响应（2026-11-06）
+
+- P25有限轨迹显示真实UI动作产生一个method=POST、path class=OUTPUT_REQUESTS_CREATE请求；Node本地代理响应500，但backend_status/backend_error_code均为空。Node正常生成诊断并退出；Python完成数据库前后快照，目标计数相同。页面为SAFE_SUBMISSION_UNCONFIRMED，没有成功状态/受理文案。P25失败，因无法证明请求到达真实FastAPI。
+- 根因范围已收窄为Node代理在获得上游HTTP响应之前异常；具体异常类型尚无证据。此前Node外层catch将原始异常字符串作为500正文发回；下一步必须去掉异常文本并增加固定类别（FETCH_TYPE_ERROR/PROXY_EXCEPTION），仅保存于合成Harness诊断，错误响应改为固定安全503 Envelope。未修改真实产品端点。
+
+**下一步实施前决策：** 只改P25 Node Harness代理异常处理与诊断字段；异常类别白名单记录，client端固定返回SYSTEM_UNAVAILABLE/503，严禁异常message/正文传播；后端仍严格要求恰好一个上游POST/422/VALIDATION_FAILED及DB前后相同。Hosted复验验证异常分类是否为FETCH_TYPE_ERROR。没有证据前不自行认定为端口、地址或业务服务故障。
