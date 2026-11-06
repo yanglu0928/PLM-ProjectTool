@@ -87,3 +87,8 @@ Hosted run [42148721420](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## P39第七轮Hosted fetch Promise拒绝类别诊断候选
 
 依照run 42148721420和上节预先记录的计划，Harness临时封装原生fetch Promise，只在被拒绝时保留method、API pathname和固定类别Abort/TypeError/Other；同步抛错也归入同一白名单分类后原样抛回，不保存错误message、query、认证信息、Header、Cookie或请求正文。基线/失败摘要只输出拒绝类别条目。仅验证工具变更，不动产品逻辑；等待Hosted运行确认本地拒绝类型或继续缩小浏览器到server的传输边界，P39保持未通过。
+
+
+## P39第七轮Hosted诊断发现原生fetch TypeError（run 42149813781，未通过）
+
+Hosted run [42149813781](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42149813781)的去敏fetch wrapper观察到Artifact引用GET以TypeError拒绝；Abort归一类别未出现。该调用未进入CDP Network或合成HTTP server，页面仍给通用安全提示，无Document content GET或附件保存。P39未通过，且此证据本身不区分浏览器传输故障、请求signal/选项故障或Edge本地策略。下一Harness-only诊断将记录固定白名单的signal有效性/已abort布尔值、credentials/cache/redirect枚举，并在失败后对合成同源引用路径分别执行无signal和有效signal的原生fetch对照探针，只记录状态码/媒体类型或固定拒绝类别；探针结果明确标记为诊断请求，绝不充作产品点击验收。不得记录错误message、认证信息、cookie、headers内容、请求/响应正文。

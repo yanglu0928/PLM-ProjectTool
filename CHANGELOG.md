@@ -717,3 +717,8 @@
 ## Unreleased · 2026-11-06（P39 fetch拒绝类别诊断候选）
 
 - 按CR-OUT-034增加Hosted Harness原生fetch Promise拒绝归一分类（Abort/TypeError/Other），只关联合成API method/path，未记录错误文案、query、认证或正文；同步抛错会归类并继续原样传播。无生产代码/API/Schema修改，等待Hosted诊断，P39未通过。
+
+
+## Unreleased · 2026-11-06（P39第七轮 Hosted fetch TypeError；P25环境阻断重复）
+
+- run [42149813781](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42149813781)：P39 Artifact原生fetch Promise拒绝类别为TypeError，未在CDP Network或合成server观察到请求，无内容下载，仍失败。Backend全量/wheel、Frontend/build、PG18 sidecar、Embedded Python/父包、PG18 smoke、A17/A34/A35、P24/A50成功。P25重复因initdb.exe exit 3221225781/0xC0000135、空输出而失败；整体workflow非全绿。按CR-OUT-034继续Harness-only归因探针；没有声称Pilot/Gate/Release通过。
