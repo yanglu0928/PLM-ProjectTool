@@ -1,7 +1,7 @@
 # CR-EXEC-040：OUT-01-A01-P41 PlanVersion 固定来源接入
 
 日期：2026-11-07  
-状态：编码前检查完成；实现已同步，Hosted 验证待进行。
+状态：PASS_SCOPE_LIMITED；代码、Owner/Resolver验证和真实 PostgreSQL 18 project-scoped lookup 均通过。完整Output写入/插件执行仍不在本WBS，正式插件信任仍失败关闭。
 
 ## 当前阶段与 WBS
 
@@ -39,3 +39,10 @@ Phase 2 Platform Core / Windows 11 Pilot 纵向业务链。WBS：OUT-01-A01-P41�
 ## 验证与风险关闭条件
 
 实施后先运行 Owner/Resolver 定向测试，再由 GitHub Hosted CI 执行后端完整套件、PG18 集成和包组合检查。若权限隔离、审阅状态或精确引用任一失败，修复后复验，不降验收要求。Secret scan 必须无命中；提交前检查远端 head，并仅以 expected-SHA 快进更新当前 feature 分支。
+
+
+## Hosted 验收结果
+
+run [42295334125](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42295334125)：后端全量测试与 wheel、Windows Server 2025 父包 PG18 smoke 成功；PG18 smoke 中新增 P41 verifier 成功执行真实 project-scoped PlanVersion UUID 查询，并确认 Owner 派生出的 plan_id 与固定版本一致、同版本跨项目不可见。Plan Owner snapshot reconstruction 在该小型隔离探针中由受控 fixture 替代，因此不宣称完整业务行重建/Output生成已通过。A17/A34/P24/P25/P39/P40/A50与前后端及构建作业成功；整轮仅A08 failure，不能算全绿。P41 仅记 PASS_SCOPE_LIMITED。
+
+该结果不代表 Windows 11 实机、正式 Publisher/License 信任、真实插件执行、Pilot、Gate 或正式 Release。Output 在无正式签名信任时仍 fail-closed。
