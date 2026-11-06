@@ -60,3 +60,10 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - 上轮run 421727的POST status=500没有本轮上游证据支持；不把它报告为Output HTTP响应。当前根因是UI动作到upstream桥的连通/路由仍待识别。
 - 结论PASS_WITH_LIMITATION：仅增加Harness-only path class/method/status摘要，限在realbackend动作时间窗且去掉UUID/query/header/body；并将成功回执验证限于成功文案/结果文本，不把非成功ARIA状态误作回执。下一轮仍严格要求一个真实upstream POST/HTTP422/VALIDATION_FAILED/无重试/无成功回执/DB不变，未满足继续失败关闭。
 - 只在GitHub Hosted Windows D盘验收，不在用户本机/C盘运行。
+
+
+## Path-class诊断候选实施记录（2026-11-06，待Hosted）
+
+- realbackend阶段现在截取本轮UI动作发生后的合成API请求，仅保留method、固定path class、status/upstream status及白名单错误码，最大20条；不输出UUID/查询参数/请求头/正文/错误消息。
+- 不再将任何ARIA status节点存在视为成功回执；只检查成功受理/创建语义，同时保留无自动重试检查。
+- Python继续先比较数据库前后快照，再严格判定真实后端POST/HTTP/错误码/UI/回执/计数合同。Harness退出及临时根D盘always清理条件不放宽。尚未Hosted验收，P25不PASS。
