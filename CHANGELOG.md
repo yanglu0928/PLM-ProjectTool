@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P25代理异常内存归一候选，Hosted复验待定）
+- 对Node代理捕获的异常message仅在内存中映射固定类别，原文/stack不记录；Edge固定收到503。严格真实HTTP、回执及DB快照验收不变。候选尚未Hosted验证。
+
 ## Unreleased · 2026-11-06（P25代理异常指纹不足）
 - run [42182842169](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42182842169)：Output POST到Node后返回固定503，未获FastAPI响应；error指纹OTHER/UNKNOWN，数据库快照一致，P25未通过。
 - 下一步按CR-OUT-021仅在内存把异常消息映射为固定类别，不保存原文；真实HTTP失败关闭验收条件保持。
