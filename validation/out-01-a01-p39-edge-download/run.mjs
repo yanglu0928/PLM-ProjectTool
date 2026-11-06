@@ -231,11 +231,10 @@ try{
  const badContentPath="/api/v1/projects/"+ids.otherProject+"/documents/"+ids.badDocument+"/versions/"+ids.badVersion+"/content";
  assert.equal(reqs.filter(x=>x.path===badContentPath&&x.method==="GET").length,0);
  checks.push("unauthorized reference fails before any content request or additional save");
-  summary.unknown_reference_failed_closed=Boolean(backendOrigin);
-
- assert.ok(reqs.every(x=>x.path.startsWith("/api/v1/")),"observed API requests stayed on synthetic same-origin server");
+  assert.ok(reqs.every(x=>x.path.startsWith("/api/v1/")),"observed API requests stayed on synthetic same-origin server");
  const summary={wbs:backendOrigin?"OUT-01-A01-P40":"OUT-01-A01-P39",status:"PASS_SCOPE_LIMITED",browser:"Microsoft Edge headless",
   backend_mode:backendOrigin?"live-fastapi-loopback":"synthetic-http-fixture",saved_file_matches_expected_bytes:true,unknown_reference_http_404:Boolean(backendOrigin),
+  unknown_reference_failed_closed:Boolean(backendOrigin),
   cross_project_failed_closed:!backendOrigin,
   runner_os:"GitHub hosted Windows Server 2025",runner_drive:"D:",synthetic_data:true,controlled_api:true,
   checks,api_requests:reqs.map(x=>({method:x.method,path:x.path,status:x.status})),
