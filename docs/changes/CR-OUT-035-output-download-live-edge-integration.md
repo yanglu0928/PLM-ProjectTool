@@ -38,3 +38,9 @@ P38和P39分别通过了服务端持久层/内容流与浏览器下载保存，�
 
 - Backend full suite/wheel, frontend full suite/build, P39 Edge regression and parent assembly succeeded. The parent PG18 smoke reached P33 but Python failed importing the new P40 verifier: its directory used hyphens while the import path used underscores. Therefore P40's FastAPI/Edge verification function never executed; this is an acceptance harness wiring error, not a route verdict.
 - Before code changes, record the minimal fix: move the verifier to the repository's underscore package naming convention, align workflow syntax-check path/import, delete the unused hyphen-path copy, then rerun Hosted. No production code/API/Schema changes.
+
+
+## P40 Hosted Edge process reached but harness hid failure stage (run 42236302466; diagnostic fix not yet applied)
+
+- The underscore import is fixed. The parent PG18 smoke successfully reached P33; P33 invoked the new P40 verifier, which started the real FastAPI/PG18 setup and launched the Edge Harness. Node returned exit 1, but P40 converted its captured output to the generic message `P40 hosted Edge validation failed; exit=1`, so the failing browser/API assertion cannot be distinguished from runner launch/transport.
+- This run does not establish P40 pass or product failure. Before another code change, record the narrow fix: on failure, parse the Harness JSON and report only a bounded allowlist of stage, synthetic API method/path/status, network error category, and exception class; never output cookies, headers, bodies, exception message or file contents. Then rerun Hosted and make the next correction from evidence.

@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P40 Hosted 浏览器诊断缺失）
+- run [42236302466](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42236302466)：P40 verifier已启动真实FastAPI/PG18/Edge子流程，但退出1；包装器把捕获的Harness摘要隐藏，无法确定失败步骤。偏差先记CR-OUT-035；下一项只提取预先定义的去敏阶段、API路径状态和异常类别字段，再根据托管证据修复。P40未通过，不推定产品错误。
+
 ## Unreleased · 2026-11-06（P40 Python 验收器导入接线偏差）
 - run [42233843515](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42233843515)：前后端全量及P39通过，P40未执行路由/浏览器断言；Python无法导入使用错误连字符目录的新验证器。先记CR-OUT-035，下一步只将验收器移至underscore包目录、校正静态检查路径并删除旧路径副本后全Hosted复验。无生产代码变化，P40未通过。
 
