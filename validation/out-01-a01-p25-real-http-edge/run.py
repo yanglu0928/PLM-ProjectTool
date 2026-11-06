@@ -590,6 +590,7 @@ async def main() -> int:
                 "db_snapshot_unchanged": database_snapshot_unchanged,
                 "edge_exit_zero": node.returncode == 0,
                 "api_requests": edge_summary.get("real_api_requests", []),
+                "proxy_failure_classes": sorted({item.get("proxy_failure_class") for item in edge_summary.get("real_api_requests", []) if item.get("proxy_failure_class")}),
             }
             raise AssertionError("P25 bounded rejection diagnostics: " + json.dumps(observed, sort_keys=True))
         result = {
@@ -643,6 +644,7 @@ async def main() -> int:
                 "database_snapshot_unchanged": locals().get("database_snapshot_unchanged"),
                 "edge_exit_zero": locals().get("node").returncode == 0 if locals().get("node") else False,
                 "api_requests": edge_details.get("real_api_requests", [])[:20],
+                "proxy_failure_classes": sorted({item.get("proxy_failure_class") for item in edge_details.get("real_api_requests", []) if item.get("proxy_failure_class")}),
             }
         if pg_root is not None:
             try:
