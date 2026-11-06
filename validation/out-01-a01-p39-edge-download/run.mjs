@@ -10,6 +10,9 @@ function arg(name){const i=args.indexOf(name);return i<0?null:args[i+1]}
 const dist=resolve(arg("--dist")||"");
 const summaryPath=resolve(arg("--summary-out")||"");
 const downloadDir=resolve(arg("--download-dir")||"");
+const backendOrigin=arg("--backend-origin");
+const liveConfigPath=arg("--live-config");
+const liveConfig=liveConfigPath?JSON.parse(await readFile(resolve(liveConfigPath),"utf8")):null;
 if(!arg("--dist")||!arg("--summary-out")||!arg("--download-dir"))throw new Error("dist, summary and download paths are required");
 const runnerTemp=resolve(process.env.RUNNER_TEMP||"");
 if(!runnerTemp||parse(runnerTemp).root.toLowerCase()!=="d:\\")throw new Error("GitHub hosted runner temp must be on D:");
@@ -31,10 +34,12 @@ const ids={
  snapshot:"b1234567-89ab-4cde-8123-456789abcdef",
  template:"c1234567-89ab-4cde-8123-456789abcdef"
 };
+if(liveConfig?.ids)Object.assign(ids,liveConfig.ids);
 const csrf="c".repeat(64), trace=ids.actor;
-const payload=Buffer.from([0x50,0x4c,0x4d,0x20,0x73,0x79,0x6e,0x74,0x68,0x65,0x74,0x69,0x63,0x20,0x61,0x74,0x74,0x61,0x63,0x68,0x6d,0x65,0x6e,0x74,0x20,0x6f,0x6e,0x6c,0x79,0x0a,0x50,0x33,0x39,0x20,0x62,0x79,0x74,0x65,0x20,0x66,0x69,0x78,0x74,0x75,0x72,0x65,0x00,0x01,0x02,0xff]);
-const digest=createHash("sha256").update(payload).digest("hex");
-const mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+let payload=Buffer.from([0x50,0x4c,0x4d,0x20,0x73,0x79,0x6e,0x74,0x68,0x65,0x74,0x69,0x63,0x20,0x61,0x74,0x74,0x61,0x63,0x68,0x6d,0x65,0x6e,0x74,0x20,0x6f,0x6e,0x6c,0x79,0x0a,0x50,0x33,0x39,0x20,0x62,0x79,0x74,0x65,0x20,0x66,0x69,0x78,0x74,0x75,0x72,0x65,0x00,0x01,0x02,0xff]);
+let digest=createHash("sha256").update(payload).digest("hex");
+let mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+if(liveConfig){payload=Buffer.from(liveConfig.payload_hex,"hex");digest=createHash("sha256").update(payload).digest("hex");mime=liveConfig.mime;}
 const reqs=[], now="2026-11-06T00:00:00Z";
 function item(id,state,requestedAt){return {
  output_request_id:id,project_id:ids.project,output_type:"DOCX",template_version_ref:ids.template,
@@ -44,11 +49,22 @@ function item(id,state,requestedAt){return {
  completed_at:state==="SUCCEEDED"?now:null,etag:'"v1"'
 }}
 function envelope(data,status=200){return {status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"},body:JSON.stringify(status>=400?{error:{code:data},trace_id:trace}:{data,trace_id:trace})}}
+async function proxyLiveBackend(req,res){
+ const response=await fetch(backendOrigin+req.url,{method:req.method||"GET",headers:{
+  cookie:req.headers.cookie||"",origin:"http://localhost:"+server.address().port
+ }});
+ const headers={};
+ for(const [key,value] of response.headers){if(!["connection","transfer-encoding","keep-alive","content-encoding"].includes(key.toLowerCase()))headers[key]=value}
+ res.writeHead(response.status,headers);res.end(Buffer.from(await response.arrayBuffer()));
+}
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url||"/","http://localhost");
  const entry=url.pathname.startsWith("/api/")?{method:req.method||"GET",path:url.pathname,query:url.search,status:null}:null;
  if(entry){reqs.push(entry);res.on("finish",()=>entry.status=res.statusCode)}
  try{
+  if(backendOrigin&&req.method==="GET"&&(/\/output-requests\/[^/]+\/artifact$/.test(url.pathname)||/\/documents\/[^/]+\/versions\/[^/]+\/content$/.test(url.pathname))){
+   await proxyLiveBackend(req,res);return;
+  }
   if(url.pathname==="/api/v1/auth/login"&&req.method==="POST"){
    let body="";for await(const chunk of req)body+=chunk;
    const value=JSON.parse(body);
@@ -59,7 +75,9 @@ const server=createServer(async(req,res)=>{
     deployment_role:"NONE",password_change_required:false,
     authorized_projects:[{project_id:ids.project,name:"Synthetic project",role:"PROJECT_MANAGER"}],
     absolute_expires_at:"2030-01-01T12:00:00Z",idle_expires_at:"2030-01-01T11:00:00Z",csrf_token:csrf});
-   res.writeHead(out.status,{...out.headers,"Set-Cookie":"plm_synthetic_session=accepted; Path=/; HttpOnly; SameSite=Lax"});
+   const cookies=["plm_synthetic_session=accepted; Path=/; HttpOnly; SameSite=Lax"];
+   if(liveConfig)cookies.push("plm_session="+liveConfig.session_token_hex+"; Path=/; HttpOnly; SameSite=Lax");
+   res.writeHead(out.status,{...out.headers,"Set-Cookie":cookies});
    res.end(out.body);return;
   }
   if(url.pathname==="/api/v1/projects/"+ids.project+"/output-requests"&&req.method==="GET"){
@@ -186,7 +204,8 @@ try{
  assert.ok(downloadWillBegin,"Edge did not report attachment download; requests="+JSON.stringify(reqs));
  assert.ok(downloadCompleted,"Edge did not complete attachment download");
  const filename=downloadWillBegin.suggestedFilename;
- assert.equal(filename,"document-"+ids.version+".bin");
+ if(!backendOrigin)assert.equal(filename,"document-"+ids.version+".bin");
+ else assert.ok(filename&&filename===filename.split(/[\\/]/).pop(),"live attachment filename escaped the download leaf");
  const downloadPath=join(downloadDir,filename);
  for(let i=0;i<100;i++){try{if((await stat(downloadPath)).isFile())break}catch{}await pause(50)}
  const saved=await readFile(downloadPath);
@@ -206,13 +225,15 @@ try{
  const badContentPath="/api/v1/projects/"+ids.otherProject+"/documents/"+ids.badDocument+"/versions/"+ids.badVersion+"/content";
  assert.equal(reqs.filter(x=>x.path===badContentPath&&x.method==="GET").length,0);
  checks.push("cross-project reference fails before any content request or additional save");
+ summary.cross_project_failed_closed=true;
 
  assert.ok(reqs.every(x=>x.path.startsWith("/api/v1/")),"observed API requests stayed on synthetic same-origin server");
- const summary={wbs:"OUT-01-A01-P39",status:"PASS_SCOPE_LIMITED",browser:"Microsoft Edge headless",
+ const summary={wbs:backendOrigin?"OUT-01-A01-P40":"OUT-01-A01-P39",status:"PASS_SCOPE_LIMITED",browser:"Microsoft Edge headless",
+  backend_mode:backendOrigin?"live-fastapi-loopback":"synthetic-http-fixture",saved_file_matches_expected_bytes:true,
   runner_os:"GitHub hosted Windows Server 2025",runner_drive:"D:",synthetic_data:true,controlled_api:true,
   checks,api_requests:reqs.map(x=>({method:x.method,path:x.path,status:x.status})),
   saved_bytes:saved.length,saved_sha256:digest,customer_data:false,external_api_calls:0,
-  plugin_executed:false,formal_license_trust:false,backend_live:false,release_eligible:false};
+  plugin_executed:false,formal_license_trust:false,backend_live:Boolean(backendOrigin),release_eligible:false};
  await writeFile(summaryPath,JSON.stringify(summary,null,2)+"\n","utf8");console.log(JSON.stringify(summary));
 }catch(error){console.error(JSON.stringify({error:String(error),stage:harnessStage,evaluation_exception_class:evaluationExceptionClass,requests:reqs.slice(-30),browser_network:browserNetwork,network_failures:networkFailures,runtime_exceptions:runtimeExceptions,client_probe:clientProbe},null,2));process.exitCode=1}
 finally{

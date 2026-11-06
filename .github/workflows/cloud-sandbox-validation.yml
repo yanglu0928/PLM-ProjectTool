@@ -426,10 +426,10 @@ jobs:
           retention-days: 14
 
   smoke-parent-postgresql:
-    name: Clean extraction and temporary PostgreSQL lifecycle smoke
-    needs: [assemble-parent-candidate]
+    name: Clean extraction, PG18 lifecycle, and P40 live Edge download
+    needs: [assemble-parent-candidate, frontend]
     runs-on: windows-2025
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -443,6 +443,11 @@ jobs:
         with:
           name: plm-windows-parent-candidate-${{ github.sha }}
           path: ${{ runner.temp }}/plm-parent-smoke-input
+      - name: Download same-run frontend build for P40
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p40-frontend
       - name: Install minimal migration verification dependencies
         shell: pwsh
         env:
@@ -450,11 +455,24 @@ jobs:
           TEMP: ${{ runner.temp }}
           TMP: ${{ runner.temp }}
         run: |
-          python -m pip install --disable-pip-version-check "Alembic==1.20.0" "SQLAlchemy==2.0.54" "psycopg[binary]==3.3.5" "pgvector==0.5.0" "fastapi==0.141.1" "cryptography==50.0.1"
+          python -m pip install --disable-pip-version-check "Alembic==1.20.0" "SQLAlchemy==2.0.54" "psycopg[binary]==3.3.5" "pgvector==0.5.0" "fastapi==0.141.1" "cryptography==50.0.1" "uvicorn==0.53.0"
           if ($LASTEXITCODE -ne 0) { throw "Migration verifier dependency install failed" }
+      - name: Verify P40 same-run frontend provenance on D-drive
+        shell: pwsh
+        run: |
+          $dist = Join-Path $env:RUNNER_TEMP "plm-out-p40-frontend"
+          $manifest = Get-Content -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Raw | ConvertFrom-Json
+          if ($manifest.source_commit -ne $env:GITHUB_SHA -or [string]$manifest.workflow_run -ne $env:GITHUB_RUN_ID -or $manifest.release_eligible -ne $false) { throw "P40 frontend provenance mismatch" }
+          if (-not (Test-Path (Join-Path $dist "index.html"))) { throw "P40 production frontend build missing" }
+          Remove-Item -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Force
+          node --check validation/out-01-a01-p39-edge-download/run.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P39/P40 Edge harness syntax failed" }
+          python -B -c "import ast,pathlib; ast.parse(pathlib.Path('validation/out-01-a01-p40-live-edge-download/verify.py').read_text(encoding='utf-8')); ast.parse(pathlib.Path('validation/out-01-a01-p33-output-completion/verify.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw "P40 Python harness syntax failed" }
       - name: Extract on runner temp and smoke PostgreSQL/pgvector
         shell: pwsh
         run: |
+          $env:PLM_P40_EDGE_DIST = Join-Path $env:RUNNER_TEMP "plm-out-p40-frontend"
           $work = Join-Path $env:RUNNER_TEMP ("plm-parent-pg-smoke-" + $env:GITHUB_RUN_ID)
           $out = Join-Path $env:RUNNER_TEMP ("plm-parent-pg-smoke-summary-" + $env:GITHUB_RUN_ID)
           $archive = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-parent-smoke-input") -Filter "*.zip" | Select-Object -First 1
@@ -462,11 +480,13 @@ jobs:
           if (-not $archive -or -not (Test-Path $summary)) { throw "Parent candidate artifact is incomplete" }
           python .\tools\smoke_windows_parent_package_pg_cloud.py --archive $archive.FullName --verification-summary $summary --work-root $work --summary-out (Join-Path $out "pg-smoke.json")
           if ($LASTEXITCODE -ne 0) { throw "Parent package PostgreSQL smoke failed" }
-      - name: Upload bounded PostgreSQL smoke evidence
+      - name: Upload bounded PostgreSQL smoke and P40 Edge evidence
         uses: actions/upload-artifact@v4
         with:
           name: plm-parent-pg-smoke-${{ github.sha }}
-          path: ${{ runner.temp }}/plm-parent-pg-smoke-summary-${{ github.run_id }}/pg-smoke.json
+          path: |
+            ${{ runner.temp }}/plm-parent-pg-smoke-summary-${{ github.run_id }}/pg-smoke.json
+            ${{ runner.temp }}/plm-out-p40-live-edge-summary-${{ github.run_id }}.json
           if-no-files-found: error
           retention-days: 14
 
