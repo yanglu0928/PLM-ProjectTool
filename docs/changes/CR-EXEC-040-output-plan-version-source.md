@@ -30,6 +30,7 @@ Phase 2 Platform Core / Windows 11 Pilot 纵向业务链。WBS：OUT-01-A01-P41�
 - Output 新增 PlanVersion 来源分发适配器、独立不可变 DOCX 模板/策略版本和 Windows Composition 接线，原 Requirement 版本及其 policy/template refs 保留。
 - 策略仅允许 APPROVED，字段限于 version_no、wbs_items、dependencies、milestones、exclusions；Plugin Operation 仍需已启用且可信的签名能力，信任源缺失时仍失败关闭。
 - 增加服务授权/项目边界、Composite Adapter 歧义拒绝、固定 Registry 兼容、Resolver 字段白名单及 DRAFT 拒绝的测试。测试只提交，未在本机执行。
+- 为真实 PG18 Owner lookup 增加独立 disposable DB 验收器，覆盖指定 PlanVersion UUID 的 project-scoped lookup、Owner 事务授权和跨项目 miss；嵌入父包 PG18 Hosted smoke。仅查询真实 PostgreSQL，快照构造用隔离 fixture，不涉及正式数据。待 Hosted run。
 
 ## 方案决策
 
