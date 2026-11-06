@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P40 hosted real Edge download limited pass；A17启动诊断待补）
+- Hosted run [42243433283](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42243433283)：P40同进程 live FastAPI/临时PG18/Storage/Edge验收job成功并上传摘要；P39、P24、A50、P25、A34与前后端基础构建检查亦成功。结论限隔离合成数据 Hosted D:。
+- 同run独立A17 packaged flow在/health/ready前退出，捕获结果只有stderr unavailable，根因未确认。按CR-OUT-035先记录；下一步对A17增加有界脱敏stderr/exit-code诊断。没有正式信任、Windows 11实机、Pilot、Gate或Release结论。
+
 ## Unreleased · 2026-11-06（P39摘要字段顺序回归）
 - run [42242042216](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42242042216)：P39真实Edge有效下载/字节路径完成，但新增负例结果flag在summary对象声明前赋值，引发ReferenceError，导致P39未通过。按CR-OUT-035先记，移除前置赋值并放入最终对象字面量，静态扫描声明顺序后再Hosted全链验证。无产品逻辑变化。
 

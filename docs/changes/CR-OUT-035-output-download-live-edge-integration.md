@@ -56,3 +56,13 @@ P38和P39分别通过了服务端持久层/内容流与浏览器下载保存，�
 
 - The live 404 assertion change passed Node syntax but regressed the standalone P39 Edge fixture. Hosted Edge completed the same successful download path, then failed with `ReferenceError: Cannot access 'summary' before initialization` in the new negative-result flag assignment. This is a verifier-only TDZ error; no production/API behavior is implicated and P39 is not considered passing for this run.
 - Before code modification, record the narrow correction: remove the pre-declaration `summary` write and place both negative-result flags in the final summary object literal; retain the live 404/alert checks and the P39 fixed-message assertion. Then run a source-level check confirming no `summary` reference precedes its declaration, followed by full Hosted validation.
+
+
+## Hosted run 42243433283：P40 实时下载通过，A17 打包服务启动仍阻塞（2026-11-06）
+
+- 来源提交：a279a56fc1eb3652bea2aa7bc82b545cd8ec7f4e；[完整 Hosted run](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42243433283)。所有项目运行均在 GitHub Hosted Windows Server 2025 的 D:\ runner/temp 完成，本机未运行项目代码。
+- P39 独立合成 Edge 下载、前端测试/构建、后端测试/wheel、PG18/pgvector sidecar 重建、P24、A50、P25，以及 A34 离线替换/人工恢复演练均通过各自的 limited scope 检查。
+- P40 job 为 success，生成并上传 plm-out-p40-live-edge-summary-42243433283.json 与 PG smoke 摘要。验收器执行内容是同一 Hosted 进程中的 FastAPI loopback + 临时 PG18 + Storage 与 Edge 浏览器下载链；结论仅限该隔离验证。不会据此声明 Windows 11 本机、正式信任、Pilot、Gate 或 Release 通过。
+- 独立 A17 packaged PlanVersion/HTTPS/PG job 失败：包装服务在 /health/ready 前退出，现有日志只给出 stderr unavailable，未获得安全、可诊断的子进程退出原因。A17 不通过；这不是 P40 失败，也没有证据能推断产品具体启动根因。
+- 下一项单一问题：为 A17 Hosted harness 安全捕获并输出子进程退出码及有界、脱敏 stderr 诊断，然后重跑当前独立 A17 流程。不得输出凭据、请求头、正文、客户数据或私钥；若发现真实产品问题再单独记录并修复。
+- A34 limited 结果维持其边界：只验证合成包的替换、隔离/恢复标记保全和显式人工恢复；验证期间没有启动服务，legal_clearance=false，不代表生产升级/回滚获准。
