@@ -15,11 +15,22 @@ BUILTIN_REQUIREMENT_DOCX_TEMPLATE_VERSION_ID = uuid.UUID(
     "a1272ce0-01f0-5e6c-9706-000000000001"
 )
 
+BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID = uuid.UUID(
+    "a1272ce0-01f0-5e6c-9706-000000000002"
+)
+
 _BUILTIN_VERSIONS = (
     OutputTemplateVersion(
         template_version_ref=BUILTIN_REQUIREMENT_DOCX_TEMPLATE_VERSION_ID,
         output_type="DOCX",
         source_kinds=("REQUIREMENT_VERSION",),
+        immutable=True,
+        published=True,
+    ),
+    OutputTemplateVersion(
+        template_version_ref=BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID,
+        output_type="DOCX",
+        source_kinds=("PLAN_VERSION",),
         immutable=True,
         published=True,
     ),
