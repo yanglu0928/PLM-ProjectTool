@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25代理安全失败继续定位）
+- run [42180790760](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42180790760)：Node对Edge Create POST固定返回503，类别PROXY_EXCEPTION；没有FastAPI上游HTTP，数据库快照相同且无成功回执。P25未通过。
+- CR-OUT-021下一步只加error.name/cause.code白名单指纹；不记录异常文本。同期P39 CDP和A17 lockfile EBUSY为独立失败，不推断成同一根因。
+
 ## Unreleased · 2026-11-06（P25代理异常脱敏候选，Hosted复验待定）
 - Node Harness对realbackend Output POST的代理异常新增有限类别，Edge改收固定503 SYSTEM_UNAVAILABLE，不再传播原始异常文本；API轨迹只输出固定path class/status等合成诊断。成功验收要求未放宽；当前未验证。
 
