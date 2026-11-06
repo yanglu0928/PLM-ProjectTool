@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-07（CR-EXEC-043：Output 空 Publisher Trust fail-closed）
+
+- OUT-01-A01-P44在Hosted PG18验证通过，独立摘要 `empty_trust_output_failure=PASS_SCOPE_LIMITED`：产品包内signer manifest key数0；真实Plugin capability repository返回missing；Output Create拒绝、六类Output写入保持不变、source projection调用0、plugin execution=0。
+- 同run后端/wheel、前端/build、父包、A17/P25/A34/A35/P24/P39/P40/A50通过。唯一workflow失败为SUR-07-A08 initdb 3221225781、无业务markers；按CR-EXEC-039停止TEMP/TMP假设。
+- 只覆盖空Operation registry与空keyring负路径；不代表真实Publisher/插件信任、文件生成、Win11/Pilot/Gate/Release。无客户数据及产品/API/Schema变更。详见CR-EXEC-043与P44结果文档。
+- 下一项P45检查真实PlanVersion snapshot重建在迁移后PG18中的最小可验方式。
+
 ## Unreleased · 2026-11-07（CR-EXEC-042：Output 生产组合信任边界检查）
 
 - OUT-01-A01-P43源码检查以PASS_WITH_LIMITATION完成：默认Login/只读组合不开放Output Create，显式Platform Write组合才挂写路由；真实组合接Plan/Requirement Owner、Output Resolver与Plugin capability repository。
