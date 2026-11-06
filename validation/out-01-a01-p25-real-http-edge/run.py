@@ -459,6 +459,8 @@ async def main() -> int:
     runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
     if runner_temp.drive.upper() != "D:" or not str(runner_temp).isascii():
         raise ValueError("P25 requires an ASCII D-drive GitHub runner temp")
+    if not args.run_id.isascii() or not args.run_id.isdigit():
+        raise ValueError("P25 run id must be an ASCII numeric GitHub run id")
     for path in (args.dist, args.sidecar, args.sidecar_sha, args.parent_smoke_summary):
         if not path.resolve(strict=True).is_relative_to(runner_temp):
             raise ValueError("P25 input escaped RUNNER_TEMP")
@@ -505,9 +507,13 @@ async def main() -> int:
         pg_runtime_layout = "VERIFIED_PARENT_PACKAGE"
         binary = pg_root / "bin"
         pg_port = free_port()
-        pg_run = Path(tempfile.mkdtemp(prefix="plm-out-p25-pg-", dir=runner_temp))
-        if not pg_run.resolve(strict=True).is_relative_to(runner_temp) or not str(pg_run).isascii():
-            raise ValueError("P25 PostgreSQL data directory escaped the D-drive runner temp")
+        pg_run = parent_root / ("p25-real-pg-" + args.run_id)
+        if pg_run.exists() or pg_run.is_symlink():
+            raise ValueError("P25 PostgreSQL work directory already exists")
+        pg_run.mkdir()
+        if (not pg_run.resolve(strict=True).is_relative_to(parent_root)
+                or not str(pg_run).isascii()):
+            raise ValueError("P25 PostgreSQL data directory escaped the verified parent package root")
         pg_data = pg_run / "data"
         pg_log = pg_run / "postgresql.log"
         pg_child_env, pg_path_filter_report = postgres_child_environment()
@@ -572,6 +578,7 @@ async def main() -> int:
             "wbs": "OUT-01-A01-P25", "status": "PASS_SCOPE_LIMITED",
             "runner_os": "GitHub hosted Windows Server 2025", "runner_drive": "D:",
             "postgres_runtime_layout": pg_runtime_layout,
+            "postgres_data_layout": "INSIDE_VERIFIED_PARENT_PACKAGE",
             "postgres_payload_matches_sidecar": True,
             "browser": "Microsoft Edge headless", "postgresql_version": version,
             "pgvector_version": vector, "real_http_status": 422,
@@ -604,6 +611,7 @@ async def main() -> int:
             "database_files_included": False,
             "pg_child_path_filter": pg_path_filter_report,
             "postgres_runtime_layout": pg_runtime_layout,
+            "postgres_data_layout": "INSIDE_VERIFIED_PARENT_PACKAGE",
         }
         if pg_root is not None:
             try:
@@ -673,10 +681,17 @@ async def main() -> int:
                                        timeout=20, check=False)
             if state.returncode == 0:
                 raise RuntimeError("P25 PostgreSQL remains running; its D-drive data is preserved")
-            if state.returncode != 3:
-                raise RuntimeError("P25 could not confirm PostgreSQL stopped; its D-drive data is preserved")
-            if pg_run.resolve(strict=True).parent != runner_temp or not pg_run.name.startswith("plm-out-p25-pg-"):
+            resolved_pg_run = pg_run.resolve(strict=True)
+            expected_pg_run = parent_root / ("p25-real-pg-" + args.run_id)
+            if (pg_run.is_symlink() or resolved_pg_run != expected_pg_run
+                    or resolved_pg_run.parent != parent_root
+                    or pg_run.name != "p25-real-pg-" + args.run_id):
                 raise RuntimeError("P25 cleanup refused an unowned PostgreSQL path")
+            if state.returncode == 4:
+                if pg_data.exists() or pg_data.is_symlink() or any(pg_run.iterdir()):
+                    raise RuntimeError("P25 refused cleanup after an incomplete database initialization")
+            elif state.returncode != 3:
+                raise RuntimeError("P25 could not confirm PostgreSQL stopped; its D-drive data is preserved")
             shutil.rmtree(pg_run)
         if work.exists():
             if not work.resolve(strict=True).is_relative_to(runner_temp) or not work.name.startswith("plm-out-p25-"):

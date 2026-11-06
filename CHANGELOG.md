@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25完整包内data目录与未初始化目录清理修正候选，Hosted复验待跑）
+
+- run [42170525215](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42170525215)已证明完整包PG初始化成功，但真实Harness在其外Runner Temp目录创建data失败。P25合成PG工作目录现迁入同run已验证父包根；状态4仅在数据目录不存在且精确自有目录为空时进行安全清理，保留主initdb错误。无业务代码改动，P25仍BLOCKED_DIAGNOSTIC。
+
 ## Unreleased · 2026-11-06（P25完整根执行已越过DLL启动阻断，合成data目录权限问题待Hosted复验）
 
 - Hosted run [42170525215](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42170525215)：父包完整根复用、P25 initdb诊断、sidecar哈希匹配及D盘根清理通过。真实P25 initdb能启动，但无法在完整父包根外的RUNNER_TEMP子目录建data（Permission denied）；无PG数据库、HTTP或Edge启动。14/15 jobs成功，P25失败。

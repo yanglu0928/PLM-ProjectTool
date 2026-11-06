@@ -29,3 +29,10 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - 证据支持优先把P25本次合成PG工作目录改为已验证父包根的直系子目录，使目录ACL继承与成功P25 profile所在完整根一致；不把permission denied进一步推断成产品缺陷。工作目录仅D盘/同run临时父包，具名为 p25-real-pg-<run-id>，由Harness在确认停止/未创建data后清理，workflow always cleanup父根兜底。
 - 单独修复Harness终结处理：pg_ctl返回4只有在pg_data确实不存在、pg_run确属当前保留父包根的精确直系子目录且无reparse点时，才允许移除空测试目录并让原始initdb异常向上报告；其他非3/运行态仍失败关闭。不得将状态4写成数据库已停止。
 - 范围保持不变：没有产品代码、API、DB、迁移或Publisher trust变化；保留run 421705为失败证据。Hosted独立复验后才可能关闭P25；成功上限仍PASS_SCOPE_LIMITED。用户本机/C盘不运行代码。
+
+
+## 目录权限调整实现候选（2026-11-06）
+
+- P25 Harness现将唯一的合成PostgreSQL工作目录放入同run、已验证完整父包根下的 p25-real-pg-<run-id>；该父包根内此前已由相同P25 initdb profile验证可建数据目录。PG runtime继续使用逐文件匹配sidecar的 payload/pgsql。没有改initdb flags、PATH过滤或HTTP流程。
+- finally逻辑允许pg_ctl status=4仅在data目录缺失、目录未变成reparse点、pg_run为根内精确命名直系子目录且该目录无其他内容时清理；否则仍保留并失败关闭。该分支只清理测试夹具目录，不把initdb失败变为通过。
+- 代码候选已同步到功能分支，尚未Hosted验收；P25仍BLOCKED_DIAGNOSTIC。

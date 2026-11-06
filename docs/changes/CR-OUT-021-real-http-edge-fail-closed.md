@@ -268,3 +268,10 @@ run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 
 - 风险/回滚：临时数据库位于D盘父包根，删除父包根将一并销毁；Harness先验证服务停止且路径严格受限，always cleanup仅删除本次根。回滚恢复RUNNER_TEMP目录和原状态处理。没有生产数据/客户数据。
 - 结论：PASS_WITH_LIMITATION，授权在CR-OUT-021下实施这一目录/cleanup协同修正；不改业务代码/Schema/API/信任，P25保持BLOCKED_DIAGNOSTIC。
+
+
+## P25目录权限失败的最小修正候选（实施记录，2026-11-06）
+
+Harness把本次合成PG run目录改为同run已验证父包提取根的精确直系子目录 p25-real-pg-<run-id>，避免使用外部RUNNER_TEMP随机子目录；PG程序仍从sidecar Hash已逐文件匹配的父包 payload/pgsql 运行。P25 initdb命令、PATH过滤、HTTP及Edge合同不变。
+
+finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point、解析后恰为当前parent_root的精确命名直系子目录且目录无其他内容时，删除该尚未初始化夹具并让initdb主异常继续传播。状态4不记作PG成功/停止；3仍是已停止，0先按原流程尝试stop，其余状态继续拒绝清理。workflow always清理当前D盘父包根兜底。实现与Hosted复验待定，P25仍BLOCKED_DIAGNOSTIC。
