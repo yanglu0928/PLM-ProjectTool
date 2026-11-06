@@ -1,7 +1,7 @@
 # CR-OUT-033：OutputArtifact到Document内容流的受保护HTTP纵向验收
 
 - 日期：2026-11-06
-- 状态：P38实现候选已提交；Hosted PG18/HTTP验收待完成
+- 状态：P38 PASS_SCOPE_LIMITED（Hosted run 42139905574）；下一项 P39 Hosted Edge 文件保存验收
 - WBS：OUT-01-A01-P38
 - 来源：P37已验证前端下载入口，但Hosted视图测试使用mock；P36验证PG Repository固定引用，没有证明两者经同一HTTP组合实际返回文档字节。
 - 基线：冻结API Contract V1、OUT-02和Document下载合同；CR-OUT-032；不改API/Schema/Migration/default composition/生产trust。
@@ -41,3 +41,12 @@ Hosted父包PG18 job的受控最小依赖明确为Alembic、SQLAlchemy、psycopg
 ## P38第二轮Hosted响应Envelope测试期望偏差（run 42138062500，修正前记录）
 
 诊断版 verifier 将Artifact响应的固定字段检查拆为布尔项后，PG18 Hosted结果为 content_url/project/request/document/version/hash/size各布尔均false，而存储定位符隐藏和正文隐藏均true。复核真实P36 HTTP adapter确认它依标准封套返回 {data, trace_id}，并非字段平铺。根因是新增验证器未解包data，属于测试fixture/期望偏差；无证据表明产品API或权限有错。P38未执行成功流/跨项目下载。修复限于 verifier读取并验证标准data envelope，随后重跑Hosted。
+
+
+## P38 Hosted验收结果（run 42139905574）
+
+- Hosted Windows Server 2025 run [42139905574](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42139905574)，15 jobs中14成功；前端205 suites/2,098 tests/typecheck/build、后端4,087 tests/wheel、clean parent PostgreSQL 18/pgvector smoke及A17/A34/A35/P24/A50成功。
+- 父包PG18 verifier marker：授权Artifact引用HTTP、Document受保护流字节/hash/size/MIME、未知及跨项目引用隐藏、跨项目Document内容隐藏、损坏文件失败关闭均PASS；storage locator未披露，客户数据false、外部调用0、正式trust未使用、临时文件仅Runner目录。
+- 独立P25 job失败：initdb.exe在初始化前以0xC0000135退出且无stdout/stderr，数据目录不存在；Edge/真实HTTP步骤未启动。全workflow非全绿，P25继续BLOCKED_DIAGNOSTIC。
+- 结论严格限定为Hosted PG18上的真实HTTP route/Repository/Storage组合验收。ASGI原生scope调用未打开loopback TCP，也没有浏览器保存/正式Platform trust/Windows 11设备证据；不代表Pilot、Gate 3或Release通过。无客户数据、Secret、生产事实或产品Schema/API变更。
+- 两项验证器偏差均已先记录并修复：首轮断言诊断不足；第二轮未拆开标准 {data, trace_id} response envelope。修复仅限P38验收器，最终固定封套校验和内容流验收通过。

@@ -1,7 +1,7 @@
 # OUT-01-A01-P38 编码前检查：OutputArtifact至Document内容流的HTTP纵向验收
 
 - 日期：2026-11-06
-- 状态：PASS_WITH_LIMITATION（仅编码前检查）
+- 状态：PASS_SCOPE_LIMITED（编码前检查与Hosted PG18/HTTP验收完成）
 - Change Request：CR-OUT-033
 - 前置：P36与P37均 PASS_SCOPE_LIMITED；结果见 docs/progress/out-01-a01-p37-controlled-download-result.md。
 
@@ -42,3 +42,12 @@
 ## Hosted父包依赖核对偏差（修复前记录）
 
 cloud-sandbox-validation.yml中父包PG18 smoke只安装Alembic、SQLAlchemy、psycopg、pgvector、FastAPI与cryptography；TestClient的httpx依赖未在此最小清单中保证。已先按CR-OUT-033记录，避免新增CI/产品依赖，改用ASGI原生scope发起相同路由处理的HTTP请求；仍验证真实HTTP响应与Document流，但不打开loopback TCP socket。
+
+
+## Hosted验收结果（run 42139905574）
+
+P38按CR-OUT-033以PASS_SCOPE_LIMITED完成，最终branch head为 c80e504e6635c8d3141323db67b60d415c8a8b6f。15 jobs中14成功，只有独立P25失败。父包PG18验证器运行真实Artifact引用和Document下载routes/Repositories/Storage：授权引用、准确内容字节及Hash/长度/MIME、跨项目/未知访问隐藏、损坏文件失败关闭全部通过。locator无响应泄露，客户数据false、外部调用0、正式trust未使用、临时文件限GitHub Runner临时目录。
+
+P25在真正HTTP/Edge执行前的PostgreSQL初始化阶段由initdb.exe返回Windows退出码0xC0000135，stdout/stderr为空、data目录未建立；同run clean parent PG18 smoke成功，故仍是P25独立Windows loader诊断，不推翻P38证据，也不能记作P25通过。
+
+本项未打开loopback TCP、未在浏览器保存文件、未使用正式trust、未在Windows 11实机运行；这些缺项转由P39 Hosted Edge契约与后续正式环境验收追踪。

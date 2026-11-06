@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-06（OUT-01-A01-P38受限通过，非发行版本）
+
+- P38按CR-OUT-033以PASS_SCOPE_LIMITED完成，Hosted run [42139905574](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42139905574)：父包PG18真实Artifact引用与Document下载路由/Repository/Storage验证授权引用、字节/Hash/长度/MIME、跨项目隐藏及损坏文件失败关闭；后端4,087 tests/wheel、前端205 suites/2,098 tests/typecheck/build、A17/A34/A35/P24/A50成功。
+- 全run 14/15 jobs成功，独立P25在initdb.exe初始化前以0xC0000135退出，真实HTTP/Edge未执行，workflow非全绿。P38未用生产trust、未打开TCP或浏览器下载，也不表示Win11/Pilot/Gate/Release通过。
+- 下一项P39先完成Hosted Edge输出历史下载保存验收的编码前检查，CR-OUT-034；仅合成浏览器HTTP合同，P38真实HTTP路由证据独立保留。
+
 ## Unreleased · 2026-11-06（P38第二轮PG18响应封套测试偏差，非发行版本）
 
 - run [42138062500](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42138062500) 的PG18 ASGI verifier把P36标准 {data, trace_id} response envelope误按顶层字段读取；字段布尔检查失败，但存储定位符与正文隐藏检查通过。产品端点按标准封套工作，P38验证器未解封数据，下载流验收未执行。已先记CR-OUT-033，修复验证器解包后重跑。
