@@ -12,3 +12,17 @@
 - 风险/回滚：额外执行一次已通过的临时父包 smoke，增加Hosted耗时；不改变父包归档或业务状态。回滚仅移除该job步骤及对应追踪文档。
 - Secret检查：新增文本仅含仓库路径、公开run URL、固定helper参数名和安全结论；不含密钥、账户凭证、客户数据或运行时原始环境值。
 - 决定：PASS_WITH_LIMITATION，可实施该单变量Hosted job差分。该步骤诊断PG装载/执行能力，不替代P25真实HTTP/Edge验收，Gate、Pilot和Release状态不变。
+
+
+## Hosted结果与重新编码前记录（run 42159992981）
+
+P25同一job父包smoke已成功，但smoke从父包候选原始PG路径、原始PATH启动，并使用其既有参数；P25精确对照脚本从同run父包解包PG子集，移除Node PATH后initdb失败。父包/sidecar 1,627项内容完全一致。二进制路径、用户/参数及PATH条件没有全匹配，不能把现象定为Node PATH根因。
+
+### 下一项编码前检查
+
+- 单一问题：Node目录过滤是否为P25 initdb失败的因果因素？
+- 最小实验：同一P25 job、同一父包PG payload解包目录和同一 `initdb.exe`，使用完全相同的P25参数，分两个新的D盘数据目录分别执行原始PATH与删除Node目录后的PATH。只报告PATH过滤布尔值/计数、退出码、stdout/stderr字节数、PG_VERSION是否产生；不得输出PATH、环境变量值、错误原文或数据库内容。
+- 判定：仅过滤PATH成功才支持该因素；结果相同则排除PATH过滤充分解释并转查二进制装载位置差异。P25仍须真实HTTP/Edge通过才算验收。
+- 风险、回滚：只改Hosted比较器/摘要；无API/Schema/产品代码变化。仅合成临时库，D盘RUNNER_TEMP直接子目录；不开服务、不做业务写入、不调用外部API或插件。本机不运行代码；失败临时目录留在一次性Hosted runner。
+- Secret检查：不打印任意环境变量值，不新增密钥/客户数据。
+- 决定：PASS_WITH_LIMITATION，可实施此Hosted单变量双臂探针；P25仍BLOCKED_DIAGNOSTIC。

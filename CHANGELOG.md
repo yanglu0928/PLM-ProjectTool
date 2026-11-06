@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25同作业父包PG smoke通过，真实HTTP/Edge仍阻断）
+
+- Hosted run [42159992981](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42159992981)：同一P25 job中父包PG18完整烟测成功（PG18.6/pgvector 0.8.6、D盘合成临时库）；1,627个PG payload hash与sidecar相同。过滤Node PATH后的父包initdb对照及P25 initdb仍返回0xC0000135、未创建数据库，真实HTTP/Edge未启动。P25仍BLOCKED_DIAGNOSTIC，整体workflow failure。按CR-OUT-021编码前检查，下一项只在相同解包二进制和参数下比较过滤/未过滤PATH。全程仅Hosted D盘，无客户数据/外部调用/本机C盘执行。
+
 ## Unreleased · 2026-11-06（P25 同一 Hosted job PG18 smoke差分候选，待复验）
 
 - 按CR-OUT-021/P25编码前检查，仅修改P25 Hosted workflow：在既有initdb差分前，对同run父包在相同Windows Server 2025 job、D盘Runner Temp中运行已存在的parent-package PG smoke helper，保存受限摘要；失败即停止，不进入真实HTTP/Edge。尚无结果，P25仍BLOCKED_DIAGNOSTIC。没有本机/C盘代码执行、客户数据、秘密、外部调用或产品API/Schema改变。
