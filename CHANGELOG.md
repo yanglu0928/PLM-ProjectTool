@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（OUT-01-A01-P40编码前检查）
+- 已核实P39 Hosted Edge保存验收为PASS_SCOPE_LIMITED（run 42156574221）；最终文档tip全链run 42224244339 success。P38服务端真实PG18/HTTP与P39浏览器下载仍是分层验收，不能声称同一实时服务端到浏览器端到端。
+- 按CR-OUT-035完成P40编码前检查：新增Hosted-only实时FastAPI loopback + PG18/Storage + Edge下载组合验收；仅合成数据、无正式trust/客户数据/插件执行。不改产品API、Schema或默认挂载。尚未实现与验收，Pilot/Gate/Release保持NOT_READY。
+
 ## Unreleased · 2026-11-06（最终文档tip Hosted重跑全绿）
 - run [42220874670](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42220874670) attempt 2：仅重跑A17后成功；Windows临时lockfile EBUSY未复现，首次失败保留。全链success；P25、A17、A34/A35、后端/前端/PG/父包及P24/P39/A50通过。仅Hosted合成验证，不代表真实trust、Win11本轮实机、Pilot/Gate/正式Release通过。
 
