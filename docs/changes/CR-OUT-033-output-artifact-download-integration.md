@@ -36,3 +36,8 @@ Hosted父包PG18 job的受控最小依赖明确为Alembic、SQLAlchemy、psycopg
 ## P38 首轮Hosted固定引用HTTP联合断言失败（run 42136117411，修正前记录）
 
 后端、前端和父包组装通过；父包PG18实际运行P33/P36 verifier后，新增ASGI HTTP验证器在 Artifact 引用响应字段/内容未泄露的复合断言处失败。当前日志没有细分是哪项布尔条件，故没有到达 Document 下载字节、Hash、损坏文件验收；P38不通过。此时不能归类为产品缺陷或通过。修正计划：只把固定引用及泄露检查拆成各个布尔证据，在AssertionError中输出布尔名，不输出正文/路径/密钥；重跑后依据具体结果再判断是否需要产品改动。
+
+
+## P38第二轮Hosted响应Envelope测试期望偏差（run 42138062500，修正前记录）
+
+诊断版 verifier 将Artifact响应的固定字段检查拆为布尔项后，PG18 Hosted结果为 content_url/project/request/document/version/hash/size各布尔均false，而存储定位符隐藏和正文隐藏均true。复核真实P36 HTTP adapter确认它依标准封套返回 {data, trace_id}，并非字段平铺。根因是新增验证器未解包data，属于测试fixture/期望偏差；无证据表明产品API或权限有错。P38未执行成功流/跨项目下载。修复限于 verifier读取并验证标准data envelope，随后重跑Hosted。

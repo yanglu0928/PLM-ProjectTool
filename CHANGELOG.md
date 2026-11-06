@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P38第二轮PG18响应封套测试偏差，非发行版本）
+
+- run [42138062500](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42138062500) 的PG18 ASGI verifier把P36标准 {data, trace_id} response envelope误按顶层字段读取；字段布尔检查失败，但存储定位符与正文隐藏检查通过。产品端点按标准封套工作，P38验证器未解封数据，下载流验收未执行。已先记CR-OUT-033，修复验证器解包后重跑。
+
 ## Unreleased · 2026-11-06（P38首轮PG18引用HTTP断言失败，非发行版本）
 
 - Hosted run [42136117411](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42136117411)：后端4,087 tests/wheel、前端205 suites/2,098 tests/typecheck/build及父包组装通过；PG18新增ASGI HTTP verifier在Artifact固定引用字段/不泄露联合断言处失败，未执行文件流下载断言，P38未通过。已先记CR-OUT-033，将细分安全布尔项后重跑。整体流程还含独立P25失败。
