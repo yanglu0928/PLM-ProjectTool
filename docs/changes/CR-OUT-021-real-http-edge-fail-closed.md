@@ -357,3 +357,10 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - 现有错误分类无法区分共通Node→FastAPI连接故障与仅该POST构造错误。
 
 **下一步实施前决策：** 增加Hosted Harness-only Node连通性探针，在浏览器请求前GET同一localhost FastAPI的/openapi.json，只记录HTTP状态/固定MIME布尔或固定异常类别，丢弃/取消响应正文，不记录Spec、环境或异常原文。探针不计业务POST，也不改变生产路由。若探针失败，修正Node/runner本地连接参数；若成功，再审查POST请求封装。业务验收仍要求真实Output POST/422/VALIDATION_FAILED、无回执重试和DB不变。
+
+
+## P25 OpenAPI只读连通性探针候选已实施，待Hosted验证（2026-11-06）
+
+- Node Harness在Edge启动前对同run本机FastAPI GET /openapi.json；仅记录状态码、是否JSON MIME与固定异常类别；立即取消响应体，不读取或记录OpenAPI正文。
+- Python将200+JSON MIME列为必要诊断前置，并在失败摘要中仅保留上述受限字段。实际Output POST严格要求真实upstream 422、VALIDATION_FAILED、无成功回执/自动重试及DB快照不变。此探针不计入业务POST，不更改产品服务/API。
+- 代码与文件已同步PR #61，Hosted复验待跑；P25仍未通过。
