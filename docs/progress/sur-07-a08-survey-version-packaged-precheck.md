@@ -1,6 +1,6 @@
 # SUR-07-A08：固定候选调研问题版本包内验收编码前检查
 
-日期：2026-11-07；状态：编码前检查完成；未执行本次 Hosted 试验。
+日期：2026-11-07；状态：首次 Hosted 运行失败，待安全诊断后复验。
 
 ## WBS 与基线
 
@@ -23,3 +23,14 @@
 |数据边界|只用新建一次性 Hosted D:\ temp、合成用户/项目/文档/交接/调查内容；不外发客户数据、不调用外部AI、不执行插件。|
 
 编码前结论：PASS_WITH_LIMITATION。持续授权允许在现有 scope 内将 verifier 接入 Hosted workflow；无须等待人工确认。实施前先提交本检查与 STATUS/CHANGELOG，再接线并由 GitHub Hosted Windows runner 验证。
+
+
+## Hosted 首轮结果（2026-11-07）
+
+Hosted run [42254166208](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42254166208) 中，A08 job 已完成候选获取、D盘边界/Node/Python语法检查并启动 packaged verifier；验收器以 ValueError 退出，退出前没有输出任何 A08 成功标记。该 workflow 其余 jobs（含 A17、P40、P25、A34、前后端/PG18/父包）均成功；整体因 A08 失败标为 failure。
+
+首次失败摘要按预设策略仅报告 exit=1、无标记、ValueError；owned 原始输出留在 D盘临时根并随清理移除，没有上传。当前证据不能判断 ValueError 来自候选/夹具、临时根、Caddy/API启动还是业务断言；不构成产品缺陷定位，也不构成 SUR-07-A08 通过。
+
+## 下一步单变量调整
+
+按 CR-EXEC-002/测试约束，仅增强失败摘要：从已捕获 traceback 提取异常类、源码 basename:line 以及最后通过的固定阶段标记；不提取消息正文、路径、请求/响应正文、凭据或原始stderr。保留 D盘清理和标记验收，再由 Hosted runner重跑。根因仍须来自新证据，不能凭猜测更改产品代码。

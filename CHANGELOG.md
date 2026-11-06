@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（SUR-07-A08 首轮 Hosted 包内验收待诊断）
+- run [42254166208](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42254166208)：本轮除A08外所有jobs成功。A08同run非发行候选与D盘语法前置通过，既有包内验收器 exit=1、无A08 PASS标记，安全摘要仅有ValueError。原始临时日志未上传并已按owner边界清理，当前根因未知；不据此修改产品或判A08通过。
+- 下一步按编码前记录只增加脱敏traceback basename:line/最后固定阶段标记，再Hosted重跑。
+
 ## Unreleased · 2026-11-07（纠正 Pilot 关键路径 Next WBS）
 - 状态复核确认 SUR-07-A07 页面已在 2026-10-25 完成；上一版 Next 指针已纠正为当前未验收的 SUR-07-A08。现有 Edge/HTTPS/PG verifier 将接入同 run 当前非发行候选的独立 Hosted job。P40/A17 最新 run 全成功，但正式 Publisher/License trust、DB 凭据、服务 ACL/TLS 仍阻断 Pilot。
 
