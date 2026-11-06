@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（CR-EXEC-040：Output PlanVersion 固定来源）
+
+- 新增 Plan Owner 授权的精确 PlanVersion Output 投影；在 Windows Output composition 中按 Owner dispatch，同时保留现有 Requirement 来源。
+- 追加不可变 PlanVersion DOCX 模板和策略版本，严格限制 APPROVED 与五类快照字段；没有数据库 Migration 或 API Contract 变化。插件签名信任保持 fail-closed。
+- 定向测试已添加，Hosted 复验待完成；不代表 Pilot/Gate/Release 或 Windows 11 实机验收。
+
 ## Unreleased · 2026-11-07（CR-EXEC-039：A08 PostgreSQL 临时环境差分）
 
 - Hosted run [42282788499](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42282788499)：目标布局两条只读版本探针均返回 0，但完整 initdb 仍以 3221225781/0xC0000135 退出。静态可执行装载不是足够解释，A08未通过。
