@@ -71,3 +71,14 @@ run [42263308077](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/422
 run [42266017538](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42266017538) 中，A08同run候选SHA/非发行校验、D盘边界、语法检查通过；CR-EXEC-033所加 staging preparation 成功把同run候选安全提取至受限目录，原 smoke 继续执行。随后在 smoke_current_app_packaged_https.py:226 调用 smoke_packaged_platform_write_https.py:330 时，PG18 helper _migration_temp_root 在创建临时PG目录前拒绝PLM_P51_TEMP_ROOT。受限帧：verify.py:301 → smoke_current_app_packaged_https.py:226 → smoke_packaged_platform_write_https.py:330 → smoke_packaged_pg18_migration.py:109。
 
 只读源码确认其固定布局须为 RUNNER_TEMP/plm-p51-a27-<唯一名>/PLMToolTemp，而A08当前根 plm-sur-a08-<run>/PLMToolTemp不合约。PG18与Edge服务尚未开始，非产品错误证据，A08仍未通过。CR-EXEC-034仅改A08 owned runRoot前缀；不放宽辅助函数安全约束。
+
+
+## Hosted 第六轮结果（2026-11-07）
+
+run [42269084207](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42269084207) 的A08通过非发行候选校验、D盘边界、语法检查、安全staging生成和CR-EXEC-034 PG temp root所有权检查，已进入 packaged platform-write PG准备。随后initdb.exe失败，调用帧为 verify.py:301 → smoke_current_app_packaged_https.py:226 → smoke_packaged_platform_write_https.py:357 → smoke_packaged_pg18_migration.py:66。helper在RuntimeError消息中包含命令名、数字退出码、stdout/stderr尾部，但A08受限包装只输出类型/帧/固定stage，未输出异常消息；原始输出未上传且owned根清理。
+
+本证据能确认失败命令为PG初始化子进程，但具体exit code未知，不能判断是包内DLL/路径/权限/其他环境问题，不能判产品缺陷或A08通过。P39本轮再次成功；workflow整体其余jobs将单独查看。
+
+## 下一步（CR-EXEC-035）
+
+只从helper异常文本中按固定正则提取命令basename，并只允许initdb.exe/pg_ctl.exe/psql.exe/powershell.exe等已知PG命令；提取有符号十进制exit code。任何stdout/stderr/message、路径或环境值都不写出。保留D盘边界、cleanup及原有失败门槛，Hosted复验后再据证据选择后续单点。

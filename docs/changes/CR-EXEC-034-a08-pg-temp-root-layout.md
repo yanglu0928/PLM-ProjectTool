@@ -18,3 +18,8 @@ Hosted run [42266017538](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## 风险、回滚与验证
 
 风险仅为路径契约对齐；helper继续执行原有强边界验证。回滚为恢复A08 Workflow中的旧runRoot名和对应叶名。不触碰其他任务的目录。Hosted Windows Server 2025 D盘完整复验需通过staging、isolated PG18、Edge/HTTPS、SurveyVersion/A12断言与License拒绝标记，并清理精确owned根；原始日志不上传，合成数据，无客户外发。
+
+
+## 后续托管证据（2026-11-07）
+
+run 42269084207确认前置 staging 修正生效，且A08运行根满足 _migration_temp_root 后，initdb.exe仍以非零码失败。当前安全摘要仅含RuntimeError和帧 verify.py:301、smoke_current_app_packaged_https.py:226、smoke_packaged_platform_write_https.py:357、smoke_packaged_pg18_migration.py:66。helper的通用异常对象包含`command basename, exit code, captured output`结构；实际A08包装器没有暴露消息体，故需要CR-EXEC-035受限提取命令basename/exit code。此失败尚未证明helper输出内容或具体PG原因。

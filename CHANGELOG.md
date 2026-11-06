@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-035：A08 PG 子进程有界退出诊断）
+- run [42269084207](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42269084207) 中A08已通过staging及PLM_P51_TEMP_ROOT所有权验证，进入 packaged platform-write 的 PG 初始化；initdb.exe子进程在smoke_packaged_pg18_migration.py:_run中失败。调用帧verify.py:301→smoke_current_app_packaged_https.py:226→smoke_packaged_platform_write_https.py:357→smoke_packaged_pg18_migration.py:66。
+- helper异常文本带捕获输出，但A08包装器未打印原文，保持安全；下一步只提取受控命令basename白名单与整数退出码，丢弃stdout/stderr和异常消息。测试设施内诊断，产品代码不变；Hosted D盘复验待完成。
+
 ## Unreleased · 2026-11-07（CR-EXEC-034：A08 临时根满足既有 PG18 所有权边界）
 - run [42266017538](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42266017538)：A08复用已校验候选 staging 后进入 P42 平台组合预检，失败于 smoke_packaged_pg18_migration.py:_migration_temp_root。既有 helper 限定 PLM_P51_TEMP_ROOT 必须位于 RUNNER_TEMP/plm-p51-a27-*/PLMToolTemp；A08自有根命名 plm-sur-a08-* 因此不匹配。异常发生在 PostgreSQL启动之前，非PG/产品失败结论。
 - 先登记偏差，下一步仅改 A08 运行根为兼容的 plm-p51-a27-a08-<run id>，保持精确根清理、staging、pristine/target及所有业务断言；由 Hosted D盘复验。
