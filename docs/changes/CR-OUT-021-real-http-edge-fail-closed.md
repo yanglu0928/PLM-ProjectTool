@@ -335,3 +335,11 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 
 - Node Harness现把error.name归类为TYPE_ERROR/ABORT_ERROR/ERROR/OTHER；cause.code只允许ECONNREFUSED、ECONNRESET、ETIMEDOUT、ENOTFOUND、EHOSTUNREACH、EPROTO、EAI_AGAIN及有限UND_ERR_*；其他为UNKNOWN。结合path class及status写入摘要，不记录异常文本。
 - 代理失败仍固定返回503 SYSTEM_UNAVAILABLE；真实成功合同不变。代码同步到PR #61，未Hosted验证，P25仍BLOCKED_DIAGNOSTIC。
+
+
+## Run 42182842169：底层异常未落入指纹白名单（2026-11-06）
+
+- Node API请求轨迹仍为Output Create POST→本地Node 503，无upstream status/error code；proxy error name归类OTHER，code归类UNKNOWN。Python先完成DB前后快照且目标计数相同；无成功回执/自动重试；P25失败。
+- 最新Hosted全链的后端/前端/PG sidecar/Windows父包及P24/P39/A50正常通过。其余 job 最终状态以Run记录为准。
+
+**下一步实施前决策：** 对Node代理捕获的error.message仅在进程内做固定关键词映射（F​ETCH_FAILED、CONNECTION_REFUSED、CONNECTION_RESET、TIMEOUT、DNS_FAILURE、SOCKET_ERROR、REQUEST_CONFIG、OTHER）；只写类别，不保留原始message、stack或原因对象。仍固定返回503，真实API成功验收保持单POST/422/VALIDATION_FAILED/无成功回执与DB不变。不得用输出文本或Message推断业务根因。
