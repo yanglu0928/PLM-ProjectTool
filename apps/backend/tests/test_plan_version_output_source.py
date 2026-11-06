@@ -8,6 +8,12 @@ import pytest
 from plm_assistant.entrypoints.output_fixed_source_adapter import (
     FixedOutputSourceAdapter,
 )
+from plm_assistant.modules.output.application.create_request import (
+    CreateOutputRequest, OutputRequestError,
+)
+from plm_assistant.modules.output.application.resolve_context import (
+    FixedSourceVersion, PluginOperationCapability, TrustedOutputContextResolver,
+)
 from plm_assistant.modules.output.infrastructure.builtin_policy_registry import (
     BUILTIN_PLAN_DOCX_POLICY_REF, BUILTIN_REQUIREMENT_DOCX_POLICY_REF,
     BuiltinOutputPolicyRegistry,
@@ -200,3 +206,91 @@ def test_builtin_plan_template_and_policy_are_appended_without_replacing_require
     assert old_policy is not None and "REQUIREMENT_VERSION" in old_policy.fields_by_source_kind
     assert new_policy is not None and tuple(new_policy.fields_by_source_kind) == ("PLAN_VERSION",)
     assert new_policy.max_sources == 1
+
+
+class _SourcePort:
+    def __init__(self, source):
+        self.source = source
+
+    def read_authorized_fixed_version(self, transaction, **kwargs):
+        return self.source
+
+
+class _PlanPolicy:
+    def get_policy(self, transaction, *, policy_ref):
+        return BuiltinOutputPolicyRegistry().get_policy(
+            transaction, policy_ref=policy_ref,
+        )
+
+
+class _PlanTemplate:
+    def get_immutable_version(self, transaction, *, template_version_ref):
+        return BuiltinOutputTemplateRegistry().get_immutable_version(
+            transaction, template_version_ref=template_version_ref,
+        )
+
+
+class _TrustedOperation:
+    def get_operation(self, transaction, *, operation_id):
+        return PluginOperationCapability(
+            operation_id=operation_id, output_types=("DOCX",),
+            enabled=True, trusted=True,
+        )
+
+
+def test_plan_output_resolver_projects_allowlisted_approved_snapshot_fields():
+    actor, project, version = _id(), _id(), _id()
+    source = FixedSourceVersion(
+        project_id=project, source_version_ref=version,
+        source_kind="PLAN_VERSION", review_state="APPROVED", authorized=True,
+        fields={
+            "version_no": 4, "wbs_items": [{"title": "synthetic"}],
+            "dependencies": [], "milestones": [], "exclusions": [],
+            "unapproved_internal_field": "must not enter context",
+        },
+    )
+    resolver = TrustedOutputContextResolver(
+        sources=_SourcePort(source), templates=_PlanTemplate(),
+        policies=_PlanPolicy(), operations=_TrustedOperation(),
+    )
+    command = CreateOutputRequest(
+        session_token=b"s" * 32, csrf_token=b"c" * 32,
+        trace_id=_id(), project_id=project, output_type="DOCX",
+        template_version_ref=BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID,
+        source_version_refs=(version,),
+        output_policy_ref=BUILTIN_PLAN_DOCX_POLICY_REF,
+        plugin_operation="word.generate",
+    )
+
+    resolved = resolver.resolve("tx", actor_id=actor, command=command)
+
+    fields = resolved.context_payload["sources"][0]["fields"]
+    assert fields == {
+        "version_no": 4, "wbs_items": [{"title": "synthetic"}],
+        "dependencies": [], "milestones": [], "exclusions": [],
+    }
+
+
+def test_plan_output_resolver_rejects_unapproved_plan_version():
+    actor, project, version = _id(), _id(), _id()
+    source = FixedSourceVersion(
+        project_id=project, source_version_ref=version,
+        source_kind="PLAN_VERSION", review_state="DRAFT", authorized=True,
+        fields={"version_no": 1, "wbs_items": [], "dependencies": [],
+                "milestones": [], "exclusions": []},
+    )
+    resolver = TrustedOutputContextResolver(
+        sources=_SourcePort(source), templates=_PlanTemplate(),
+        policies=_PlanPolicy(), operations=_TrustedOperation(),
+    )
+    command = CreateOutputRequest(
+        session_token=b"s" * 32, csrf_token=b"c" * 32,
+        trace_id=_id(), project_id=project, output_type="DOCX",
+        template_version_ref=BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID,
+        source_version_refs=(version,),
+        output_policy_ref=BUILTIN_PLAN_DOCX_POLICY_REF,
+        plugin_operation="word.generate",
+    )
+
+    with pytest.raises(OutputRequestError):
+        resolver.resolve("tx", actor_id=actor, command=command)
