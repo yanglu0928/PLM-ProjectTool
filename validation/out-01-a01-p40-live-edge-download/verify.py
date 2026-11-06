@@ -172,7 +172,7 @@ def verify_live_edge_download(engine, *, data: dict, storage_root: Path,
             listener.close()
         except OSError:
             pass
-        for path in (config_path, summary_path):
+        for path in (config_path,):
             if path.exists():
                 path.unlink()
         if download_dir.exists():
