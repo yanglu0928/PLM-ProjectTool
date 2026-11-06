@@ -18,3 +18,8 @@ Hosted run [42272810533](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## 验收和回滚
 
 GitHub Hosted Windows Server 2025 D盘完整流程；只用合成数据；仅输出探针return code、固定stage及既有安全字段。回滚只删除该 --version 探针。保留原A08 marker门槛、合成License和临时根清理；不在本机/C盘运行项目代码。
+
+
+## Hosted 探针结果（run 42276408517）
+
+A08 verifier新增加载探针在完整哈希提取后的stage执行 payload/pgsql/bin/initdb.exe --version。最终失败诊断的阶段为 PACKAGED_SMOKE_START（而探针失败会生成 STAGE_INITDB_PROBE_FAIL 并以独立RuntimeError退出），故探针成功。之后smoke target中的真实initdb完整初始化仍返回0xC0000135。该差分表明简单进程启动可用，失败在完整初始化阶段/目标布局环境；具体DLL未知。

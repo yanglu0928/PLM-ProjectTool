@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-037：A08 显式加入包内 PostgreSQL DLL 搜索目录）
+- run [42276408517](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42276408517) 中已验签候选staging的 initdb.exe --version 探针成功；后续smoke安装布局的完整initdb仍返回3221225781/0xC0000135。A08失败stage是PACKAGED_SMOKE_START，故只读探针已经通过。故障位于target layout完整初始化调用上下文；尚无具体DLL缺失证据。
+- 先登记后，仅在A08隔离验收进程PATH前置同run target内 runtime/pgsql/bin 和 runtime/pgsql/lib，使子进程能按嵌入式布局找到依赖。保留原始PG初始化、Edge和License门槛，不改产品/API/包。Hosted D盘重验。
+
 ## Unreleased · 2026-11-07（CR-EXEC-036：A08 initdb 装载状态隔离探针）
 - run [42272810533](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42272810533) 中A08的PG子进程诊断值为 initdb.exe / 3221225781（十六进制0xC0000135，Windows STATUS_DLL_NOT_FOUND），失败发生于目标布局执行 initdb；同期A17成功。原始stdout/stderr未记录，根因仍未知。
 - 先登记，再于候选包已通过完整性提取的stage中运行 initdb.exe --version。捕获并丢弃输出，只记录exit code/固定stage；该只读命令不创建数据库。按探针结果确认候选二进制装载还是安装布局差异，不预先归因产品。
