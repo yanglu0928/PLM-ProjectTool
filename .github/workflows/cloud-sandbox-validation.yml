@@ -509,8 +509,17 @@ jobs:
               $exceptionType = "unknown"
               $exceptionMatches = [regex]::Matches($raw, "\b[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception)\b")
               if ($exceptionMatches.Count -gt 0) { $exceptionType = $exceptionMatches[$exceptionMatches.Count - 1].Value }
+              $location = "unknown"
+              $traceMatches = [regex]::Matches($raw, '(?m)^\s*File "([^"]+)", line (\d+)')
+              if ($traceMatches.Count -gt 0) {
+                $frame = $traceMatches[$traceMatches.Count - 1]
+                $location = [System.IO.Path]::GetFileName($frame.Groups[1].Value) + ":" + $frame.Groups[2].Value
+              }
+              $stage = "none"
+              $stageMatches = [regex]::Matches($raw, '(?m)^\s*(SUR_[A-Z0-9_]+_(?:PASS|FAIL|BLOCKED))\b')
+              if ($stageMatches.Count -gt 0) { $stage = $stageMatches[$stageMatches.Count - 1].Groups[1].Value }
               $markerSummary = if ($seen.Count) { $seen -join "," } else { "none" }
-              Write-Output ("SUR-07-A08 safe diagnostic: exit=" + $verifyExitCode + "; markers=" + $markerSummary + "; exception=" + $exceptionType)
+              Write-Output ("SUR-07-A08 safe diagnostic: exit=" + $verifyExitCode + "; markers=" + $markerSummary + "; exception=" + $exceptionType + "; location=" + $location + "; last_stage=" + $stage)
               throw "SUR-07-A08 packaged SurveyVersion flow did not satisfy its required markers"
             }
             $summary = [ordered]@{
