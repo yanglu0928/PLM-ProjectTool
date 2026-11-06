@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P40 Python 验收器导入接线偏差）
+- run [42233843515](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42233843515)：前后端全量及P39通过，P40未执行路由/浏览器断言；Python无法导入使用错误连字符目录的新验证器。先记CR-OUT-035，下一步只将验收器移至underscore包目录、校正静态检查路径并删除旧路径副本后全Hosted复验。无生产代码变化，P40未通过。
+
 ## Unreleased · 2026-11-06（P40首轮Hosted Harness偏差）
 - run [42232610178](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42232610178) 前端全量/构建与P39 harness语法通过；Edge已完成有效下载和字节/hash检查，但 Harness 在跨项目负例诊断字段写入时引用未初始化的summary，P39回归未关闭、P40未形成结论。偏差已先记CR-OUT-035；后续仅把结果布尔值移入summary对象初始化，保留其他断言并全链Hosted复验。无产品代码/API/Schema改动。
 

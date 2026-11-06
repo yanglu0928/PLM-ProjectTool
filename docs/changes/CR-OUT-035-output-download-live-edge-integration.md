@@ -32,3 +32,9 @@ P38和P39分别通过了服务端持久层/内容流与浏览器下载保存，�
 
 - The full frontend tests/build and P39 harness syntax check succeeded. Real Edge then completed the valid row's Artifact GET, Document content GET and exact saved-file byte/hash assertions. The Harness subsequently threw `ReferenceError: Cannot access 'summary' before initialization` when adding a diagnostic flag before the summary object was declared; the cross-project negative assertion did not finish, so this run is a P39 regression and P40 is not accepted.
 - Evidence points to the new Harness summary assignment order only; no backend route or product code failure is indicated. Before changing code, record the minimal correction: move the two P40 summary booleans into the final summary object, leave the request/UI/data assertions unchanged, then rerun the Hosted workflow. No product/API/Schema/Trust changes.
+
+
+## P40 second Hosted attempt blocked before route execution (run 42233843515; fix not yet applied)
+
+- Backend full suite/wheel, frontend full suite/build, P39 Edge regression and parent assembly succeeded. The parent PG18 smoke reached P33 but Python failed importing the new P40 verifier: its directory used hyphens while the import path used underscores. Therefore P40's FastAPI/Edge verification function never executed; this is an acceptance harness wiring error, not a route verdict.
+- Before code changes, record the minimal fix: move the verifier to the repository's underscore package naming convention, align workflow syntax-check path/import, delete the unused hyphen-path copy, then rerun Hosted. No production code/API/Schema changes.
