@@ -197,17 +197,21 @@ def verify_output_artifact_download_http(engine, *, data: dict,
         f"/api/v1/projects/{project_id}/documents/{document_id}"
         f"/versions/{version_id}/content"
     )
-    if (reference.get("content_url") != expected_content_path
-            or reference.get("project_id") != str(project_id)
-            or reference.get("output_request_id") != str(request_id)
-            or reference.get("document_id") != str(document_id)
-            or reference.get("document_version_id") != str(version_id)
-            or reference.get("content_sha256") != data["content_hash"].hex()
-            or reference.get("size_bytes") != data["size"]
-            or data["locator"] in reference_response.text
-            or data["final_locator"] in reference_response.text
-            or data["content_bytes"].decode("ascii") in reference_response.text):
-        raise AssertionError("Artifact reference leaked path/body or differed from fixed facts")
+    reference_checks = {
+        "content_url": reference.get("content_url") == expected_content_path,
+        "project_id": reference.get("project_id") == str(project_id),
+        "output_request_id": reference.get("output_request_id") == str(request_id),
+        "document_id": reference.get("document_id") == str(document_id),
+        "document_version_id": reference.get("document_version_id") == str(version_id),
+        "content_sha256": reference.get("content_sha256") == data["content_hash"].hex(),
+        "size_bytes": reference.get("size_bytes") == data["size"],
+        "storage_locator_hidden": data["locator"] not in reference_response.text
+            and data["final_locator"] not in reference_response.text,
+        "content_body_hidden": data["content_bytes"].decode("ascii") not in reference_response.text,
+    }
+    if not all(reference_checks.values()):
+        raise AssertionError("Artifact reference check failed: "
+                             + json.dumps(reference_checks, sort_keys=True))
 
     hidden_project_path = f"/api/v1/projects/{uuid.uuid4()}/output-requests/{request_id}/artifact"
     hidden_project = get(hidden_project_path)
