@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P25 Node→FastAPI只读连通性探针候选）
+- 新增Hosted Harness本机FastAPI /openapi.json只读探针，只保留状态/MIME/异常类别并取消响应正文；不计入业务请求。Python强制验证后仍按真实POST/422/VALIDATION_FAILED/无回执重试/数据库不变决定结果。尚未Hosted验证。
+
 ## Unreleased · 2026-11-06（P25连通性前置探针待实施）
 - run [42184707119](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42184707119)：除P25外托管全链成功；P25 Node代理返回503且没有FastAPI上游状态，安全异常分类OTHER/UNKNOWN，DB快照相同、无成功回执。
 - CR-OUT-021下一步增加只读/openapi.json状态探针，丢弃正文，只辨别Node→FastAPI连通性与POST封装阶段；P25仍未通过。
