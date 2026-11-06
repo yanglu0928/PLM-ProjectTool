@@ -221,15 +221,22 @@ try{
  harnessStage="cross-project-mouse-click";await send("Input.dispatchMouseEvent",{type:"mouseMoved",x:badProbe.x,y:badProbe.y});
  await send("Input.dispatchMouseEvent",{type:"mousePressed",x:badProbe.x,y:badProbe.y,button:"left",clickCount:1});
  await send("Input.dispatchMouseEvent",{type:"mouseReleased",x:badProbe.x,y:badProbe.y,button:"left",clickCount:1});
- await waitFor("document.querySelector('[role=alert]')?.innerText.includes('暂时无法获取输出文件')","invalid cross-project reference");
+ if(backendOrigin){
+  await waitFor("Boolean(document.querySelector('[role=alert]')?.innerText.trim())","invalid cross-project reference");
+  const badReferencePath="/api/v1/projects/"+ids.project+"/output-requests/"+ids.badRequest+"/artifact";
+  assert.equal(reqs.find(x=>x.path===badReferencePath&&x.method==="GET")?.status,404,"live unknown OutputRequest must be hidden as 404");
+ }else{
+  await waitFor("document.querySelector('[role=alert]')?.innerText.includes('暂时无法获取输出文件')","invalid cross-project reference");
+ }
  const badContentPath="/api/v1/projects/"+ids.otherProject+"/documents/"+ids.badDocument+"/versions/"+ids.badVersion+"/content";
  assert.equal(reqs.filter(x=>x.path===badContentPath&&x.method==="GET").length,0);
- checks.push("cross-project reference fails before any content request or additional save");
+ checks.push("unauthorized reference fails before any content request or additional save");
+  summary.unknown_reference_failed_closed=Boolean(backendOrigin);
 
  assert.ok(reqs.every(x=>x.path.startsWith("/api/v1/")),"observed API requests stayed on synthetic same-origin server");
  const summary={wbs:backendOrigin?"OUT-01-A01-P40":"OUT-01-A01-P39",status:"PASS_SCOPE_LIMITED",browser:"Microsoft Edge headless",
-  backend_mode:backendOrigin?"live-fastapi-loopback":"synthetic-http-fixture",saved_file_matches_expected_bytes:true,
-  cross_project_failed_closed:true,
+  backend_mode:backendOrigin?"live-fastapi-loopback":"synthetic-http-fixture",saved_file_matches_expected_bytes:true,unknown_reference_http_404:Boolean(backendOrigin),
+  cross_project_failed_closed:!backendOrigin,
   runner_os:"GitHub hosted Windows Server 2025",runner_drive:"D:",synthetic_data:true,controlled_api:true,
   checks,api_requests:reqs.map(x=>({method:x.method,path:x.path,status:x.status})),
   saved_bytes:saved.length,saved_sha256:digest,customer_data:false,external_api_calls:0,
