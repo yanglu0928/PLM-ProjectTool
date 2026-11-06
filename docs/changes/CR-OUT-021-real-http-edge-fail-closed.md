@@ -407,3 +407,11 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - P25 在 GitHub hosted Windows Server 2025/D盘以同run包和PostgreSQL 18.6/pgvector 0.8.6运行；`/health/live` 200/JSON/UP；Edge到真实显式Windows Output Create API的唯一POST得到HTTP 422与`VALIDATION_FAILED`；UI分类为预期固定版本校验提示；POST数1，无成功/状态回执；Output/Job/Audit/Idempotency目标计数前后相同；D盘父包、临时数据库和浏览器资源清理成功。
 - 此结果关闭P25的真实HTTP失败关闭验收，范围为`PASS_SCOPE_LIMITED`。没有产生DOCX、执行插件或调用外部API；只使用合成账户/项目/需求，不含客户数据。默认Create路由仍不挂载、正式publisher/License信任未建立、Win11本轮实机未测；Pilot、Gate 3及正式Release仍NOT_READY。
 - 详情：`docs/progress/out-01-a01-p25-real-http-edge-result.md`。
+
+
+### 2026-11-06：文档tip全链复验的独立A17 EBUSY失败（重跑前记录）
+
+- run [42220874670](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42220874670) 由P25最终结果文档提交触发。P25真实HTTP/Edge、A34/A35、前后端/PG/父包及P24/P39/A50通过；A17失败，故不能把该全链run写为全绿。
+- A17日志表明其P51-A27旧多条目Edge检查先输出通过标记，清理时随后出现Windows `EBUSY`，无法unlink该验证器自有临时`lockfile`；A17复合任务因脚本返回非零失败。此证据不能证明产品行为失败，也尚不能断定为仅瞬时竞争。
+- 选择最小下一步：仅重跑失败A17 job，不改产品/Harness代码、不重建其他成功jobs。若重跑通过，记录为间歇性清理竞争且保留首次失败；若复现，再按其临时锁生命周期做独立CR-PLT/CR-P51处理。
+- 本失败不撤销run 42217889515的独立P25 PASS_SCOPE_LIMITED。仅GitHub Hosted环境，无本机/C盘运行、无客户数据、无外部调用。

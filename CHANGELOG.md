@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（最终文档tip A17清理竞争重跑前记录）
+- run [42220874670](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42220874670) 的P25和大多数jobs成功；A17旧多条目Edge验证清理临时lockfile时报Windows EBUSY，导致该job失败。按CR-OUT-021先记后只重跑失败A17 job，不变更成功的P25结论；若复现再记录并修复。
+
 ## Unreleased · 2026-11-06（OUT-01-A01-P25 PASS_SCOPE_LIMITED）
 - GitHub Hosted run [42217889515](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42217889515) 全16 jobs成功。P25在Windows Server 2025/D盘通过真实Edge→FastAPI Output Create单POST HTTP422/VALIDATION_FAILED、预期固定版本安全提示、无成功/状态回执、数据库目标快照不变及清理成功；健康探针200/JSON/UP。代理Harness作用域错误已修复。
 - 仅合成数据；无DOCX、插件或外部调用。该项不代表Windows 11本轮实机、正式trust、Pilot、Gate 3或正式Release通过。详见docs/progress/out-01-a01-p25-real-http-edge-result.md。
