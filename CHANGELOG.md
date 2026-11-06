@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P39第二轮Edge点击未发出引用请求，非通过）
+
+- run [42145821433](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42145821433)：浏览器页面/合成登录/历史加载通过，CDP证明成功行下载按钮存在且未禁用；鼠标事件后前端显示通用错误，但Node server只观测到login及history请求，未观测Artifact GET、Document GET或下载事件。P39不通过、产品后端未被调用。按CR-OUT-034记录后，将增加不含认证头/正文的CDP Network/Runtime诊断，定位客户端请求前失败原因。
+
 ## Unreleased · 2026-11-06（P39首轮无Artifact引用请求；Hosted点击诊断候选）
 
 - run [42144778960](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42144778960) 仅发生合成登录及输出历史查询，未有Artifact引用GET/Document内容GET/Edge下载事件。已按CR-OUT-034记录，改以等待按钮可用及CDP真实鼠标事件触发，并在下一次Hosted摘要中输出安全的按钮/请求路径诊断；产品代码未改，P39仍待复验。

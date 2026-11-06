@@ -50,3 +50,8 @@ Hosted run [42144778960](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## P39第二轮诊断候选
 
 根据run 42144778960的实际请求摘要（仅login和output-requests GET），P39 harness改为先等待成功行按钮真实可用，再通过CDP鼠标移动/按下/释放触发浏览器事件；增加有限等待和安全的按钮状态/API路径诊断，以区分未触发与HTTP/保存失败。跨项目负例同样采用鼠标事件。尚待Hosted运行，未形成P39通过证据。
+
+
+## P39第二轮Hosted鼠标点击仍未发出引用请求（run 42145821433，未通过）
+
+Hosted P39 node --check及provenance通过。Edge成功渲染含三行的输出历史，CDP探针确认目标SUCCEEDED行“下载文件”按钮存在且enabled=false? 运行证据明确enabled=false为否（disabled=false）；CDP鼠标事件后UI出现“暂时无法获取输出文件，请稍后重试。”，但Node合成服务器仍只记录login和history GET，没有Artifact引用GET、Document内容GET或下载事件。第二轮因此未通过，不能归因产品后端。下一修复先开启Chrome DevTools Protocol Network/Runtime诊断（仅记录API path/method、失败码和异常短文，不记录Cookie/Headers/body），定位请求是否在浏览器fetch之前被拒绝；仅在证据确认后改对应测试fixture/交互，不改生产逻辑。
