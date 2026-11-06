@@ -102,3 +102,10 @@ run 42149813781已确认点击触发的Artifact fetch归一拒绝类别为TypeEr
 ## P39第八轮Hosted对照支持Artifact fetch接收者绑定缺陷（run 42152467241，尚未修复）
 
 run [42152467241](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42152467241)中产品点击请求路径确认origin_matches=true、signal_present/valid=true、signal_aborted=false，credentials=same-origin、cache=no-store、redirect=error、Accept正确；原生fetch Promise仍为TypeError，未到达CDP/服务端。失败后分离执行的无signal与有效AbortSignal同源对照GET均返回200/application/json。源码对照发现OutputArtifactReadClient.getJson()以对象属性形式调用this.fetcher(path, options)，而已工作的OutputRequestListClient.get()先赋值const fetcher=this.fetcher后以局部函数调用。由此推断Artifact默认原生fetch收到客户端实例作为this，导致浏览器Web API TypeError；这是源码差异+Hosted对照支持的高置信根因，仍须修复后的真实Edge验收证明。偏差先记后实施：只把Artifact client fetcher复制到局部常量并以局部函数调用，保持GET选项、timeout、错误映射和fixture不变；更新/补充单测确认注入fetcher调用，跑全量Frontend与Hosted Edge P39。无API/Schema/Migration变化；回滚仅还原该client一处调用。
+
+
+## P39修复候选Hosted轮次发生Harness evaluate异常（run 42154634914，未验收）
+
+已在提交57865990中按上述记录将OutputArtifactReadClient的fetcher改为局部函数调用，并增加检查接收者未绑定的Frontend单测。run [42154634914](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42154634914)中Frontend全量测试与构建成功；但P39 Edge Harness失败于通用CDP Runtime.evaluate异常“Uncaught”，诊断状态未捕获clientProbe，Node仅见登录/历史请求，没有Artifact/Document GET或下载事件。故无法判断真实点击是否已触发，也不能称产品修复已验收。偏差先记：下一Harness-only变更为受限stage标签（login/history/button-probe/mouse-click/alert/download）和异常class类别，并保留CDP message-free，不添加业务代码或请求数据；之后Hosted重新检查产品点击。
+
+run [42154634914](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42154634914)其余Backend/wheel、PG18/pgvector、Frontend/build、嵌入式Python与Windows父包、PG18生命周期烟测、A17/A34/A35/P24/A50成功。独立P25仍因initdb.exe 3221225781/0xC0000135失败；整体workflow不全绿。Pilot/Gate/Release不变。
