@@ -205,7 +205,7 @@ def verify_plan_source_output_persistence(runtime: object, actor: uuid.UUID,
     before = row_counts(database_dsn, project)
     source.review_state = "DRAFT"
     try:
-        owner.create(plan_command(draft_version), idempotency_key="p42-draft-key-000001")
+        owner.create(plan_command(version), idempotency_key="p42-draft-key-000001")
     except OutputRequestError:
         pass
     else:
