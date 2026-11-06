@@ -25,3 +25,8 @@ GitHub Hosted workflow run [42259742947](https://github.com/yanglu0928/PLM-Proje
 ## 验证计划与数据边界
 
 在 GitHub Hosted Windows Server 2025 runner 的 D盘运行；同 run、非发行候选，隔离 PG18、真实 Edge/HTTPS、仅合成一次性项目/用户/调研数据。验证必须继续通过三个既有标记：A08 PG、A12 P05 Edge 与 A08 License denial。原始输出不上传，测试目录仅清理精确 owned 根。不在用户本机或 C盘运行项目代码，不外发客户资料、不调用外部 AI、不执行插件。
+
+
+## 实施记录（2026-11-07）
+
+已将上述诊断接入 A08 verifier 与 Workflow：固定枚举阶段覆盖 verifier/temp-root/smoke、浏览器回调、审批夹具、Edge、License expiry；异常摘要不含异常消息和路径，只含异常类、可选整数 WinError、最多 8 个净化 basename:line。Workflow 的诊断正则对字符集与总字段长度作约束，原始临时输出仍不上传并按owned根清理。A08 所有三项通过标记和原业务断言未改。Python/PowerShell运行验收等待下一GitHub Hosted workflow；若诊断后仍失败，按新证据继续记录，不转为产品缺陷推断。

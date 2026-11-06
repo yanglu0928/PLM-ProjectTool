@@ -50,3 +50,8 @@ run [42259742947](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/422
 ## 下一步单变量诊断（CR-EXEC-032）
 
 仅增强测试验收器诊断：失败时输出异常类、可用的数值型 WinError、最多 8 个调用栈文件 basename:line（不包含路径/异常消息），并在验收器入口、包内 smoke、浏览器回调与关键回调边界输出固定枚举阶段。Workflow 仅从受限白名单读取诊断字段；保留现有D盘隔离、owned 清理、合成数据与严格验收标记。此轮不修改产品业务代码、API、Schema、权限或正式信任；由 Hosted Windows runner 复验后再判断根因。
+
+
+## CR-EXEC-032 实施状态（2026-11-07）
+
+已修改 A08 测试验收器和 Hosted Workflow：验收器在 smoke、浏览器回调、审批/Edge/过期License边界输出固定阶段枚举；异常时以固定格式给出异常类型、整数 WinError（若有）、最多 8 个清洗后 basename:line。Workflow 只从该格式提取受限字符白名单。A08成功标记、业务断言、同run候选身份校验、D盘边界和owned清理均保留。只改测试设施，不改产品逻辑。静态差异与Secret模式检查已完成；最终 Python/Workflow运行验收由新 GitHub Hosted run 执行，尚待结果。

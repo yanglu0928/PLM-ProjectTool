@@ -506,20 +506,11 @@ jobs:
             $raw = if (Test-Path -LiteralPath $rawOutput) { Get-Content -LiteralPath $rawOutput -Raw } else { "" }
             $seen = @($markers | Where-Object { $raw.Contains($_) })
             if ($verifyExitCode -ne 0 -or $seen.Count -ne $markers.Count) {
-              $exceptionType = "unknown"
-              $exceptionMatches = [regex]::Matches($raw, "\b[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception)\b")
-              if ($exceptionMatches.Count -gt 0) { $exceptionType = $exceptionMatches[$exceptionMatches.Count - 1].Value }
-              $location = "unknown"
-              $traceMatches = [regex]::Matches($raw, '(?m)^\s*File "([^"]+)", line (\d+)')
-              if ($traceMatches.Count -gt 0) {
-                $frame = $traceMatches[$traceMatches.Count - 1]
-                $location = [System.IO.Path]::GetFileName($frame.Groups[1].Value) + ":" + $frame.Groups[2].Value
-              }
-              $stage = "none"
-              $stageMatches = [regex]::Matches($raw, '(?m)^\s*(SUR_[A-Z0-9_]+_(?:PASS|FAIL|BLOCKED))\b')
-              if ($stageMatches.Count -gt 0) { $stage = $stageMatches[$stageMatches.Count - 1].Groups[1].Value }
+              $safeDiagMatches = [regex]::Matches($raw, 'SUR_07_A08_SAFE_DIAG: exception=([A-Za-z0-9_.-]{1,80}); winerror=(-?\d{1,10}|none); stage=(SUR_07_A08_STAGE_[A-Z0-9_]{1,64}|none); frames=([A-Za-z0-9_.:>,_-]{1,800}|none)')
+              $safeDiag = "unavailable"
+              if ($safeDiagMatches.Count -gt 0) { $safeDiag = $safeDiagMatches[$safeDiagMatches.Count - 1].Value }
               $markerSummary = if ($seen.Count) { $seen -join "," } else { "none" }
-              Write-Output ("SUR-07-A08 safe diagnostic: exit=" + $verifyExitCode + "; markers=" + $markerSummary + "; exception=" + $exceptionType + "; location=" + $location + "; last_stage=" + $stage)
+              Write-Output ("SUR-07-A08 safe diagnostic: exit=" + $verifyExitCode + "; markers=" + $markerSummary + "; " + $safeDiag)
               throw "SUR-07-A08 packaged SurveyVersion flow did not satisfy its required markers"
             }
             $summary = [ordered]@{

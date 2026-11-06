@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-032 实施：A08 WinError 脱敏诊断）
+- A08 packaged verifier 增加固定流程阶段标记；失败时仅输出异常类、数字 WinError 与最多8个清理后的文件basename:line。Workflow 用严格字符与长度白名单解析该行；不采集错误消息、完整路径、环境、请求/响应或原始日志。
+- 修改范围仅验证器及Hosted Workflow，保持D盘临时根、数据清理、候选哈希和原A08验收标记。代码提交后等待 GitHub Hosted 复验，当前不能判 A08 PASS。
+
 ## Unreleased · 2026-11-07（CR-EXEC-032：SUR-07-A08 WinError 脱敏诊断补齐）
 - run [42259742947](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42259742947) 的 A08 job 已下载并校验同 run A17 非发行候选，D盘边界和语法检查通过；包内验收启动后 exit=1、无通过标记。安全摘要为 WinError，最后 traceback 位置 <frozen ntpath>:709，不足以识别失败调用。
 - 偏差先登记；下一单点只在验证器增加固定阶段标记、WinError 数值与有界源码 basename:line 栈，不记录路径/异常消息/请求正文/凭据/原始日志；再用 GitHub Hosted Windows runner D盘复验。无产品/API/DB变更；A08不通过。

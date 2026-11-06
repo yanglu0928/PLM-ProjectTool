@@ -4,16 +4,29 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import runpy
 import subprocess
 import sys
 import tempfile
+import traceback
 import uuid
 from pathlib import Path
 
 import httpx
 
 ROOT = Path(__file__).resolve().parents[2]
+_CURRENT_STAGE = "none"
+
+
+def mark_stage(stage: str) -> None:
+    global _CURRENT_STAGE
+    if not re.fullmatch(r"[A-Z0-9_]{1,64}", stage):
+        raise ValueError("invalid diagnostic stage")
+    _CURRENT_STAGE = "SUR_07_A08_STAGE_" + stage
+    print(_CURRENT_STAGE, flush=True)
+
+
 sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "apps" / "backend" / "src"))
 survey_create = runpy.run_path(str(ROOT / "validation/sur-07-a03-survey-create-packaged/verify.py"))
@@ -39,7 +52,9 @@ handover_review["browser_probe"].__globals__["seed_observer"] = seed_project_man
 
 
 def after_approval(state: dict, **context) -> None:
+    mark_stage("APPROVAL_FIXTURE_START")
     survey_create["after_approval"](state, **context)
+    mark_stage("APPROVAL_FIXTURE_READY")
     project, survey = state["project"], state["survey"]
     origin = context["origin"]
     observer = context["observer_client"]
@@ -70,6 +85,7 @@ def after_approval(state: dict, **context) -> None:
         assert membership is not None and membership[0] in {
             "CUSTOMER_MANAGER", "CUSTOMER_MEMBER"
         }, membership
+    mark_stage("EDGE_START")
     edge = subprocess.run([
         "node", str(Path(__file__).with_name("run-survey-version-edge.mjs")),
         origin, str(project), str(survey), str(context["observer_id"]),
@@ -80,6 +96,7 @@ def after_approval(state: dict, **context) -> None:
         raise AssertionError("packaged SurveyVersion Edge failed: "
                              + edge.stdout[-9000:] + edge.stderr[-9000:])
     result = json.loads(edge.stdout.strip().splitlines()[-1])
+    mark_stage("EDGE_PASS")
     assert result["status"] == "SUR_07_A12_P05_PACKAGED_EDGE_PASS", result
     assert result["review_ui_subject_label"] is True
     assert result["review_ui_fixed_version_link"].endswith(
@@ -227,7 +244,9 @@ def after_approval(state: dict, **context) -> None:
 
 
 def after_expiry(state: dict, **context) -> None:
+    mark_stage("LICENSE_EXPIRY_FIXTURE_START")
     survey_create["after_expiry"](state, **context)
+    mark_stage("LICENSE_EXPIRY_FIXTURE_READY")
     project, survey = state["project"], state["survey"]
     denied = context["observer_client"].post(
         f"/api/v1/projects/{project}/surveys/{survey}/versions", headers={
@@ -243,12 +262,15 @@ def after_expiry(state: dict, **context) -> None:
 
 def browser_probe(**context) -> None:
     state: dict = {}
+    mark_stage("BROWSER_CALLBACK_START")
     handover_review["browser_probe"](**context,
         after_approval_probe=lambda **values: after_approval(state, **values),
         after_expiry_probe=lambda **values: after_expiry(state, **values))
+    mark_stage("BROWSER_CALLBACK_PASS")
 
 
 def main() -> int:
+    mark_stage("VERIFIER_START")
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("candidate", "stage", "pristine", "target"):
         parser.add_argument("--" + name, type=Path, required=True)
@@ -262,12 +284,30 @@ def main() -> int:
                 or root.name != "PLMToolTemp" or root.drive.upper() != "D:"):
             raise ValueError("alternate temp root rejected")
         tempfile.tempdir = str(root)
+    mark_stage("TEMP_ROOT_READY")
     runner = handover_review["base"]["base"]["project"]["base"].base.base
-    result = runner.smoke(
-        args.candidate, args.stage, args.pristine, args.target, args.expected_sha256,
-        synthetic_license_document_factory=runner.synthetic_document,
-        licensed_https_probe=browser_probe,
-    )
+    mark_stage("PACKAGED_SMOKE_START")
+    try:
+        result = runner.smoke(
+            args.candidate, args.stage, args.pristine, args.target, args.expected_sha256,
+            synthetic_license_document_factory=runner.synthetic_document,
+            licensed_https_probe=browser_probe,
+        )
+    except Exception as exc:
+        frames = []
+        for frame in traceback.extract_tb(exc.__traceback__)[-8:]:
+            filename = re.sub(r"[^A-Za-z0-9_.-]", "_", Path(frame.filename).name)[:80]
+            frames.append(filename + ":" + str(frame.lineno))
+        exception_name = re.sub(r"[^A-Za-z0-9_.-]", "_", type(exc).__name__)[:80]
+        winerror = getattr(exc, "winerror", None)
+        if not isinstance(winerror, int):
+            winerror = "none"
+        print("SUR_07_A08_SAFE_DIAG: exception=" + exception_name
+              + "; winerror=" + str(winerror)
+              + "; stage=" + _CURRENT_STAGE
+              + "; frames=" + (">".join(frames) if frames else "none"), flush=True)
+        raise
+    mark_stage("PACKAGED_SMOKE_PASS")
     print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
     return 0
 
