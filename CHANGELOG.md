@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25代理请求未获上游响应，待安全诊断）
+- run [42178693259](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42178693259)：Edge动作产生OUTPUT_REQUESTS_CREATE POST并到达Node Harness，但Node本地返回500、无上游状态/错误码；数据库目标计数前后相同，页面无成功回执。P25未通过。
+- 按CR-OUT-021先记录：代理异常只归类FETCH_TYPE_ERROR/PROXY_EXCEPTION，并返回固定503，禁止传播异常message；保持真实后端HTTP验收严格。
+
 ## Unreleased · 2026-11-06（P25有限API路径诊断，Hosted复验待定）
 - 针对run 42176547201真实后端POST计数为0的证据，仅在P25 realbackend动作窗口记录有限API path class/method/status/upstream status/白名单错误码，不含UUID/query/header/body/message；回执判定限成功受理/创建文案。真实POST、422、VALIDATION_FAILED、无重试/成功回执及DB不变的严格条件继续。
 - 测试Harness候选已同步，尚未Hosted复验，不构成PASS或发行包。
