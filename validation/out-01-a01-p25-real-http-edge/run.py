@@ -593,6 +593,7 @@ async def main() -> int:
                 "proxy_failure_classes": sorted({item.get("proxy_failure_class") for item in edge_summary.get("real_api_requests", []) if item.get("proxy_failure_class")}),
                 "proxy_error_name_classes": sorted({item.get("proxy_error_name_class") for item in edge_summary.get("real_api_requests", []) if item.get("proxy_error_name_class")}),
                 "proxy_error_cause_codes": sorted({item.get("proxy_error_cause_code") for item in edge_summary.get("real_api_requests", []) if item.get("proxy_error_cause_code")}),
+                "proxy_error_message_classes": sorted({item.get("proxy_error_message_class") for item in edge_summary.get("real_api_requests", []) if item.get("proxy_error_message_class")}),
             }
             raise AssertionError("P25 bounded rejection diagnostics: " + json.dumps(observed, sort_keys=True))
         result = {
@@ -649,6 +650,7 @@ async def main() -> int:
                 "proxy_failure_classes": sorted({item.get("proxy_failure_class") for item in edge_details.get("real_api_requests", []) if item.get("proxy_failure_class")}),
                 "proxy_error_name_classes": sorted({item.get("proxy_error_name_class") for item in edge_details.get("real_api_requests", []) if item.get("proxy_error_name_class")}),
                 "proxy_error_cause_codes": sorted({item.get("proxy_error_cause_code") for item in edge_details.get("real_api_requests", []) if item.get("proxy_error_cause_code")}),
+                "proxy_error_message_classes": sorted({item.get("proxy_error_message_class") for item in edge_details.get("real_api_requests", []) if item.get("proxy_error_message_class")}),
             }
         if pg_root is not None:
             try:
