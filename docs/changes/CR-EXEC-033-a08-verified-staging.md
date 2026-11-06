@@ -18,3 +18,8 @@ Hosted run [42263308077](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## 风险、回滚与验证
 
 风险是重复读取/校验完整候选会增加Hosted D盘时间；此举保留完整性边界且避免未验证解包。回滚限于删除新增 staging 调用并恢复workflow stage name，其他A08/A17流程不动。以完整 GitHub Hosted Windows Server 2025 D盘 run 验证 stage 创建、PG18/Edge/HTTPS流程、三个原有A08/A12标记和 owned-root 清理；原始日志不上传，数据仅合成，无客户外发/外部AI/插件执行。
+
+
+## Hosted 结果与后续根目录对齐（2026-11-07）
+
+run 42266017538 证明CR-EXEC-033的候选 staging创建和包清单校验已完成。失败随后发生在 packaged platform-write / migration smoke 开始处：smoke_packaged_pg18_migration._migration_temp_root拒绝A08的PLM_P51_TEMP_ROOT。该helper的行109固定要求 selected.parent.parent == RUNNER_TEMP、selected.parent.name以 plm-p51-a27- 开始、selected.name为PLMToolTemp；A08当前run根名不满足，PG18进程尚未启动。按CR-EXEC-034先记录；仅重命名A08精确owned runRoot为兼容前缀，再跑完整Hosted流程。

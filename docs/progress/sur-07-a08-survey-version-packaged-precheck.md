@@ -64,3 +64,10 @@ run [42263308077](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/422
 ## CR-EXEC-033 实施前修正
 
 仅在A08 verifier使用既有 tools/run_a17_packaged_cloud_validation.py 中的 extract_verified 创建经过候选SHA、清单/路径和逐文件哈希验证的stage；stage名改为 plm-current-app-stage-a08-<run id> 以满足 smoke 的 _inputs 契约。pristine/target仍按隔离 rehearse 工具的 plm-install-rehearsal-* 约束保持全新。之后Hosted完整重跑，不改产品代码或通过标准。
+
+
+## Hosted 第五轮结果（2026-11-07）
+
+run [42266017538](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42266017538) 中，A08同run候选SHA/非发行校验、D盘边界、语法检查通过；CR-EXEC-033所加 staging preparation 成功把同run候选安全提取至受限目录，原 smoke 继续执行。随后在 smoke_current_app_packaged_https.py:226 调用 smoke_packaged_platform_write_https.py:330 时，PG18 helper _migration_temp_root 在创建临时PG目录前拒绝PLM_P51_TEMP_ROOT。受限帧：verify.py:301 → smoke_current_app_packaged_https.py:226 → smoke_packaged_platform_write_https.py:330 → smoke_packaged_pg18_migration.py:109。
+
+只读源码确认其固定布局须为 RUNNER_TEMP/plm-p51-a27-<唯一名>/PLMToolTemp，而A08当前根 plm-sur-a08-<run>/PLMToolTemp不合约。PG18与Edge服务尚未开始，非产品错误证据，A08仍未通过。CR-EXEC-034仅改A08 owned runRoot前缀；不放宽辅助函数安全约束。

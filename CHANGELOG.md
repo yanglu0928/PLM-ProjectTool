@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-034：A08 临时根满足既有 PG18 所有权边界）
+- run [42266017538](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42266017538)：A08复用已校验候选 staging 后进入 P42 平台组合预检，失败于 smoke_packaged_pg18_migration.py:_migration_temp_root。既有 helper 限定 PLM_P51_TEMP_ROOT 必须位于 RUNNER_TEMP/plm-p51-a27-*/PLMToolTemp；A08自有根命名 plm-sur-a08-* 因此不匹配。异常发生在 PostgreSQL启动之前，非PG/产品失败结论。
+- 先登记偏差，下一步仅改 A08 运行根为兼容的 plm-p51-a27-a08-<run id>，保持精确根清理、staging、pristine/target及所有业务断言；由 Hosted D盘复验。
+
 ## Unreleased · 2026-11-07（CR-EXEC-033：A08 增加受验 staging 准备）
 - run [42263308077](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42263308077) 的安全诊断为 FileNotFoundError/WinError 2，阶段 PACKAGED_SMOKE_START；调用链定位至 smoke_current_app_packaged_https.py:160 和 _inputs 的 stage.resolve(strict=True)。A08 verifier 传入 stage 路径却未先从候选包校验、解包该目录；既有 A17 runner 使用 extract_verified 执行摘要、路径、清单与逐文件哈希校验并创建 stage。
 - 先登记偏差，再仅将该既有 staging 前置复用到 A08，并改 stage 名以符合 plm-current-app-stage-* 契约；pristine/target保留隔离安装根命名。无产品逻辑/API/Schema变化，Hosted D盘验收待复验。
