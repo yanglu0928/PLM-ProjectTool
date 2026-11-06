@@ -364,3 +364,13 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - Node Harness在Edge启动前对同run本机FastAPI GET /openapi.json；仅记录状态码、是否JSON MIME与固定异常类别；立即取消响应体，不读取或记录OpenAPI正文。
 - Python将200+JSON MIME列为必要诊断前置，并在失败摘要中仅保留上述受限字段。实际Output POST严格要求真实upstream 422、VALIDATION_FAILED、无成功回执/自动重试及DB快照不变。此探针不计入业务POST，不更改产品服务/API。
 - 代码与文件已同步PR #61，Hosted复验待跑；P25仍未通过。
+
+
+## 2026-11-06：P25 OpenAPI 探针路径修正及代理阶段诊断计划（实施前记录）
+
+- 触发证据：Hosted run [42212193585](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42212193585) 中 Node→FastAPI `GET /openapi.json` 返回 HTTP 404、JSON MIME、探针异常类别 NONE。源码核对 `entrypoints/api.py` 显式设置 `openapi_url=None` 与 `docs_url=None`，故该路径被有意关闭；404 是有效 HTTP 回应，不能据此判定回环不可达，也不能作为健康探针。该运行中真实 Output POST 仍被 Node 代理固定映射为 503，未取得上游状态；DB快照相同且无成功回执，P25未通过。
+- 方案比较：A 保留 OpenAPI 路径并把404当连通性证据，但不能给出有效健康响应；B 改用既有匿名只读 `GET /health/live`（返回200和固定 `{"status":"UP"}`），不读取业务数据；C 增加产品路由/启用OpenAPI，范围更大且不需要。
+- 选择 B：仅修改 Hosted P25 harness 的只读探针，要求200、JSON MIME及固定UP状态，读取后即丢弃响应内容，不计入业务POST。进一步只给 Output 代理的单次诊断记录固定阶段枚举（`FETCH_CALL`、`READ_RESPONSE_BODY`、`RESPONSE_FORWARD`、`UNKNOWN`）和上游请求尝试布尔值；不保留异常原文、堆栈、请求/响应正文、凭证、Cookie或运行环境值。
+- 差异/影响：只更正验证器探针路径并提高Harness失败定位能力；不更改产品端点、冻结API、Schema、业务响应、信任或默认挂载，不放宽P25验收。
+- 迁移/回滚：无数据迁移。若只读health探针或安全枚举诊断引入干扰，回滚本次Harness修改即可；原真实POST及DB差异验收保持。
+- 验证计划：GitHub Hosted Windows Server 2025 runner D盘运行本次全链；探针须200/JSON/UP。P25仍只有在真实POST恰为422/VALIDATION_FAILED、POST计数1、无成功回执及重试、DB快照不变、清理成功时才可通过。另做Secret检查；不得在本机/C盘执行项目代码。
