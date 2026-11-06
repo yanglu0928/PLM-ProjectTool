@@ -46,3 +46,7 @@ P39候选提交后，GitHub源码复核发现Node harness的Content-Disposition�
 ## P39 Hosted首轮浏览器流程未触发下载（run 42144778960，未通过）
 
 Hosted run [42144778960](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42144778960) 的P39 job通过artifact provenance及Node语法检查，Edge打开生产前端并完成合成登录和输出历史读取；随后未观察到Artifact引用GET、Document内容GET或Browser downloadWillBegin事件，失败于“Edge did not report attachment download”。因此P39未验收，不是产品后端HTTP拒绝证据。初步判定缺失证据是点击交互/按钮可用状态或前端handler是否触发；需加按钮状态、点击返回和有限等待请求轨迹诊断。修复仅限Hosted harness，并在下一轮重新证明引用请求、内容请求和Edge下载完成。
+
+## P39第二轮诊断候选
+
+根据run 42144778960的实际请求摘要（仅login和output-requests GET），P39 harness改为先等待成功行按钮真实可用，再通过CDP鼠标移动/按下/释放触发浏览器事件；增加有限等待和安全的按钮状态/API路径诊断，以区分未触发与HTTP/保存失败。跨项目负例同样采用鼠标事件。尚待Hosted运行，未形成P39通过证据。

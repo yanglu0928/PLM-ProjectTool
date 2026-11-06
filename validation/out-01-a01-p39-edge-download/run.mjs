@@ -155,9 +155,28 @@ try{
 
  const validRefPath="/api/v1/projects/"+ids.project+"/output-requests/"+ids.request+"/artifact";
  const validContentPath="/api/v1/projects/"+ids.project+"/documents/"+ids.document+"/versions/"+ids.version+"/content";
- await evaluate("(()=>{const li=[...document.querySelectorAll('li')].find(x=>x.innerText.includes("+JSON.stringify(ids.request)+"));const b=[...li.querySelectorAll('button')].find(x=>x.innerText.trim()==='下载文件');b.click();return true})()");
+ const clickSucceeded=async()=>{
+  let probe=null;
+  for(let i=0;i<100;i++){
+   probe=await evaluate("(()=>{const li=[...document.querySelectorAll('li')].find(x=>x.innerText.includes("+JSON.stringify(ids.request)+"));if(!li)return {found:false};const b=[...li.querySelectorAll('button')].find(x=>x.innerText.trim()==='下载文件');if(!b)return {found:false,row:li.innerText};b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {found:true,disabled:b.disabled,text:b.innerText.trim(),x:r.x+r.width/2,y:r.y+r.height/2,row:li.innerText}})()");
+   if(probe&&probe.found&&!probe.disabled)break;
+   await pause(100);
+  }
+  assert.ok(probe&&probe.found&&!probe.disabled,"download button was not ready: "+JSON.stringify(probe));
+  await send("Input.dispatchMouseEvent",{type:"mouseMoved",x:probe.x,y:probe.y});
+  await send("Input.dispatchMouseEvent",{type:"mousePressed",x:probe.x,y:probe.y,button:"left",clickCount:1});
+  await send("Input.dispatchMouseEvent",{type:"mouseReleased",x:probe.x,y:probe.y,button:"left",clickCount:1});
+  for(let i=0;i<100;i++){
+   const alert=await evaluate("document.querySelector('[role=alert]')?.innerText||''");
+   if(reqs.some(x=>x.path===validRefPath&&x.method==="GET"))return probe;
+   if(alert)throw new Error("download handler showed alert before reference request: "+JSON.stringify({probe,alert,requests:reqs}));
+   await pause(50);
+  }
+  throw new Error("download click did not request Artifact reference: "+JSON.stringify({probe,diagnostics:await evaluate("({url:location.href,buttons:[...document.querySelectorAll('button')].map(b=>({text:b.innerText.trim(),disabled:b.disabled})),alerts:[...document.querySelectorAll('[role=alert]')].map(x=>x.innerText)})"),requests:reqs}));
+ };
+ await clickSucceeded();
  for(let i=0;i<300&&!downloadCompleted;i++)await pause(100);
- assert.ok(downloadWillBegin,"Edge did not report attachment download");
+ assert.ok(downloadWillBegin,"Edge did not report attachment download; requests="+JSON.stringify(reqs));
  assert.ok(downloadCompleted,"Edge did not complete attachment download");
  const filename=downloadWillBegin.suggestedFilename;
  assert.equal(filename,"document-"+ids.version+".bin");
@@ -171,7 +190,11 @@ try{
  assert.equal(reqs.filter(x=>x.path===validContentPath&&x.method==="GET").length,1);
  checks.push("SUCCEEDED row resolves the same-origin Artifact reference and Edge saves exact attachment bytes/hash/length");
 
- await evaluate("(()=>{const li=[...document.querySelectorAll('li')].find(x=>x.innerText.includes("+JSON.stringify(ids.badRequest)+"));const b=[...li.querySelectorAll('button')].find(x=>x.innerText.trim()==='下载文件');b.click();return true})()");
+ const badProbe=await evaluate("(()=>{const li=[...document.querySelectorAll('li')].find(x=>x.innerText.includes("+JSON.stringify(ids.badRequest)+"));if(!li)return {found:false};const b=[...li.querySelectorAll('button')].find(x=>x.innerText.trim()==='下载文件');if(!b)return {found:false};b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {found:true,disabled:b.disabled,x:r.x+r.width/2,y:r.y+r.height/2}})()");
+ assert.ok(badProbe&&badProbe.found&&!badProbe.disabled,"cross-project row download action was not ready: "+JSON.stringify(badProbe));
+ await send("Input.dispatchMouseEvent",{type:"mouseMoved",x:badProbe.x,y:badProbe.y});
+ await send("Input.dispatchMouseEvent",{type:"mousePressed",x:badProbe.x,y:badProbe.y,button:"left",clickCount:1});
+ await send("Input.dispatchMouseEvent",{type:"mouseReleased",x:badProbe.x,y:badProbe.y,button:"left",clickCount:1});
  await waitFor("document.querySelector('[role=alert]')?.innerText.includes('暂时无法获取输出文件')","invalid cross-project reference");
  const badContentPath="/api/v1/projects/"+ids.otherProject+"/documents/"+ids.badDocument+"/versions/"+ids.badVersion+"/content";
  assert.equal(reqs.filter(x=>x.path===badContentPath&&x.method==="GET").length,0);

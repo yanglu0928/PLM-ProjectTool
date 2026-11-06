@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P39首轮无Artifact引用请求；Hosted点击诊断候选）
+
+- run [42144778960](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42144778960) 仅发生合成登录及输出历史查询，未有Artifact引用GET/Document内容GET/Edge下载事件。已按CR-OUT-034记录，改以等待按钮可用及CDP真实鼠标事件触发，并在下一次Hosted摘要中输出安全的按钮/请求路径诊断；产品代码未改，P39仍待复验。
+
 ## Unreleased · 2026-11-06（P39首轮Hosted Edge未触发下载，非通过）
 
 - run [42144778960](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42144778960)：provenance、Node syntax、Edge页面、合成登录和输出历史读取通过；下载动作后无Artifact引用GET/Document内容GET及Edge downloadWillBegin，P39失败关闭且未验收。仅两个API GET出现在摘要，不能判为产品后端缺陷。已先记CR-OUT-034，计划增强按钮状态/点击结果/请求路径诊断后Hosted复验。
