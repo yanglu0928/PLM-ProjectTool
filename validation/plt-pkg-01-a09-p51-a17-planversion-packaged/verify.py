@@ -1422,6 +1422,68 @@ def packaged_planversion_probe(**context) -> None:
             f"packaged PlanVersion PG state mismatch: plan={plan}, version={version}, "
             f"children={counts}, review={review}, round={round_state}, decisions={decisions}"
         )
+    from sqlalchemy.engine import URL
+    from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
+    from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
+    from plm_assistant.modules.project.infrastructure.authorization_repository import (
+        SqlAlchemyProjectAuthorizationRepository,
+    )
+    from plm_assistant.modules.plan.application.read_plan_version import (
+        PlanVersionReadError, PlanVersionReadService,
+    )
+    from plm_assistant.modules.plan.infrastructure.plan_version_read_repository import (
+        SqlAlchemyPlanVersionReadRepository,
+    )
+
+    source_runtime = create_database_runtime(URL.create(
+        "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
+        port=fixture_db.pg_port, database=fixture_db.database,
+    ))
+    try:
+        source_reader = PlanVersionReadService(
+            unit_of_work=source_runtime.unit_of_work, access=object(),
+            license_guard=object(),
+            authorization=ProjectAuthorizationService(
+                unit_of_work=source_runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository(),
+            ),
+            repository=SqlAlchemyPlanVersionReadRepository(),
+        )
+        with source_runtime.unit_of_work() as tx:
+            projection = source_reader.read_output_source(
+                tx, actor_id=actor, project_id=project,
+                plan_version_id=version_id,
+            )
+            tx.commit()
+        actual_wbs = projection.fields.get("wbs_items")
+        if (projection.project_id != project
+                or projection.plan_version_id != version_id
+                or projection.version_state != "IN_REVIEW"
+                or projection.fields.get("version_no") != 1
+                or not isinstance(actual_wbs, list) or len(actual_wbs) != 2
+                or [item.get("name") for item in actual_wbs]
+                    != ["合成实施任务一", "合成实施任务二"]
+                or actual_wbs[1].get("wbs_code") != "TASK-002"
+                or not all("acceptance_criteria" in item for item in actual_wbs)):
+            raise AssertionError("real Plan Owner snapshot projection did not match persisted A17 facts")
+        try:
+            with source_runtime.unit_of_work() as tx:
+                source_reader.read_output_source(
+                    tx, actor_id=actor, project_id=uuid.uuid4(),
+                    plan_version_id=version_id,
+                )
+        except PlanVersionReadError as error:
+            if error.code != "RESOURCE_NOT_FOUND":
+                raise
+        else:
+            raise AssertionError("real Plan Owner exposed a version across projects")
+        print(
+            "OUT_01_A01_P45_REAL_PLAN_SNAPSHOT_PG_PASS: migrated PostgreSQL rows; "
+            "fixed UUID/project authorization; IN_REVIEW preserved; WBS=2; cross-project hidden",
+            flush=True,
+        )
+    finally:
+        source_runtime.dispose()
     print(f"P51_A17_PACKAGED_PLANVERSION_PG_PASS: state={version[0]}; "
           f"WBS/requirement/validation={counts}; Review/Round={review[0]}/{round_state[0]}; decisions=0",
           flush=True)
