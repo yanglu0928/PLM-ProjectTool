@@ -40,6 +40,16 @@ from plm_assistant.modules.platform.infrastructure.database import create_databa
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.platform.infrastructure.migration import downgrade_database, upgrade_database
 from plm_assistant.modules.project.infrastructure.orm import ProjectRow
+from plm_assistant.modules.plugin.application.operation_capability import PluginOperationCapabilityReader
+from plm_assistant.modules.plugin.infrastructure.operation_capability_repository import (
+    SqlAlchemyPluginOperationCapabilityRepository,
+)
+from plm_assistant.modules.plugin.infrastructure.packaged_signer_resolver import (
+    PackagedPluginSignerResolver,
+)
+from plm_assistant.modules.output.infrastructure.plugin_operation_registry_adapter import (
+    PluginOperationRegistryAdapter,
+)
 
 
 def url(name: str, port: int) -> URL:
@@ -226,6 +236,70 @@ def verify_plan_source_output_persistence(runtime: object, actor: uuid.UUID,
     }
 
 
+def verify_empty_trust_output_failure(runtime: object, actor: uuid.UUID,
+                                            port: int, database: str) -> dict[str, object]:
+    project, version = uuid.uuid4(), uuid.uuid4()
+    with runtime.unit_of_work() as uow:
+        uow.session.add(ProjectRow(
+            project_id=project, project_code="P44-" + project.hex[:12].upper(),
+            project_code_normalized="P44-" + project.hex[:12].upper(),
+            name="Synthetic Empty Trust Output", created_by=actor,
+        ))
+        uow.commit()
+
+    signer_resolver = PackagedPluginSignerResolver()
+    signer_count = len(signer_resolver._active_signers)
+    if signer_count != 0 or signer_resolver.resolve_trusted_signer("p44:synthetic-probe") is not None:
+        raise AssertionError("P44 expected the actual packaged publisher signer set to be empty")
+    capability_reader = PluginOperationCapabilityReader(
+        SqlAlchemyPluginOperationCapabilityRepository(signer_resolver),
+    )
+    operation_registry = PluginOperationRegistryAdapter(capability_reader)
+    with runtime.unit_of_work() as uow:
+        capability = operation_registry.get_operation(uow, operation_id="word.generate")
+    if capability is not None:
+        raise AssertionError("empty synthetic Plugin registry unexpectedly yielded an Output capability")
+
+    source = SyntheticPlanSource(project, version)
+    resolver = TrustedOutputContextResolver(
+        sources=source, templates=BuiltinOutputTemplateRegistry(),
+        policies=BuiltinOutputPolicyRegistry(), operations=operation_registry,
+    )
+    owner = service(runtime, actor, resolver=resolver)
+    request = CreateOutputRequest(
+        b"synthetic-session", b"synthetic-csrf", uuid.uuid4(), project,
+        "DOCX", BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID, (version,),
+        BUILTIN_PLAN_DOCX_POLICY_REF, "word.generate",
+    )
+    database_dsn = dsn(database, port)
+    before = row_counts(database_dsn, project)
+    if before != (0, 0, 0, 0, 0, 0):
+        raise AssertionError("P44 synthetic project was not initially empty")
+    try:
+        owner.create(request, idempotency_key="p44-empty-trust-key-00001")
+    except OutputRequestError:
+        pass
+    else:
+        raise AssertionError("Output Create accepted an operation absent from the empty trusted registry")
+    after = row_counts(database_dsn, project)
+    with psycopg.connect(database_dsn) as connection:
+        executions = connection.execute(
+            "SELECT count(*) FROM plm.plg_executions WHERE project_id=%s", (project,),
+        ).fetchone()[0]
+    if after != before or source.calls != 0 or executions != 0:
+        raise AssertionError("empty-trust rejection read source data or left persistent side effects")
+    return {
+        "status": "PASS_SCOPE_LIMITED",
+        "packaged_signer_key_count": signer_count,
+        "operation_capability_missing": capability is None,
+        "output_create_rejected": True,
+        "output_row_counts_unchanged": True,
+        "source_projection_calls": source.calls,
+        "plugin_execution_count": executions,
+        "customer_data": False,
+    }
+
+
 class FailingAudit:
     def append(self, transaction: object, event: AuditEventDraft) -> uuid.UUID:
         raise RuntimeError("synthetic audit failure")
@@ -395,6 +469,9 @@ def main() -> int:
             raise AssertionError("raw or non-deterministic idempotency key persisted")
 
         plan_output_validation = verify_plan_source_output_persistence(runtime, actor, args.port, database)
+        empty_trust_validation = verify_empty_trust_output_failure(
+            runtime, actor, args.port, database,
+        )
         history_before = history_snapshot(database_dsn, project)
         runtime.dispose()
         runtime = None
@@ -412,7 +489,8 @@ def main() -> int:
                       raw_idempotency_key_persisted=False,
                       context_immutable_update_delete=True,
                       migration_history_preserved_across_downgrade=True,
-                      plan_version_output_persistence=plan_output_validation)
+                      plan_version_output_persistence=plan_output_validation,
+                      empty_trust_output_failure=empty_trust_validation)
     finally:
         if runtime is not None:
             runtime.dispose()
