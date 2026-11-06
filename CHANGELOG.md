@@ -712,3 +712,8 @@
 ## Unreleased · 2026-11-06（P39第六轮Hosted复验仍未通过）
 
 - run [42148721420](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42148721420) 重现Artifact GET仅出现在页面内存trace、未进入CDP Network或合成服务，UI安全提示且无内容GET/附件保存。P39仍未通过。本轮Backend全量/wheel、Frontend/build、PG18 sidecar、A17、P24、A50和嵌入式组装成功，P39是唯一失败job。按CR-OUT-034，仅下一步在Hosted Harness统计fetch Promise rejection归一类别，不改生产端点或安全边界。
+
+
+## Unreleased · 2026-11-06（P39 fetch拒绝类别诊断候选）
+
+- 按CR-OUT-034增加Hosted Harness原生fetch Promise拒绝归一分类（Abort/TypeError/Other），只关联合成API method/path，未记录错误文案、query、认证或正文；同步抛错会归类并继续原样传播。无生产代码/API/Schema修改，等待Hosted诊断，P39未通过。
