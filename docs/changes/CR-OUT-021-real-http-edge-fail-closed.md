@@ -374,3 +374,12 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - 差异/影响：只更正验证器探针路径并提高Harness失败定位能力；不更改产品端点、冻结API、Schema、业务响应、信任或默认挂载，不放宽P25验收。
 - 迁移/回滚：无数据迁移。若只读health探针或安全枚举诊断引入干扰，回滚本次Harness修改即可；原真实POST及DB差异验收保持。
 - 验证计划：GitHub Hosted Windows Server 2025 runner D盘运行本次全链；探针须200/JSON/UP。P25仍只有在真实POST恰为422/VALIDATION_FAILED、POST计数1、无成功回执及重试、DB快照不变、清理成功时才可通过。另做Secret检查；不得在本机/C盘执行项目代码。
+
+
+### 2026-11-06：P25 探针路径修正与代理阶段诊断候选已实施
+
+- 实施范围：P25 Hosted Node/Python Harness。只读探针改用 `GET /health/live`，保存有限的HTTP状态、JSON MIME、`status_up`布尔及固定错误类别；Python验收要求200/JSON/UP。
+- Output代理单次诊断记录增加固定阶段 `FETCH_CALL`/`READ_RESPONSE_BODY`/`RESPONSE_FORWARD`/`UNKNOWN` 及 `upstream_request_attempted`布尔，用于区分fetch调用、响应体读取、转发阶段；无原始异常文本、堆栈、请求/响应正文、UUID、认证或环境值。
+- 不变项：产品代码/API/Schema/业务行为未改；仍必须真实POST=1、HTTP422、VALIDATION_FAILED、预期安全UI、无成功/状态回执、DB快照不变和Hosted清理成功。
+- 回滚：如候选引入干扰，撤回本次P25测试夹具变更即可；无数据迁移。
+- 结果：尚待GitHub Hosted复验，P25不得标PASS。

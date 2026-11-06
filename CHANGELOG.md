@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P25健康探针与安全代理阶段诊断候选，Hosted待验）
+- 按CR-OUT-021，OpenAPI关闭路径改为只读 /health/live，验收200/JSON/UP；真实Output代理增加有限阶段及请求尝试布尔诊断。未记录原始异常、凭据或请求/响应正文。产品代码与P25真实422/单POST/无回执/数据库不变标准未改，尚未Hosted验证。
+
 ## Unreleased · 2026-11-06（P25探针路径与安全阶段诊断修正，实施前记录）
 - run [42212193585](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42212193585)：/openapi.json返回404/JSON；FastAPI源码确认OpenAPI/docs明确关闭，故探针路径错误，不代表loopback不可达。真实Output Create代理返回固定503、未取得上游状态；DB快照相同、无成功回执，P25仍失败。
 - 按CR-OUT-021先记录后实施：探针改为既有匿名只读/health/live并验证200/JSON/UP；真实代理诊断新增固定阶段/请求尝试布尔值，不记录异常原文、凭证、正文或环境值。严格验收不变。
