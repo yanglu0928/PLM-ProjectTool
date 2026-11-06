@@ -45,3 +45,10 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - 单一问题：现有Harness在UI文案等待失败时立即退出，并且没有保存安全错误码，丢失了后续DB复核及根因所需的最小证据。
 - 结论：PASS_WITH_LIMITATION，仅允许Harness诊断/控制流修正。Node从真实合成响应解析错误码但只保留固定允许的协议错误码，否则写UNRECOGNIZED；页面文本仅归类为有限枚举；即使预期文案缺失，也先写Node结构化摘要并让Python执行after snapshot，最终仍严格要求HTTP 422、预期安全UI类别、单POST、无回执/重试及数据库计数不变，任一不符退出失败。不得将500改判通过，不改产品逻辑，不记录响应正文/认证/异常原文。
 - 之后通过GitHub Hosted Windows/D盘全链验收。失败继续登记，不影响其他WBS；本机/C盘不运行项目代码。
+
+
+## Harness诊断候选实施记录（2026-11-06，待Hosted）
+
+- 按上述编码前检查，仅改P25 Node/Python验证器：错误Envelope只输出协议白名单码或UNRECOGNIZED；Edge alert归为固定类别；真实请求分支继续检查无回执/无自动重试，但不因预设文案未出现而提前异常退出。
+- Python读取Node摘要后先比较请求前后数据库快照，再联合严格判定HTTP 422、VALIDATION_FAILED、指定安全UI类别、单POST、无成功回执及计数不变。失败摘要最多保留HTTP状态、错误枚举、UI类别、请求次数、数据库相等/进程退出布尔；不包含原始正文/异常消息。
+- 仅GitHub分支改动；尚未Hosted验收，P25仍BLOCKED_DIAGNOSTIC。没有本机/C盘运行。
