@@ -99,3 +99,9 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 
 - Hosted结论：Node捕获错误名OTHER、底层cause code UNKNOWN；代理安全返回503；真实后端无响应；DB快照一致；UI安全失败无回执。现有结构化指纹不足，不能确定是否为Node fetch连接/请求配置问题。
 - PASS_WITH_LIMITATION：仅在捕获异常的进程内以关键词映射固定类（FETCH_FAILED/CONNECTION_REFUSED/CONNECTION_RESET/TIMEOUT/DNS_FAILURE/SOCKET_ERROR/REQUEST_CONFIG/OTHER），只输出枚举，不记录message/stack。由下一Hosted运行报告真实上游响应是否仍缺失。其余严格验收不变；GitHub Hosted D盘运行。
+
+
+## P25异常消息内存归一候选实施记录（2026-11-06，待Hosted）
+
+- 只在Node代理异常处理内对原始message做固定关键词判别，输出FETCH_FAILED、CONNECTION_REFUSED、CONNECTION_RESET、TIMEOUT、DNS_FAILURE、SOCKET_ERROR、REQUEST_CONFIG或OTHER；原始值不保存，Edge仍只收到固定503 SYSTEM_UNAVAILABLE。
+- 摘要同时保留白名单cause code/name类、动作窗API方法/path class/status/上游状态和有限消息类别。未修改产品代码，未Hosted验收，不构成PASS。
