@@ -87,3 +87,9 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - 新结果：真实UI Output Create POST到达Node，Node安全返回503，有限类别PROXY_EXCEPTION；没有backend_status/error_code。UI为SAFE_SERVICE_UNAVAILABLE，无成功状态/文案；请求前后数据库目标计数相同。Node/PG清理正常。P25仍未证明请求到达FastAPI。
 - 结论PASS_WITH_LIMITATION：仅增加代理错误指纹白名单（error.name固定分类与cause.code有限枚举），不记录任何错误message/stack/URL/环境变量。继续固定503，不再尝试猜测代理/端口根因；下轮证据决策。
 - 同run P39 CDP evaluation异常及A17 lockfile EBUSY为独立Harness问题，需分项记录，不与P25混淆。Hosted D盘继续执行；本机/C盘不运行。
+
+
+## Node代理底层错误指纹候选实施（2026-11-06，待Hosted）
+
+- 按CR-OUT-021仅在合成Node代理异常中记录error.name固定类别与cause.code白名单；其余映射UNKNOWN。经Python摘要透传仍只含有限码，不含Message/Stack/环境路径。代理异常返回固定503，不回显异常。
+- 真实HTTP成功条件与DB快照顺序保持严格；当前仅候选，需GitHub Hosted独立复验。
