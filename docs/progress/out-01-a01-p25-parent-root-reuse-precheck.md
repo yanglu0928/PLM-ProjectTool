@@ -105,3 +105,9 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 
 - 只在Node代理异常处理内对原始message做固定关键词判别，输出FETCH_FAILED、CONNECTION_REFUSED、CONNECTION_RESET、TIMEOUT、DNS_FAILURE、SOCKET_ERROR、REQUEST_CONFIG或OTHER；原始值不保存，Edge仍只收到固定503 SYSTEM_UNAVAILABLE。
 - 摘要同时保留白名单cause code/name类、动作窗API方法/path class/status/上游状态和有限消息类别。未修改产品代码，未Hosted验收，不构成PASS。
+
+
+## Run 42184707119后连通性探针编码前检查（2026-11-06）
+
+- 当前有限字段连续两轮均为proxy异常OTHER/UNKNOWN，无真实upstream状态，但能确认浏览器POST到达Node并收到固定503；本轮其他15个作业全通过，含A17/A34。数据库snapshot一致，仍不是Output API负例验收。
+- PASS_WITH_LIMITATION：下一轮在同一Node Harness进程中对FastAPI /openapi.json作一次只读连通性GET，输出状态码及受限响应MIME标志/异常类别，响应正文直接取消且不解析。只用于区分网络/Node fetch与POST构造阶段；不计入业务请求。失败保持固定类别诊断，成功再检POST。产品代码不改，GitHub Hosted D盘运行。
