@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P38首轮PG18引用HTTP断言失败，非发行版本）
+
+- Hosted run [42136117411](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42136117411)：后端4,087 tests/wheel、前端205 suites/2,098 tests/typecheck/build及父包组装通过；PG18新增ASGI HTTP verifier在Artifact固定引用字段/不泄露联合断言处失败，未执行文件流下载断言，P38未通过。已先记CR-OUT-033，将细分安全布尔项后重跑。整体流程还含独立P25失败。
+
 ## Unreleased · 2026-11-06（P38验收依赖兼容偏差，非发行版本）
 
 - 发现父包PG smoke最小Hosted依赖不包含TestClient所需httpx；在运行前静态确认并按CR-OUT-033记录。验收器将改用FastAPI ASGI原生请求驱动相同HTTP router与StreamingResponse，不增加依赖；产品代码不改，P38仍待Hosted验收。

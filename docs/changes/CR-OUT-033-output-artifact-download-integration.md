@@ -31,3 +31,8 @@ Hash/长度/字节完全一致；项目越权、未知/不可用Artifact、内�
 ## P38父包验证依赖静态偏差（修正前记录）
 
 Hosted父包PG18 job的受控最小依赖明确为Alembic、SQLAlchemy、psycopg、pgvector、FastAPI和cryptography；没有保证安装Starlette TestClient所依赖的httpx。首个P38 verifier候选使用TestClient，若直接运行可能在依赖导入处失败，当前尚无该Hosted实测结果。为避免无必要引入验证依赖，修正为ASGI原生HTTP scope调用真实FastAPI路由/中间件/StreamingResponse，保留实际PG18 Repository与本地Hash验证；不改产品代码或业务范围。
+
+
+## P38 首轮Hosted固定引用HTTP联合断言失败（run 42136117411，修正前记录）
+
+后端、前端和父包组装通过；父包PG18实际运行P33/P36 verifier后，新增ASGI HTTP验证器在 Artifact 引用响应字段/内容未泄露的复合断言处失败。当前日志没有细分是哪项布尔条件，故没有到达 Document 下载字节、Hash、损坏文件验收；P38不通过。此时不能归类为产品缺陷或通过。修正计划：只把固定引用及泄露检查拆成各个布尔证据，在AssertionError中输出布尔名，不输出正文/路径/密钥；重跑后依据具体结果再判断是否需要产品改动。
