@@ -74,3 +74,9 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - 请求轨迹已将路径定位为OUTPUT_REQUESTS_CREATE、method POST，Node自身status 500，backend_status/error code为空；数据库目标计数前后相同；前端安全提示为提交结果未确认。故请求确实到Node本地代理，但没有上游HTTP响应。当前Harness外层catch返回了原始错误字符串，既不安全也不利于区分故障阶段。
 - 结论PASS_WITH_LIMITATION：Node外层catch仅对本轮真实Output POST填固定proxy_failure_class：Fetch TypeError映射FETCH_TYPE_ERROR，其余映射PROXY_EXCEPTION；向Edge只返回固定SYSTEM_UNAVAILABLE 503，绝不回传异常message。请求方法/path class/status/upstream status/proxy class有限诊断保留。Node仍需成功产生摘要、Python先执行DB快照后严格判定；成功条件不放宽。
 - 只做Hosted Harness修正，不改真实产品代码。通过GitHub Hosted Windows/D盘验证；本机/C盘不运行。
+
+
+## 代理异常脱敏候选实施记录（2026-11-06，待Hosted）
+
+- 只修改Node Harness：Output POST代理异常映射固定类别；TypeError→FETCH_TYPE_ERROR，其他→PROXY_EXCEPTION；Edge得到固定503 SYSTEM_UNAVAILABLE Envelope，不再返回异常字符串。动作轨迹只包含方法/path class/status/upstream status/白名单error code/代理异常类别。
+- Python异常摘要也保留相同有限字段；严格成功判定不变，DB快照先执行。本候选尚未Hosted验证；不代表真实API通过。
