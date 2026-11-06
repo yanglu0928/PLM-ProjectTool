@@ -497,7 +497,7 @@ jobs:
             $candidateSummary = Get-Content -LiteralPath $candidateSummaryPath -Raw | ConvertFrom-Json
             $candidateHash = (Get-FileHash -LiteralPath $candidate.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             if ($candidateHash -ne $candidateSummary.archive_sha256 -or $candidateSummary.release_eligible -ne $false -or $candidateSummary.legal_clearance -ne $false) { throw "SUR-07-A08 candidate identity or non-release scope mismatch" }
-            $stage = Join-Path $tempRoot ("plm-install-rehearsal-stage-a08-" + $env:GITHUB_RUN_ID)
+            $stage = Join-Path $tempRoot ("plm-current-app-stage-a08-" + $env:GITHUB_RUN_ID)
             $pristine = Join-Path $tempRoot ("plm-install-rehearsal-pristine-a08-" + $env:GITHUB_RUN_ID)
             $target = Join-Path $tempRoot ("plm-install-rehearsal-target-a08-" + $env:GITHUB_RUN_ID)
             $markers = @("SUR_07_A08_PACKAGED_PG_PASS", "SUR_07_A12_P05_PACKAGED_EDGE_PASS", "SUR_07_A08_PACKAGED_LICENSE_DENIAL_PASS")

@@ -29,6 +29,7 @@ def mark_stage(stage: str) -> None:
 
 sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "apps" / "backend" / "src"))
+extract_verified = runpy.run_path(str(ROOT / "tools/run_a17_packaged_cloud_validation.py"))["extract_verified"]
 survey_create = runpy.run_path(str(ROOT / "validation/sur-07-a03-survey-create-packaged/verify.py"))
 handover_review = survey_create["prior"]
 _seed_observer = handover_review["seed_observer"]
@@ -285,6 +286,15 @@ def main() -> int:
             raise ValueError("alternate temp root rejected")
         tempfile.tempdir = str(root)
     mark_stage("TEMP_ROOT_READY")
+    temp = Path(tempfile.gettempdir()).resolve(strict=True)
+    stage_parent = args.stage.parent.resolve(strict=True)
+    if (stage_parent != temp or not str(args.stage).isascii()
+            or not args.stage.name.startswith("plm-current-app-stage-")
+            or args.stage.exists() or args.stage.is_symlink()):
+        raise ValueError("current-app stage root rejected")
+    mark_stage("CANDIDATE_STAGE_EXTRACT_START")
+    extract_verified(args.candidate, args.expected_sha256, args.stage)
+    mark_stage("CANDIDATE_STAGE_EXTRACT_PASS")
     runner = handover_review["base"]["base"]["project"]["base"].base.base
     mark_stage("PACKAGED_SMOKE_START")
     try:
