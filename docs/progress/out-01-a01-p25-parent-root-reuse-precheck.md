@@ -111,3 +111,10 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 
 - 当前有限字段连续两轮均为proxy异常OTHER/UNKNOWN，无真实upstream状态，但能确认浏览器POST到达Node并收到固定503；本轮其他15个作业全通过，含A17/A34。数据库snapshot一致，仍不是Output API负例验收。
 - PASS_WITH_LIMITATION：下一轮在同一Node Harness进程中对FastAPI /openapi.json作一次只读连通性GET，输出状态码及受限响应MIME标志/异常类别，响应正文直接取消且不解析。只用于区分网络/Node fetch与POST构造阶段；不计入业务请求。失败保持固定类别诊断，成功再检POST。产品代码不改，GitHub Hosted D盘运行。
+
+
+## Node→FastAPI OpenAPI探针实施记录（2026-11-06，Hosted待验证）
+
+- 在Node Harness同一进程中、启动Edge前GET真实Hosted临时FastAPI的/openapi.json；只保留HTTP状态、JSON MIME布尔和有限异常类别，立即取消正文流；不读取API schema内容，不计入Output Create请求次数。
+- Python要求preflight HTTP 200及JSON MIME并保留此诊断；失败时仍执行Node摘要后DB snapshot，再统一严格拒绝。真实Output POST成功验收仍422/VALIDATION_FAILED/无回执无重试/数据库不变。
+- 测试代码已同步，尚未Hosted验证；本机/C盘未运行。
