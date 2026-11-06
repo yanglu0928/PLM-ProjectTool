@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P39 Hosted验收器静态接线遗漏，修复前记录）
+
+- 源码复核发现P39候选Synthetic server尚未服务production dist静态SPA，request summary将包含非API资源；与Content-Disposition转义风险一并先记CR-OUT-034，未将静态发现表述为已运行失败。下一步仅补server静态回退和限定API请求记录，Hosted node --check/Edge验收待跑。
+
 ## Unreleased · 2026-11-06（P39 Hosted验证器静态转义偏差，待云端复验）
 
 - P39候选提交后的静态复核发现附件文件名响应头在Node脚本中的转义可能提前结束字符串，尚未以Hosted node --check确认，也未形成P39通过结果。已先补记CR-OUT-034，拟只修验证器引用字面量和合成字节数组；产品逻辑不变。
