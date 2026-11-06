@@ -192,7 +192,16 @@ def verify_output_artifact_download_http(engine, *, data: dict,
     reference_response = get(reference_path)
     if reference_response.status_code != 200:
         raise AssertionError("authorized Artifact reference HTTP read failed")
-    reference = json.loads(reference_response.text)
+    envelope = json.loads(reference_response.text)
+    envelope_valid = (
+        type(envelope) is dict and set(envelope) == {"data", "trace_id"}
+        and type(envelope.get("data")) is dict
+        and type(envelope.get("trace_id")) is str
+        and str(uuid.UUID(envelope["trace_id"])) == envelope["trace_id"]
+    )
+    if not envelope_valid:
+        raise AssertionError("Artifact reference response envelope is invalid")
+    reference = envelope["data"]
     expected_content_path = (
         f"/api/v1/projects/{project_id}/documents/{document_id}"
         f"/versions/{version_id}/content"
