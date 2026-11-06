@@ -1,7 +1,7 @@
 # CR-OUT-021：真实 Output Create HTTP 与 hosted Edge 失败关闭集成
 
 - 日期：2026-11-05
-- 状态：编码前检查PASS_WITH_LIMITATION；hosted桥接代码已实现，P25真实HTTP/Edge验收仍被PG初始化阻断
+- 状态：P25仍BLOCKED_DIAGNOSTIC；Hosted真实HTTP/Edge已接通但HTTP/UI/无副作用证据未闭环
 - 来源：CR-OUT-015/P19真实PG18 API失败关闭证据、CR-OUT-020/P24 Edge模拟API证据
 - 基线：冻结 API Contract V1 OUTPUT_REQUEST_CREATE、已批准Windows显式write组合；不改冻结合同/Schema/Migration/默认挂载
 
@@ -275,3 +275,13 @@ run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 Harness把本次合成PG run目录改为同run已验证父包提取根的精确直系子目录 p25-real-pg-<run-id>，避免使用外部RUNNER_TEMP随机子目录；PG程序仍从sidecar Hash已逐文件匹配的父包 payload/pgsql 运行。P25 initdb命令、PATH过滤、HTTP及Edge合同不变。
 
 finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point、解析后恰为当前parent_root的精确命名直系子目录且目录无其他内容时，删除该尚未初始化夹具并让initdb主异常继续传播。状态4不记作PG成功/停止；3仍是已停止，0先按原流程尝试stop，其余状态继续拒绝清理。workflow always清理当前D盘父包根兜底。实现与Hosted复验待定，P25仍BLOCKED_DIAGNOSTIC。
+
+
+## Run 42172719463：真实 HTTP 已到达，错误响应诊断不足（2026-11-06）
+
+- Hosted Windows Server 2025/D盘 run [42172719463](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42172719463) 的15个job中14个成功，P25失败。完整父包内PG运行根、data目录、PostgreSQL启动、侧车逐文件Hash及always清理均通过；真实Edge页面向真实HTTP组合发出一次Create POST。
+- P25 Harness记录该POST响应500，Edge安全显示“服务暂不可用/提交结果暂时无法确认”，没有业务成功回执。当前Node Harness等待一个特定验证文案时提前抛错；真实HTTP响应的错误码未以白名单形式记录，Python未继续做请求前后DB snapshot比较。因此，尚不能判定该500的业务根因，也不能声称数据库无变化。
+- 同一日志另有一个request_completed状态422事件，但日志没有将它与Edge Create POST关联；不把该事件解释成POST的响应。未发现客户数据、外部API或插件执行。
+
+**下一步实施前决策：** 只扩展P25测试Harness：在合成HTTP响应中解析错误Envelope，只输出固定白名单错误码或UNRECOGNIZED；Edge只输出有限UI类别。将“等待精确文案”改成采集诊断，让Node成功写出结构化摘要后，由Python始终完成请求前后DB snapshot比较，再对HTTP状态、UI类别、请求次数及DB相等性统一作严格失败/通过判断。不得吞掉失败、放宽预期422或将500当通过；绝不记录正文、认证头、异常消息或客户内容。产品/API/Schema/Publisher信任不变。
+- 验收：GitHub Hosted Windows D盘重新运行全链；需同时拿到明确HTTP错误码、UI类别、恰好一次POST、无回执/重试及相同DB计数。任一要求不符均失败并保留去敏摘要。验证代码不在本机/C盘运行。
