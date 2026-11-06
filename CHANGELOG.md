@@ -732,3 +732,8 @@
 ## Unreleased · 2026-11-06（P39 fetch this 接收者根因推断，修复待验证）
 
 - run [42152467241](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42152467241)：Artifact click fetch参数标志均有效但native fetch TypeError；无signal/有效signal对照各自HTTP 200。源码显示OutputArtifactReadClient将fetcher作为this.fetcher(...)对象方法调用，OutputRequestListClient则以局部fetcher函数调用。按CR-OUT-034将此定为高置信根因推断，仅拟修调用形式并执行完整前端/Hosted Edge验证，尚未修复/通过。P25仍initdb 0xC0000135；不构成Pilot/Gate/Release通过。
+
+
+## Unreleased · 2026-11-06（P39 Hosted Harness阶段诊断候选）
+
+- 按CR-OUT-034记录的CDP evaluate通用Uncaught，独立Harness增加固定阶段标签和异常class类别；停止输出原始CDP异常文本。仅帮助确认点击/页面阶段，未改产品逻辑或安全策略，等待Hosted复验。

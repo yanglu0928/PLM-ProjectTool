@@ -120,20 +120,21 @@ async function getPage(){for(let i=0;i<300;i++){
 function send(method,params={}){const id=++nextId;socket.send(JSON.stringify({id,method,params}));
  return new Promise((resolveSend,rejectSend)=>pending.set(id,{resolveSend,rejectSend}));
 }
+let harnessStage="startup",evaluationExceptionClass=null;
 async function evaluate(expression){const out=await send("Runtime.evaluate",{expression,awaitPromise:true,returnByValue:true});
- if(out.exceptionDetails)throw new Error(out.exceptionDetails.text);return out.result.value;
+ if(out.exceptionDetails){evaluationExceptionClass=out.exceptionDetails.exception?.className||"unknown";throw new Error("CDP evaluation exception")};return out.result.value;
 }
-async function waitFor(expression,label){for(let i=0;i<300;i++){
+async function waitFor(expression,label){harnessStage=({"login form":"login-ready","synthetic login":"login-confirm","output history":"history-load","invalid cross-project reference":"cross-project-negative"})[label]||"wait";for(let i=0;i<300;i++){
  try{if(await evaluate("Boolean("+expression+")"))return}catch{}await pause(100)}
  throw new Error("timeout "+label);
 }
-async function click(label){const ok=await evaluate("(()=>{const e=[...document.querySelectorAll('button,a')].find(x=>x.textContent.trim()==="+JSON.stringify(label)+");if(!e)return false;e.click();return true})()");
+async function click(label){harnessStage=label.includes("登录")?"login-submit":"button-click";const ok=await evaluate("(()=>{const e=[...document.querySelectorAll('button,a')].find(x=>x.textContent.trim()==="+JSON.stringify(label)+");if(!e)return false;e.click();return true})()");
  if(!ok)throw new Error("missing browser action: "+label);
 }
-async function setValue(selector,value){const ok=await evaluate("(()=>{const e=document.querySelector("+JSON.stringify(selector)+");if(!e)return false;const d=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e),'value');d.set.call(e,"+JSON.stringify(value)+");e.dispatchEvent(new Event('input',{bubbles:true}));return true})()");
+async function setValue(selector,value){harnessStage="login-input";const ok=await evaluate("(()=>{const e=document.querySelector("+JSON.stringify(selector)+");if(!e)return false;const d=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e),'value');d.set.call(e,"+JSON.stringify(value)+");e.dispatchEvent(new Event('input',{bubbles:true}));return true})()");
  if(!ok)throw new Error("missing browser input: "+selector);
 }
-async function navigate(path){await evaluate("history.pushState({},'',"+JSON.stringify(path)+");dispatchEvent(new PopStateEvent('popstate'))")}
+async function navigate(path){harnessStage="history-navigation";await evaluate("history.pushState({},'',"+JSON.stringify(path)+");dispatchEvent(new PopStateEvent('popstate'))")}
 try{
  const page=await getPage();socket=new WebSocket(page.webSocketDebuggerUrl);
  await new Promise((ok,bad)=>{socket.addEventListener("open",ok,{once:true});socket.addEventListener("error",bad,{once:true})});
@@ -147,15 +148,15 @@ try{
  });
  await send("Runtime.enable");await send("Page.enable");await send("Network.enable");
  await send("Browser.setDownloadBehavior",{behavior:"allow",downloadPath:downloadDir,eventsEnabled:true});
- const instrumentation=await evaluate("(()=>{const nativeFetch=window.fetch;window.__p39NativeFetch=nativeFetch;window.__p39FetchTrace=[];window.__p39FetchRejects=[];const recordFetchReject=(url,method,error)=>{const category=error&&error.name==='AbortError'?'Abort':error&&error.name==='TypeError'?'TypeError':'Other';window.__p39FetchRejects.push({method,path:url.pathname,category})};window.fetch=function(...args){const input=args[0];const url=new URL(typeof input==='string'?input:input.url,location.href);const init=args[1]||{};const method=init.method||input.method||'GET';const api=url.pathname.startsWith('/api/');const signal=init.signal||input.signal||null;const credentials=['omit','same-origin','include'].includes(init.credentials)?init.credentials:'default';const cache=['default','no-store','reload','no-cache','force-cache','only-if-cached'].includes(init.cache)?init.cache:'other';const redirect=['follow','error','manual'].includes(init.redirect)?init.redirect:'default';const acceptJson=new Headers(init.headers||input.headers||undefined).get('Accept')==='application/json';if(api)window.__p39FetchTrace.push({method,path:url.pathname,origin_matches:url.origin===location.origin,signal_present:!!signal,signal_valid:!!signal&&signal instanceof AbortSignal,signal_aborted:!!signal?.aborted,credentials,cache,redirect,accept_json:acceptJson});try{const result=nativeFetch.apply(this,args);if(!api)return result;return Promise.resolve(result).catch(error=>{recordFetchReject(url,method,error);throw error})}catch(error){if(api)recordFetchReject(url,method,error);throw error}};const NativeAbort=window.AbortController;window.__p39AbortCount=0;window.AbortController=class extends NativeAbort{constructor(){super();window.__p39AbortCount++}};return {fetch_type:typeof window.fetch,abort_type:typeof NativeAbort}})()");
+ harnessStage="instrumentation";const instrumentation=await evaluate("(()=>{const nativeFetch=window.fetch;window.__p39NativeFetch=nativeFetch;window.__p39FetchTrace=[];window.__p39FetchRejects=[];const recordFetchReject=(url,method,error)=>{const category=error&&error.name==='AbortError'?'Abort':error&&error.name==='TypeError'?'TypeError':'Other';window.__p39FetchRejects.push({method,path:url.pathname,category})};window.fetch=function(...args){const input=args[0];const url=new URL(typeof input==='string'?input:input.url,location.href);const init=args[1]||{};const method=init.method||input.method||'GET';const api=url.pathname.startsWith('/api/');const signal=init.signal||input.signal||null;const credentials=['omit','same-origin','include'].includes(init.credentials)?init.credentials:'default';const cache=['default','no-store','reload','no-cache','force-cache','only-if-cached'].includes(init.cache)?init.cache:'other';const redirect=['follow','error','manual'].includes(init.redirect)?init.redirect:'default';const acceptJson=new Headers(init.headers||input.headers||undefined).get('Accept')==='application/json';if(api)window.__p39FetchTrace.push({method,path:url.pathname,origin_matches:url.origin===location.origin,signal_present:!!signal,signal_valid:!!signal&&signal instanceof AbortSignal,signal_aborted:!!signal?.aborted,credentials,cache,redirect,accept_json:acceptJson});try{const result=nativeFetch.apply(this,args);if(!api)return result;return Promise.resolve(result).catch(error=>{recordFetchReject(url,method,error);throw error})}catch(error){if(api)recordFetchReject(url,method,error);throw error}};const NativeAbort=window.AbortController;window.__p39AbortCount=0;window.AbortController=class extends NativeAbort{constructor(){super();window.__p39AbortCount++}};return {fetch_type:typeof window.fetch,abort_type:typeof NativeAbort}})()");
  assert.equal(instrumentation.fetch_type,"function");
  await waitFor("document.querySelector('#login-username')","login form");
  await setValue("#login-username","synthetic-user");await setValue("#login-password","synthetic-only");
  await click("登录 / 重新登录");await waitFor("document.body.innerText.includes('登录成功。')","synthetic login");
  await navigate("/projects/"+ids.project+"/output-requests");
  await waitFor("location.pathname==='/projects/"+ids.project+"/output-requests' && document.querySelectorAll('li').length===3","output history");
- const clientBaseline=await evaluate("({fetch_calls:window.__p39FetchTrace.length,abort_count:window.__p39AbortCount,fetch_rejections:window.__p39FetchRejects.length})");
- const failedHasDownload=await evaluate("(()=>{const li=[...document.querySelectorAll('li')].find(x=>x.innerText.includes("+JSON.stringify(ids.failedRequest)+"));return !!li&&[...li.querySelectorAll('button')].some(b=>b.innerText.trim()==='下载文件')})()");
+ harnessStage="history-ready";const clientBaseline=await evaluate("({fetch_calls:window.__p39FetchTrace.length,abort_count:window.__p39AbortCount,fetch_rejections:window.__p39FetchRejects.length})");
+ harnessStage="failed-row-check";const failedHasDownload=await evaluate("(()=>{const li=[...document.querySelectorAll('li')].find(x=>x.innerText.includes("+JSON.stringify(ids.failedRequest)+"));return !!li&&[...li.querySelectorAll('button')].some(b=>b.innerText.trim()==='下载文件')})()");
  assert.equal(failedHasDownload,false,"FAILED output must not show download action");
  checks.push("FAILED output row exposes no download action");
 
@@ -163,17 +164,17 @@ try{
  const validContentPath="/api/v1/projects/"+ids.project+"/documents/"+ids.document+"/versions/"+ids.version+"/content";
  const clickSucceeded=async()=>{
   let probe=null;
-  for(let i=0;i<100;i++){
+  harnessStage="button-probe";for(let i=0;i<100;i++){
    probe=await evaluate("(()=>{const li=[...document.querySelectorAll('li')].find(x=>x.innerText.includes("+JSON.stringify(ids.request)+"));if(!li)return {found:false};const b=[...li.querySelectorAll('button')].find(x=>x.innerText.trim()==='下载文件');if(!b)return {found:false,row:li.innerText};b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {found:true,disabled:b.disabled,text:b.innerText.trim(),x:r.x+r.width/2,y:r.y+r.height/2,row:li.innerText}})()");
    if(probe&&probe.found&&!probe.disabled)break;
    await pause(100);
   }
   assert.ok(probe&&probe.found&&!probe.disabled,"download button was not ready: "+JSON.stringify(probe));
-  await send("Input.dispatchMouseEvent",{type:"mouseMoved",x:probe.x,y:probe.y});
+  harnessStage="artifact-mouse-click";await send("Input.dispatchMouseEvent",{type:"mouseMoved",x:probe.x,y:probe.y});
   await send("Input.dispatchMouseEvent",{type:"mousePressed",x:probe.x,y:probe.y,button:"left",clickCount:1});
   await send("Input.dispatchMouseEvent",{type:"mouseReleased",x:probe.x,y:probe.y,button:"left",clickCount:1});
   for(let i=0;i<100;i++){
-   const alert=await evaluate("document.querySelector('[role=alert]')?.innerText||''");
+   harnessStage="artifact-click-result";const alert=await evaluate("document.querySelector('[role=alert]')?.innerText||''");
    if(reqs.some(x=>x.path===validRefPath&&x.method==="GET"))return probe;
    if(alert){clientProbe=await evaluate("({fetch_calls:window.__p39FetchTrace,abort_count:window.__p39AbortCount,fetch_rejections:window.__p39FetchRejects})");const probeExpression="(async()=>{const run=async(mode)=>{const path="+JSON.stringify(validRefPath)+"+'?__p39_probe='+mode;const init={method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error',headers:{Accept:'application/json'}};if(mode==='signal'){const controller=new AbortController();init.signal=controller.signal}try{const response=await window.__p39NativeFetch.call(window,path,init);return {probe:mode,outcome:'resolved',status:response.status,media_type:response.headers.get('content-type')?.split(';')[0]||null}}catch(error){const category=error&&error.name==='AbortError'?'Abort':error&&error.name==='TypeError'?'TypeError':'Other';return {probe:mode,outcome:'rejected',category}}};const controller=new AbortController();return {signal:{instance_valid:controller.signal instanceof AbortSignal,aborted:controller.signal.aborted},comparisons:[await run('bare'),await run('signal')]}})()";clientProbe.diagnostic_probe=await evaluate(probeExpression);throw new Error("download handler showed alert before reference request: "+JSON.stringify({probe,alert,clientBaseline,clientProbe,requests:reqs}))}
    await pause(50);
@@ -196,9 +197,9 @@ try{
  assert.equal(reqs.filter(x=>x.path===validContentPath&&x.method==="GET").length,1);
  checks.push("SUCCEEDED row resolves the same-origin Artifact reference and Edge saves exact attachment bytes/hash/length");
 
- const badProbe=await evaluate("(()=>{const li=[...document.querySelectorAll('li')].find(x=>x.innerText.includes("+JSON.stringify(ids.badRequest)+"));if(!li)return {found:false};const b=[...li.querySelectorAll('button')].find(x=>x.innerText.trim()==='下载文件');if(!b)return {found:false};b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {found:true,disabled:b.disabled,x:r.x+r.width/2,y:r.y+r.height/2}})()");
+ harnessStage="cross-project-button-probe";const badProbe=await evaluate("(()=>{const li=[...document.querySelectorAll('li')].find(x=>x.innerText.includes("+JSON.stringify(ids.badRequest)+"));if(!li)return {found:false};const b=[...li.querySelectorAll('button')].find(x=>x.innerText.trim()==='下载文件');if(!b)return {found:false};b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return {found:true,disabled:b.disabled,x:r.x+r.width/2,y:r.y+r.height/2}})()");
  assert.ok(badProbe&&badProbe.found&&!badProbe.disabled,"cross-project row download action was not ready: "+JSON.stringify(badProbe));
- await send("Input.dispatchMouseEvent",{type:"mouseMoved",x:badProbe.x,y:badProbe.y});
+ harnessStage="cross-project-mouse-click";await send("Input.dispatchMouseEvent",{type:"mouseMoved",x:badProbe.x,y:badProbe.y});
  await send("Input.dispatchMouseEvent",{type:"mousePressed",x:badProbe.x,y:badProbe.y,button:"left",clickCount:1});
  await send("Input.dispatchMouseEvent",{type:"mouseReleased",x:badProbe.x,y:badProbe.y,button:"left",clickCount:1});
  await waitFor("document.querySelector('[role=alert]')?.innerText.includes('暂时无法获取输出文件')","invalid cross-project reference");
@@ -213,7 +214,7 @@ try{
   saved_bytes:saved.length,saved_sha256:digest,customer_data:false,external_api_calls:0,
   plugin_executed:false,formal_license_trust:false,backend_live:false,release_eligible:false};
  await writeFile(summaryPath,JSON.stringify(summary,null,2)+"\n","utf8");console.log(JSON.stringify(summary));
-}catch(error){console.error(JSON.stringify({error:String(error),requests:reqs.slice(-30),browser_network:browserNetwork,network_failures:networkFailures,runtime_exceptions:runtimeExceptions,client_probe:clientProbe},null,2));process.exitCode=1}
+}catch(error){console.error(JSON.stringify({error:String(error),stage:harnessStage,evaluation_exception_class:evaluationExceptionClass,requests:reqs.slice(-30),browser_network:browserNetwork,network_failures:networkFailures,runtime_exceptions:runtimeExceptions,client_probe:clientProbe},null,2));process.exitCode=1}
 finally{
  if(socket&&socket.readyState===WebSocket.OPEN)socket.close();
  edge.kill();await pause(300);
