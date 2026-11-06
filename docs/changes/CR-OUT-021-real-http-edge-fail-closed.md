@@ -399,3 +399,11 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - 风险：当前分支树暂时退回了健康探针/阶段诊断代码；若继续直接修单行作用域，会遗漏前一提交代码并让验证结果失配。
 - 方案：从已存在提交 `f62f292` 恢复完整的两份 P25 Harness 文件（Node与Python），在同一Node文件加入 `req.__p24Entry` 局部绑定修复，再以当前分支 `ba44e1e` 为父节点和tree基准创建正常快进提交。保留全部Git历史，不force push。
 - 验证/回滚：GitHub Hosted复验将以恢复后的同一commit执行；若验证失败，继续前向修正，不移动/覆盖远端历史。Secret检查仅针对恢复文件；仅Hosted Windows D盘执行。
+
+
+## 验收结果：OUT-01-A01-P25 PASS_SCOPE_LIMITED
+
+- GitHub Hosted run [42217889515](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42217889515)，提交 `06f75f1bda0cef39a97de6b890e15c81d5777b2c)，16/16 jobs 成功。
+- P25 在 GitHub hosted Windows Server 2025/D盘以同run包和PostgreSQL 18.6/pgvector 0.8.6运行；`/health/live` 200/JSON/UP；Edge到真实显式Windows Output Create API的唯一POST得到HTTP 422与`VALIDATION_FAILED`；UI分类为预期固定版本校验提示；POST数1，无成功/状态回执；Output/Job/Audit/Idempotency目标计数前后相同；D盘父包、临时数据库和浏览器资源清理成功。
+- 此结果关闭P25的真实HTTP失败关闭验收，范围为`PASS_SCOPE_LIMITED`。没有产生DOCX、执行插件或调用外部API；只使用合成账户/项目/需求，不含客户数据。默认Create路由仍不挂载、正式publisher/License信任未建立、Win11本轮实机未测；Pilot、Gate 3及正式Release仍NOT_READY。
+- 详情：`docs/progress/out-01-a01-p25-real-http-edge-result.md`。
