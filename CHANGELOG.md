@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（CR-EXEC-038：A08 目标布局 PostgreSQL 装载探针）
+
+- Hosted run [42278965171](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42278965171)：CR-EXEC-037 的 target PostgreSQL bin/lib PATH 前置后，A08 完整 initdb 仍返回 3221225781/0xC0000135；路径假设未获支持，无 A08 业务 markers。同期 A17/P25/P40/A34/A35、前后端、PG18 与候选包作业成功，整体run仍因A08 failure不全绿。
+- 先登记偏差后，A08 仅在实际 initdb 调用的同一 target 目录/环境中增加 initdb.exe 与 postgres.exe 的只读 --version 探针；stdout/stderr丢弃，只将退出码或固定超时/启动失败分类纳入白名单摘要。随后仍执行原完整 smoke，产品包/业务/验收标准不变。
+- 下一 Hosted 复验待完成；A08仍未通过，不代表Win11实机、Pilot、Gate或Release。
+
 ## Unreleased · 2026-11-07（CR-EXEC-037 PATH 调整已实施）
 - A08 verifier在候选 staging --version成功后，对下一步 smoke 使用的 target 路径执行所有权预检，并将同run target/runtime/pgsql/bin 与 lib 前置到Python进程PATH，保留原值；预计可让PG子进程解析包内DLL。只改A08验证Harness，不改父包内容/产品/业务验收。
 - GitHub Hosted Windows Server 2025 D盘完整复验待结果；不宣称问题解决或PASS。

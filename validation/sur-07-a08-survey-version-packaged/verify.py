@@ -324,6 +324,31 @@ def main() -> int:
     ))
     mark_stage("BUNDLED_PG_DLL_PATH_READY")
     runner = handover_review["base"]["base"]["project"]["base"].base.base
+    platform_write_globals = runner.smoke.__globals__["original_smoke"].__globals__
+    original_pg_run = platform_write_globals["_run"]
+    target_pg_bin = target_root / "runtime" / "pgsql" / "bin"
+    target_pg_probes = {"initdb": "not_run", "postgres": "not_run"}
+
+    def a08_pg_run(arguments, *, env=None, timeout=120):
+        if (arguments and Path(arguments[0]).name.casefold() == "initdb.exe"
+                and target_pg_probes["initdb"] == "not_run"):
+            probe_env = dict(env if env is not None else os.environ)
+            for name in ("initdb", "postgres"):
+                try:
+                    probe = subprocess.run(
+                        [str(target_pg_bin / (name + ".exe")), "--version"],
+                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL, timeout=30, check=False, env=probe_env,
+                    )
+                    target_pg_probes[name] = str(probe.returncode)
+                except subprocess.TimeoutExpired:
+                    target_pg_probes[name] = "timeout"
+                except OSError:
+                    target_pg_probes[name] = "launch_error"
+            mark_stage("TARGET_PG_VERSION_PROBES_DONE")
+        return original_pg_run(arguments, env=env, timeout=timeout)
+
+    platform_write_globals["_run"] = a08_pg_run
     mark_stage("PACKAGED_SMOKE_START")
     try:
         result = runner.smoke(
@@ -356,9 +381,13 @@ def main() -> int:
               + "; winerror=" + str(winerror)
               + "; child=" + child
               + "; child_exit=" + child_exit
+              + "; target_initdb_probe=" + target_pg_probes["initdb"]
+              + "; target_postgres_probe=" + target_pg_probes["postgres"]
               + "; stage=" + _CURRENT_STAGE
               + "; frames=" + (">".join(frames) if frames else "none"), flush=True)
         raise
+    finally:
+        platform_write_globals["_run"] = original_pg_run
     mark_stage("PACKAGED_SMOKE_PASS")
     print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
     return 0
