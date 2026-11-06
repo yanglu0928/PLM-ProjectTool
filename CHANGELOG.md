@@ -2,7 +2,7 @@
 
 - 新增 Plan Owner 授权的精确 PlanVersion Output 投影；在 Windows Output composition 中按 Owner dispatch，同时保留现有 Requirement 来源。
 - 追加不可变 PlanVersion DOCX 模板和策略版本，严格限制 APPROVED 与五类快照字段；没有数据库 Migration 或 API Contract 变化。插件签名信任保持 fail-closed。
-- 定向测试和独立真实 PG18 Owner lookup 验收器已添加，并接入 Hosted 父包 PG18 smoke；待新 run 验证。当前后端单测/wheel成功，但不代表本项PG18集成、Pilot/Gate/Release或Windows 11实机验收。
+- Hosted run [42295334125](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42295334125) 中后端全量测试/wheel与父包 PG18 smoke 成功；P41 隔离 verifier 对 PlanVersion UUID 做真实 PostgreSQL project-scoped 查询并验证固定版本到 plan_id 派生。snapshot reconstruction 用合成 fixture；P41 为 PASS_SCOPE_LIMITED。全run仅因A08失败未全绿；正式信任、插件执行、Pilot/Gate/Release及Win11实机不在通过结论内。
 
 ## Unreleased · 2026-11-07（CR-EXEC-039：A08 PostgreSQL 临时环境差分）
 
