@@ -1,7 +1,7 @@
 # CR-EXEC-045：OUT-01-A01-P46 真实 PlanVersion 状态门与 Output 零写入验证
 
 日期：2026-11-07  
-状态：编码已完成；Hosted PG18/A17验收待完成（2026-11-07）。
+状态：PASS_SCOPE_LIMITED（2026-11-07；Hosted run 42311145160 A17 marker及PG18断言通过）。
 
 ## 当前阶段与 WBS
 
@@ -35,3 +35,12 @@ Phase 2 Platform Core / Windows 11 Pilot 纵向业务链。WBS：OUT-01-A01-P46�
 
 - 已按编码前检查，仅扩展A17验证Harness：把同run真实Plan Owner读层接入生产 `FixedOutputSourceAdapter`、固定Plan模板/APPROVED策略、`TrustedOutputContextResolver`及`OutputRequestService`；用test-only enabled/trusted capability使请求到达真实来源状态门，不调用插件。
 - 在A17受限结果marker allowlist中显式纳入P45/P46两个固定marker，令PG18 Owner snapshot及零写入断言可在bound summary中追溯。代码已同步至PR #61分支；Hosted验收待完成。
+
+
+## 实施及验收结果（2026-11-07）
+
+- A17同run迁移后PG18中实际创建的IN_REVIEW PlanVersion经真实PlanVersionReadService、生产FixedOutputSourceAdapter、内置Plan DOCX模板/APPROVED策略、TrustedOutputContextResolver及OutputRequestService发起合成请求，返回 `VALIDATION_FAILED`。
+- A17 summary证实实际Plan Owner读取1次，OutputRequest/ContextSnapshot/Job/Outbox/Audit/幂等六类计数不变，插件执行0；summary含P45/P46固定marker。
+- Run [42311145160](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42311145160)的A17/P25/A34及构建/测试通过。17 jobs中16成功；唯一失败SUR-07-A08 initdb 3221225781、无业务markers，TEMP/TMP路线按CR-EXEC-039停止。
+- 仅Hosted D盘synthetic验收；无产品/API/Schema/Migration改动、客户数据、插件执行或文档生成；Windows 11实机、正式Publisher trust、Pilot、Gate、Release不变。
+- 下一项 PLG-03-A01，按CR-EXEC-046实现JSON-RPC over stdio子进程Host，不接生产Output或真实Publisher trust。

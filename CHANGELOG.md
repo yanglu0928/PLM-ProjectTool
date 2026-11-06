@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-07（CR-EXEC-045：真实 PlanVersion 状态门 fail-closed）
+
+- OUT-01-A01-P46在Hosted A17同run PG18中通过：真实IN_REVIEW PlanVersion经生产FixedOutputSourceAdapter、内置不可变模板与仅APPROVED策略、真实TrustedOutputContextResolver及OutputRequestService，状态门返回VALIDATION_FAILED；六类Output持久化计数不变，Plan Owner实际读取1次，plugin execution=0。
+- A17 bounded summary导出P45真实快照marker与P46状态门/零写入marker。Hosted run [42311145160](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42311145160)：A17/P25/A34和基础构建/测试成功；17 jobs中16成功，唯一失败仍为SUR-07-A08 initdb 3221225781、无业务markers。按CR-EXEC-039不重跑TEMP/TMP假设。
+- 仅synthetic Hosted Windows Server 2025 D盘验证；无产品/API/Schema/Migration更改、客户数据、真实trust、插件执行、文件生成或本机/C盘运行。Windows 11实机、Pilot、Gate、Release不变。
+- 下一项转至 PLG-03-A01：按CR-EXEC-046实现最小JSON-RPC over stdio Host并云端验证，不接生产Output或真实Publisher trust。
+
 ## Unreleased · 2026-11-07（CR-EXEC-045：真实 PlanVersion 状态门验证）
 
 - OUT-01-A01-P46 A17验证Harness已实现：同run真实Plan Owner的IN_REVIEW投影经生产FixedOutputSourceAdapter、固定模板/APPROVED策略、TrustedOutputContextResolver及OutputRequestService；由test-only capability确保到达Owner状态门，预期VALIDATION_FAILED且ContextSnapshot/Request/Job/Outbox/Audit/幂等收据六类记录零新增，插件执行0。
