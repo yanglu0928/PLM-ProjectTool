@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25代理异常指纹不足）
+- run [42182842169](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42182842169)：Output POST到Node后返回固定503，未获FastAPI响应；error指纹OTHER/UNKNOWN，数据库快照一致，P25未通过。
+- 下一步按CR-OUT-021仅在内存把异常消息映射为固定类别，不保存原文；真实HTTP失败关闭验收条件保持。
+
 ## Unreleased · 2026-11-06（P25底层代理错误安全指纹候选，Hosted复验待定）
 - 增加有限error.name类别/cause.code白名单，其他归UNKNOWN；不记录异常文本，代理仍固定返回503。仅验证Harness变化，真实HTTP422合同不变，待Hosted复验。
 
