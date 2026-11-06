@@ -159,6 +159,24 @@ const server=createServer(async(req,res)=>{
 });
 await new Promise((ok,bad)=>{server.once("error",bad);server.listen(requestedPort,"127.0.0.1",ok)});
 const address=server.address(),origin="http://localhost:"+address.port;
+let backendPreflight={status:null,json_mime:false,error_category:"NOT_RUN"};
+if(backendOrigin){
+ try{
+  const probe=await fetch(backendOrigin+"/openapi.json",{method:"GET",headers:{accept:"application/json"}});
+  backendPreflight.status=probe.status;
+  backendPreflight.json_mime=(probe.headers.get("content-type")||"").toLowerCase().includes("application/json");
+  await probe.body?.cancel();
+  backendPreflight.error_category="NONE";
+ }catch(error){
+  const message=typeof error?.message==="string"?error.message.toLowerCase():"";
+  backendPreflight.error_category=message.includes("fetch failed")?"FETCH_FAILED":
+   message.includes("econnrefused")?"CONNECTION_REFUSED":
+   message.includes("econnreset")?"CONNECTION_RESET":
+   message.includes("timed out")||message.includes("timeout")?"TIMEOUT":
+   message.includes("getaddrinfo")||message.includes("enotfound")||message.includes("eai_again")?"DNS_FAILURE":
+   message.includes("socket")?"SOCKET_ERROR":"OTHER";
+ }
+}
 const profile=await mkdtemp(join(runnerTemp,"plm-out-p24-edge-"));
 const port=12000+(process.pid%30000);
 const edge=spawn("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",[
@@ -268,7 +286,7 @@ try{
   runner_os:"GitHub hosted Windows Server 2025",runner_drive:"D:",synthetic_data:true,controlled_api:true,
   checks,request_posts:reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")).length,real_backend_posts:realBackendPostCount,real_backend_status:realBackendStatus,real_backend_error_code:realBackendErrorCode,real_ui_category:realUiCategory,real_no_status_receipt:realNoStatusReceipt,real_no_success_receipt:realNoSuccessReceipt,real_api_requests:realApiRequests,
   customer_data:false,external_api_calls:0,plugin_executed:false,docx_generated:false,formal_license_trust:false,
-  gate3_changed:false,pilot_ready:false,release_eligible:false};
+  backend_preflight:backendPreflight,gate3_changed:false,pilot_ready:false,release_eligible:false};
  await writeFile(summaryPath,JSON.stringify(summary,null,2)+"\n","utf8");console.log(JSON.stringify(summary));
 }catch(error){console.error(JSON.stringify({error:String(error),requests:reqs.slice(-30).map(x=>({method:x.method,path:x.path,query:x.query,status:x.status,headers:x.headers}))},null,2));process.exitCode=1}
 finally{if(socket&&socket.readyState===WebSocket.OPEN)socket.close();edge.kill();await pause(300);
