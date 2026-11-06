@@ -874,6 +874,7 @@ def main() -> int:
     port_sock.close()
     result = {}
     p25_initdb_profile_diagnostic = None
+    p41_source_validation = None
     try:
         if args.p25_initdb_profile_diagnostic:
             probe_root = root / "p25-initdb-profile-diagnostic"
@@ -948,6 +949,16 @@ def main() -> int:
                 or migration_lifecycle.get("owner_migration_downgrade_reupgrade") != "PASS"
                 or migration_lifecycle.get("existing_synthetic_data_upgrade") != "PASS"):
             raise RuntimeError("Output migration lifecycle validation failed")
+        p41_source_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p41-plan-source-pg18/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            300)
+        p41_source_validation = json.loads(p41_source_run.stdout.strip().splitlines()[-1])
+        if (p41_source_validation.get("status") != "PASS_SCOPE_LIMITED"
+                or p41_source_validation.get("exact_version_scope") != "PASS"
+                or p41_source_validation.get("cross_project_isolation") != "PASS"):
+            raise RuntimeError("PlanVersion Output source PG18 validation failed")
         plugin_run = run_checked(
             [sys.executable,
              str(ROOT / "validation/plg-01-a01-package-schema/verify.py"),
@@ -1146,6 +1157,7 @@ def main() -> int:
             "web_service_smoke": web_service_smoke,
             "p25_initdb_profile_diagnostic": p25_initdb_profile_diagnostic,
             "output_migration_lifecycle": migration_lifecycle,
+            "plan_output_source_pg18": p41_source_validation,
         }
     finally:
         if start_attempted and data_dir.is_dir():
