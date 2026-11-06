@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P25代理异常脱敏候选，Hosted复验待定）
+- Node Harness对realbackend Output POST的代理异常新增有限类别，Edge改收固定503 SYSTEM_UNAVAILABLE，不再传播原始异常文本；API轨迹只输出固定path class/status等合成诊断。成功验收要求未放宽；当前未验证。
+
 ## Unreleased · 2026-11-06（P25代理请求未获上游响应，待安全诊断）
 - run [42178693259](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42178693259)：Edge动作产生OUTPUT_REQUESTS_CREATE POST并到达Node Harness，但Node本地返回500、无上游状态/错误码；数据库目标计数前后相同，页面无成功回执。P25未通过。
 - 按CR-OUT-021先记录：代理异常只归类FETCH_TYPE_ERROR/PROXY_EXCEPTION，并返回固定503，禁止传播异常message；保持真实后端HTTP验收严格。
