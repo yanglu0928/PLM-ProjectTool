@@ -258,3 +258,13 @@ run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - P25 Harness要求同run/commit的parent smoke PASS摘要及完整根P25 initdb成功字段，并要求保留根是本run的D盘直系路径；sidecar内容Hash逐文件匹配父包 payload/pgsql 后，真实P25 PG/HTTP/Edge从该根运行。
 - 工作流在真实步骤后加入always清理，校验D盘、精确父目录和非reparse点后才删除；Harness临时路径及TEMP/TMP均定向RUNNER_TEMP。PG-only比较步骤保留作基线。
 - 仅变更Hosted smoke/P25验证设施与追踪文档，不改产品代码。代码候选已同步到功能分支，待Hosted全链独立验收；本候选不视为P25通过。
+
+
+## Run 42170525215 完整根复用后首次initdb目录权限失败（实施前调整，2026-11-06）
+
+- run [42170525215](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42170525215)：P25输入/provenance、父包PG lifecycle、完整父包P25 profile initdb（exit 0/PG_VERSION true）、sidecar对嵌入式PG逐文件Hash核验、清理保留根均通过。真实Harness改从完整根运行后成功越过0xC0000135启动失败，但initdb不能在父包根外的D盘RUNNER_TEMP随机子目录创建data，标准错误为Permission denied；数据库目录未创建，HTTP/Edge没启动。pg_ctl status对不存在的数据目录返回4，现有finally把这一正常“尚未初始化”情形抛成清理错误。其余14/15 jobs成功，整体run失败。
+
+**实施前调整：** 将合成PG数据运行目录放在同run完整父包根的具名直系子目录，和已通过的父包P25初始化探针保持完整根/ACL继承；不更改命令profile、PG二进制、PG环境过滤或HTTP逻辑。清理规则仅在pg_data不存在、status=4、pg_run为当前父包根内精确自有非reparse目录时允许清除尚未初始化的自有目录，再继续原异常；不可报告PG已停止。若pg_data存在，仍按原停止/状态3规则关闭；未知状态继续拒绝清理。Workflow always清理父包根仍作为兜底。
+
+- 风险/回滚：临时数据库位于D盘父包根，删除父包根将一并销毁；Harness先验证服务停止且路径严格受限，always cleanup仅删除本次根。回滚恢复RUNNER_TEMP目录和原状态处理。没有生产数据/客户数据。
+- 结论：PASS_WITH_LIMITATION，授权在CR-OUT-021下实施这一目录/cleanup协同修正；不改业务代码/Schema/API/信任，P25保持BLOCKED_DIAGNOSTIC。

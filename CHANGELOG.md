@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-06（P25完整根执行已越过DLL启动阻断，合成data目录权限问题待Hosted复验）
+
+- Hosted run [42170525215](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42170525215)：父包完整根复用、P25 initdb诊断、sidecar哈希匹配及D盘根清理通过。真实P25 initdb能启动，但无法在完整父包根外的RUNNER_TEMP子目录建data（Permission denied）；无PG数据库、HTTP或Edge启动。14/15 jobs成功，P25失败。
+- 按CR-OUT-021先记录后修：把本次合成data放到已验证父包根的精确子目录；只有data不存在且pg_ctl返回4并满足自有路径约束才清理空目录，保留原始initdb异常。测试夹具变更，业务产品不变；P25仍BLOCKED_DIAGNOSTIC。
+
 ## Unreleased · 2026-11-06（P25已改用完整父包PG运行根，Hosted复验待跑）
 
 - 根据run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42166973706)的完整包/PG-only对照，P25专用helper现按需保留已验证父包根；Harness核对同run/commit摘要并逐文件核验嵌入式PG与sidecar Hash，从父包的 payload/pgsql 运行。Hosted always清理严格约束到D盘本run根。只变更测试设施，不改生产逻辑；完整Hosted复验待完成，P25仍BLOCKED_DIAGNOSTIC。

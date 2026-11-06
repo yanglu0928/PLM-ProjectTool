@@ -22,3 +22,10 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 只在GitHub Hosted Windows Server 2025/D盘运行。合成数据库/Project、空Publisher manifest、无客户数据/外部API/插件/文件生成。若数据库不能安全停止或清理路径不匹配则失败并保留受限诊断。运行成功最多为PASS_SCOPE_LIMITED；不得推断Pilot/Gate/Release通过。
 
 回滚删除保留flag、完整根传递、复用验证和always清理代码，恢复sidecar PG-only解包方式。只记录退出/字节数/状态布尔，不输出环境值、原始错误文本、DB内容。Secret检查不提交客户数据/令牌/密码。
+
+## run 42170525215 后的下一轮编码前检查（2026-11-06）
+
+- 结果：完整父包P25 initdb profile成功、完整根复用和1,627项sidecar/嵌入式PG Hash匹配均通过；P25 Harness实际执行 initdb 后，错误明确为无法在父包根外的RUNNER_TEMP新建data目录（Permission denied）。PG_CTL因data目录不存在返回4；后续清理逻辑将该可恢复的“尚未创建数据库目录”状态包装成cleanup异常。P25从未启动PostgreSQL/API/Edge，14/15 workflow jobs成功，整体仍failure。
+- 证据支持优先把P25本次合成PG工作目录改为已验证父包根的直系子目录，使目录ACL继承与成功P25 profile所在完整根一致；不把permission denied进一步推断成产品缺陷。工作目录仅D盘/同run临时父包，具名为 p25-real-pg-<run-id>，由Harness在确认停止/未创建data后清理，workflow always cleanup父根兜底。
+- 单独修复Harness终结处理：pg_ctl返回4只有在pg_data确实不存在、pg_run确属当前保留父包根的精确直系子目录且无reparse点时，才允许移除空测试目录并让原始initdb异常向上报告；其他非3/运行态仍失败关闭。不得将状态4写成数据库已停止。
+- 范围保持不变：没有产品代码、API、DB、迁移或Publisher trust变化；保留run 421705为失败证据。Hosted独立复验后才可能关闭P25；成功上限仍PASS_SCOPE_LIMITED。用户本机/C盘不运行代码。
