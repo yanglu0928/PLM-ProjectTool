@@ -312,8 +312,22 @@ def main() -> int:
         winerror = getattr(exc, "winerror", None)
         if not isinstance(winerror, int):
             winerror = "none"
+        child = "none"
+        child_exit = "none"
+        error_message = exc.args[0] if len(exc.args) == 1 and isinstance(exc.args[0], str) else ""
+        child_match = re.match(
+            r"synthetic packaged migration command failed: ([A-Za-z0-9_.-]{1,80}), "
+            r"exit=(-?\\d{1,10}), output=",
+            error_message,
+        )
+        if child_match and child_match.group(1).casefold() in {
+            "initdb.exe", "pg_ctl.exe", "psql.exe", "postgres.exe", "python.exe",
+        }:
+            child, child_exit = child_match.groups()
         print("SUR_07_A08_SAFE_DIAG: exception=" + exception_name
               + "; winerror=" + str(winerror)
+              + "; child=" + child
+              + "; child_exit=" + child_exit
               + "; stage=" + _CURRENT_STAGE
               + "; frames=" + (">".join(frames) if frames else "none"), flush=True)
         raise
