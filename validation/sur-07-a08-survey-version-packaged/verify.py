@@ -7,6 +7,7 @@ import json
 import os
 import re
 import runpy
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -327,26 +328,83 @@ def main() -> int:
     platform_write_globals = runner.smoke.__globals__["original_smoke"].__globals__
     original_pg_run = platform_write_globals["_run"]
     target_pg_bin = target_root / "runtime" / "pgsql" / "bin"
-    target_pg_probes = {"initdb": "not_run", "postgres": "not_run"}
+    target_pg_probes = {
+        "initdb": "not_run", "postgres": "not_run", "temp_env": "not_run",
+        "temp_env_applied": "no",
+    }
 
     def a08_pg_run(arguments, *, env=None, timeout=120):
+        actual_env = dict(env if env is not None else os.environ)
         if (arguments and Path(arguments[0]).name.casefold() == "initdb.exe"
                 and target_pg_probes["initdb"] == "not_run"):
-            probe_env = dict(env if env is not None else os.environ)
             for name in ("initdb", "postgres"):
                 try:
                     probe = subprocess.run(
                         [str(target_pg_bin / (name + ".exe")), "--version"],
                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL, timeout=30, check=False, env=probe_env,
+                        stderr=subprocess.DEVNULL, timeout=30, check=False, env=actual_env,
                     )
                     target_pg_probes[name] = str(probe.returncode)
                 except subprocess.TimeoutExpired:
                     target_pg_probes[name] = "timeout"
                 except OSError:
                     target_pg_probes[name] = "launch_error"
-            mark_stage("TARGET_PG_VERSION_PROBES_DONE")
-        return original_pg_run(arguments, env=env, timeout=timeout)
+
+            pg_temp_value = actual_env.get("TEMP", "")
+            pg_temp = Path(pg_temp_value)
+            owned_temp = Path(tempfile.gettempdir()).resolve(strict=True)
+            probe_root = None
+            try:
+                if (not pg_temp_value or pg_temp.is_symlink()
+                        or pg_temp.resolve(strict=True).parent != owned_temp
+                        or not pg_temp.name.startswith("plm-pg18-platform-write-")
+                        or owned_temp.drive.upper() != "D:"
+                        or not str(pg_temp).isascii()):
+                    target_pg_probes["temp_env"] = "unsafe_boundary"
+                else:
+                    pg_temp = pg_temp.resolve(strict=True)
+                    probe_root = pg_temp / "a08-initdb-base-temp-probe"
+                    if probe_root.exists() or probe_root.is_symlink():
+                        target_pg_probes["temp_env"] = "unsafe_boundary"
+                    else:
+                        probe_root.mkdir()
+                        probe_args = list(arguments)
+                        pgdata_indexes = [
+                            index for index, value in enumerate(probe_args)
+                            if value.startswith("--pgdata=")
+                        ]
+                        if len(pgdata_indexes) != 1:
+                            target_pg_probes["temp_env"] = "invalid_args"
+                        else:
+                            probe_args[pgdata_indexes[0]] = "--pgdata=" + str(probe_root / "data")
+                            alternate_env = dict(actual_env)
+                            alternate_env["TEMP"] = str(owned_temp)
+                            alternate_env["TMP"] = str(owned_temp)
+                            try:
+                                probe = subprocess.run(
+                                    probe_args, stdin=subprocess.DEVNULL,
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                    timeout=60, check=False, env=alternate_env,
+                                )
+                                target_pg_probes["temp_env"] = str(probe.returncode)
+                                if probe.returncode == 0:
+                                    actual_env["TEMP"] = str(owned_temp)
+                                    actual_env["TMP"] = str(owned_temp)
+                                    target_pg_probes["temp_env_applied"] = "yes"
+                            except subprocess.TimeoutExpired:
+                                target_pg_probes["temp_env"] = "timeout"
+                            except OSError:
+                                target_pg_probes["temp_env"] = "launch_error"
+            finally:
+                if probe_root is not None and probe_root.exists() and not probe_root.is_symlink():
+                    resolved_probe = probe_root.resolve(strict=True)
+                    if (resolved_probe.parent == pg_temp.resolve(strict=True)
+                            and resolved_probe.name == "a08-initdb-base-temp-probe"
+                            and resolved_probe.drive.upper() == "D:"
+                            and str(resolved_probe).isascii()):
+                        shutil.rmtree(resolved_probe)
+            mark_stage("TARGET_PG_TEMP_ENV_PROBE_DONE")
+        return original_pg_run(arguments, env=actual_env, timeout=timeout)
 
     platform_write_globals["_run"] = a08_pg_run
     mark_stage("PACKAGED_SMOKE_START")
@@ -383,6 +441,8 @@ def main() -> int:
               + "; child_exit=" + child_exit
               + "; target_initdb_probe=" + target_pg_probes["initdb"]
               + "; target_postgres_probe=" + target_pg_probes["postgres"]
+              + "; target_initdb_temp_env_probe=" + target_pg_probes["temp_env"]
+              + "; target_initdb_temp_env_applied=" + target_pg_probes["temp_env_applied"]
               + "; stage=" + _CURRENT_STAGE
               + "; frames=" + (">".join(frames) if frames else "none"), flush=True)
         raise

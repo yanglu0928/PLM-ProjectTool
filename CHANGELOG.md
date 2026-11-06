@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（CR-EXEC-039：A08 PostgreSQL 临时环境差分）
+
+- Hosted run [42282788499](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42282788499)：目标布局两条只读版本探针均返回 0，但完整 initdb 仍以 3221225781/0xC0000135 退出。静态可执行装载不是足够解释，A08未通过。
+- 源码对照确认 A08 platform-write smoke 为 PostgreSQL 专设 TEMP/TMP 指向唯一 pg_run；既有 migration smoke 使用继承环境。先记录后，A08 Harness 增加同候选/同PATH/同初始化参数、仅TEMP/TMP改为本轮D盘owned PLMToolTemp根的真实初始化A/B；临时探针数据在精确owned目录中清理，输出只保留退出码。仅A/B成功才将该变化用于原smoke，否则继续原环境并切换任务，不作无证据推断。
+- 复验待完成；不代表Windows11实机、Pilot、Gate或Release。
+
 ## Unreleased · 2026-11-07（CR-EXEC-038：A08 目标布局 PostgreSQL 装载探针）
 
 - Hosted run [42278965171](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42278965171)：CR-EXEC-037 的 target PostgreSQL bin/lib PATH 前置后，A08 完整 initdb 仍返回 3221225781/0xC0000135；路径假设未获支持，无 A08 业务 markers。同期 A17/P25/P40/A34/A35、前后端、PG18 与候选包作业成功，整体run仍因A08 failure不全绿。

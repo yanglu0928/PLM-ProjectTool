@@ -25,3 +25,8 @@ Hosted Windows Server 2025 run [42278965171](https://github.com/yanglu0928/PLM-P
 ## 实施记录
 
 按上述边界在 A08 首个完整 initdb.exe 调用前，使用同一 env 直接查询目标布局内的 initdb.exe --version 和 postgres.exe --version。输出句柄指向 DEVNULL。探针结果并入安全摘要 allowlist，原 _run 在结束后恢复；完整 smoke 和业务断言保持原样。等待本次 GitHub Hosted workflow 复验，不预判结果。
+
+
+## Hosted 复验结果
+
+run [42282788499](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42282788499) 中目标布局 initdb.exe --version 和 postgres.exe --version 均返回 0；完整初始化仍返回 3221225781/0xC0000135，安全阶段为 TARGET_PG_VERSION_PROBES_DONE，无业务 markers。因此该错误只在完整初始化路径出现，不能归因于二进制静态装载；A08仍 NOT_PASSED。

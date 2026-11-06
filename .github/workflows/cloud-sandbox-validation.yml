@@ -506,7 +506,7 @@ jobs:
             $raw = if (Test-Path -LiteralPath $rawOutput) { Get-Content -LiteralPath $rawOutput -Raw } else { "" }
             $seen = @($markers | Where-Object { $raw.Contains($_) })
             if ($verifyExitCode -ne 0 -or $seen.Count -ne $markers.Count) {
-              $safeDiagMatches = [regex]::Matches($raw, 'SUR_07_A08_SAFE_DIAG: exception=([A-Za-z0-9_.-]{1,80}); winerror=(-?\d{1,10}|none); child=(initdb\.exe|pg_ctl\.exe|psql\.exe|postgres\.exe|python\.exe|none); child_exit=(-?\d{1,10}|none); target_initdb_probe=(-?\d{1,10}|timeout|launch_error|not_run); target_postgres_probe=(-?\d{1,10}|timeout|launch_error|not_run); stage=(SUR_07_A08_STAGE_[A-Z0-9_]{1,64}|none); frames=([A-Za-z0-9_.:>,_-]{1,800}|none)')
+              $safeDiagMatches = [regex]::Matches($raw, 'SUR_07_A08_SAFE_DIAG: exception=([A-Za-z0-9_.-]{1,80}); winerror=(-?\d{1,10}|none); child=(initdb\.exe|pg_ctl\.exe|psql\.exe|postgres\.exe|python\.exe|none); child_exit=(-?\d{1,10}|none); target_initdb_probe=(-?\d{1,10}|timeout|launch_error|not_run); target_postgres_probe=(-?\d{1,10}|timeout|launch_error|not_run); target_initdb_temp_env_probe=(-?\d{1,10}|timeout|launch_error|unsafe_boundary|invalid_args|not_run); target_initdb_temp_env_applied=(yes|no); stage=(SUR_07_A08_STAGE_[A-Z0-9_]{1,64}|none); frames=([A-Za-z0-9_.:>,_-]{1,800}|none)')
               $safeDiag = "unavailable"
               if ($safeDiagMatches.Count -gt 0) { $safeDiag = $safeDiagMatches[$safeDiagMatches.Count - 1].Value }
               $markerSummary = if ($seen.Count) { $seen -join "," } else { "none" }
