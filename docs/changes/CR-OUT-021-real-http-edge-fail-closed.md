@@ -329,3 +329,9 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - 本轮其余检查出现独立失败：P39 Edge记录CDP evaluation exception；A17发生Review Edge Artifact lockfile EBUSY并伴随包装流程断言失败，需在最终状态中分别保留，不作为P25根因。A34状态当时仍运行。
 
 **下一步实施前决策：** 在P25 Harness记录有限代理错误指纹：error.name类别（TypeError/Error/AbortError/Other）和cause.code有限白名单（ECONNREFUSED/ECONNRESET/ETIMEDOUT/ENOTFOUND/EHOSTUNREACH/EPROTO及UND_ERR_*白名单），未知映射UNKNOWN；仍固定503且不回显错误文本。目标是区分底层Node fetch/本地连接失败。成功验收及数据库检查保持不变。
+
+
+## P25有限底层错误指纹候选已实施，Hosted复验待跑（2026-11-06）
+
+- Node Harness现把error.name归类为TYPE_ERROR/ABORT_ERROR/ERROR/OTHER；cause.code只允许ECONNREFUSED、ECONNRESET、ETIMEDOUT、ENOTFOUND、EHOSTUNREACH、EPROTO、EAI_AGAIN及有限UND_ERR_*；其他为UNKNOWN。结合path class及status写入摘要，不记录异常文本。
+- 代理失败仍固定返回503 SYSTEM_UNAVAILABLE；真实成功合同不变。代码同步到PR #61，未Hosted验证，P25仍BLOCKED_DIAGNOSTIC。
