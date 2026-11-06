@@ -94,6 +94,9 @@ class BuiltinOutputPolicyRegistry:
             and type(item.allowed_review_states) is tuple
             and item.allowed_review_states == ("APPROVED",)
             and isinstance(item.fields_by_source_kind, Mapping)
+            and type(item.max_sources) is int and 1 <= item.max_sources <= 4
+            and type(item.max_context_bytes) is int
+            and 256 <= item.max_context_bytes <= 262_144
             and (
                 (
                     item.policy_ref == BUILTIN_REQUIREMENT_DOCX_POLICY_REF
@@ -105,6 +108,7 @@ class BuiltinOutputPolicyRegistry:
                             "title", "statement", "acceptance_criteria",
                         ),
                     }
+                    and item.max_context_bytes <= 8192
                 )
                 or (
                     item.policy_ref == BUILTIN_PLAN_DOCX_POLICY_REF
@@ -118,12 +122,8 @@ class BuiltinOutputPolicyRegistry:
                         ),
                     }
                     and item.max_sources == 1
-                    and item.max_context_bytes <= 262_144
                 )
             )
-            and type(item.max_sources) is int and 1 <= item.max_sources <= 4
-            and type(item.max_context_bytes) is int
-            and 256 <= item.max_context_bytes <= 8192
         )
 
     def get_policy(
