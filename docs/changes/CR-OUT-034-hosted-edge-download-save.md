@@ -68,3 +68,8 @@ Hosted run [42146593192](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## P39第四轮请求前诊断候选
 
 在合成浏览器页面登录前临时wrap window.fetch与AbortController；只记录API pathname/method及AbortController/fetch调用计数，不保留参数、认证头、Cookie或正文。首轮列表读取后记录基线，点击后若UI安全错误则输出差值和CDP Network/Runtime摘要，以判定严格客户端是否在调用fetch前拒绝。诊断仅为Hosted harness，不改产品源码，等待运行。
+
+
+## P39第四轮Hosted已触达fetch但传输未到server（run 42147565204，未通过）
+
+run [42147565204](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42147565204)中Harness包裹window.fetch的path-only trace记录到GET /api/v1/projects/{syntheticProject}/output-requests/{syntheticRequest}/artifact；CDP Network无该请求，Node server也未收到。前端显示安全错误，P39仍未通过；证据说明严格客户端已越过本地UUID前置并调用fetch，但浏览器到本地合成server的传输行为仍未查明。下一步按CR-OUT-034在fetch wrapper只记录Promise拒绝的error name及固定归一类别（Abort/TypeError/Other），不输出message、URL参数、Cookie/Header/body；再Hosted观察。产品API/代码未改。

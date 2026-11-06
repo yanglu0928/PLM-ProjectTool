@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P39 fetch已调用但未到达本地Harness，未通过）
+
+- run [42147565204](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42147565204)：P39 wrapper记录到Artifact固定引用GET调用，但CDP Network事件和Node服务端没有该请求，UI显示安全错误；没有HTTP响应、Document请求或Edge下载。P39未通过，传输原因未确定。已先按CR-OUT-034记录，准备只增加归一化fetch拒绝类型诊断，不记录错误message、查询参数或认证/正文。
+
 ## Unreleased · 2026-11-06（P39增加客户端请求前检查点，待Hosted验收）
 
 - 对run [42146593192](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42146593192)的CDP证据（无Artifact request、无网络错误）作CR-OUT-034记录后，P39 Hosted fixture临时包装window.fetch/AbortController，仅收集API路径/method和调用次数，帮助确定严格客户端是否在fetch之前拒绝。认证头、Cookie和body不采集；产品代码不变，尚未验收。
