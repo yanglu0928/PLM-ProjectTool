@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P38验收依赖兼容偏差，非发行版本）
+
+- 发现父包PG smoke最小Hosted依赖不包含TestClient所需httpx；在运行前静态确认并按CR-OUT-033记录。验收器将改用FastAPI ASGI原生请求驱动相同HTTP router与StreamingResponse，不增加依赖；产品代码不改，P38仍待Hosted验收。
+
 ## Unreleased · 2026-11-06（OUT-01-A01-P38：受保护下载HTTP集成候选，非发行版本）
 
 - 变更：父包PG18 verifier增加真实Artifact引用HTTP到Document受保护内容流的端到端验证，覆盖成功字节/hash/大小/MIME、跨项目与未知引用隐藏、跨项目内容隐藏、篡改文件失败关闭及存储定位不披露。Session/Project/License为合成测试夹具，PG和文件均限Hosted D盘临时目录。

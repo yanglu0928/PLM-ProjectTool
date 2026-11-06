@@ -37,3 +37,8 @@
 ## P38实现候选与验收状态
 
 新增P33父包PG18 verifier helper并在P36固定引用检查后调用。验证采用真实SQLAlchemy OutputArtifact Repository、DocumentReadService/Repository、真实受保护HTTP router factories、PrepareDownloadService和本地内容存储；仅Session/Project授权摘要/License guard为合成测试夹具。测试成功字节、Hash/长度/MIME，跨项目与未知请求404，跨项目内容404，篡改后的物理文件不得流出。GitHub Hosted验收待完成；结果仍非Pilot/真实trust证据。
+
+
+## Hosted父包依赖核对偏差（修复前记录）
+
+cloud-sandbox-validation.yml中父包PG18 smoke只安装Alembic、SQLAlchemy、psycopg、pgvector、FastAPI与cryptography；TestClient的httpx依赖未在此最小清单中保证。已先按CR-OUT-033记录，避免新增CI/产品依赖，改用ASGI原生scope发起相同路由处理的HTTP请求；仍验证真实HTTP响应与Document流，但不打开loopback TCP socket。

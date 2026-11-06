@@ -26,3 +26,8 @@ Hash/长度/字节完全一致；项目越权、未知/不可用Artifact、内�
 ## P38 Hosted实现候选
 
 已在P33临时PG18父包验证器中增加P38 helper，使用真实OutputArtifact读取Repository、真实DocumentReadService/Repository、PrepareDownloadService、LocalFileStorage及两个HTTP router factory；Session、Project授权摘要和License guard使用仅限合成测试的夹具。实际HTTP贯穿授权Artifact引用到Document流字节，并检查跨项目/未知引用隐藏、Hash/大小/MIME、存储路径不披露及文件被篡改后不返回正文。只写Runner临时目录；未修改生产API、Schema/Migration、默认挂载、正式信任或业务数据。待Hosted run验收后按结果更新。
+
+
+## P38父包验证依赖静态偏差（修正前记录）
+
+Hosted父包PG18 job的受控最小依赖明确为Alembic、SQLAlchemy、psycopg、pgvector、FastAPI和cryptography；没有保证安装Starlette TestClient所依赖的httpx。首个P38 verifier候选使用TestClient，若直接运行可能在依赖导入处失败，当前尚无该Hosted实测结果。为避免无必要引入验证依赖，修正为ASGI原生HTTP scope调用真实FastAPI路由/中间件/StreamingResponse，保留实际PG18 Repository与本地Hash验证；不改产品代码或业务范围。
