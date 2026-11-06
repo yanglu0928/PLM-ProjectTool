@@ -225,11 +225,11 @@ try{
  const badContentPath="/api/v1/projects/"+ids.otherProject+"/documents/"+ids.badDocument+"/versions/"+ids.badVersion+"/content";
  assert.equal(reqs.filter(x=>x.path===badContentPath&&x.method==="GET").length,0);
  checks.push("cross-project reference fails before any content request or additional save");
- summary.cross_project_failed_closed=true;
 
  assert.ok(reqs.every(x=>x.path.startsWith("/api/v1/")),"observed API requests stayed on synthetic same-origin server");
  const summary={wbs:backendOrigin?"OUT-01-A01-P40":"OUT-01-A01-P39",status:"PASS_SCOPE_LIMITED",browser:"Microsoft Edge headless",
   backend_mode:backendOrigin?"live-fastapi-loopback":"synthetic-http-fixture",saved_file_matches_expected_bytes:true,
+  cross_project_failed_closed:true,
   runner_os:"GitHub hosted Windows Server 2025",runner_drive:"D:",synthetic_data:true,controlled_api:true,
   checks,api_requests:reqs.map(x=>({method:x.method,path:x.path,status:x.status})),
   saved_bytes:saved.length,saved_sha256:digest,customer_data:false,external_api_calls:0,
