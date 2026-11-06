@@ -132,7 +132,13 @@ const server=createServer(async(req,res)=>{
  }catch(error){
   const entry=req.__p24Entry;
   if(mode==="realbackend"&&entry?.method==="POST"&&entry?.path.endsWith("/output-requests")){
-   entry.proxy_failure_class=error?.name==="TypeError"?"FETCH_TYPE_ERROR":"PROXY_EXCEPTION";
+   const safeNames=new Map([["TypeError","TYPE_ERROR"],["AbortError","ABORT_ERROR"],["Error","ERROR"]]);
+   const safeCodes=new Set(["ECONNREFUSED","ECONNRESET","ETIMEDOUT","ENOTFOUND","EHOSTUNREACH","EPROTO",
+    "EAI_AGAIN","UND_ERR_CONNECT_TIMEOUT","UND_ERR_SOCKET","UND_ERR_HEADERS_TIMEOUT","UND_ERR_BODY_TIMEOUT"]);
+   entry.proxy_error_name_class=safeNames.get(error?.name)||"OTHER";
+   entry.proxy_error_cause_code=safeCodes.has(error?.cause?.code)?error.cause.code:"UNKNOWN";
+   entry.proxy_failure_class=entry.proxy_error_cause_code!=="UNKNOWN"?"FETCH_"+entry.proxy_error_cause_code:
+    entry.proxy_error_name_class==="TYPE_ERROR"?"FETCH_TYPE_ERROR":"PROXY_EXCEPTION";
    const out=envelope("SYSTEM_UNAVAILABLE",503);
    if(!res.headersSent){res.writeHead(out.status,out.headers);res.end(out.body)}else res.destroy();
    return;
@@ -226,7 +232,7 @@ try{
    path.includes("/sessions")?"SESSION":"OTHER_API";
   const captureRequests=()=>reqs.slice(realActionStart).filter(x=>x.path.startsWith("/api/v1/")).slice(-20).map(x=>({
    method:x.method,path_class:apiPathClass(x.path),status:x.status,
-   backend_status:x.backend_status??null,backend_error_code:x.backend_error_code??null,proxy_failure_class:x.proxy_failure_class??null}));
+   backend_status:x.backend_status??null,backend_error_code:x.backend_error_code??null,proxy_failure_class:x.proxy_failure_class??null,proxy_error_name_class:x.proxy_error_name_class??null,proxy_error_cause_code:x.proxy_error_cause_code??null}));
   realApiRequests=captureRequests();
   let realPosts=reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")&&x.backend_status!==undefined);
   realBackendPostCount=realPosts.length;
