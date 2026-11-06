@@ -110,7 +110,7 @@ const edge=spawn("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.
 ],{stdio:"ignore",windowsHide:true});
 const pause=ms=>new Promise(resolvePause=>setTimeout(resolvePause,ms));
 let socket,nextId=0,downloadWillBegin=null,downloadCompleted=false;
-const pending=new Map(),checks=[];
+const pending=new Map(),checks=[],browserNetwork=[],networkFailures=[],runtimeExceptions=[];
 async function getPage(){for(let i=0;i<300;i++){
  try{const entries=await(await fetch("http://127.0.0.1:"+debugPort+"/json/list")).json();
   const page=entries.find(x=>x.type==="page"&&x.url.startsWith(origin));if(page)return page
@@ -139,10 +139,13 @@ try{
  await new Promise((ok,bad)=>{socket.addEventListener("open",ok,{once:true});socket.addEventListener("error",bad,{once:true})});
  socket.addEventListener("message",({data})=>{const msg=JSON.parse(data);
   if(msg.id&&pending.has(msg.id)){const p=pending.get(msg.id);pending.delete(msg.id);if(msg.error)p.rejectSend(new Error(msg.error.message));else p.resolveSend(msg.result);return}
+  if(msg.method==="Network.requestWillBeSent"){const u=new URL(msg.params.request.url);if(u.pathname.startsWith("/api/"))browserNetwork.push({method:msg.params.request.method,path:u.pathname})}
+  if(msg.method==="Network.loadingFailed")networkFailures.push({type:msg.params.type,error:msg.params.errorText});
+  if(msg.method==="Runtime.exceptionThrown"){const e=msg.params.exceptionDetails||{};runtimeExceptions.push({class_name:e.exception?.className||"unknown",text:String(e.text||"").slice(0,160)})}
   if(msg.method==="Browser.downloadWillBegin")downloadWillBegin=msg.params;
   if(msg.method==="Browser.downloadProgress"&&msg.params.state==="completed")downloadCompleted=true;
  });
- await send("Runtime.enable");await send("Page.enable");
+ await send("Runtime.enable");await send("Page.enable");await send("Network.enable");
  await send("Browser.setDownloadBehavior",{behavior:"allow",downloadPath:downloadDir,eventsEnabled:true});
  await waitFor("document.querySelector('#login-username')","login form");
  await setValue("#login-username","synthetic-user");await setValue("#login-password","synthetic-only");
@@ -207,7 +210,7 @@ try{
   saved_bytes:saved.length,saved_sha256:digest,customer_data:false,external_api_calls:0,
   plugin_executed:false,formal_license_trust:false,backend_live:false,release_eligible:false};
  await writeFile(summaryPath,JSON.stringify(summary,null,2)+"\n","utf8");console.log(JSON.stringify(summary));
-}catch(error){console.error(JSON.stringify({error:String(error),requests:reqs.slice(-30)},null,2));process.exitCode=1}
+}catch(error){console.error(JSON.stringify({error:String(error),requests:reqs.slice(-30),browser_network:browserNetwork,network_failures:networkFailures,runtime_exceptions:runtimeExceptions},null,2));process.exitCode=1}
 finally{
  if(socket&&socket.readyState===WebSocket.OPEN)socket.close();
  edge.kill();await pause(300);

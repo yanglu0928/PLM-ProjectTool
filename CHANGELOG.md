@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P39增加去敏浏览器网络诊断，待Hosted复验）
+
+- 按CR-OUT-034先记录run [42145821433](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42145821433)现象后，为P39 harness增加CDP Network/Runtime观察。只记录API路径/method、网络失败类型和异常类/短文本，不记录Cookie、Headers或正文。此诊断只用于区分浏览器请求前失败与服务路由问题，产品代码不变，P39仍未通过。
+
 ## Unreleased · 2026-11-06（P39第二轮Edge点击未发出引用请求，非通过）
 
 - run [42145821433](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42145821433)：浏览器页面/合成登录/历史加载通过，CDP证明成功行下载按钮存在且未禁用；鼠标事件后前端显示通用错误，但Node server只观测到login及history请求，未观测Artifact GET、Document GET或下载事件。P39不通过、产品后端未被调用。按CR-OUT-034记录后，将增加不含认证头/正文的CDP Network/Runtime诊断，定位客户端请求前失败原因。
