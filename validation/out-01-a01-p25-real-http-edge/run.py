@@ -63,12 +63,18 @@ def safe_member(name: str) -> PurePosixPath:
     return path
 
 
-def verify_and_extract_sidecar(archive: Path, digest_file: Path, root: Path) -> Path:
+def verify_and_extract_sidecar(archive: Path, digest_file: Path, root: Path, *,
+                               reuse_existing_root: bool = False) -> Path:
     expected = json.loads(digest_file.read_text(encoding="utf-8-sig"))
     expected_sha = expected.get("Hash") or expected.get("hash")
     if type(expected_sha) is not str or sha256_file(archive) != expected_sha.lower():
         raise ValueError("same-run PostgreSQL sidecar archive digest mismatch")
-    root.mkdir(parents=True, exist_ok=False)
+    if reuse_existing_root:
+        if not root.is_dir() or root.is_symlink():
+            raise ValueError("verified parent package root is missing or unsafe")
+        root = root.resolve(strict=True)
+    else:
+        root.mkdir(parents=True, exist_ok=False)
     with zipfile.ZipFile(archive) as bundle:
         names = bundle.namelist()
         if len(names) != len(set(names)) or len(names) > 10000:
@@ -105,9 +111,15 @@ def verify_and_extract_sidecar(archive: Path, digest_file: Path, root: Path) -> 
                 raise ValueError("PG sidecar payload digest mismatch")
             if name.startswith("payload/pgsql/"):
                 target = root.joinpath(*safe_member(name).parts)
-                target.parent.mkdir(parents=True, exist_ok=True)
-                with bundle.open(name) as src, target.open("wb") as dst:
-                    shutil.copyfileobj(src, dst, length=1024 * 1024)
+                if reuse_existing_root:
+                    if (target.is_symlink() or not target.is_file()
+                            or not target.resolve(strict=True).is_relative_to(root)
+                            or sha256_file(target) != expected_hash):
+                        raise ValueError("parent package PostgreSQL payload differs from verified sidecar")
+                else:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    with bundle.open(name) as src, target.open("wb") as dst:
+                        shutil.copyfileobj(src, dst, length=1024 * 1024)
     binary = root / "payload" / "pgsql" / "bin"
     for executable in ("initdb.exe", "pg_ctl.exe", "postgres.exe"):
         if not (binary / executable).is_file():
@@ -440,13 +452,35 @@ async def main() -> int:
     parser.add_argument("--sidecar-sha", type=Path, required=True)
     parser.add_argument("--summary-out", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--source-commit", required=True)
+    parser.add_argument("--parent-package-root", type=Path, required=True)
+    parser.add_argument("--parent-smoke-summary", type=Path, required=True)
     args = parser.parse_args()
     runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
     if runner_temp.drive.upper() != "D:" or not str(runner_temp).isascii():
         raise ValueError("P25 requires an ASCII D-drive GitHub runner temp")
-    for path in (args.dist, args.sidecar, args.sidecar_sha):
+    for path in (args.dist, args.sidecar, args.sidecar_sha, args.parent_smoke_summary):
         if not path.resolve(strict=True).is_relative_to(runner_temp):
             raise ValueError("P25 input escaped RUNNER_TEMP")
+    parent_root = args.parent_package_root.resolve(strict=True)
+    expected_parent_root = (runner_temp / ("plm-p25-parent-smoke-" + args.run_id)).resolve(strict=True)
+    expected_smoke_summary = (runner_temp / ("plm-p25-parent-smoke-summary-" + args.run_id + ".json")).resolve(strict=True)
+    if (parent_root != expected_parent_root or args.parent_package_root.is_symlink()
+            or args.parent_smoke_summary.resolve(strict=True) != expected_smoke_summary):
+        raise ValueError("P25 retained parent package paths do not match this hosted run")
+    parent_smoke = json.loads(args.parent_smoke_summary.read_text(encoding="utf-8-sig"))
+    p25_initdb = parent_smoke.get("p25_initdb_profile_diagnostic", {})
+    if (parent_smoke.get("status") != "PARENT_PG18_TEMP_LIFECYCLE_PASS_LIMITED"
+            or parent_smoke.get("source_commit") != args.source_commit
+            or str(parent_smoke.get("workflow_run")) != args.run_id
+            or parent_smoke.get("extraction_retained_for_p25") is not True
+            or p25_initdb.get("profile") != "P25"
+            or p25_initdb.get("timed_out") is not False
+            or p25_initdb.get("exit_code") != 0
+            or p25_initdb.get("pg_version_created") is not True):
+        raise ValueError("P25 full-package PostgreSQL smoke evidence is not eligible")
+    if not (parent_root / "payload" / "pgsql").is_dir():
+        raise ValueError("P25 verified parent PostgreSQL runtime missing")
     if not (args.dist / "index.html").is_file():
         raise ValueError("same-run frontend production build missing")
     work = Path(tempfile.mkdtemp(prefix="plm-out-p25-", dir=runner_temp))
@@ -456,6 +490,7 @@ async def main() -> int:
     pg_run = None
     pg_log = None
     pg_root = None
+    pg_runtime_layout = "UNVERIFIED"
     pg_started = False
     database = "plm_out25_" + args.run_id[-10:]
     runtime = None
@@ -465,7 +500,9 @@ async def main() -> int:
     pg_path_filter_report: dict[str, object] = {}
     ACTOR_BY_TOKEN[TOKEN] = ACTOR
     try:
-        pg_root = verify_and_extract_sidecar(args.sidecar, args.sidecar_sha, work / "pg-runtime")
+        pg_root = verify_and_extract_sidecar(
+            args.sidecar, args.sidecar_sha, parent_root, reuse_existing_root=True)
+        pg_runtime_layout = "VERIFIED_PARENT_PACKAGE"
         binary = pg_root / "bin"
         pg_port = free_port()
         pg_run = Path(tempfile.mkdtemp(prefix="plm-out-p25-pg-", dir=runner_temp))
@@ -534,6 +571,8 @@ async def main() -> int:
         result = {
             "wbs": "OUT-01-A01-P25", "status": "PASS_SCOPE_LIMITED",
             "runner_os": "GitHub hosted Windows Server 2025", "runner_drive": "D:",
+            "postgres_runtime_layout": pg_runtime_layout,
+            "postgres_payload_matches_sidecar": True,
             "browser": "Microsoft Edge headless", "postgresql_version": version,
             "pgvector_version": vector, "real_http_status": 422,
             "real_http_posts": 1, "database_snapshot_unchanged": True,
@@ -564,6 +603,7 @@ async def main() -> int:
             "plugin_executed": False,
             "database_files_included": False,
             "pg_child_path_filter": pg_path_filter_report,
+            "postgres_runtime_layout": pg_runtime_layout,
         }
         if pg_root is not None:
             try:

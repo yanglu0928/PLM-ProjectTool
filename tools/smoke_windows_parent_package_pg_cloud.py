@@ -726,7 +726,10 @@ def main() -> int:
     parser.add_argument("--work-root", type=Path, required=True)
     parser.add_argument("--summary-out", type=Path, required=True)
     parser.add_argument("--p25-initdb-profile-diagnostic", action="store_true")
+    parser.add_argument("--retain-parent-extraction-for-p25", action="store_true")
     args = parser.parse_args()
+    if args.retain_parent_extraction_for_p25 and not args.p25_initdb_profile_diagnostic:
+        parser.error("--retain-parent-extraction-for-p25 requires the P25 diagnostic")
 
     runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
     root = args.work_root.resolve()
@@ -899,6 +902,11 @@ def main() -> int:
                     "stderr_bytes": len(exc.stderr or b""),
                     "pg_version_created": (probe_data / "PG_VERSION").is_file(),
                 }
+            finally:
+                if probe_root.exists():
+                    if probe_root.parent != root or probe_root.is_symlink():
+                        raise RuntimeError("refusing to clean P25 initdb probe outside package root")
+                    shutil.rmtree(probe_root)
         init = run_checked([str(initdb), "-D", str(data_dir), "-U", "postgres",
                             "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"], 180)
         start_attempted = True
@@ -1104,6 +1112,7 @@ def main() -> int:
             "status": "PARENT_PG18_TEMP_LIFECYCLE_PASS_LIMITED",
             "source_commit": parent["source_commit"], "workflow_run": parent["workflow_run"],
             "parent_archive_sha256": parent["archive_sha256"],
+            "extraction_retained_for_p25": args.retain_parent_extraction_for_p25,
             "postgresql_version": version, "pgvector_version": vector_version,
             "output_owner_validation": owner_validation,
             "output_cancel_owner_validation": cancel_validation,
@@ -1162,7 +1171,17 @@ def main() -> int:
         if root.exists():
             if root.parent != runner_temp or root.drive.casefold() == "c:":
                 raise RuntimeError("refusing to clean outside runner temp/non-C drive")
-            shutil.rmtree(root)
+            if args.retain_parent_extraction_for_p25:
+                for generated in (data_dir, log_path, root / "pgctl-start.txt"):
+                    if generated.exists():
+                        if generated.parent != root or generated.is_symlink():
+                            raise RuntimeError("refusing to clean generated parent smoke data outside extraction root")
+                        if generated.is_dir():
+                            shutil.rmtree(generated)
+                        else:
+                            generated.unlink()
+            else:
+                shutil.rmtree(root)
 
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)
     args.summary_out.write_text(json.dumps(result, sort_keys=True, indent=2) + "\n", encoding="utf-8")

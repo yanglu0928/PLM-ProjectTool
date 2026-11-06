@@ -250,3 +250,11 @@ run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - 风险：保留的完整候选包短暂增加D盘临时占用；由always清理并在Harness finally双重清理。若异常终止，Hosted runner销毁临时盘，无本机遗留。回滚：删除P25保留flag/传参/复用路径与always清理步骤，恢复侧车独立解包。
 - Secret/隐私：仅非发行同run包、合成DB和合成Project，不上传PATH、错误文本、客户正文或数据库文件；产物仅固定摘要。
 - 结论：编码前检查PASS_WITH_LIMITATION，进入单WBS Harness/workflow修正；P25仍BLOCKED_DIAGNOSTIC。
+
+
+## P25 完整父包运行根复用候选（实施记录，2026-11-06）
+
+- 将P25专用parent smoke helper加可选保留flag，仅诊断/initdb profile成功的P25调用启用；helper在退出前移除自身合成PG数据和日志。
+- P25 Harness要求同run/commit的parent smoke PASS摘要及完整根P25 initdb成功字段，并要求保留根是本run的D盘直系路径；sidecar内容Hash逐文件匹配父包 payload/pgsql 后，真实P25 PG/HTTP/Edge从该根运行。
+- 工作流在真实步骤后加入always清理，校验D盘、精确父目录和非reparse点后才删除；Harness临时路径及TEMP/TMP均定向RUNNER_TEMP。PG-only比较步骤保留作基线。
+- 仅变更Hosted smoke/P25验证设施与追踪文档，不改产品代码。代码候选已同步到功能分支，待Hosted全链独立验收；本候选不视为P25通过。

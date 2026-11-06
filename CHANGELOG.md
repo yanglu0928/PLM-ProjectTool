@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25已改用完整父包PG运行根，Hosted复验待跑）
+
+- 根据run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42166973706)的完整包/PG-only对照，P25专用helper现按需保留已验证父包根；Harness核对同run/commit摘要并逐文件核验嵌入式PG与sidecar Hash，从父包的 payload/pgsql 运行。Hosted always清理严格约束到D盘本run根。只变更测试设施，不改生产逻辑；完整Hosted复验待完成，P25仍BLOCKED_DIAGNOSTIC。
+
 ## Unreleased · 2026-11-06（P25完整包根initdb通过，Harness改用已验证布局；Hosted复验待跑）
 
 - run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42166973706)：完整父包提取根下P25 profile initdb成功并创建PG_VERSION；PG-only compare和P25侧车Harness仍0xC0000135。其他15个jobs成功，P25真实HTTP/Edge未启动。
