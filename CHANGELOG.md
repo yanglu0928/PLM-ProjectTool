@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P40实时下载正路径通过、负例UI期待偏差）
+- run [42238876643](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42238876643)的安全摘要确认P40实际Edge下载访问真实PG18 Artifact/Document routes各200一次、保存成功；未知请求真实404且无内容GET。Harness仅在live 404负例等待合成fixture专用精确alert文案超时。按CR-OUT-035先记录，后续仅让P40断言真实404与任意非空alert，同时保留P39精确提示回归。P40整体未通过，尚待完整负例/清理和全链结果。
+
 ## Unreleased · 2026-11-06（P40 Hosted 浏览器诊断缺失）
 - run [42236302466](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42236302466)：P40 verifier已启动真实FastAPI/PG18/Edge子流程，但退出1；包装器把捕获的Harness摘要隐藏，无法确定失败步骤。偏差先记CR-OUT-035；下一项只提取预先定义的去敏阶段、API路径状态和异常类别字段，再根据托管证据修复。P40未通过，不推定产品错误。
 
