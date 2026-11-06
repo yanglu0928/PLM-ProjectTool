@@ -26,6 +26,15 @@ from plm_assistant.modules.output.application.create_request import (
     CreateOutputRequest, OutputRequestError, OutputRequestService, ResolvedOutputContext,
 )
 from plm_assistant.modules.output.infrastructure.create_request_repository import SqlAlchemyOutputRequestRepository
+from plm_assistant.modules.output.application.resolve_context import (
+    FixedSourceVersion, PluginOperationCapability, TrustedOutputContextResolver,
+)
+from plm_assistant.modules.output.infrastructure.builtin_policy_registry import (
+    BUILTIN_PLAN_DOCX_POLICY_REF, BuiltinOutputPolicyRegistry,
+)
+from plm_assistant.modules.output.infrastructure.builtin_template_registry import (
+    BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID, BuiltinOutputTemplateRegistry,
+)
 from plm_assistant.modules.platform.application.idempotency import canonical_payload_fingerprint
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
@@ -74,17 +83,152 @@ class SyntheticResolver:
                                      canonical_payload_fingerprint(payload))
 
 
+class SyntheticPlanSource:
+    def __init__(self, project_id: uuid.UUID, version_id: uuid.UUID) -> None:
+        self.project_id, self.version_id = project_id, version_id
+        self.review_state = "APPROVED"
+        self.calls = 0
+
+    def read_authorized_fixed_version(self, transaction: object, *, actor_id: uuid.UUID,
+                                      project_id: uuid.UUID,
+                                      source_version_ref: uuid.UUID) -> FixedSourceVersion | None:
+        self.calls += 1
+        if project_id != self.project_id or source_version_ref != self.version_id:
+            return None
+        return FixedSourceVersion(
+            project_id=project_id, source_version_ref=source_version_ref,
+            source_kind="PLAN_VERSION", review_state=self.review_state,
+            authorized=True,
+            fields={
+                "version_no": 2, "wbs_items": [{"wbs_code": "P42-01",
+                                                  "name": "Synthetic task"}],
+                "dependencies": [], "milestones": [], "exclusions": [],
+                "internal_unapproved_field": "must not persist",
+            },
+        )
+
+
+class SyntheticTrustedOperation:
+    """Test-only operation capability; never invokes PluginService or a process."""
+
+    def get_operation(self, transaction: object, *, operation_id: str) -> PluginOperationCapability:
+        return PluginOperationCapability(
+            operation_id=operation_id, output_types=("DOCX",),
+            enabled=True, trusted=True,
+        )
+
+
+def verify_plan_source_output_persistence(runtime: object, actor: uuid.UUID,
+                                          port: int) -> dict[str, object]:
+    project, other_project = uuid.uuid4(), uuid.uuid4()
+    version, draft_version = uuid.uuid4(), uuid.uuid4()
+    trace, template = uuid.uuid4(), BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID
+    with runtime.unit_of_work() as uow:
+        uow.session.add(ProjectRow(
+            project_id=project, project_code="P42-" + project.hex[:12].upper(),
+            project_code_normalized="P42-" + project.hex[:12].upper(),
+            name="Synthetic Plan Output", created_by=actor,
+        ))
+        uow.commit()
+
+    source = SyntheticPlanSource(project, version)
+    resolver = TrustedOutputContextResolver(
+        sources=source, templates=BuiltinOutputTemplateRegistry(),
+        policies=BuiltinOutputPolicyRegistry(),
+        operations=SyntheticTrustedOperation(),
+    )
+    owner = service(runtime, actor, resolver=resolver)
+
+    def plan_command(ref: uuid.UUID, project_ref: uuid.UUID = project) -> CreateOutputRequest:
+        return CreateOutputRequest(
+            b"synthetic-session", b"synthetic-csrf", trace, project_ref,
+            "DOCX", template, (ref,), BUILTIN_PLAN_DOCX_POLICY_REF,
+            "word.generate",
+        )
+
+    request = plan_command(version)
+    first = owner.create(request, idempotency_key="p42-plan-source-key-000001")
+    replay = owner.create(request, idempotency_key="p42-plan-source-key-000001")
+    if (first.output_request_id, first.job_id) != (replay.output_request_id, replay.job_id):
+        raise AssertionError("PlanVersion Output replay changed Request/Job references")
+
+    expected_counts = (1, 1, 1, 1, 1, 1)
+    database_dsn = dsn(runtime._engine.url.database, port)
+    committed = row_counts(database_dsn, project)
+    if committed != expected_counts:
+        raise AssertionError(f"unexpected Plan source Output persistence: {committed!r}")
+    if row_counts(database_dsn, other_project) != (0, 0, 0, 0, 0, 0):
+        raise AssertionError("cross-project Plan source request persisted data")
+
+    with psycopg.connect(database_dsn) as connection:
+        row = connection.execute(
+            "SELECT r.output_request_id, r.context_snapshot_id, r.source_version_refs, "
+            "c.context_payload, j.job_id, j.payload_refs, "
+            "(SELECT count(*) FROM plm.job_outbox_events e "
+            " WHERE e.project_id=r.project_id AND e.aggregate_ref=r.output_request_id), "
+            "(SELECT count(*) FROM plm.plg_executions x WHERE x.project_id=r.project_id) "
+            "FROM plm.out_output_requests r "
+            "JOIN plm.out_context_snapshots c ON c.context_snapshot_id=r.context_snapshot_id "
+            "JOIN plm.job_jobs j ON j.job_id=%s "
+            "WHERE r.project_id=%s AND r.output_request_id=%s",
+            (first.job_id, project, first.output_request_id),
+        ).fetchone()
+    if row is None:
+        raise AssertionError("Plan source Output rows could not be joined")
+    request_id, snapshot_id, source_refs, payload, job_id, job_payload, outbox_count, execution_count = row
+    expected_fields = {
+        "version_no": 2,
+        "wbs_items": [{"wbs_code": "P42-01", "name": "Synthetic task"}],
+        "dependencies": [], "milestones": [], "exclusions": [],
+    }
+    if (request_id != first.output_request_id or job_id != first.job_id
+            or source_refs != [str(version)]
+            or payload["sources"][0]["source_version_ref"] != str(version)
+            or payload["sources"][0]["source_kind"] != "PLAN_VERSION"
+            or payload["sources"][0]["review_state"] != "APPROVED"
+            or payload["sources"][0]["fields"] != expected_fields
+            or "internal_unapproved_field" in payload["sources"][0]["fields"]
+            or job_payload.get("payload_refs", {}).get("context_snapshot_id") == str(snapshot_id)
+            or job_payload.get("context_snapshot_id") != str(snapshot_id)
+            or outbox_count != 1 or execution_count != 0):
+        raise AssertionError("PlanVersion context/Job/Outbox persisted unexpected data")
+
+    before = row_counts(database_dsn, project)
+    source.review_state = "DRAFT"
+    try:
+        owner.create(plan_command(draft_version), idempotency_key="p42-draft-key-000001")
+    except OutputRequestError:
+        pass
+    else:
+        raise AssertionError("DRAFT PlanVersion was accepted by Plan policy")
+    if row_counts(database_dsn, project) != before:
+        raise AssertionError("DRAFT PlanVersion failure left writes")
+
+    return {
+        "status": "PASS_SCOPE_LIMITED",
+        "request_job_snapshot_outbox_atomic": True,
+        "same_key_replay": True,
+        "approved_plan_source": True,
+        "draft_source_rejected_without_writes": True,
+        "field_allowlist": True,
+        "plugin_execution_count": execution_count,
+        "test_operation_capability_only": True,
+        "customer_data": False,
+    }
+
+
 class FailingAudit:
     def append(self, transaction: object, event: AuditEventDraft) -> uuid.UUID:
         raise RuntimeError("synthetic audit failure")
 
 
-def service(runtime: object, actor: uuid.UUID, *, denied: bool = False, audit: object | None = None) -> OutputRequestService:
+def service(runtime: object, actor: uuid.UUID, *, denied: bool = False, audit: object | None = None,
+            resolver: object | None = None) -> OutputRequestService:
     return OutputRequestService(
         unit_of_work=runtime.unit_of_work,
         access=SyntheticAccess(actor, denied=denied),
         license_guard=SyntheticLicense(),
-        resolver=SyntheticResolver(),
+        resolver=resolver or SyntheticResolver(),
         repository=SqlAlchemyOutputRequestRepository(),
         jobs=OutputJobQueue(SqlAlchemyOutputJobQueueRepository()),
         receipts=SqlAlchemyIdempotencyReceipts(),
@@ -241,6 +385,7 @@ def main() -> int:
         if stored != hashlib.sha256(b"p02-same-key-000001").hexdigest():
             raise AssertionError("raw or non-deterministic idempotency key persisted")
 
+        plan_output_validation = verify_plan_source_output_persistence(runtime, actor, args.port)
         history_before = history_snapshot(database_dsn, project)
         runtime.dispose()
         runtime = None
@@ -257,7 +402,8 @@ def main() -> int:
                       audit_failure_rolled_back=True, denied_call_wrote_nothing=True,
                       raw_idempotency_key_persisted=False,
                       context_immutable_update_delete=True,
-                      migration_history_preserved_across_downgrade=True)
+                      migration_history_preserved_across_downgrade=True,
+                      plan_version_output_persistence=plan_output_validation)
     finally:
         if runtime is not None:
             runtime.dispose()
