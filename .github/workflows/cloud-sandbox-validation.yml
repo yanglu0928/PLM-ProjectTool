@@ -477,7 +477,7 @@ jobs:
         shell: pwsh
         run: |
           $runnerTemp = [System.IO.Path]::GetFullPath($env:RUNNER_TEMP)
-          $runRoot = Join-Path $runnerTemp ("plm-sur-a08-" + $env:GITHUB_RUN_ID)
+          $runRoot = Join-Path $runnerTemp ("plm-p51-a27-a08-" + $env:GITHUB_RUN_ID)
           if (([System.IO.Path]::GetPathRoot($runnerTemp).ToUpperInvariant() -eq "C:\") -or (Test-Path $runRoot)) { throw "SUR-07-A08 requires a fresh non-C runner temp root" }
           $tempRoot = Join-Path $runRoot "PLMToolTemp"
           $summaryOut = Join-Path $runnerTemp ("plm-sur-a08-result-" + $env:GITHUB_RUN_ID + ".json")
@@ -536,7 +536,7 @@ jobs:
             if (Test-Path -LiteralPath $runRoot) {
               $resolvedRoot = (Resolve-Path -LiteralPath $runRoot).Path
               $resolvedTemp = (Resolve-Path -LiteralPath $runnerTemp).Path
-              if ([System.IO.Path]::GetPathRoot($resolvedRoot).ToUpperInvariant() -eq "C:\" -or (Split-Path -Parent $resolvedRoot) -ne $resolvedTemp -or (Split-Path -Leaf $resolvedRoot) -ne ("plm-sur-a08-" + $env:GITHUB_RUN_ID)) { throw "SUR-07-A08 cleanup ownership check failed" }
+              if ([System.IO.Path]::GetPathRoot($resolvedRoot).ToUpperInvariant() -eq "C:\" -or (Split-Path -Parent $resolvedRoot) -ne $resolvedTemp -or (Split-Path -Leaf $resolvedRoot) -ne ("plm-p51-a27-a08-" + $env:GITHUB_RUN_ID)) { throw "SUR-07-A08 cleanup ownership check failed" }
               Remove-Item -LiteralPath $resolvedRoot -Recurse -Force
             }
           }
