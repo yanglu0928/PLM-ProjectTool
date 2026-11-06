@@ -201,9 +201,9 @@ try{
  assert.ok(await evaluate("document.querySelector('[role=alert]')?.innerText.includes('输出服务暂不可用')"));
  checks.push("simulated service rejection is visible and no automatic second POST occurs");
 
- let realBackendStatus=null,realBackendErrorCode=null,realUiCategory="NOT_RUN",realNoSuccessReceipt=null,realNoStatusReceipt=null,realBackendPostCount=0;
+ let realBackendStatus=null,realBackendErrorCode=null,realUiCategory="NOT_RUN",realNoSuccessReceipt=null,realNoStatusReceipt=null,realBackendPostCount=0,realApiRequests=[];
  if(backendOrigin){
-  mode="realbackend";await openRequirement();await click("请求生成 DOCX");
+  mode="realbackend";await openRequirement();const realActionStart=reqs.length;await click("请求生成 DOCX");
   try{await waitFor("document.querySelector('[role=alert]')!==null","real API failure-closed UI alert");}catch{}
   const alertText=await evaluate("document.querySelector('[role=alert]')?.innerText||''");
   if(alertText.includes("当前固定版本暂不满足输出请求条件。"))realUiCategory="EXPECTED_FIXED_VERSION_VALIDATION";
@@ -211,15 +211,25 @@ try{
   else if(alertText.includes("提交结果暂时无法确认"))realUiCategory="SAFE_SUBMISSION_UNCONFIRMED";
   else if(alertText)realUiCategory="OTHER_ALERT";
   else realUiCategory="NO_ALERT";
+  const apiPathClass=(path)=>path.endsWith("/output-requests")?"OUTPUT_REQUESTS_CREATE":
+   path.includes("/requirements/")&&path.endsWith("/versions")?"REQUIREMENT_VERSIONS":
+   path.includes("/requirements/")?"REQUIREMENT_READ":
+   path.includes("/sessions")?"SESSION":"OTHER_API";
+  const captureRequests=()=>reqs.slice(realActionStart).filter(x=>x.path.startsWith("/api/v1/")).slice(-20).map(x=>({
+   method:x.method,path_class:apiPathClass(x.path),status:x.status,
+   backend_status:x.backend_status??null,backend_error_code:x.backend_error_code??null}));
+  realApiRequests=captureRequests();
   let realPosts=reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")&&x.backend_status!==undefined);
   realBackendPostCount=realPosts.length;
   if(realPosts.length===1){realBackendStatus=realPosts[0].backend_status;realBackendErrorCode=realPosts[0].backend_error_code||"UNRECOGNIZED";}
-  realNoStatusReceipt=await evaluate("document.querySelector('[role=status]')===null");
-  realNoSuccessReceipt=!(await evaluate("document.body.innerText.includes('请求已受理')"));
+  const statusText=await evaluate("document.querySelector('[role=status]')?.innerText||''");
+  realNoStatusReceipt=!/请求已受理|请求已创建|生成成功/.test(statusText);
+  realNoSuccessReceipt=!(await evaluate("document.body.innerText.includes('请求已受理')||document.body.innerText.includes('输出请求已创建')"));
   await pause(500);
+  realApiRequests=captureRequests();
   realPosts=reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")&&x.backend_status!==undefined);
   realBackendPostCount=realPosts.length;
-  checks.push("real HTTP response and Edge alert captured with bounded categories; final acceptance remains strict in Python after DB snapshot");
+  checks.push("real UI action retained bounded synthetic API path-class/status evidence; strict acceptance remains in Python after DB snapshot");
  }
 
  mode="unapproved";await openRequirement(false);
@@ -230,7 +240,7 @@ try{
  assert.ok(reqs.every(x=>x.path.startsWith("/api/v1/")),"all API calls remain on synthetic same-origin API");
  const summary={wbs:backendOrigin?"OUT-01-A01-P25":"OUT-01-A01-P24",status:backendOrigin?"DIAGNOSTIC_CAPTURED":"PASS_SCOPE_LIMITED",browser:"Microsoft Edge headless",
   runner_os:"GitHub hosted Windows Server 2025",runner_drive:"D:",synthetic_data:true,controlled_api:true,
-  checks,request_posts:reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")).length,real_backend_posts:realBackendPostCount,real_backend_status:realBackendStatus,real_backend_error_code:realBackendErrorCode,real_ui_category:realUiCategory,real_no_status_receipt:realNoStatusReceipt,real_no_success_receipt:realNoSuccessReceipt,
+  checks,request_posts:reqs.filter(x=>x.method==="POST"&&x.path.endsWith("/output-requests")).length,real_backend_posts:realBackendPostCount,real_backend_status:realBackendStatus,real_backend_error_code:realBackendErrorCode,real_ui_category:realUiCategory,real_no_status_receipt:realNoStatusReceipt,real_no_success_receipt:realNoSuccessReceipt,real_api_requests:realApiRequests,
   customer_data:false,external_api_calls:0,plugin_executed:false,docx_generated:false,formal_license_trust:false,
   gate3_changed:false,pilot_ready:false,release_eligible:false};
  await writeFile(summaryPath,JSON.stringify(summary,null,2)+"\n","utf8");console.log(JSON.stringify(summary));
