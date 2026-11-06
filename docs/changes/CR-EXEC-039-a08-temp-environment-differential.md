@@ -1,7 +1,7 @@
 # CR-EXEC-039：SUR-07-A08 PostgreSQL 临时环境 A/B
 
 日期：2026-11-07  
-状态：实施前记录；Hosted 复验中，A08 尚未通过。
+状态：已实施并复验；TEMP/TMP 假设未获支持，停止该假设组；A08 仍 NOT_PASSED。
 
 ## 证据与差异
 
@@ -20,3 +20,10 @@ Hosted run [42282788499](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## 验证
 
 Hosted Windows Server 2025 同run候选、D盘owned根；完整工作流及 A08原始markers必须通过才可记 PASS_LIMITED。该托管证据不代表 Windows 11 实机、Pilot、Gate或正式Release。
+
+
+## Hosted 复验结果
+
+run [42285896336](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42285896336) 中同候选、同路径、同参数的 TEMP/TMP 替代环境探针仍退出 `3221225781`，故 `target_initdb_temp_env_applied=no`；随后原环境 initdb 同码失败，阶段 `TARGET_PG_TEMP_ENV_PROBE_DONE`，没有 A08 业务 markers。17 个 jobs 中其余 16 项成功。该假设未获支持，依实施前退出条件停止继续改变 TEMP/TMP；没有产品缺陷或 A08 通过证据。
+
+影响范围仅为 A08 Hosted Harness 诊断；不修改产品默认环境、不改变验收标准。后续如获得不同的新证据可另立 CR；当前转向独立 WBS。仅合成数据与 Hosted D: 结果，不代表 Windows 11 实机、Pilot、Gate 或正式 Release。
