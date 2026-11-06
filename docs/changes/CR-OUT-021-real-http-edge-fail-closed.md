@@ -285,3 +285,9 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 
 **下一步实施前决策：** 只扩展P25测试Harness：在合成HTTP响应中解析错误Envelope，只输出固定白名单错误码或UNRECOGNIZED；Edge只输出有限UI类别。将“等待精确文案”改成采集诊断，让Node成功写出结构化摘要后，由Python始终完成请求前后DB snapshot比较，再对HTTP状态、UI类别、请求次数及DB相等性统一作严格失败/通过判断。不得吞掉失败、放宽预期422或将500当通过；绝不记录正文、认证头、异常消息或客户内容。产品/API/Schema/Publisher信任不变。
 - 验收：GitHub Hosted Windows D盘重新运行全链；需同时拿到明确HTTP错误码、UI类别、恰好一次POST、无回执/重试及相同DB计数。任一要求不符均失败并保留去敏摘要。验证代码不在本机/C盘运行。
+
+
+## P25 Harness诊断候选已实施，Hosted复验待跑（2026-11-06）
+
+- Node Harness现在只保留七个协议错误码白名单，否则归类UNRECOGNIZED；页面提示归类为有限UI类别，不保留正文/异常文案。预期固定版本提示缺失时不再提前终止；Node写结构化诊断，Python先执行after DB snapshot，再严格检查422、VALIDATION_FAILED、预期安全提示、单POST、无回执和计数不变。失败诊断只含状态/枚举/布尔。
+- 仅修改P25 Hosted测试设施，不改产品端点、Schema/API、Publisher信任或插件执行；等待本次提交的Hosted全链独立验收，P25仍BLOCKED_DIAGNOSTIC。
