@@ -300,3 +300,10 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - 这是对421727“POST 500”事实解释的修正：原记录中的500是旧Harness记录到的客户端请求状态，但未证明由真实Output HTTP组合返回；本轮上游计数为0，需以新证据排除。此前422 request_completed事件仍不可关联。
 
 **下一步实施前决策：** 仅对真实UI动作期间的Node合成API轨迹增加脱敏类别汇总：method、固定path class、HTTP status及是否存在upstream status，不记录路径ID、query、头、正文、错误消息。定位是否POST绕过预期同源桥接。将无回执检查定义为页面是否出现成功受理/成功创建文案，而非要求整个ARIA status区域不存在；仍需恰好一个请求到达真实后端并收到422/VALIDATION_FAILED、无自动重试、无成功回执、DB snapshot不变，否则失败。
+
+
+## P25请求路径分类探针候选已实施，待Hosted验证（2026-11-06）
+
+- 按run 42176547201的诊断，realbackend动作窗口新增最多20条合成API请求的固定path class、method、status/upstream status及白名单错误码；不含路径ID/query/认证/header/body/消息。用于确认Create UI动作是否发出了代理路由请求及是否触及真实后端。
+- “无回执”改为检查成功受理/创建文案，不因ARIA status区域存在失败状态而误报回执；Python仍严格要求真实POST=1、422、VALIDATION_FAILED、无成功状态/文案/重试，且DB计数不变。此为验证Harness边界调整，不更改产品与信任。
+- 当前代码与本记录已同步至PR #61功能分支，等待Hosted全链复验；P25仍BLOCKED_DIAGNOSTIC。
