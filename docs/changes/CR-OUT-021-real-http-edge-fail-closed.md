@@ -349,3 +349,11 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 
 - Node代理在捕获时只对异常message进行内存关键词匹配，输出FETCH_FAILED/CONNECTION_REFUSED/CONNECTION_RESET/TIMEOUT/DNS_FAILURE/SOCKET_ERROR/REQUEST_CONFIG/OTHER之一；原文、stack及cause对象不落盘、不入日志。原生name/code仍做白名单分类；返回固定503不变。
 - Python摘要接收有限枚举并保持单POST/422/VALIDATION_FAILED/无回执/DB快照严格要求。候选已同步功能分支，Hosted复验待跑。
+
+
+## Run 42184707119：代理异常信息仍为OTHER，独立任务通过（2026-11-06）
+
+- Hosted全链除P25外全部作业成功，含后端/前端/PG/父包/P24/P39/A50/A17/A34；P25临时PG启动/完整根对照/Edge Harness/DB前后快照/D盘清理均执行。Edge Output POST到Node，本地固定503；上游HTTP/error码为空，error.name/message/cause均归一为OTHER/UNKNOWN；DB目标计数相同，无成功回执和重试。P25为唯一失败。
+- 现有错误分类无法区分共通Node→FastAPI连接故障与仅该POST构造错误。
+
+**下一步实施前决策：** 增加Hosted Harness-only Node连通性探针，在浏览器请求前GET同一localhost FastAPI的/openapi.json，只记录HTTP状态/固定MIME布尔或固定异常类别，丢弃/取消响应正文，不记录Spec、环境或异常原文。探针不计业务POST，也不改变生产路由。若探针失败，修正Node/runner本地连接参数；若成功，再审查POST请求封装。业务验收仍要求真实Output POST/422/VALIDATION_FAILED、无回执重试和DB不变。
