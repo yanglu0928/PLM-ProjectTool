@@ -565,15 +565,32 @@ async def main() -> int:
                                                     env=node_env,
                                                     stdout=asyncio.subprocess.PIPE,
                                                     stderr=asyncio.subprocess.STDOUT)
-        output, _ = await asyncio.wait_for(node.communicate(), timeout=240)
-        if node.returncode:
-            raise RuntimeError("P25 Edge harness failed: " + output.decode("utf-8", "replace")[-6000:])
+        await asyncio.wait_for(node.communicate(), timeout=240)
+        if not node_summary.is_file():
+            raise RuntimeError("P25 Edge harness failed before writing bounded diagnostics")
         edge_summary = json.loads(node_summary.read_text(encoding="utf-8"))
         after = snapshot(database, pg_port)
-        if edge_summary.get("real_backend_posts") != 1 or edge_summary.get("real_backend_status") != 422:
-            raise AssertionError("P25 real HTTP rejection contract did not pass")
-        if before != after:
-            raise AssertionError("P25 real HTTP rejection changed Output/Job/Audit/Idempotency rows")
+        database_snapshot_unchanged = before == after
+        contract = {
+            "edge_exit_zero": node.returncode == 0,
+            "one_real_post": edge_summary.get("real_backend_posts") == 1,
+            "http_422": edge_summary.get("real_backend_status") == 422,
+            "validation_error_code": edge_summary.get("real_backend_error_code") == "VALIDATION_FAILED",
+            "expected_safe_ui": edge_summary.get("real_ui_category") == "EXPECTED_FIXED_VERSION_VALIDATION",
+            "no_status_receipt": edge_summary.get("real_no_status_receipt") is True,
+            "no_success_receipt": edge_summary.get("real_no_success_receipt") is True,
+            "database_snapshot_unchanged": database_snapshot_unchanged,
+        }
+        if not all(contract.values()):
+            observed = {
+                "http_status": edge_summary.get("real_backend_status"),
+                "error_code": edge_summary.get("real_backend_error_code"),
+                "ui_category": edge_summary.get("real_ui_category"),
+                "real_post_count": edge_summary.get("real_backend_posts"),
+                "db_snapshot_unchanged": database_snapshot_unchanged,
+                "edge_exit_zero": node.returncode == 0,
+            }
+            raise AssertionError("P25 bounded rejection diagnostics: " + json.dumps(observed, sort_keys=True))
         result = {
             "wbs": "OUT-01-A01-P25", "status": "PASS_SCOPE_LIMITED",
             "runner_os": "GitHub hosted Windows Server 2025", "runner_drive": "D:",
@@ -613,6 +630,18 @@ async def main() -> int:
             "postgres_runtime_layout": pg_runtime_layout,
             "postgres_data_layout": "INSIDE_VERIFIED_PARENT_PACKAGE",
         }
+        edge_details = locals().get("edge_summary")
+        if isinstance(edge_details, dict):
+            diagnostic["real_http_diagnostic"] = {
+                "http_status": edge_details.get("real_backend_status"),
+                "error_code": edge_details.get("real_backend_error_code"),
+                "ui_category": edge_details.get("real_ui_category"),
+                "real_post_count": edge_details.get("real_backend_posts"),
+                "no_status_receipt": edge_details.get("real_no_status_receipt"),
+                "no_success_receipt": edge_details.get("real_no_success_receipt"),
+                "database_snapshot_unchanged": locals().get("database_snapshot_unchanged"),
+                "edge_exit_zero": locals().get("node").returncode == 0 if locals().get("node") else False,
+            }
         if pg_root is not None:
             try:
                 diagnostic["windows_loader"] = windows_loader_diagnostics(pg_root)
