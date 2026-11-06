@@ -46,6 +46,17 @@ describe("OutputArtifactReadClient", () => {
     expect(Object.isFrozen(value)).toBe(true);
   });
 
+  it("invokes fetcher without binding the client instance", async () => {
+    let receiver: unknown = Symbol("not-called");
+    const fetcher = vi.fn(function (this: unknown): Promise<Response> {
+      receiver = this;
+      return Promise.resolve(ok(reference()));
+    });
+    const api = new OutputArtifactReadClient(fetcher as typeof fetch);
+    await api.get(project, request);
+    expect(receiver).toBeUndefined();
+  });
+
   it("rejects cross-scope, external URLs, extra fields and inconsistent content", () => {
     for (const corrupt of [
       { ...reference(), project_id: request },

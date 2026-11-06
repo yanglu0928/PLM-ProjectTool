@@ -103,7 +103,8 @@ export class OutputArtifactReadClient {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(path, {
+      const fetcher = this.fetcher;
+      const response = await fetcher(path, {
         method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error",
         headers: { Accept: "application/json" }, signal: controller.signal,
       });
