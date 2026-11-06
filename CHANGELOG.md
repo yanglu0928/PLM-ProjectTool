@@ -707,3 +707,8 @@
 ## Unreleased · 2026-11-06（P39第五轮 Hosted fetch transport诊断，未通过）
 
 - run [42148130637](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42148130637) 的P39 job失败：前端path-only trace显示调用Artifact引用GET，AbortController计数从2增至3；CDP Network及合成server仍未观察到该请求，无内容GET/Edge保存。P39未通过。Frontend测试/build、PG18侧车重建、A17 D盘边界及A50成功；检查时Backend job仍运行，不将整体说成全绿。按CR-OUT-034先记录下一诊断，仅输出fetch rejection固定归一类别，禁止记录message、参数、认证或正文。产品API/Schema/信任未改。
+
+
+## Unreleased · 2026-11-06（P39第六轮Hosted复验仍未通过）
+
+- run [42148721420](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42148721420) 重现Artifact GET仅出现在页面内存trace、未进入CDP Network或合成服务，UI安全提示且无内容GET/附件保存。P39仍未通过。本轮Backend全量/wheel、Frontend/build、PG18 sidecar、A17、P24、A50和嵌入式组装成功，P39是唯一失败job。按CR-OUT-034，仅下一步在Hosted Harness统计fetch Promise rejection归一类别，不改生产端点或安全边界。

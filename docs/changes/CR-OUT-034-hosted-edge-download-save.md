@@ -77,3 +77,8 @@ run [42147565204](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 ## P39第五轮Hosted fetch拒绝诊断（run 42148130637，未通过）
 
 Hosted run [42148130637](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42148130637)复现Artifact引用未到达浏览器Network/合成服务器；UI显示安全提示。页面侧path-only fetch trace包含预期Artifact GET，AbortController计数由2增至3，未有内容GET或Edge下载，P39仍未通过。Frontend测试/build、PG18 sidecar重建、A17 D盘边界和A50通过；后端全量测试在检查时仍运行，不能据此声称整轮完整通过。偏差先记于本节；下一步只增加原生fetch Promise rejection的固定类别统计（Abort/TypeError/Other），不记录错误message、查询参数、认证信息或正文，然后在Hosted复验。产品API/Schema/信任未改。
+
+
+## P39第六轮Hosted复验重复失败（run 42148721420，未通过）
+
+Hosted run [42148721420](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42148721420)复现同一现象：artifact 引用GET只出现在Harness页面内存的method/path trace；CDP Network与合成HTTP server没有请求，页面给出通用安全提示，无Document content GET或Edge保存。P39继续未通过。此轮Backend全量测试/wheel、Frontend测试/typecheck/build、PG18侧车重建、A17 D盘临时路径检查、P24/A50及Embedded Python组装成功；P39是该Workflow唯一失败job。偏差和下一最小诊断已先记录：Harness在原生fetch Promise拒绝时仅采集规范化类别（Abort/TypeError/Other），不保存错误文案或任何请求敏感数据；不改生产代码/API/Schema/Trust。
