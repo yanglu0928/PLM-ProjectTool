@@ -41,3 +41,12 @@ Hosted run [42254166208](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42257007756](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42257007756) 的失败摘要在不回显原始日志的前提下给出 ValueError 来源 basename:line 为 rehearse_windows_unified_pg18_layout.py:64。只读核对该行确认既有隔离安装工具要求 stage、pristine、target 三个输出根均为 RUNNER_TEMP 直属、名称匹配 plm-install-rehearsal-[A-Za-z0-9_-]{8,64} 且目录事先不存在。本轮工作流传入 candidate-stage/install-pristine/install-target，违反其现有命名契约，因此在业务验证开始前被拒绝。此为 Hosted Harness 输入偏差，不是产品/业务 API 故障，PG/Edge 调研版本断言尚未执行。
 
 修正范围：仅将三个 owned 临时目录命名为合规且互异的 plm-install-rehearsal-stage-a08-<run id>、plm-install-rehearsal-pristine-a08-<run id>、plm-install-rehearsal-target-a08-<run id>；继续确保它们均在 PLMToolTemp 直属、每次全新、结尾只清理本 job 私有根。然后完整 Hosted 复验。
+
+
+## Hosted 第三轮结果（2026-11-07）
+
+run [42259742947](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42259742947) 中 A08 job 已完成候选下载与身份摘要校验、D盘边界及 Python/Node 语法检查，并启动包内流程。验收器 exit=1、无成功标记；包装层安全摘要为 WinError、最后帧 <frozen ntpath>:709，stage 未输出。未上传原始 verifier 输出，临时 owned 根按流程清理。该证据不足以判断是临时路径、Caddy/服务进程或业务步骤问题，不证明产品故障或通过。
+
+## 下一步单变量诊断（CR-EXEC-032）
+
+仅增强测试验收器诊断：失败时输出异常类、可用的数值型 WinError、最多 8 个调用栈文件 basename:line（不包含路径/异常消息），并在验收器入口、包内 smoke、浏览器回调与关键回调边界输出固定枚举阶段。Workflow 仅从受限白名单读取诊断字段；保留现有D盘隔离、owned 清理、合成数据与严格验收标记。此轮不修改产品业务代码、API、Schema、权限或正式信任；由 Hosted Windows runner 复验后再判断根因。

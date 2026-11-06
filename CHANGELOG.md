@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-032：SUR-07-A08 WinError 脱敏诊断补齐）
+- run [42259742947](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42259742947) 的 A08 job 已下载并校验同 run A17 非发行候选，D盘边界和语法检查通过；包内验收启动后 exit=1、无通过标记。安全摘要为 WinError，最后 traceback 位置 <frozen ntpath>:709，不足以识别失败调用。
+- 偏差先登记；下一单点只在验证器增加固定阶段标记、WinError 数值与有界源码 basename:line 栈，不记录路径/异常消息/请求正文/凭据/原始日志；再用 GitHub Hosted Windows runner D盘复验。无产品/API/DB变更；A08不通过。
+
 ## Unreleased · 2026-11-07（定位并修正 SUR-07-A08 临时根命名偏差）
 - run [42257007756](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42257007756)的安全诊断仅披露 ValueError 源文件和行号，定位到现有 rehearse_windows_unified_pg18_layout.py:64。Workflow传入的临时输出根名不匹配既有 plm-install-rehearsal-* fail-closed 约束，业务Edge/PG验证未执行。根因是本次验收接线参数偏差，无产品缺陷证据。
 - 先记录后改：仅为stage/pristine/target改用合规、唯一、全新D盘RUNNER_TEMP直属目录名并Hosted复验；不上传原始日志。
