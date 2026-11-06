@@ -295,6 +295,21 @@ def main() -> int:
     mark_stage("CANDIDATE_STAGE_EXTRACT_START")
     extract_verified(args.candidate, args.expected_sha256, args.stage)
     mark_stage("CANDIDATE_STAGE_EXTRACT_PASS")
+    stage_initdb = args.stage / "payload" / "pgsql" / "bin" / "initdb.exe"
+    if not stage_initdb.is_file() or stage_initdb.is_symlink():
+        raise ValueError("verified candidate initdb path rejected")
+    mark_stage("STAGE_INITDB_PROBE_START")
+    initdb_probe = subprocess.run(
+        [str(stage_initdb), "--version"], capture_output=True, text=True,
+        encoding="utf-8", errors="replace", timeout=30, check=False,
+    )
+    if initdb_probe.returncode:
+        mark_stage("STAGE_INITDB_PROBE_FAIL")
+        raise RuntimeError(
+            "synthetic packaged migration command failed: initdb.exe, exit="
+            + str(initdb_probe.returncode) + ", output="
+        )
+    mark_stage("STAGE_INITDB_PROBE_PASS")
     runner = handover_review["base"]["base"]["project"]["base"].base.base
     mark_stage("PACKAGED_SMOKE_START")
     try:
