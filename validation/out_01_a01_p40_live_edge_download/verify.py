@@ -131,8 +131,48 @@ def verify_live_edge_download(engine, *, data: dict, storage_root: Path,
             capture_output=True, text=True, errors="replace", timeout=240, check=False,
         )
         if result.returncode != 0 or not summary_path.is_file():
-            raise RuntimeError("P40 hosted Edge validation failed; exit="
-                               + str(result.returncode))
+            safe_diagnostic: dict[str, object] = {
+                "exit_code": result.returncode,
+                "summary_written": summary_path.is_file(),
+                "stage": "unavailable",
+                "api_requests": [],
+                "network_failures": [],
+                "runtime_exception_classes": [],
+            }
+            try:
+                raw = json.loads(result.stderr)
+                if isinstance(raw, dict):
+                    if isinstance(raw.get("stage"), str):
+                        safe_diagnostic["stage"] = raw["stage"][:64]
+                    requests = raw.get("requests")
+                    if isinstance(requests, list):
+                        safe_diagnostic["api_requests"] = [
+                            {"method": item.get("method"), "path": item.get("path"),
+                             "status": item.get("status")}
+                            for item in requests[-20:] if isinstance(item, dict)
+                            and isinstance(item.get("path"), str)
+                            and item["path"].startswith("/api/v1/")
+                        ]
+                    failures = raw.get("network_failures")
+                    if isinstance(failures, list):
+                        safe_diagnostic["network_failures"] = [
+                            {"type": item.get("type"),
+                             "category": item.get("error")
+                             if isinstance(item.get("error"), str)
+                             and item["error"].startswith("net::")
+                             and len(item["error"]) <= 48 else "OTHER"}
+                            for item in failures[-20:] if isinstance(item, dict)
+                        ]
+                    exceptions = raw.get("runtime_exceptions")
+                    if isinstance(exceptions, list):
+                        safe_diagnostic["runtime_exception_classes"] = [
+                            item.get("class_name", "unknown")
+                            for item in exceptions[-20:] if isinstance(item, dict)
+                        ]
+            except (json.JSONDecodeError, TypeError, ValueError):
+                pass
+            raise RuntimeError("P40 hosted Edge validation failed; safe_diagnostic="
+                               + json.dumps(safe_diagnostic, sort_keys=True))
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         requests = summary.get("api_requests")
         reference_path = (
