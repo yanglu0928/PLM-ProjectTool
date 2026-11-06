@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（CR-EXEC-045：真实 PlanVersion 状态门验证）
+
+- OUT-01-A01-P46 A17验证Harness已实现：同run真实Plan Owner的IN_REVIEW投影经生产FixedOutputSourceAdapter、固定模板/APPROVED策略、TrustedOutputContextResolver及OutputRequestService；由test-only capability确保到达Owner状态门，预期VALIDATION_FAILED且ContextSnapshot/Request/Job/Outbox/Audit/幂等收据六类记录零新增，插件执行0。
+- A17受限summary现要求导出P45真实snapshot marker与P46状态门/零写入marker，补强业务级验收可追溯性。仅Hosted PG18合成验收，不改产品/API/Schema/Migration或trust，不生成文件。新run待完成。
+
 ## Unreleased · 2026-11-07（CR-EXEC-044：真实 PlanVersion 快照重建）
 
 - OUT-01-A01-P45在Hosted A17同run迁移后PG18中使用真实Plan Owner与SQLAlchemy repository从浏览器/API实际生成的IN_REVIEW PlanVersion行重建两条WBS；固定UUID/ProjectId、状态保真与跨项目隐藏断言通过，结论PASS_SCOPE_LIMITED。

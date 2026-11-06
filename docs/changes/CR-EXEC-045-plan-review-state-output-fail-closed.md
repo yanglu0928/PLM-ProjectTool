@@ -1,7 +1,7 @@
 # CR-EXEC-045：OUT-01-A01-P46 真实 PlanVersion 状态门与 Output 零写入验证
 
 日期：2026-11-07  
-状态：编码前检查通过；实现与 Hosted PG18/A17 验收待完成。
+状态：编码已完成；Hosted PG18/A17验收待完成（2026-11-07）。
 
 ## 当前阶段与 WBS
 
@@ -29,3 +29,9 @@ Phase 2 Platform Core / Windows 11 Pilot 纵向业务链。WBS：OUT-01-A01-P46�
 若Output请求在Owner source读取前因其他门失败，或需要改写真实Review/Project状态、绕过冻结策略、使用真实Publisher密钥/插件或改变API/Schema，立即停止并记录，不得声称P46已覆盖Owner状态门。失败时只调整本次Harness，并先登记偏差；不重复CR-EXEC-039已停止的A08 TEMP/TMP试验。
 
 回滚仅移除P46 Harness装配、断言和marker，保留P45证据及产品代码。无客户数据、付款、生产写入或不可恢复动作。
+
+
+## 实现状态（2026-11-07）
+
+- 已按编码前检查，仅扩展A17验证Harness：把同run真实Plan Owner读层接入生产 `FixedOutputSourceAdapter`、固定Plan模板/APPROVED策略、`TrustedOutputContextResolver`及`OutputRequestService`；用test-only enabled/trusted capability使请求到达真实来源状态门，不调用插件。
+- 在A17受限结果marker allowlist中显式纳入P45/P46两个固定marker，令PG18 Owner snapshot及零写入断言可在bound summary中追溯。代码已同步至PR #61分支；Hosted验收待完成。

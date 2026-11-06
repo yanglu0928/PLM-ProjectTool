@@ -1477,6 +1477,140 @@ def packaged_planversion_probe(**context) -> None:
                 raise
         else:
             raise AssertionError("real Plan Owner exposed a version across projects")
+        # P46 sends the actual Owner projection through the production Output adapter and policy.
+        from sqlalchemy import text
+        from plm_assistant.entrypoints.output_fixed_source_adapter import FixedOutputSourceAdapter
+        from plm_assistant.modules.audit.application.public import AuditService
+        from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
+        from plm_assistant.modules.jobs.application.output_enqueue import OutputJobQueue
+        from plm_assistant.modules.jobs.infrastructure.output_enqueue_repository import SqlAlchemyOutputJobQueueRepository
+        from plm_assistant.modules.output.application.create_request import (
+            CreateOutputRequest, OutputRequestError, OutputRequestService,
+        )
+        from plm_assistant.modules.output.application.resolve_context import (
+            PluginOperationCapability, TrustedOutputContextResolver,
+        )
+        from plm_assistant.modules.output.infrastructure.builtin_policy_registry import (
+            BUILTIN_PLAN_DOCX_POLICY_REF, BuiltinOutputPolicyRegistry,
+        )
+        from plm_assistant.modules.output.infrastructure.builtin_template_registry import (
+            BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID, BuiltinOutputTemplateRegistry,
+        )
+        from plm_assistant.modules.output.infrastructure.create_request_repository import (
+            SqlAlchemyOutputRequestRepository,
+        )
+        from plm_assistant.modules.platform.infrastructure.idempotency_receipts import (
+            SqlAlchemyIdempotencyReceipts,
+        )
+
+        class _P46PlanRepository(SqlAlchemyPlanVersionReadRepository):
+            def __init__(self) -> None:
+                self.output_reads = 0
+
+            def get_output_source(self, transaction, *, project_id, plan_version_id):
+                self.output_reads += 1
+                return super().get_output_source(
+                    transaction, project_id=project_id, plan_version_id=plan_version_id,
+                )
+
+        # Rebind the already-real Plan Owner to a counting repository for P46 only.
+        plan_repository = _P46PlanRepository()
+        source_reader._repository = plan_repository
+
+        class _NoRequirementMatch:
+            def read_output_source(self, _transaction, **_kwargs):
+                return None
+
+        class _P46Access:
+            def authorized_creator(self, *_args, **_kwargs):
+                return actor
+
+        class _P46License:
+            def require_valid(self, *, trace_id):
+                return True
+
+        class _P46TestCapability:
+            def get_operation(self, _transaction, *, operation_id):
+                if operation_id != "word.generate":
+                    return None
+                return PluginOperationCapability(
+                    "word.generate", ("DOCX",), enabled=True, trusted=True,
+                )
+
+        fixed_sources = FixedOutputSourceAdapter(
+            requirements=_NoRequirementMatch(), plans=source_reader,
+        )
+        output_resolver = TrustedOutputContextResolver(
+            sources=fixed_sources,
+            templates=BuiltinOutputTemplateRegistry(),
+            policies=BuiltinOutputPolicyRegistry(),
+            operations=_P46TestCapability(),
+        )
+        output_service = OutputRequestService(
+            unit_of_work=source_runtime.unit_of_work,
+            access=_P46Access(), license_guard=_P46License(), resolver=output_resolver,
+            repository=SqlAlchemyOutputRequestRepository(),
+            jobs=OutputJobQueue(SqlAlchemyOutputJobQueueRepository()),
+            receipts=SqlAlchemyIdempotencyReceipts(),
+            audit=AuditService(SqlAlchemyAuditRepository()),
+        )
+        p46_request = CreateOutputRequest(
+            b"synthetic-session", b"synthetic-csrf", uuid.uuid4(), project,
+            "DOCX", BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID, (version_id,),
+            BUILTIN_PLAN_DOCX_POLICY_REF, "word.generate",
+        )
+        p46_queries = (
+            "SELECT count(*) FROM plm.out_context_snapshots WHERE project_id=:project",
+            "SELECT count(*) FROM plm.out_output_requests WHERE project_id=:project",
+            "SELECT count(*) FROM plm.job_jobs WHERE project_id=:project AND owner_module='output'",
+            "SELECT count(*) FROM plm.job_outbox_events WHERE project_id=:project AND owner_module='output'",
+            "SELECT count(*) FROM plm.aud_events WHERE target_project_id=:project AND action='OUTPUT_REQUEST_CREATE'",
+            "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE project_id=:project AND operation='V1_OUTPUT_REQUEST_CREATE'",
+        )
+
+        def p46_output_counts():
+            with source_runtime.unit_of_work() as tx:
+                counts = tuple(
+                    tx.session.execute(text(query), {"project": project}).scalar_one()
+                    for query in p46_queries
+                )
+                tx.commit()
+            return counts
+
+        def p46_execution_count():
+            with source_runtime.unit_of_work() as tx:
+                count = tx.session.execute(
+                    text("SELECT count(*) FROM plm.plg_executions WHERE project_id=:project"),
+                    {"project": project},
+                ).scalar_one()
+                tx.commit()
+            return count
+
+        plan_repository.output_reads = 0
+        p46_before = p46_output_counts()
+        p46_exec_before = p46_execution_count()
+        try:
+            output_service.create(
+                p46_request, idempotency_key="p46-inreview-plan-key-000001",
+            )
+        except OutputRequestError as error:
+            if error.code != "VALIDATION_FAILED":
+                raise
+        else:
+            raise AssertionError("P46 accepted a real IN_REVIEW PlanVersion for Output")
+        p46_after = p46_output_counts()
+        p46_exec_after = p46_execution_count()
+        if (plan_repository.output_reads != 1 or p46_after != p46_before
+                or p46_exec_after != p46_exec_before or p46_exec_after != 0):
+            raise AssertionError(
+                "P46 state-gate rejection did not reach the real Plan Owner or left side effects"
+            )
+        print(
+            "OUT_01_A01_P46_REAL_PLAN_REVIEW_STATE_ZERO_WRITES_PASS: "
+            "production fixed-source adapter; real IN_REVIEW owner; resolver rejected; "
+            "six Output counts unchanged; plugin execution=0",
+            flush=True,
+        )
         print(
             "OUT_01_A01_P45_REAL_PLAN_SNAPSHOT_PG_PASS: migrated PostgreSQL rows; "
             "fixed UUID/project authorization; IN_REVIEW preserved; WBS=2; cross-project hidden",

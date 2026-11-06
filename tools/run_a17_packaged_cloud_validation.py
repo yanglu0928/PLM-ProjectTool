@@ -128,6 +128,8 @@ def main() -> int:
     output = completed.stdout + completed.stderr
     required = ("P51_A17_PACKAGED_PLANVERSION_EDGE_PASS",
                 "P51_A17_PACKAGED_PLANVERSION_PG_PASS",
+                "OUT_01_A01_P45_REAL_PLAN_SNAPSHOT_PG_PASS",
+                "OUT_01_A01_P46_REAL_PLAN_REVIEW_STATE_ZERO_WRITES_PASS",
                 "OUT_01_A01_P05_REQUIREMENT_FIXED_SOURCE_PG_PASS",
                 "OUT_01_A01_P07_BUILTIN_TEMPLATE_REGISTRY_PASS",
                 "OUT_01_A01_P09_BUILTIN_POLICY_REGISTRY_PASS",
