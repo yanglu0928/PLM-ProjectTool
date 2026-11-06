@@ -2,7 +2,7 @@
 
 - 新增 Plan Owner 授权的精确 PlanVersion Output 投影；在 Windows Output composition 中按 Owner dispatch，同时保留现有 Requirement 来源。
 - 追加不可变 PlanVersion DOCX 模板和策略版本，严格限制 APPROVED 与五类快照字段；没有数据库 Migration 或 API Contract 变化。插件签名信任保持 fail-closed。
-- 定向测试已添加，Hosted 复验待完成；不代表 Pilot/Gate/Release 或 Windows 11 实机验收。
+- 定向测试和独立真实 PG18 Owner lookup 验收器已添加，并接入 Hosted 父包 PG18 smoke；待新 run 验证。当前后端单测/wheel成功，但不代表本项PG18集成、Pilot/Gate/Release或Windows 11实机验收。
 
 ## Unreleased · 2026-11-07（CR-EXEC-039：A08 PostgreSQL 临时环境差分）
 
