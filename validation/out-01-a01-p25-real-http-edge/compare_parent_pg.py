@@ -98,31 +98,31 @@ def main() -> int:
     same = all(pg_hashes.get(name) == sidecar_hashes.get(name) for name in common)
 
     initdb = extract_root / "payload" / "pgsql" / "bin" / "initdb.exe"
-
-    def run_initdb_probe(profile: str) -> dict[str, object]:
-        work = Path(tempfile.mkdtemp(prefix="plm-out-p25-profile-" + profile.lower() + "-", dir=runner_temp))
-        data_dir = work / "data"
-        if profile == "P25":
-            command = [str(initdb), f"--pgdata={data_dir}", "--username=poc_admin",
-                       "--auth=trust", "--encoding=UTF8", "--locale=C"]
-        elif profile == "PARENT_SMOKE":
-            command = [str(initdb), "-D", str(data_dir), "-U", "postgres",
-                       "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"]
-        else:
-            raise ValueError("unknown fixed initdb profile")
-        result = subprocess.run(
+    data_root = Path(tempfile.mkdtemp(prefix="plm-out-p25-partial-profile-", dir=runner_temp))
+    data_dir = data_root / "data"
+    command = [str(initdb), f"--pgdata={data_dir}", "--username=poc_admin",
+               "--auth=trust", "--encoding=UTF8", "--locale=C"]
+    try:
+        probe = subprocess.run(
             command, env=os.environ.copy(), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, encoding="utf-8", errors="replace", timeout=180, check=False)
-        return {
-            "profile": profile,
-            "exit_code": result.returncode,
-            "stdout_bytes": len(result.stdout.encode("utf-8")),
-            "stderr_bytes": len(result.stderr.encode("utf-8")),
+            timeout=180, check=False)
+        partial_root_p25_profile = {
+            "profile": "P25",
+            "timed_out": False,
+            "exit_code": probe.returncode,
+            "stdout_bytes": len(probe.stdout or b""),
+            "stderr_bytes": len(probe.stderr or b""),
             "pg_version_created": (data_dir / "PG_VERSION").is_file(),
         }
-
-    p25_profile = run_initdb_probe("P25")
-    parent_smoke_profile = run_initdb_probe("PARENT_SMOKE")
+    except subprocess.TimeoutExpired as exc:
+        partial_root_p25_profile = {
+            "profile": "P25",
+            "timed_out": True,
+            "exit_code": None,
+            "stdout_bytes": len(exc.stdout or b""),
+            "stderr_bytes": len(exc.stderr or b""),
+            "pg_version_created": (data_dir / "PG_VERSION").is_file(),
+        }
     report = {
         "status": "DIFFERENTIAL_DIAGNOSTIC",
         "run_id": args.run_id,
@@ -133,13 +133,12 @@ def main() -> int:
             {"path": name, "parent_sha256": pg_hashes.get(name), "sidecar_sha256": sidecar_hashes.get(name)}
             for name in common if pg_hashes.get(name) != sidecar_hashes.get(name)
         ][:80],
-        "command_profile_comparison": {
-            "same_extracted_initdb_binary": True,
-            "same_original_runner_path": True,
-            "p25_profile": p25_profile,
-            "parent_smoke_profile": parent_smoke_profile,
+        "layout_comparison": {
+            "pg_only_extraction_root": partial_root_p25_profile,
+            "profile": "P25",
+            "original_runner_path": True,
         },
-        "parent_candidate_initdb_exit_code": p25_profile["exit_code"],
+        "parent_candidate_initdb_exit_code": partial_root_p25_profile["exit_code"],
         "runner_drive": "D:",
         "database_files_uploaded": False,
         "external_api_calls": 0,

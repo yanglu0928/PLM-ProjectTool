@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25 full-package vs PG-only 布局探针候选，待Hosted）
+
+- 根据CR-OUT-021，compare脚本在PG-only根跑P25 initdb profile；同作业父包smoke helper新增仅P25启用的可选诊断，在完整parent extraction root用同一P25 profile/runner PATH运行。只写D盘临时合成目录并保留退出码、输出长度与PG_VERSION布尔。代码候选待Hosted Windows复验；生产Harness与业务逻辑不变。
+
 ## Unreleased · 2026-11-06（P25两种initdb命令profile均失败，包布局对照待实施）
 
 - Hosted run [42164655328](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42164655328)：同一PG-only解包initdb.exe/原始PATH下，P25与parent-smoke参数profile都0xC0000135、无输出/PG_VERSION；完整父包smoke同job通过。P25仅job失败，HTTP/Edge未启动。下一项按CR-OUT-021用相同P25 profile对照PG-only与完整父包 extraction root；不改生产harness，仍仅D盘Hosted。

@@ -725,6 +725,7 @@ def main() -> int:
     parser.add_argument("--verification-summary", type=Path, required=True)
     parser.add_argument("--work-root", type=Path, required=True)
     parser.add_argument("--summary-out", type=Path, required=True)
+    parser.add_argument("--p25-initdb-profile-diagnostic", action="store_true")
     args = parser.parse_args()
 
     runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
@@ -869,7 +870,35 @@ def main() -> int:
     port = port_sock.getsockname()[1]
     port_sock.close()
     result = {}
+    p25_initdb_profile_diagnostic = None
     try:
+        if args.p25_initdb_profile_diagnostic:
+            probe_root = root / "p25-initdb-profile-diagnostic"
+            probe_root.mkdir()
+            probe_data = probe_root / "data"
+            p25_command = [str(initdb), f"--pgdata={probe_data}", "--username=poc_admin",
+                           "--auth=trust", "--encoding=UTF8", "--locale=C"]
+            try:
+                p25_probe = subprocess.run(
+                    p25_command, env=os.environ.copy(), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    timeout=180, check=False)
+                p25_initdb_profile_diagnostic = {
+                    "profile": "P25",
+                    "timed_out": False,
+                    "exit_code": p25_probe.returncode,
+                    "stdout_bytes": len(p25_probe.stdout or b""),
+                    "stderr_bytes": len(p25_probe.stderr or b""),
+                    "pg_version_created": (probe_data / "PG_VERSION").is_file(),
+                }
+            except subprocess.TimeoutExpired as exc:
+                p25_initdb_profile_diagnostic = {
+                    "profile": "P25",
+                    "timed_out": True,
+                    "exit_code": None,
+                    "stdout_bytes": len(exc.stdout or b""),
+                    "stderr_bytes": len(exc.stderr or b""),
+                    "pg_version_created": (probe_data / "PG_VERSION").is_file(),
+                }
         init = run_checked([str(initdb), "-D", str(data_dir), "-U", "postgres",
                             "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"], 180)
         start_attempted = True
@@ -1106,6 +1135,7 @@ def main() -> int:
             "startup_manifest_tamper_matrix": startup_manifest_tamper_matrix,
             "startup_preflight_diagnostic": startup_preflight_diagnostic,
             "web_service_smoke": web_service_smoke,
+            "p25_initdb_profile_diagnostic": p25_initdb_profile_diagnostic,
             "output_migration_lifecycle": migration_lifecycle,
         }
     finally:

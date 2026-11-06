@@ -232,3 +232,8 @@ run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - 同run同job完整父包 smoke成功（其完整包提取根含全部20,228 payload文件，并使用parent-smoke profile），但当前命令比较只在PG-only解包目录中运行。因此profile本身未解释成功/失败差异；剩余可检验差异为运行所在的完整父包提取布局/伴随payload。
 - 下一项在同一P25 job、相同P25 profile和原始PATH下，分别在PG-only extracted root与parent smoke helper的完整candidate root运行两次initdb；相同PG文件由同一run候选产生。只报告固定profile、退出码、输出字节数、PG_VERSION布尔。若完整包根成功而PG-only失败，差异收敛到布局/伴随payload；若两者都失败，则需重新核实smoke实际initdb阶段和其输出证据，不修改生产harness猜测。
 - run [42164655328](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42164655328)整体仅P25 job失败，其余jobs成功。P25/Pilot/Gate/Release状态不变。
+
+
+## P25 完整父包 vs PG-only 布局差分实现候选（2026-11-06）
+
+编码前检查见 `docs/progress/out-01-a01-p25-full-layout-precheck.md`。实现仅添加parent package smoke helper可选参数 `--p25-initdb-profile-diagnostic`，仅P25 workflow调用该flag；helper在完整候选解包根执行一次P25 profile initdb，单独新数据目录、原始runner环境，记录固定profile/超时/退出码/输出字节数/PG_VERSION布尔。常规parent PG smoke默认不执行此附加探针。compare脚本在PG-only extraction root保留相同P25 profile对照。无客户数据/产品API/Schema/安装包变化。失败并不冒充P25通过；回滚仅移除flag及比较器代码。
