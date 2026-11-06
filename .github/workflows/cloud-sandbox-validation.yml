@@ -467,7 +467,7 @@ jobs:
           Remove-Item -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Force
           node --check validation/out-01-a01-p39-edge-download/run.mjs
           if ($LASTEXITCODE -ne 0) { throw "P39/P40 Edge harness syntax failed" }
-          python -B -c "import ast,pathlib; ast.parse(pathlib.Path('validation/out-01-a01-p40-live-edge-download/verify.py').read_text(encoding='utf-8')); ast.parse(pathlib.Path('validation/out-01-a01-p33-output-completion/verify.py').read_text(encoding='utf-8'))"
+          python -B -c "import ast,pathlib; ast.parse(pathlib.Path('validation/out_01_a01_p40_live_edge_download/verify.py').read_text(encoding='utf-8')); ast.parse(pathlib.Path('validation/out-01-a01-p33-output-completion/verify.py').read_text(encoding='utf-8'))"
           if ($LASTEXITCODE -ne 0) { throw "P40 Python harness syntax failed" }
       - name: Extract on runner temp and smoke PostgreSQL/pgvector
         shell: pwsh
