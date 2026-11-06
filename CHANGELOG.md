@@ -2,7 +2,7 @@
 
 - Hosted run [42282788499](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42282788499)：目标布局两条只读版本探针均返回 0，但完整 initdb 仍以 3221225781/0xC0000135 退出。静态可执行装载不是足够解释，A08未通过。
 - 源码对照确认 A08 platform-write smoke 为 PostgreSQL 专设 TEMP/TMP 指向唯一 pg_run；既有 migration smoke 使用继承环境。先记录后，A08 Harness 增加同候选/同PATH/同初始化参数、仅TEMP/TMP改为本轮D盘owned PLMToolTemp根的真实初始化A/B；临时探针数据在精确owned目录中清理，输出只保留退出码。仅A/B成功才将该变化用于原smoke，否则继续原环境并切换任务，不作无证据推断。
-- 复验待完成；不代表Windows11实机、Pilot、Gate或Release。
+- Hosted run [42285896336](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42285896336)：同候选/相同初始化参数的 TEMP/TMP 对照仍以 3221225781 退出；替代 TEMP/TMP 未应用，原 initdb 随后以相同退出码失败。16/17 jobs 成功，A08 packaged SurveyVersion flow 失败。该差异假设未获支持，停止这组 A08 环境试验，A08 维持 NOT_PASSED；不代表 Windows 11 实机、Pilot、Gate 或 Release。
 
 ## Unreleased · 2026-11-07（CR-EXEC-038：A08 目标布局 PostgreSQL 装载探针）
 
