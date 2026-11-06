@@ -321,3 +321,11 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 
 - Node Harness仅对realbackend模式下Output POST异常归类FETCH_TYPE_ERROR或PROXY_EXCEPTION，响应固定SYSTEM_UNAVAILABLE/503；不再向Edge回传raw exception。请求摘要增加proxy_failure_class白名单，Python诊断只保留有限类别。严格成功判定仍要求真实upstream POST/422/VALIDATION_FAILED及DB无变化。
 - 代码已进入PR #61功能分支；本候选未Hosted验收，P25仍BLOCKED_DIAGNOSTIC。
+
+
+## Run 42180790760：安全503闭合，但Node代理仍未得到上游响应（2026-11-06）
+
+- 新版Harness语法检查通过；真实Create UI产生OUTPUT_REQUESTS_CREATE POST，到Node代理后记录proxy_failure_class=PROXY_EXCEPTION、浏览器HTTP 503/SYSTEM_UNAVAILABLE；backend_status与真实错误码为空。数据库目标计数前后相同，UI归类SAFE_SERVICE_UNAVAILABLE，无成功回执/重试。PG运行及D盘清理通过。P25仍失败，不能声称HTTP POST到达FastAPI。
+- 本轮其余检查出现独立失败：P39 Edge记录CDP evaluation exception；A17发生Review Edge Artifact lockfile EBUSY并伴随包装流程断言失败，需在最终状态中分别保留，不作为P25根因。A34状态当时仍运行。
+
+**下一步实施前决策：** 在P25 Harness记录有限代理错误指纹：error.name类别（TypeError/Error/AbortError/Other）和cause.code有限白名单（ECONNREFUSED/ECONNRESET/ETIMEDOUT/ENOTFOUND/EHOSTUNREACH/EPROTO及UND_ERR_*白名单），未知映射UNKNOWN；仍固定503且不回显错误文本。目标是区分底层Node fetch/本地连接失败。成功验收及数据库检查保持不变。
