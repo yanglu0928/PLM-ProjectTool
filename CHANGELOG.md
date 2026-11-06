@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-06（P25底层代理错误安全指纹候选，Hosted复验待定）
+- 增加有限error.name类别/cause.code白名单，其他归UNKNOWN；不记录异常文本，代理仍固定返回503。仅验证Harness变化，真实HTTP422合同不变，待Hosted复验。
+
 ## Unreleased · 2026-11-06（P25代理安全失败继续定位）
 - run [42180790760](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42180790760)：Node对Edge Create POST固定返回503，类别PROXY_EXCEPTION；没有FastAPI上游HTTP，数据库快照相同且无成功回执。P25未通过。
 - CR-OUT-021下一步只加error.name/cause.code白名单指纹；不记录异常文本。同期P39 CDP和A17 lockfile EBUSY为独立失败，不推断成同一根因。
