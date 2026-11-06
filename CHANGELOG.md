@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（A17 packaged Edge/HTTPS/PG复验通过；正式启动信任仍阻塞）
+- Hosted run [42248236859](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42248236859)全部jobs成功；A17 packaged PlanVersion/HTTPS/PG、P40 live Edge、P39、P24、A50、P25、A34、前后端及PG18/父包检查均通过受限验证。A17载荷20,239项完整性与临时run根清理通过。Caddy退出诊断分支本轮未触发，上一轮间歇退出原因未确认。
+- 启动preflight依旧明确阻断正式公钥/License trust、DB凭据引用、service ACL及TLS。按CR-EXEC-002继续独立关键路径 SUR-07-A07，遵守实际面对面调研内容优先且不伪造客户事实。没有Win11实机、正式安装、Pilot/Gate/Release结论。
+
 ## Unreleased · 2026-11-06（CR-PKG-014：A17 Caddy启动诊断编码前记录）
 - P40 hosted live Edge 下载、P39/P24/A50/P25/A34及基础构建通过；同轮 A17 因 Caddy 在 HTTPS readiness 前退出且 stderr 被 DEVNULL 丢弃而失败，根因未知。按 CR-PKG-014 先记录，仅改 Hosted Harness 捕获 owned D 盘临时日志并输出固定脱敏分类/退出码；不上传原始内容，不改产品/API/DB/安装器。待 Hosted 复验。
 
