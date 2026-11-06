@@ -315,3 +315,9 @@ finally仅在pg_ctl状态4且pg_data实际不存在、pg_run不为reparse point�
 - 根因范围已收窄为Node代理在获得上游HTTP响应之前异常；具体异常类型尚无证据。此前Node外层catch将原始异常字符串作为500正文发回；下一步必须去掉异常文本并增加固定类别（FETCH_TYPE_ERROR/PROXY_EXCEPTION），仅保存于合成Harness诊断，错误响应改为固定安全503 Envelope。未修改真实产品端点。
 
 **下一步实施前决策：** 只改P25 Node Harness代理异常处理与诊断字段；异常类别白名单记录，client端固定返回SYSTEM_UNAVAILABLE/503，严禁异常message/正文传播；后端仍严格要求恰好一个上游POST/422/VALIDATION_FAILED及DB前后相同。Hosted复验验证异常分类是否为FETCH_TYPE_ERROR。没有证据前不自行认定为端口、地址或业务服务故障。
+
+
+## P25代理异常脱敏候选已实施，Hosted复验待跑（2026-11-06）
+
+- Node Harness仅对realbackend模式下Output POST异常归类FETCH_TYPE_ERROR或PROXY_EXCEPTION，响应固定SYSTEM_UNAVAILABLE/503；不再向Edge回传raw exception。请求摘要增加proxy_failure_class白名单，Python诊断只保留有限类别。严格成功判定仍要求真实upstream POST/422/VALIDATION_FAILED及DB无变化。
+- 代码已进入PR #61功能分支；本候选未Hosted验收，P25仍BLOCKED_DIAGNOSTIC。
