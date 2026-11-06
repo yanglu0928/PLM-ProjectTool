@@ -82,3 +82,10 @@ run [42269084207](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/422
 ## 下一步（CR-EXEC-035）
 
 只从helper异常文本中按固定正则提取命令basename，并只允许initdb.exe/pg_ctl.exe/psql.exe/powershell.exe等已知PG命令；提取有符号十进制exit code。任何stdout/stderr/message、路径或环境值都不写出。保留D盘边界、cleanup及原有失败门槛，Hosted复验后再据证据选择后续单点。
+
+
+## Hosted 第七轮结果（2026-11-07）
+
+run [42272810533](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42272810533) A08已通过安全候选stage提取及D盘边界，随后 packaged platform-write 调用 initdb.exe 返回3221225781（十六进制0xC0000135，对应Windows STATUS_DLL_NOT_FOUND），失败帧 verify.py:301 → smoke_current_app_packaged_https.py:226 → smoke_packaged_platform_write_https.py:357 → smoke_packaged_pg18_migration.py:66。未启动PostgreSQL；无Edge、A08 PG业务标记或产品业务验收结论。原始子进程stdout/stderr保持捕获且未上传。
+
+同run A17 packaged PlanVersion流程通过，且候选来自同run assemble-a17-current-app-candidate，因此binary package故障尚未证实。下一步按CR-EXEC-036在已校验的D盘 staging中单独运行 initdb.exe --version，捕获并丢弃正文，只输出exit code和固定阶段，辨别基础DLL装载与target-layout阶段。A08仍未通过。

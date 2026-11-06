@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-036：A08 initdb 装载状态隔离探针）
+- run [42272810533](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42272810533) 中A08的PG子进程诊断值为 initdb.exe / 3221225781（十六进制0xC0000135，Windows STATUS_DLL_NOT_FOUND），失败发生于目标布局执行 initdb；同期A17成功。原始stdout/stderr未记录，根因仍未知。
+- 先登记，再于候选包已通过完整性提取的stage中运行 initdb.exe --version。捕获并丢弃输出，只记录exit code/固定stage；该只读命令不创建数据库。按探针结果确认候选二进制装载还是安装布局差异，不预先归因产品。
+
 ## Unreleased · 2026-11-07（CR-EXEC-035 子进程退出码诊断已实现）
 - A08安全诊断现在从通用migration helper异常文本中仅解析固定命令basename（initdb/pg_ctl/psql/postgres/python）和整数exit code；原始stdout/stderr与异常全文不记录。静态复核修正正则转义，等待GitHub Hosted Windows D盘验证。
 

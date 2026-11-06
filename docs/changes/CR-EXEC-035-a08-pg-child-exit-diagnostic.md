@@ -23,3 +23,8 @@ helper异常文本按源码包含可控执行文件basename、数字exit code和
 ## 实施记录
 
 已按CR-EXEC-035在A08 verify.py中匹配helper固定错误前缀，只提取命令basename与有符号整数退出码并将命令限制在PG/python白名单；未读取输出段用于摘要，Workflow regex同步约束字段。实施过程静态复核发现一次正则转义写法不匹配十进制数字，已在本提交前修正为Python raw regex的数字类写法。完整Hosted复验待GitHub Actions。
+
+
+## Hosted 结果与下一隔离探针（CR-EXEC-036）
+
+run 42272810533 在同run A17成功的同时，A08通过候选解包，随后target layout内initdb.exe以3221225781/0xC0000135退出。该状态说明Windows loader报告DLL缺失，但没有指出具体DLL。不能基于异常推断产品包装缺。下一步在完整校验的stage二进制路径执行无写入的 --version 探针，捕获并丢弃所有输出，仅保留整数退出码；再与target layout测试比较。若stage probe通过，则按A08与A17 env/layout差异继续分析。
