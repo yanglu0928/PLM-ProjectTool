@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25真实后端请求未证实，待路由诊断）
+- run [42176547201](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42176547201)：PG/父包/清理通过，P25 Harness完成数据库前后快照且目标计数相同；但Edge动作窗没有真实后端POST，HTTP状态/错误码为空，故P25失败。UI为提交结果未确认类提示，无成功受理文案。上轮500未证明为后端响应。
+- 按CR-OUT-021，下一步只给realbackend动作窗口增加method/path类别/status脱敏计数，并将回执判定精确为成功文案；不记录ID/query/header/body。真实HTTP422/VALIDATION_FAILED、单次请求、无重试/成功回执和DB不变条件仍严格。
+
 ## Unreleased · 2026-11-06（P25有界失败诊断候选，Hosted复验待定）
 - 仅调整P25 Hosted Node/Python Harness：错误码输出采用白名单，UI提示归类；预期文案缺失时仍完成数据库后快照，最终仍严格要求HTTP 422、VALIDATION_FAILED、无回执/重试、单POST及数据不变。产品端点/API/Schema/信任不变。尚未Hosted验收，不构成PASS。
 
