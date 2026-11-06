@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（定位并修正 SUR-07-A08 临时根命名偏差）
+- run [42257007756](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42257007756)的安全诊断仅披露 ValueError 源文件和行号，定位到现有 rehearse_windows_unified_pg18_layout.py:64。Workflow传入的临时输出根名不匹配既有 plm-install-rehearsal-* fail-closed 约束，业务Edge/PG验证未执行。根因是本次验收接线参数偏差，无产品缺陷证据。
+- 先记录后改：仅为stage/pristine/target改用合规、唯一、全新D盘RUNNER_TEMP直属目录名并Hosted复验；不上传原始日志。
+
 ## Unreleased · 2026-11-07（SUR-07-A08 首轮 Hosted 包内验收待诊断）
 - run [42254166208](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42254166208)：本轮除A08外所有jobs成功。A08同run非发行候选与D盘语法前置通过，既有包内验收器 exit=1、无A08 PASS标记，安全摘要仅有ValueError。原始临时日志未上传并已按owner边界清理，当前根因未知；不据此修改产品或判A08通过。
 - 下一步按编码前记录只增加脱敏traceback basename:line/最后固定阶段标记，再Hosted重跑。
