@@ -36,3 +36,12 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - P25 Harness现将唯一的合成PostgreSQL工作目录放入同run、已验证完整父包根下的 p25-real-pg-<run-id>；该父包根内此前已由相同P25 initdb profile验证可建数据目录。PG runtime继续使用逐文件匹配sidecar的 payload/pgsql。没有改initdb flags、PATH过滤或HTTP流程。
 - finally逻辑允许pg_ctl status=4仅在data目录缺失、目录未变成reparse点、pg_run为根内精确命名直系子目录且该目录无其他内容时清理；否则仍保留并失败关闭。该分支只清理测试夹具目录，不把initdb失败变为通过。
 - 代码候选已同步到功能分支，尚未Hosted验收；P25仍BLOCKED_DIAGNOSTIC。
+
+
+## Run 42172719463 后诊断与单点修正编码前检查（2026-11-06）
+
+- 结果：同run父包/PG18.6/pgvector0.8.6、完整根及根内data启动、sidecar逐文件Hash和always清理通过；P25 Edge确实向真实Create HTTP组合发送一次POST，但Harness记录HTTP 500。页面展示安全的通用不可用/提交结果未确认提示，预设的精确验证文案没有出现。
+- 其余14/15 jobs成功，包括后端全量/wheel、前端测试/build、PG18/pgvector、父包/A17/A34/A35/P24/P39/A50等。整体Workflow失败。数据库前后快照未完成，不能宣称无写入；同一日志中的422事件未能关联到该POST。
+- 单一问题：现有Harness在UI文案等待失败时立即退出，并且没有保存安全错误码，丢失了后续DB复核及根因所需的最小证据。
+- 结论：PASS_WITH_LIMITATION，仅允许Harness诊断/控制流修正。Node从真实合成响应解析错误码但只保留固定允许的协议错误码，否则写UNRECOGNIZED；页面文本仅归类为有限枚举；即使预期文案缺失，也先写Node结构化摘要并让Python执行after snapshot，最终仍严格要求HTTP 422、预期安全UI类别、单POST、无回执/重试及数据库计数不变，任一不符退出失败。不得将500改判通过，不改产品逻辑，不记录响应正文/认证/异常原文。
+- 之后通过GitHub Hosted Windows/D盘全链验收。失败继续登记，不影响其他WBS；本机/C盘不运行项目代码。
