@@ -589,6 +589,7 @@ async def main() -> int:
                 "real_post_count": edge_summary.get("real_backend_posts"),
                 "db_snapshot_unchanged": database_snapshot_unchanged,
                 "edge_exit_zero": node.returncode == 0,
+                "api_requests": edge_summary.get("real_api_requests", []),
             }
             raise AssertionError("P25 bounded rejection diagnostics: " + json.dumps(observed, sort_keys=True))
         result = {
@@ -641,6 +642,7 @@ async def main() -> int:
                 "no_success_receipt": edge_details.get("real_no_success_receipt"),
                 "database_snapshot_unchanged": locals().get("database_snapshot_unchanged"),
                 "edge_exit_zero": locals().get("node").returncode == 0 if locals().get("node") else False,
+                "api_requests": edge_details.get("real_api_requests", [])[:20],
             }
         if pg_root is not None:
             try:
