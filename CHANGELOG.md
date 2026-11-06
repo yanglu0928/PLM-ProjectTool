@@ -1,3 +1,11 @@
+## Unreleased · 2026-11-07（CR-EXEC-044：真实 PlanVersion 快照重建）
+
+- OUT-01-A01-P45在Hosted A17同run迁移后PG18中使用真实Plan Owner与SQLAlchemy repository从浏览器/API实际生成的IN_REVIEW PlanVersion行重建两条WBS；固定UUID/ProjectId、状态保真与跨项目隐藏断言通过，结论PASS_SCOPE_LIMITED。
+- run [42307444742](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42307444742) 中A17、P25、A34和构建/后端/前端等作业通过；全run 17 jobs中16成功，唯一失败仍为SUR-07-A08 initdb 3221225781，无业务markers。按CR-EXEC-039不重复TEMP/TMP试验。
+- 仅synthetic Hosted Windows Server 2025 D盘验证；无产品/API/Schema/Migration变化、客户数据、插件执行、文件生成或本机/C盘运行。未通过Windows 11实机、Pilot、Gate或Release。
+- P45断言未单独进入bounded Artifact摘要；现已在CR-EXEC-045记录下一项P46增加受限结果marker的可观察性要求。
+- 下一项 OUT-01-A01-P46：真实IN_REVIEW Owner投影通过生产FixedOutputSourceAdapter与APPROVED policy后拒绝Output Create并保持六类输出写入计数不变；实施前置检查见CR-EXEC-045。
+
 ## Unreleased · 2026-11-07（CR-EXEC-043：Output 空 Publisher Trust fail-closed）
 
 - OUT-01-A01-P44在Hosted PG18验证通过，独立摘要 `empty_trust_output_failure=PASS_SCOPE_LIMITED`：产品包内signer manifest key数0；真实Plugin capability repository返回missing；Output Create拒绝、六类Output写入保持不变、source projection调用0、plugin execution=0。
