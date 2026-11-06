@@ -722,3 +722,8 @@
 ## Unreleased · 2026-11-06（P39第七轮 Hosted fetch TypeError；P25环境阻断重复）
 
 - run [42149813781](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42149813781)：P39 Artifact原生fetch Promise拒绝类别为TypeError，未在CDP Network或合成server观察到请求，无内容下载，仍失败。Backend全量/wheel、Frontend/build、PG18 sidecar、Embedded Python/父包、PG18 smoke、A17/A34/A35、P24/A50成功。P25重复因initdb.exe exit 3221225781/0xC0000135、空输出而失败；整体workflow非全绿。按CR-OUT-034继续Harness-only归因探针；没有声称Pilot/Gate/Release通过。
+
+
+## Unreleased · 2026-11-06（P39第八轮Hosted诊断实施前记录）
+
+- run 42149813781已显示Artifact原生fetch以TypeError拒绝。按CR-OUT-034，下一修正限Harness：记录安全布尔/白名单选项并对同一合成同源引用执行无signal/有效signal对照GET；只记录状态/MIME或固定拒绝类别，探针不计入产品点击/下载验收。产品代码与安全边界不变。
