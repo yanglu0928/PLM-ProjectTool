@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25两种initdb命令profile均失败，包布局对照待实施）
+
+- Hosted run [42164655328](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42164655328)：同一PG-only解包initdb.exe/原始PATH下，P25与parent-smoke参数profile都0xC0000135、无输出/PG_VERSION；完整父包smoke同job通过。P25仅job失败，HTTP/Edge未启动。下一项按CR-OUT-021用相同P25 profile对照PG-only与完整父包 extraction root；不改生产harness，仍仅D盘Hosted。
+
 ## Unreleased · 2026-11-06（P25 initdb 命令 profile 对照候选，待Hosted）
 
 - 按CR-OUT-021先记录后修改比较器：同一解包PG initdb二进制与原始PATH下，分别执行P25和parent smoke原有参数profile，D盘隔离空数据目录；只记录固定profile、退出码、输出字节数、PG_VERSION布尔。无产品改动；尚未Hosted验收，P25仍BLOCKED_DIAGNOSTIC。

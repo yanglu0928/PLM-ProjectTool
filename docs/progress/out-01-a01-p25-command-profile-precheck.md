@@ -12,3 +12,8 @@
 - 风险/回滚：增加两个受限诊断initdb尝试；只改比较器并保留失败目录于一次性runner temp。回滚仅还原诊断代码和追踪文档。
 - Secret检查：不记录环境值、错误消息、凭据或库文件。
 - 结论：PASS_WITH_LIMITATION，可进入该Hosted对照；P25仍BLOCKED_DIAGNOSTIC。
+
+
+## Hosted命令 profile 结果与下一个判别项（run 42164655328）
+
+P25与parent-smoke两种完整参数profile在同一个PG-only解包根、同一二进制和原始PATH下均失败，故profile不是充分解释。成功的parent smoke则在它自己完整candidate staging根上运行。下一项应把P25 profile搬到完整candidate staging根测试；P25 profile/原PATH不变，只更改运行时包布局。最节省runner资源的做法是在P25 job既有完整smoke helper中加可选诊断flag，于该helper现成完整解包目录中执行一次P25 profile，摘要字段不输出敏感信息；同时比较器保留PG-only提取路径上的P25 profile结果。普通PG smoke job不启用此可选诊断。
