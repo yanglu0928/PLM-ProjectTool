@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（CR-EXEC-041：PlanVersion Output 事务持久化）
+
+- OUT-01-A01-P42在Hosted PG18合成数据库中通过 `PASS_SCOPE_LIMITED`：真实 `TrustedOutputContextResolver` / `OutputRequestService` 将APPROVED PlanVersion白名单快照原子持久化至OutputRequest、ContextSnapshot、Job/Outbox、Audit与幂等收据；同Key重放保持唯一结果，DRAFT及跨Project拒绝且零写入，plugin execution count=0。
+- 证据见 [Hosted run 42298833604](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42298833604) 和 `docs/progress/out-01-a01-p42-plan-version-output-persistence-result.md`。此项使用synthetic Owner projection与test-only Operation capability；不代表正式Publisher trust、生产授权或实际文件生成。无API/Schema/Migration变更，无客户数据。
+- 同run后端/wheel、前端/build、父包、A17、P25、A34/A35、P24/P39/P40/A50通过；唯一失败A08仍为initdb 3221225781，无业务markers。Win11实机、Pilot/Gate/Release状态未变；下一项P43做打包实际接线编码前检查。
+
 ## Unreleased · 2026-11-07（CR-EXEC-040：Output PlanVersion 固定来源）
 
 - 新增 Plan Owner 授权的精确 PlanVersion Output 投影；在 Windows Output composition 中按 Owner dispatch，同时保留现有 Requirement 来源。
