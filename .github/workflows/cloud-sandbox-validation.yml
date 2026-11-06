@@ -885,6 +885,22 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "P25 parent PostgreSQL comparison syntax failed" }
           $parentInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-parent-input"
           if (-not (Test-Path (Join-Path $parentInput "verification-summary.json"))) { throw "P25 parent candidate summary missing" }
+      - name: Run established parent-package PG smoke inside the P25 job on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $parentInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-parent-input"
+          $parent = Get-ChildItem -LiteralPath $parentInput -Filter "NOT-FOR-RELEASE-windows-parent-*.zip" | Select-Object -First 1
+          $verification = Join-Path $parentInput "verification-summary.json"
+          if (-not $parent -or -not (Test-Path -LiteralPath $verification)) { throw "P25 same-job smoke candidate inputs are incomplete" }
+          $workRoot = Join-Path $env:RUNNER_TEMP ("plm-p25-parent-smoke-" + $env:GITHUB_RUN_ID)
+          $summary = Join-Path $env:RUNNER_TEMP ("plm-p25-parent-smoke-summary-" + $env:GITHUB_RUN_ID + ".json")
+          python -B .\tools\smoke_windows_parent_package_pg_cloud.py --archive $parent.FullName --verification-summary $verification --work-root $workRoot --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "P25 same-job parent PostgreSQL smoke failed; stop before P25 initdb differential and HTTP/Edge" }
+          if (-not (Test-Path -LiteralPath $summary)) { throw "P25 same-job parent PostgreSQL smoke summary missing" }
+          Get-Content -LiteralPath $summary -Raw
       - name: Compare same-run parent package PostgreSQL startup on D-drive temp
         shell: pwsh
         run: |
@@ -912,6 +928,7 @@ jobs:
           path: |
             ${{ runner.temp }}/plm-out-p25-summary-${{ github.run_id }}.json
             ${{ runner.temp }}/plm-out-p25-parent-pg-${{ github.run_id }}.json
+            ${{ runner.temp }}/plm-p25-parent-smoke-summary-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 14
 

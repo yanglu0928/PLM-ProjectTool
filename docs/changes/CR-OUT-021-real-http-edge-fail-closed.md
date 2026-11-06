@@ -192,3 +192,10 @@ P25 的 runner-temp 输入校验、PG sidecar provenance、依赖清单/语法�
 run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42156574221) 中P39已通过Hosted Edge保存合同，但P25仍在initdb启动前以 `0xC0000135` 失败。既有父包临时PG18 smoke在独立job通过；CR-OUT-021既有决策要求恢复P25时，先在P25同一job运行该helper，再采集白名单环境证据。本次编码前检查见 `docs/progress/out-01-a01-p25-same-job-smoke-precheck.md`。
 
 **实施前决策：** 在P25输入完整性/语法/provenance检查之后、原有父包与sidecar initdb差分之前，使用完全相同的父包ZIP与verification-summary，在唯一RUNNER_TEMP/D盘子目录运行既有 `tools/smoke_windows_parent_package_pg_cloud.py`。不改其命令参数、不修改生产代码或服务；helper失败则该job立即停止，成功才进入既有P25差分/HTTP/Edge流程。结果将区分“同job PG smoke已失败”与“同job smoke成功但P25后续仍失败”；仍不把诊断当成P25通过。数据只为一次性合成临时PG。回滚仅删除该工作流步骤及本次文档。
+
+
+## P25 同一 Hosted job PG18 smoke 差分实现候选（2026-11-06）
+
+基于 `e2d2debd72dd816af004bce97288ccd9e3928b76` 的编码前检查，Hosted workflow候选在P25的既有D盘输入/provenance/语法检查后、父包与sidecar initdb差分前，新增单一步骤调用已在独立 `Clean extraction and temporary PostgreSQL lifecycle smoke` job通过的 `tools/smoke_windows_parent_package_pg_cloud.py`。该步骤复用完全相同的父包ZIP与verification summary，使用新的RUNNER_TEMP直系work-root和summary；nonzero立即停止P25 job，成功才进入原有P25步骤。summary纳入P25的Always evidence上传。只改workflow与追踪文档；无生产代码/API/Schema/Migration/安装包变化，无客户数据/秘密/外部调用/插件执行。
+
+该实现候选尚未通过Hosted运行；不得把同job smoke本身描述为P25 HTTP/Edge通过。回滚为删除该单一步骤和关联证据路径。

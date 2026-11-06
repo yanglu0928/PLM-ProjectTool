@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-06（P25 同一 Hosted job PG18 smoke差分候选，待复验）
+
+- 按CR-OUT-021/P25编码前检查，仅修改P25 Hosted workflow：在既有initdb差分前，对同run父包在相同Windows Server 2025 job、D盘Runner Temp中运行已存在的parent-package PG smoke helper，保存受限摘要；失败即停止，不进入真实HTTP/Edge。尚无结果，P25仍BLOCKED_DIAGNOSTIC。没有本机/C盘代码执行、客户数据、秘密、外部调用或产品API/Schema改变。
+
 ## Unreleased · 2026-11-06（OUT-01-A01-P39 PASS_SCOPE_LIMITED；P25转同作业PG smoke差分）
 
 - run [42156574221](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42156574221)：P39 Hosted Windows Server 2025 Edge实际保存合成附件，长度50字节、SHA-256匹配；FAILED行无下载入口，跨项目引用在内容GET前拒绝。P39 PASS_SCOPE_LIMITED，详见 `docs/progress/out-01-a01-p39-edge-download-result.md`。真实FastAPI/PG链路为分层证据，正式trust/Win11实机/真实产品进程未验。
