@@ -52,3 +52,11 @@ run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/421
 - 按上述编码前检查，仅改P25 Node/Python验证器：错误Envelope只输出协议白名单码或UNRECOGNIZED；Edge alert归为固定类别；真实请求分支继续检查无回执/无自动重试，但不因预设文案未出现而提前异常退出。
 - Python读取Node摘要后先比较请求前后数据库快照，再联合严格判定HTTP 422、VALIDATION_FAILED、指定安全UI类别、单POST、无成功回执及计数不变。失败摘要最多保留HTTP状态、错误枚举、UI类别、请求次数、数据库相等/进程退出布尔；不包含原始正文/异常消息。
 - 仅GitHub分支改动；尚未Hosted验收，P25仍BLOCKED_DIAGNOSTIC。没有本机/C盘运行。
+
+
+## Run 42176547201后补充编码前检查（2026-11-06）
+
+- Hosted结果：PG真实初始化/启动、父包对照、Node Harness语法检查和always清理通过；P25 Node正常写出诊断。有限结果显示real_backend_posts=0、HTTP/error code为空、UI类别SAFE_SUBMISSION_UNCONFIRMED、数据库前后目标计数相同。no_status_receipt=false，而no_success_receipt=true。由此只能证明本轮选定表快照未变化，不能证明真实Create API已到达或拒绝。
+- 上轮run 421727的POST status=500没有本轮上游证据支持；不把它报告为Output HTTP响应。当前根因是UI动作到upstream桥的连通/路由仍待识别。
+- 结论PASS_WITH_LIMITATION：仅增加Harness-only path class/method/status摘要，限在realbackend动作时间窗且去掉UUID/query/header/body；并将成功回执验证限于成功文案/结果文本，不把非成功ARIA状态误作回执。下一轮仍严格要求一个真实upstream POST/HTTP422/VALIDATION_FAILED/无重试/无成功回执/DB不变，未满足继续失败关闭。
+- 只在GitHub Hosted Windows D盘验收，不在用户本机/C盘运行。
