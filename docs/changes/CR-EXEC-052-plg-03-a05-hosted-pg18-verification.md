@@ -2,7 +2,7 @@
 
 - 日期：2026-11-07
 - Phase/WBS：Phase 2 Platform Core / PLG-03-A05
-- 状态：编码前检查完成，待新增托管验收器与独立复验
+- 状态：PLG-03-A05 通过 `PASS_SCOPE_LIMITED`；证据仅覆盖 GitHub Hosted Windows Server 2025 D 盘临时 PG18 与合成数据；不代表正式信任、Worker、Win11 实机或发行验收
 - 基线：CR-EXEC-050、CR-EXEC-051；冻结 PluginExecution schema、Jobs/Output/Audit contracts 不变
 - 类型：验证范围补齐；仅新增 Hosted synthetic PG18 验收器及调用点，不改产品API、DB Schema、Migration、默认组合或Worker
 
@@ -108,3 +108,10 @@ Hosted run [42341698193](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42342572247](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42342572247) 已通过父包校验/解压、PG18迁移与两组fixture准备；Admission Owner调用仍以固定码PLUGIN_EXECUTION_NOT_ADMITTED拒绝，A05未通过。异常栈显示Admission Owner将Jobs/Output admission异常收敛为固定错误；只读代码追踪显示SyntheticOutputAdmission按Job ID返回绑定正确的Output事实。Jobs SqlAlchemyRepository.check_output_claim明确要求 job.lease_expires_at 与 lease.lease_expires_at 逐值相等，而fixture在Job和Lease两条独立INSERT中分别计算 statement_timestamp()+10 minutes，因此时间值不保证相等，符合当前唯一可见的Jobs拒绝条件。
 
 实施前记录：在同一fixture事务中先由PostgreSQL只计算一次 statement_timestamp()+interval '10 minutes'，将返回的同一个timestamp参数分别写入 Job.lease_expires_at 与 JobLease.lease_expires_at；避免使用本机时钟或放宽Jobs校验。仅修改A05 synthetic fixture，产品Jobs/Output/Plugin Owner及Schema/Migration不变。Hosted D盘复验需越过Admission Owner首个调用并完成全部原定原子性/重放/陈旧token/attempt/Audit回滚/DB guard断言；回滚为恢复两个SQL时间表达式。
+
+
+## PLG-03-A05 Hosted PG18 验收结果（2026-11-07）
+
+GitHub Hosted run [42343641530](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42343641530) 的 A05 job `128318561425` 成功完成，上传有界 JSON 摘要并输出固定标记 `PLG_03_A05_PG18_PASS`。证据确认：同run受校验非发行父包所带 PostgreSQL 18.6；真实 SQLAlchemy UoW、Jobs Lease Repository、PluginExecution repository 与 AuditService；首次Admission在同事务提交PENDING根/状态事件/Audit；完全相同重放不重复事件/Audit；过期fencing及attempt 2零新增写入拒绝；模拟Audit失败导致Execution/Audit全回滚；直接绕过Owner的root写被DB guard拒绝。Output admission仍为明确synthetic port；未运行Plugin进程、Worker，未使用客户数据或Publisher正式信任。结论 `PASS_SCOPE_LIMITED`，不关闭Gate、Pilot、正式Release或Win11实测。
+
+同一run整体仍为failure：P40 live Edge在history-ready阶段失败（登录200、Output Request历史GET 200、无网络失败/运行时异常/summary）；A08再次在完整initdb返回3221225781，临时环境对照同码且未应用，按CR-EXEC-039停止；A34因此跳过。P25/A17及后端、前端、父包、A35等任务成功。上述为其它WBS，不改变本项限定验收结论。Secret scan: 本次提交仅变更CR/STATUS文档，未加入密钥或客户资料。
