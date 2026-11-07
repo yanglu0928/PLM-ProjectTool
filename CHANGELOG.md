@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（CR-EXEC-049：PLG-03-A03 派发边界检查）
+- 已只读确认 Output Admission、Plugin capability、安装物化、Process Host 与 PluginExecution schema 的接口边界及缺少执行生命周期 Owner；无产品代码/API/Schema/Migration改变，未执行插件。
+- 下一项 PLG-03-A04 实现 owner-controlled Execution admission/state Owner 前先验证 Job fencing/lease 与同事务一致性，Hosted Windows D 盘 PG18 synthetic验收；正式 Publisher trust 为空时 Production Output/Worker继续 fail-closed。
+- 本机/C盘未运行项目代码；Gate 3/Pilot/Release和Windows 11实机状态不变。
+
 ## Unreleased · 2026-11-07（CR-EXEC-048：PLG-03-A02 Windows 进程树启动 containment）
 
 - 发现 `subprocess.CREATE_SUSPENDED` 不可用导致默认值为 0，已按 CR-EXEC-048 明确采用 Win32 `0x00000004)，使入口执行前完成 Job Object 归属，再恢复初始线程。受限诊断只输出白名单阶段/整数码。
