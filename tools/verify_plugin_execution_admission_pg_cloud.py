@@ -151,7 +151,7 @@ def _seed(engine, *, user_id: uuid.UUID, project_id: uuid.UUID,
             "INSERT INTO plm.out_context_snapshots "
             "(context_snapshot_id,project_id,source_version_refs,context_payload,"
             "context_fingerprint,created_by) "
-            "VALUES (:id,:project,'[{\"synthetic\":true}]'::jsonb,'{}'::jsonb,"
+            "VALUES (:id,:project,jsonb_build_array(jsonb_build_object('synthetic',TRUE)),'{}'::jsonb,"
             "decode(repeat('2a',32),'hex'),:user)"
         ), {"id": context_id, "project": project_id, "user": user_id})
         conn.execute(text(
