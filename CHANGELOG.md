@@ -1,4 +1,4 @@
-## Unreleased · 2026-11-07（CR-EXEC-053：PLG-03-A06 PENDING→RUNNING）
+## Unreleased · 2026-11-07（CR-EXEC-055：恢复A06验收实现）\n- 发现 481e4bf 删除了A06验收代码与专用Hosted job，但保留历史PASS记录；先恢复已验收源提交内容并在GitHub Hosted复验，再继续A07。\n\n## Unreleased · 2026-11-07（CR-EXEC-053：PLG-03-A06 PENDING→RUNNING）
 - PLG-03-A06 PASS_SCOPE_LIMITED：有效Job fencing下，PluginExecution状态/事件/Audit同一PG18 UoW原子写；Audit故障回滚；精确输出请求/上下文绑定，重放与失效claim拒绝验证通过。
 - Hosted run [42348507961](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42348507961) Backend/wheel、Frontend/build、P40、A34、A06通过；A08仍因initdb 3221225781独立失败。无插件/Worker/API/Schema/Migration，不能宣称Pilot或Release通过。
 - 下一项 PLG-03-A07 先处理不可重试 PluginExecution failure 与 Output/Jobs 的同事务终态。
