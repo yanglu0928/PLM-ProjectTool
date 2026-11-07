@@ -29,6 +29,8 @@ jobs:
           python -B -m py_compile
           validation/prt-01-a11-a05-p04-read-load/resource_observer.py
           validation/prt-01-a11-a05-p04-read-load/verify.py
+          validation/prt-01-a11-a05-p01-physical-pg/verify.py
+          validation/prt-01-a11-a05-p03-approved-prototype/verify.py
       - name: Run observer unit tests
         run: >-
           python -B -m unittest discover
