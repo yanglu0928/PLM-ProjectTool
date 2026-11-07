@@ -52,3 +52,9 @@
 ### 绑定复核修正已实施
 
 按上述修正前记录，Owner command校验现在要求唯一且规范的OutputRequest/ContextSnapshot UUID payload refs；facts和SQL锁定/更新均再次核对两项绑定。新增单元负例与PG18零写拒绝断言。此修改与本项CR一致；尚待Hosted结果。
+
+## 首次 Hosted A06 接线失败（run 42347736836，修正前登记）
+
+- A06 Job 在下载同轮候选包步骤停止；日志显示 artifact 名称被按字面值解析为 `plm-windows-parent-candidate-${ github.sha }`，因此未找到产物。PG18未启动，A06 Owner/Verifier均未执行，不能据此判定实现通过或失败。
+- 根因是新增 workflow YAML 内表达式少了一层花括号。修复仅把该Job三个 artifact 名/path表达式恢复为标准 `${{ github.* }}`；不改产品代码、验收项、包内容或路径策略。
+- 下轮重新运行同一托管流程；Secret仍只扫描、不输出匹配内容。本机/C盘无项目代码运行。
