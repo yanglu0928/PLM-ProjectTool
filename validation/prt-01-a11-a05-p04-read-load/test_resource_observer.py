@@ -40,6 +40,20 @@ class ResourceObserverTests(unittest.TestCase):
         self.assertEqual(result["status"], "UNAVAILABLE")
         self.assertNotIn("synthetic secret-like diagnostic text", repr(result))
 
+
+    @unittest.skipUnless(__import__("sys").platform == "win32", "Windows host counters required")
+    def test_windows_host_counters_are_read_only_and_aggregated(self) -> None:
+        observer = ResourceObserver(interval_seconds=0.1)
+        observer.start()
+        time.sleep(0.35)
+        result = observer.stop()
+        self.assertEqual(result["status"], "AVAILABLE")
+        self.assertEqual(result["scope"], "verifier_process")
+        self.assertGreaterEqual(result["sample_count"], 2)
+        self.assertGreaterEqual(result["cpu_percent_p95"], 0.0)
+        self.assertLessEqual(result["cpu_percent_p95"], 100.0)
+        self.assertGreater(result["available_memory_mb_min"], 0.0)
+
     def test_observer_keeps_cpu_and_memory_values_separate(self) -> None:
         reader = Mock(side_effect=[
             ((100, 200), None, 700.0),
