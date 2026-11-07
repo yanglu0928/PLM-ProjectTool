@@ -1,4 +1,12 @@
 
+## 后续复验纠正：A08稳定通过，PLG-02 rollback head 仍需诊断（2026-11-07）
+
+- Hosted run [42363588328](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42363588328) 中A08专项job 128378836416成功，A08的PG18复验继续通过；A17 packaged PlanVersion也通过。
+- P40/父包PG smoke深入PLG-02验证后仍因 `A08 downgrade refusal changed migration head` 失败。前一条记录将它归因于预期值仍是0232；本次已将断言修为0233但错误继续，因此该根因判断已被否定。当前验证器只给通用错误且未输出实际version_num，尚不能判断是PLG-02 guard触发前迁移链已部分降级、revision预期不正确，还是其他行为。不得把它当作单纯陈旧常量并放松guard。
+- 已先记录，下一步只增加安全、限定于synthetic PG18的诊断信息：失败时输出当前 `version_num` 与固定预期值，再复跑Hosted。根据实际revision与Alembic事务/迁移边界证据决定是修验收语义还是产品回滚原子性；保留“PLG-02历史拒绝降级且不丢历史”的安全标准。
+- 同run SUR-07-A08 packaged SurveyVersion独立job因已知 `initdb.exe=3221225781` 失败；TEMP环境探针也同码且明确未应用。按CR-EXEC-039继续停止此路径，不声称SUR通过，不重复改TEMP假设。
+
+
 ## PLG-03-A08 受限验收完成与 P40 verifier 遗漏（2026-11-07）
 
 - A08 独立验收由Hosted run [42362550450](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42362550450)，job 128375724422完成，日志输出 `PLG_03_A08_PG18_PASS`，结论 `PASS_SCOPE_LIMITED`。真实合成PG18.6覆盖空库/既有库0232→0233升级、单attempt downgrade/re-upgrade、多attempt rollback保护、attempt 1 RETRY_WAIT/QUEUED、attempt 2独立PluginExecution/PENDING→RUNNING、耗尽失败关闭、attempt idempotency历史、Audit失败回滚、stale fence/worker/错误码零写拒绝。Backend全量/wheel、Frontend/build、A05/A06/A07同轮通过。
