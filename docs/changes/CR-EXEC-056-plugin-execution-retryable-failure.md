@@ -1,4 +1,11 @@
 
+## PLG-03-A08 受限验收完成与 P40 verifier 遗漏（2026-11-07）
+
+- A08 独立验收由Hosted run [42362550450](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42362550450)，job 128375724422完成，日志输出 `PLG_03_A08_PG18_PASS`，结论 `PASS_SCOPE_LIMITED`。真实合成PG18.6覆盖空库/既有库0232→0233升级、单attempt downgrade/re-upgrade、多attempt rollback保护、attempt 1 RETRY_WAIT/QUEUED、attempt 2独立PluginExecution/PENDING→RUNNING、耗尽失败关闭、attempt idempotency历史、Audit失败回滚、stale fence/worker/错误码零写拒绝。Backend全量/wheel、Frontend/build、A05/A06/A07同轮通过。
+- 范围限制：仅Hosted Windows Server 2025 D盘，父包合成PG18.6；未执行插件进程、未接Worker、未使用客户数据/外部服务、无正式trust或release结论。
+- 同run父包PG smoke继续至 `validation/plg-02-a06-operation-disable/verify.py`，因“A08 downgrade refusal changed migration head”断言仍预期head 0232而当前head为0233失败。A08 rollback安全拒绝本身已发生；待将该验证器current-head期望更新为0233并重新执行父包smoke。P40/父包完整烟测不因此标通过。
+
+
 ## 第三轮 Hosted verifier 发现与修正计划（2026-11-07）
 
 - Hosted run [42361605909](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42361605909) 中Backend全量/wheel、Frontend/build、运行时与父包组装再次通过；A06/A05/A07专项通过。A08已成功执行attempt 1重试排队、down/up、attempt 2独立RUNNING、耗尽失败及多attempt历史保留，最后读取迁移版本表时因验证器SQL使用未限定的 `alembic_version`（实际位于 `plm.alembic_version`）触发UndefinedTable。属于验收器后置断言缺陷，A08仍未关闭。
