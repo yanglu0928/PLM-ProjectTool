@@ -773,27 +773,24 @@ jobs:
           $workspace = [IO.Path]::GetFullPath($env:GITHUB_WORKSPACE)
           if ([IO.Path]::GetPathRoot($tempRoot) -cne "D:\" -or [IO.Path]::GetPathRoot($workspace) -cne "D:\") { throw "PRT validation must remain on runner D drive" }
           $owned = Join-Path $tempRoot ("plm-prt-p25-" + $env:GITHUB_RUN_ID)
-          $repoArtifacts = Join-Path $workspace "artifacts\poc-02\windows"
           $report = Join-Path $tempRoot ("plm-prt-p25-summary-" + $env:GITHUB_RUN_ID + ".json")
           if (Test-Path -LiteralPath $owned) { throw "Owned PRT temp root already exists" }
-          if (Test-Path -LiteralPath $repoArtifacts) { throw "PRT source staging path is not fresh" }
           New-Item -ItemType Directory -Path $owned | Out-Null
           try {
-            $archive = Get-ChildItem -LiteralPath (Join-Path $tempRoot "plm-prt-p25-sidecar") -Filter "NOT-FOR-RELEASE-windows-pg18-pgvector-runtime.zip" | Select-Object -First 1
-            if (-not $archive) { throw "Same-run PG18 sidecar archive missing" }
+            $sidecarRoot = Join-Path $tempRoot "plm-prt-p25-sidecar"
+            $archive = Get-ChildItem -LiteralPath $sidecarRoot -Filter "NOT-FOR-RELEASE-windows-pg18-pgvector-runtime.zip" | Select-Object -First 1
+            $hashFile = Join-Path $sidecarRoot "sidecar-sha256.json"
+            if (-not $archive -or -not (Test-Path -LiteralPath $hashFile)) { throw "Same-run PG18 sidecar evidence missing" }
+            $expectedHash = (Get-Content -LiteralPath $hashFile -Raw | ConvertFrom-Json).Hash
+            $actualHash = (Get-FileHash -LiteralPath $archive.FullName -Algorithm SHA256).Hash
+            if ($actualHash -cne $expectedHash) { throw "Same-run PG18 sidecar hash mismatch" }
             $extract = Join-Path $owned "sidecar"
             Expand-Archive -LiteralPath $archive.FullName -DestinationPath $extract
+            $manifest = Get-Content -LiteralPath (Join-Path $extract "manifest.json") -Raw | ConvertFrom-Json
+            if ($manifest.kind -ne "WINDOWS_PG18_PGVECTOR_RUNTIME_NON_RELEASE_REBUILT" -or $manifest.postgresql_version -ne "18.6" -or $manifest.pgvector_version -ne "0.8.6" -or $manifest.release_eligible -ne $false) { throw "PG18 sidecar manifest is not the expected non-release candidate" }
             $pg = Join-Path $extract "payload\pgsql"
             if (-not (Test-Path -LiteralPath (Join-Path $pg "bin\initdb.exe")) -or -not (Test-Path -LiteralPath (Join-Path $pg "lib\vector.dll"))) { throw "PG18/pgvector payload is incomplete" }
-            $runtimeTarget = Join-Path $repoArtifacts "runtime\postgresql-18.6\pgsql"
-            $vectorTarget = Join-Path $repoArtifacts "source\pgvector-0.8.6"
-            New-Item -ItemType Directory -Path $runtimeTarget -Force | Out-Null
-            New-Item -ItemType Directory -Path $vectorTarget -Force | Out-Null
-            Copy-Item -Path (Join-Path $pg "*") -Destination $runtimeTarget -Recurse -Force
-            Copy-Item -LiteralPath (Join-Path $runtimeTarget "lib\vector.dll") -Destination $vectorTarget
-            $extensionDir = Join-Path $runtimeTarget "share\extension"
-            Copy-Item -LiteralPath (Join-Path $extensionDir "vector.control") -Destination $vectorTarget
-            Get-ChildItem -LiteralPath $extensionDir -Filter "vector--*.sql" | Copy-Item -Destination $vectorTarget
+            $env:PLM_PRT_PG_SOURCE = $pg
             $env:TEMP = $tempRoot
             $env:TMP = $tempRoot
             $raw = Join-Path $owned "bounded-verifier-output.txt"
@@ -854,12 +851,20 @@ jobs:
             $metrics = $line.Line.Substring("PRT_HOST_RESOURCE_SUMMARY=".Length) | ConvertFrom-Json
             if ($metrics.status -ne "AVAILABLE" -or $metrics.sample_count -lt 2) { throw "Windows host counters unavailable or insufficient" }
             if (-not (Select-String -LiteralPath $raw -Pattern "REQ_01_A12_A05_WORKFLOW_PG_PASS" -Quiet)) { throw "Prototype workflow success marker missing" }
+            $loadMetrics = @()
+            foreach ($entry in $rawLines) {
+              if ($entry -match "^PRT_A05_P04_READ_LOAD_SUMMARY mode=([A-Z0-9_]+) (PROTOTYPE_[A-Z0-9_]+) median_round_p95_ms=([0-9]+(?:\.[0-9]+)?)$") {
+                $loadMetrics += @{ mode = $Matches[1]; measure = $Matches[2]; median_round_p95_ms = [double]$Matches[3] }
+              }
+            }
+            if ($loadMetrics.Count -lt 2) { throw "Bounded Prototype load metrics missing" }
             @{
               wbs = "PRT-01-A11-A05-P04-P25"
               status = "PASS_LIMITED"
               scope = "synthetic Hosted Windows Server 2025"
               verifier_success = $true
               resource_summary = $metrics
+              prototype_load_p95 = $loadMetrics
               performance_gate_passed = $false
               release_eligible = $false
             } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $report -Encoding utf8
@@ -868,8 +873,6 @@ jobs:
           } finally {
             $rootPrefix = $tempRoot.TrimEnd("\") + "\"
             if ($owned.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $owned)) { Remove-Item -LiteralPath $owned -Recurse -Force }
-            $workspacePrefix = $workspace.TrimEnd("\") + "\"
-            if ($repoArtifacts.StartsWith($workspacePrefix, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $repoArtifacts)) { Remove-Item -LiteralPath $repoArtifacts -Recurse -Force }
           }
       - uses: actions/upload-artifact@v4
         if: always()
