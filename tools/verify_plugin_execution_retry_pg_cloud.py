@@ -413,7 +413,7 @@ def main() -> int:
             pass
         else:
             raise AssertionError("down migration accepted multiple attempts for one Job")
-        head = _one(engine, "SELECT version_num FROM alembic_version", {}).version_num
+        head = _one(engine, "SELECT version_num FROM plm.alembic_version", {}).version_num
         preserved = _count(
             engine, "SELECT count(*) FROM plm.plg_executions WHERE job_id=:id",
             {"id": ids["job"]},
