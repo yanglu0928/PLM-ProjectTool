@@ -67,64 +67,82 @@ class OutputGenerationFailureOwner:
 
     def fail(self, claim: ClaimedJob, *, worker_ref: str, error_code: str
              ) -> OutputGenerationFailureFacts:
+        try:
+            with self._uow() as transaction:
+                facts = self.fail_in_transaction(
+                    transaction, claim, worker_ref=worker_ref, error_code=error_code,
+                )
+                transaction.commit()
+                return facts
+        except OutputGenerationFailureError:
+            raise
+        except (JobLeaseError, IdempotencyError):
+            raise OutputGenerationFailureError() from None
+        except Exception:
+            raise OutputGenerationFailureError("SYSTEM_UNAVAILABLE") from None
+
+    def fail_in_transaction(
+        self, transaction: object, claim: ClaimedJob, *,
+        worker_ref: str, error_code: str,
+    ) -> OutputGenerationFailureFacts:
+        """Fail Output and its Job inside the caller's active UnitOfWork; never commit."""
         request_id, snapshot_id, trace_id = self._validate_claim(claim, worker_ref)
         if type(error_code) is not str or error_code not in FAILURE_CODES:
             raise OutputGenerationFailureError()
         execution_id = uuid.uuid5(claim.job_id, "output-generation:" + str(claim.fencing_token))
         try:
-            with self._uow() as transaction:
-                candidate = self._repo.lock_candidate(
-                    transaction, claim=claim, execution_id=execution_id,
-                )
-                if (type(candidate) is not OutputGenerationFailureFacts
-                        or candidate.output_request_id != request_id
-                        or candidate.context_snapshot_id != snapshot_id
-                        or candidate.job_id != claim.job_id
-                        or candidate.project_id != claim.project_id
-                        or candidate.execution_id != execution_id
-                        or candidate.state != "GENERATING" or candidate.changed
-                        or candidate.lock_version < 1):
-                    raise OutputGenerationFailureError()
-                current = self._jobs.check_output_claim(
-                    transaction, job_id=claim.job_id,
-                    fencing_token=claim.fencing_token, worker_ref=worker_ref,
-                )
-                if (type(current) is not ClaimedJob or current != claim
-                        or current.job_type != "OUTPUT_GENERATE"
-                        or current.project_id != claim.project_id
-                        or current.payload_refs != claim.payload_refs):
-                    raise OutputGenerationFailureError()
-                job_state = self._jobs.retry_or_fail(
-                    transaction, job_id=claim.job_id,
-                    fencing_token=claim.fencing_token, worker_ref=worker_ref,
-                    error_code=error_code, retryable=False, delay_seconds=0,
-                )
-                if job_state != "FAILED":
-                    raise OutputGenerationFailureError()
-                facts = self._repo.fail_generation(
-                    transaction, claim=claim, execution_id=execution_id,
-                    expected_lock_version=candidate.lock_version,
-                )
-                if (type(facts) is not OutputGenerationFailureFacts
-                        or facts.output_request_id != request_id
-                        or facts.context_snapshot_id != snapshot_id
-                        or facts.job_id != claim.job_id
-                        or facts.project_id != claim.project_id
-                        or facts.execution_id != execution_id
-                        or facts.state != "FAILED" or facts.lock_version != candidate.lock_version + 1
-                        or not facts.changed):
-                    raise OutputGenerationFailureError()
-                self._audit.append(transaction, AuditEventDraft(
-                    trace_id=trace_id, event_scope="PROJECT",
-                    target_project_id=facts.project_id, actor_type="SYSTEM",
-                    actor_id=self._system_actor_id, original_actor_id=facts.requested_by,
-                    actor_hint_digest=None, action="OUTPUT_GENERATION_FAILED",
-                    outcome="FAILED", target_owner_module="output",
-                    target_object_type="OUT-01", target_object_id=facts.output_request_id,
-                    before_state="GENERATING", after_state="FAILED",
-                ))
-                transaction.commit()
-                return facts
+            candidate = self._repo.lock_candidate(
+                transaction, claim=claim, execution_id=execution_id,
+            )
+            if (type(candidate) is not OutputGenerationFailureFacts
+                    or candidate.output_request_id != request_id
+                    or candidate.context_snapshot_id != snapshot_id
+                    or candidate.job_id != claim.job_id
+                    or candidate.project_id != claim.project_id
+                    or candidate.execution_id != execution_id
+                    or candidate.state != "GENERATING" or candidate.changed
+                    or candidate.lock_version < 1):
+                raise OutputGenerationFailureError()
+            current = self._jobs.check_output_claim(
+                transaction, job_id=claim.job_id,
+                fencing_token=claim.fencing_token, worker_ref=worker_ref,
+            )
+            if (type(current) is not ClaimedJob or current != claim
+                    or current.job_type != "OUTPUT_GENERATE"
+                    or current.project_id != claim.project_id
+                    or current.payload_refs != claim.payload_refs):
+                raise OutputGenerationFailureError()
+            job_state = self._jobs.retry_or_fail(
+                transaction, job_id=claim.job_id,
+                fencing_token=claim.fencing_token, worker_ref=worker_ref,
+                error_code=error_code, retryable=False, delay_seconds=0,
+            )
+            if job_state != "FAILED":
+                raise OutputGenerationFailureError()
+            facts = self._repo.fail_generation(
+                transaction, claim=claim, execution_id=execution_id,
+                expected_lock_version=candidate.lock_version,
+            )
+            if (type(facts) is not OutputGenerationFailureFacts
+                    or facts.output_request_id != request_id
+                    or facts.context_snapshot_id != snapshot_id
+                    or facts.job_id != claim.job_id
+                    or facts.project_id != claim.project_id
+                    or facts.execution_id != execution_id
+                    or facts.state != "FAILED"
+                    or facts.lock_version != candidate.lock_version + 1
+                    or not facts.changed):
+                raise OutputGenerationFailureError()
+            self._audit.append(transaction, AuditEventDraft(
+                trace_id=trace_id, event_scope="PROJECT",
+                target_project_id=facts.project_id, actor_type="SYSTEM",
+                actor_id=self._system_actor_id, original_actor_id=facts.requested_by,
+                actor_hint_digest=None, action="OUTPUT_GENERATION_FAILED",
+                outcome="FAILED", target_owner_module="output",
+                target_object_type="OUT-01", target_object_id=facts.output_request_id,
+                before_state="GENERATING", after_state="FAILED",
+            ))
+            return facts
         except OutputGenerationFailureError:
             raise
         except (JobLeaseError, IdempotencyError):

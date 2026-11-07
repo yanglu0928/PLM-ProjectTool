@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（CR-EXEC-054：PLG-03-A07不可重试失败收敛）
+- 增加PluginExecution failure Owner/Repository，并将既有Output失败Owner拆出不提交的事务入口，旧独立包装保持兼容。
+- 新增单元及父包PG18.6 Hosted验收；同一事务处理Output/Job/lease/attempt/Plugin事件与Audit。验收待运行，不标PASS。
+- 不新增API/Schema/Migration，不接Worker/ProcessHost，不执行插件或外部调用。
+
 ## Unreleased · 2026-11-07（CR-EXEC-055：恢复 A06 已验收源码）
 - 恢复被481e4bf删除的A06 Owner、Repository、单测、PG18 verifier和Hosted job，按历史验收源恢复。
 - Hosted run [42350824543](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42350824543) A06专项PG18 job、Backend全量/wheel及前端构建通过；A06恢复验收PASS_SCOPE_LIMITED，workflow其他独立作业未据此宣称全绿。

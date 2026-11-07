@@ -645,6 +645,54 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  plg-03-a07-failure-pg18:
+    name: PLG-03-A07 PluginExecution failure owner on temporary PG18
+    needs: [assemble-parent-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download same-run parent package candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plg03-a07-parent-input
+      - name: Install minimal PG18 transition verifier dependencies
+        shell: pwsh
+        env:
+          PIP_CACHE_DIR: ${{ runner.temp }}/plg03-a07-pip-cache
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          python -m pip install --disable-pip-version-check "Alembic==1.20.0" "SQLAlchemy==2.0.54" "psycopg[binary]==3.3.5" "pgvector==0.5.0" "fastapi==0.141.1" "cryptography==50.0.1" "uvicorn==0.53.0"
+          if ($LASTEXITCODE -ne 0) { throw "A07 verifier dependency install failed" }
+      - name: Run A07 atomic failure transition against isolated packaged PostgreSQL
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          $inputRoot = Join-Path $env:RUNNER_TEMP "plg03-a07-parent-input"
+          $archive = Get-ChildItem -LiteralPath $inputRoot -Filter "*.zip" | Select-Object -First 1
+          $verification = Join-Path $inputRoot "verification-summary.json"
+          $summary = Join-Path $env:RUNNER_TEMP ("plg03-a07-summary-" + $env:GITHUB_RUN_ID + ".json")
+          $runRoot = Join-Path $env:RUNNER_TEMP ("plg03-a07-run-" + $env:GITHUB_RUN_ID)
+          if (-not $archive -or -not (Test-Path -LiteralPath $verification)) { throw "A07 candidate input incomplete" }
+          python -B tools/verify_plugin_execution_failure_pg_cloud.py --archive $archive.FullName --verification-summary $verification --run-root $runRoot --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "A07 isolated PG18 transition validation failed" }
+          if (-not (Test-Path -LiteralPath $summary)) { throw "A07 evidence summary missing" }
+          Get-Content -LiteralPath $summary -Raw
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plg03-a07-start-pg18-${{ github.sha }}
+          path: ${{ runner.temp }}/plg03-a07-summary-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
   smoke-parent-postgresql:
     name: Clean extraction, PG18 lifecycle, and P40 live Edge download
     needs: [assemble-parent-candidate, frontend]

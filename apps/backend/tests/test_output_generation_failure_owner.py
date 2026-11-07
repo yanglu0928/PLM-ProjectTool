@@ -127,6 +127,16 @@ class OutputGenerationFailureOwnerTests(unittest.TestCase):
         self.assertEqual((event.actor_id, event.original_actor_id),
                          (self.world.system_id, self.world.requester_id))
 
+    def test_transaction_scoped_failure_does_not_commit(self):
+        with self.world.unit_of_work() as tx:
+            result = self.owner.fail_in_transaction(
+                tx, self.world.claim, worker_ref="worker-1",
+                error_code="OUTPUT_GENERATION_FAILED",
+            )
+            self.assertEqual(result.state, "FAILED")
+            self.assertFalse(tx.committed)
+        self.assertEqual(self.world.state["job"], "FAILED")
+
     def test_unlisted_error_code_is_rejected_before_transaction(self):
         with self.assertRaises(OutputGenerationFailureError):
             self.owner.fail(self.world.claim, worker_ref="worker-1",

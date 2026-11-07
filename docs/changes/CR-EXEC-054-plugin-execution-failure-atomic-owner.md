@@ -29,3 +29,10 @@
 - 只使用合成PostgreSQL 18.6、合成worker reference与测试Actor UUID；不启动插件、Worker或服务，不创建文件/Artifact，不发送外部API。
 - 回滚移除transaction-scoped wrapper与新增Plugin Owner/Repo/测试/verifier/workflow步骤；无Schema/Migration/业务数据迁移。
 - 验收：真实Output GENERATING、Job RUNNING claim与Plugin RUNNING联动成功/回滚两条PG18事务；Backend全量/wheel及Secret scan。只在GitHub Hosted Windows Server 2025 D盘执行。
+
+## 实现同步（2026-11-07）
+
+- 新增PluginExecution不可重试Failure Owner/Repository；复用既有OutputGenerationFailureOwner与Jobs retry_or_fail(retryable=false)，同一UoW完成Output/Job/lease/attempt/Plugin root/event/Audit。
+- 为保持旧Output standalone行为不变，增加fail_in_transaction事务入口，原fail()仍负责单独UoW和提交。
+- 固定复用三个Output错误码，不保存异常正文；锁顺序Output→Jobs→Plugin；Audit失败回滚整体。无API/Schema/Migration/Worker/ProcessHost/生产组合变化。
+- 单元测试、父包PG18.6验收器及Hosted Windows job已接入；等待该提交的Hosted专项、Backend全量/wheel及相关回归结果。A07当前未PASS。
