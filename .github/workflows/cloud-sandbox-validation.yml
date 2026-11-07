@@ -812,10 +812,12 @@ jobs:
               }
               $failedCommand = ""
               $processExitCode = $null
+              $failureClass = "UNKNOWN"
               foreach ($entry in $rawLines) {
-                if ($entry -match "isolated PostgreSQL command failed: ([A-Za-z0-9_.-]+) exit_code=(-?[0-9]+)") {
+                if ($entry -match "isolated PostgreSQL command failed: ([A-Za-z0-9_.-]+) exit_code=(-?[0-9]+) failure_class=([A-Z0-9_]+)") {
                   $failedCommand = $Matches[1]
                   $processExitCode = [long]$Matches[2]
+                  $failureClass = $Matches[3]
                   break
                 }
               }
@@ -837,6 +839,7 @@ jobs:
                 exception_class = $exceptionClass
                 failed_command = $failedCommand
                 process_exit_code = $processExitCode
+                failure_class = $failureClass
                 source_frames = $frames
                 marker_names = $markerNames
                 raw_output_uploaded = $false
