@@ -169,11 +169,12 @@ def main() -> int:
             request_id=ids["request"], context_id=ids["context"],
             operation=operation,
         )
+        lease_repository = SqlAlchemyJobLeaseRepository()
         jobs = JobLeaseService(
-            unit_of_work=make_uow, repository=SqlAlchemyJobLeaseRepository(),
+            unit_of_work=make_uow, repository=lease_repository,
         )
         output_start = OutputGenerationStartOwner(
-            unit_of_work=make_uow, jobs=jobs,
+            unit_of_work=make_uow, jobs=lease_repository,
             repository=SqlAlchemyOutputGenerationStartRepository(),
             audit=AuditService(SqlAlchemyAuditRepository()),
             system_actor_id=ids["user"],
@@ -197,7 +198,7 @@ def main() -> int:
         start_owner.start(StartPluginExecutionCommand(claim, worker))
 
         output_failure = OutputGenerationFailureOwner(
-            unit_of_work=make_uow, jobs=jobs,
+            unit_of_work=make_uow, jobs=lease_repository,
             repository=SqlAlchemyOutputGenerationFailureRepository(),
             audit=AuditService(SqlAlchemyAuditRepository()),
             system_actor_id=ids["user"],
