@@ -1,4 +1,12 @@
 
+## PLG-02 head 诊断关闭，PLG-03 当前 head 断言遗漏（2026-11-07）
+
+- Hosted run [42364926754](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42364926754) 中新增诊断断言没有再触发；PG smoke越过PLG-02 A08 downgrade-refusal head检查并进入PLG-03 execution schema verifier。因此PLG-02在期待0233下的head保留检查已通过，先前“仍需诊断/可能回滚原子性问题”判断据此关闭，不再修改PLG-02保护逻辑。
+- PG smoke随后在 `validation/plg-03-a01-execution-schema/verify.py` 失败；源码该验证器升级后仍将 `head` 与 `20261105_0232` 比较，而本CR已增加migration `20261106_0233`。这是下游共享验收脚本当前版本断言遗漏；其余聚合条件未独立输出。本次仅拟将此处head期望改为0233，保留0230的升级前基线及表/约束/触发器/marker断言。
+- 再次Hosted PG18 smoke验收；不改PLG03迁移或产品数据。P40/P25因父包smoke未通过仍保持失败/未验证。
+- 同run SUR-07-A08再次因initdb及TEMP探针均为3221225781且探针未应用而失败；遵循CR-EXEC-039继续停止，不将它与PLG-03/A08业务Owner混为一项。
+
+
 ## 后续复验纠正：A08稳定通过，PLG-02 rollback head 仍需诊断（2026-11-07）
 
 - Hosted run [42363588328](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42363588328) 中A08专项job 128378836416成功，A08的PG18复验继续通过；A17 packaged PlanVersion也通过。
