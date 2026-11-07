@@ -1,3 +1,4 @@
+|Execution Note|2026-11-07复核PRT连接参数时发现两处残留固定用户值，已在首次Hosted运行验收前统一；未执行本地项目代码。|
 |Execution Note|2026-11-07 CR-PRT-007已登记并进入实施：PRT负载改接父包PG18 Hosted服务，在独立临时数据库运行；仍无新性能数据或通过结论。|
 |Execution Note|2026-11-07 GATE-3-A03基于本分支最新证据复核：run [42374803790](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42374803790) 20/22 jobs成功；父包PG18/P40有限通过，PRT负载因DATA_DIRECTORY_ACCESS_DENIED未执行，独立SUR-07-A08为3221225781。P51-A36/A38仍显示正式公钥/License trust、DB credential ref、服务身份/ACL、TLS等未核验；Output Create保持fail-closed。Gate 3与Pilot仍BLOCKED/NOT_READY。见docs/progress/gate-3-a03-current-evidence-reconciliation.md。|
 |Current WBS|PRT-01-A11-A05-P04-P26：CR-PRT-007已完成实施前记录；正在将并发负载接入父包PG18 Hosted生命周期。|

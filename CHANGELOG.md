@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（PRT连接参数统一化）
+
+- 首次Hosted运行开始前复核发现两处旧测试角色写死；已统一改为父PG服务的动态loopback连接参数，仍等待Hosted验收。
+
 ## Unreleased · 2026-11-07（PRT负载接入父包 PG18 生命周期；验证待完成）
 
 - 按 CR-PRT-007 将 PRT 20 并发 Prototype 负载安排在父包 Hosted PostgreSQL 18 生命周期内执行，每次创建专属临时数据库并保留固定性能门槛。

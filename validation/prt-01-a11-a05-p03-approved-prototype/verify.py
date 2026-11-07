@@ -562,7 +562,7 @@ def _probe_review_pipeline(database: str, review_id: uuid.UUID,
 
             def worker() -> float:
                 with psycopg.connect(
-                    host="127.0.0.1", port=PORT, user="poc_admin",
+                    host=PG_HOST, port=PORT, user=PG_USER,
                     dbname=database,
                 ) as connection:
                     assert method(connection) == expected
@@ -1189,7 +1189,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                 assert parallel_reader.result(timeout=5).project_role == "PROJECT_MANAGER"
             try:
                 with psycopg.connect(
-                    host="127.0.0.1", port=PORT, user="poc_admin",
+                    host=PG_HOST, port=PORT, user=PG_USER,
                     dbname=database, autocommit=True,
                 ) as db, db.transaction():
                     db.execute("SET LOCAL lock_timeout='200ms'")
