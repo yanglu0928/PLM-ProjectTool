@@ -85,3 +85,10 @@ Hosted run [42335600556](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42339772925](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42339772925) 已成功验证同run父包、直接解压与临时 PostgreSQL 18 启动，并进入合成 fixture 数据准备；随后 SQLAlchemy 在 _seed 插入 out_context_snapshots.source_version_refs 时，将 SQL 字符串 JSON 字面量中的 :true 误解析为命名绑定参数，抛出 InvalidRequestError: A value is required for bind parameter 'true'。失败发生在 Admission Owner 首次调用之前；无Owner验收marker，未证明产品Owner错误，也未生成通过证据。该run其它并行任务状态独立记录，不混入A05结论。
 
 实施前记录：只调整 Hosted 验收器合成fixture，将含冒号的内嵌 JSON SQL 字面量替换为 PostgreSQL jsonb_build_array(jsonb_build_object(...)) 构造（或等效的显式绑定值），不改产品Owner、冻结Schema/Migration、父包或验收范围。修复后在GitHub Hosted D盘对同run打包的合成PG18重跑A05全部原验收断言；若越过fixture后失败，依据新的固定断言/脱敏诊断再处置。回滚为还原单个fixture SQL。仅合成数据，无插件执行、客户数据或外发。
+
+
+## 第八轮 Hosted A05 manifest fixture 同类绑定解析失败（修正前记录）
+
+最新 Hosted run [42340859323](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42340859323) 已越过临时 PostgreSQL 18 启动，并成功写入上下文快照、Job/Lease/Attempt 与 OutputRequest 合成数据；随后在插件包 manifest fixture 写入处，SQLAlchemy text 将 JSON 字面量 {"schema_version":1} 的冒号解析成 :1 绑定参数并报缺失参数。Admission Owner仍未调用，故本轮A05未通过。此为首次fixture修复未全面枚举含冒号JSON SQL的同类问题，不是产品Owner失败。
+
+实施前记录：对A05验收器全文件搜索SQLAlchemy text()使用的JSON字面量，删除其中所有直接内嵌的冒号键值JSON；manifest_snapshot改用 jsonb_build_object('schema_version',1)，上下文来源已改用 jsonb_build_*。无冒号JSON数组可以保持原样。静态复核所有 text() SQL string 后，在GitHub Hosted D盘重跑完整A05 Owner/Repository/Audit断言及本次PG18生命周期。影响仅合成验收夹具；不改Owner/API/Schema/Migration/包，回滚仅恢复脚本表达式。
