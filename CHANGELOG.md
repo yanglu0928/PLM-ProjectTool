@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（CR-EXEC-051：PluginExecution Admission Owner）
+- 已完成编码前检查，下一项在同一 UoW 内复核 Jobs fencing、Output admission 与 Plugin 安装身份，并按 owner-write GUC 创建初始 PENDING root/state event/Audit。
+- 本 WBS 仅接受 attempt 1；attempt>1、真实插件执行和 Production Worker wiring 留后续任务。正式 Publisher trust 为空期间继续 fail closed。
+- 仅 GitHub Hosted Windows D 盘 synthetic PG18/全量测试；本机/C盘不运行项目代码。
+
 ## Unreleased · 2026-11-07（CR-EXEC-050：事务内 Jobs/Output Admission 入口）
 - 新增 `JobLeaseService.check_output_claim_in_transaction` 与 `OutputJobExecutionAdmissionOwner.admit_in_transaction`；原有独立 UnitOfWork 包装继续可用。调用方可在同一事务中验证租约、Output绑定和Plugin capability。
 - GitHub Hosted run [42324011767](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42324011767) 后端4,099 tests、wheel及前端/build通过；父包/A17/A35通过。P25/A08/A17全链仍在运行，未据此宣称整条workflow通过。
