@@ -36,3 +36,8 @@
 - 为保持旧Output standalone行为不变，增加fail_in_transaction事务入口，原fail()仍负责单独UoW和提交。
 - 固定复用三个Output错误码，不保存异常正文；锁顺序Output→Jobs→Plugin；Audit失败回滚整体。无API/Schema/Migration/Worker/ProcessHost/生产组合变化。
 - 单元测试、父包PG18.6验收器及Hosted Windows job已接入；等待该提交的Hosted专项、Backend全量/wheel及相关回归结果。A07当前未PASS。
+## 首轮 Hosted 验收偏差（修复前登记，2026-11-07）
+
+- run 42352260652 的A07专项job 128344614988完成PG18临时环境与合成数据准备后，在调用Output/Plugin状态Owner之前抛出NameError：验证器未导入 OutputGenerationStartOwner；因此没有执行A07状态转移，也不能判定产品Owner通过/失败。
+- 修复计划：仅补齐验收器中既有Output start Owner及Repository导入，保持业务代码、数据库Schema、验收标准、锁顺序及业务行为不变，再运行新Hosted提交的Backend全量/wheel及同一父包PG18 A07专项。
+- 合成fixture在临时数据库内被本job清理；没有客户数据、插件子进程、外部调用或产品业务状态转换。A07仍未通过。

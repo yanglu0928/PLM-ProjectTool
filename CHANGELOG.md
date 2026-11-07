@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-054：A07 Hosted首轮偏差）
+- A07专项Job在PG18 fixture准备后、调用Owner前因验证器遗漏OutputGenerationStartOwner导入失败；无A07业务状态写入。已按CR先登记，仅补验收器导入并复跑，不调整验收合同或产品Owner。
+- A07保持未通过，下一提交云端重跑后再结论。
+
 ## Unreleased · 2026-11-07（CR-EXEC-054：PLG-03-A07不可重试失败收敛）
 - 增加PluginExecution failure Owner/Repository，并将既有Output失败Owner拆出不提交的事务入口，旧独立包装保持兼容。
 - 新增单元及父包PG18.6 Hosted验收；同一事务处理Output/Job/lease/attempt/Plugin事件与Audit。验收待运行，不标PASS。
