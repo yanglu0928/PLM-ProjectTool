@@ -39,3 +39,11 @@
 - 不执行真实、客户或第三方插件，不接生产 Output/Worker，不改变 API、DB、Migration、信任根或 package manifest。
 - Host containment 或测试失败时停止继续接线，保留证据；通过单独 revert commit 恢复提交 `60a9e2e` 的传输实现，不 force push、不改写冻结基线。
 - 通过 Hosted 定向和全量测试后，复查完整流程和无 Secret 变更，再更新本 CR、结果、STATUS、CHANGELOG 并推送。
+
+
+## 首轮 Hosted 复验
+
+- run [42318583193](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42318583193) 的前端、PG18 sidecar、A17 runner-temp harness、P39/P24/A50成功；Backend 4,095 项套件中新增 Host 7 项出现 5 failures、2 errors。
+- 失败均来自新的 Windows suspended-start/Job Object 接线返回固定 `PLUGIN_PROCESS_START_FAILED`，未泄露 child 输出，过程 fail-closed。尚未通过用例证明进程树语义，也未达到该 WBS 验收。
+- 具体 API 子阶段未知；不依据调用顺序猜测根因。下一步仅增加阶段枚举与 Win32 整数错误码的内部诊断，保留外部错误码与失败关闭行为，不输出原始异常文本。
+- 此测试失败不是产品信任绕过或客户影响；运行只在 Hosted runner D 盘，合成数据；未改数据库/API/信任/Output。修复前保持 PLG-03-A02 `INCOMPLETE`。
