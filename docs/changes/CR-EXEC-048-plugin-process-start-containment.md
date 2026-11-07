@@ -1,7 +1,7 @@
 # CR-EXEC-048：Windows 插件进程树启动期 containment 加固
 
 - 日期：2026-11-07
-- 状态：编码前检查通过；实施与 Hosted 验收待完成。
+- 状态：完成，`PASS_SCOPE_LIMITED`；仅GitHub Hosted Windows Server 2025 synthetic child验收。
 - Phase：Phase 2 Platform Core。
 - WBS：PLG-03-A02。
 - 上游：PLG-03-A01 Process Host，代码提交 `60a9e2e12e212e4a279fdd765ed6b0032af7d4af`。
@@ -55,3 +55,12 @@
 - 源码核对发现启动参数使用 `getattr(subprocess,"CREATE_SUSPENDED",0)`，而 CPython 3.13 的 `subprocess` Windows 导出列表未包含 `CREATE_SUSPENDED`，故该表达式回退为 0，子进程并非 suspended。该结论解释了当前证据；不是产品已发生插件逃逸的证据。
 - 修正：在 Windows 分支显式使用 Win32 `CREATE_SUSPENDED` 常量值 `0x00000004`；保留“创建→Job 归属→恢复主线程”的fail-closed顺序，并用同一Hosted测试验证。
 
+
+
+## 实施与复验结果
+
+- 代码提交：`6f753f4f4eeded0e880ca7bbb2d5a8449cd102e4`；显式 Win32 `CREATE_SUSPENDED=0x00000004)，然后将进程分配至 kill-on-close Job Object，最后恢复初始主线程；失败路径保持固定错误和 fail-closed。
+- 新增 synthetic descendant 超时测试：Hosted child 确认 descendant 已启动，Host 超时后 kill Job Object；等待超过 descendant 的写入期限，受控 marker 仍不存在。证明本次 Hosted 测试中的进程树清理路径工作。
+- GitHub Hosted Windows Server 2025 run [42319974381](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42319974381)：后端 4,095 tests、Host 8 tests、wheel、前端/build、PG18 sidecar、父包、P25/P40/A17/A34/A35/P24/P39/A50成功；17 jobs 中16 success、1 failure。
+- 唯一失败仍为 SUR-07-A08 `initdb.exe` 3221225781。目标二进制只读probe=0；受控TEMP环境probe同码失败，替代环境未应用；根据CR-EXEC-039停止该假设。A17同run包含P45/P46真实PlanVersion状态/零写入markers成功。
+- 结果：PLG-03-A02 `PASS_SCOPE_LIMITED`。只证明Hosted Windows Server 2025上的 synthetic child containment；没有Windows 11实机证据，不构成正式Publisher trust、插件签名发行、OS完整沙箱、Pilot、Gate或Release结论。未接入Production Output/Worker、API/DB/Migration或真实插件。
