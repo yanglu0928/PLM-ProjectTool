@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（PRT验证器入口签名修正）
+
+- Hosted运行在负载开始前发现复用参数位置错误；已先记录并修正到PRT入口，等待下一轮Hosted复验。
+
 ## Unreleased · 2026-11-07（PRT连接参数统一化）
 
 - 首次Hosted运行开始前复核发现两处旧测试角色写死；已统一改为父PG服务的动态loopback连接参数，仍等待Hosted验收。

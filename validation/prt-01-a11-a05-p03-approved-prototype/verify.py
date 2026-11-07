@@ -728,8 +728,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        phase_diagnostic: bool = False,
                        timeline_diagnostic: bool = False,
                        external_client: bool = False,
-                       external_pool_comparison: bool = False,
-         reuse_postgres: tuple[str, int, str] | None = None) -> None:
+                       external_pool_comparison: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -1495,7 +1494,8 @@ def main(*, mixed_not_required: bool = False,
          phase_diagnostic: bool = False,
          timeline_diagnostic: bool = False,
          external_client: bool = False,
-         external_pool_comparison: bool = False) -> None:
+         external_pool_comparison: bool = False,
+         reuse_postgres: tuple[str, int, str] | None = None) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
