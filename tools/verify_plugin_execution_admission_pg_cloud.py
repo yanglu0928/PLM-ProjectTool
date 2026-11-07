@@ -185,7 +185,7 @@ def main() -> int:
             or not run_id.isascii() or not run_id.isdigit()):
         raise ValueError("A05 requires an owned new D-drive hosted Windows temp root")
     root.mkdir()
-    stage = root / "verified-parent"
+    stage = runner_temp / ("plg03-a05-stage-" + run_id)
     port_sock = socket.socket()
     port_sock.bind(("127.0.0.1", 0))
     port = port_sock.getsockname()[1]
@@ -398,10 +398,13 @@ def main() -> int:
             )
             if stop.returncode:
                 raise RuntimeError("temporary PostgreSQL shutdown was not confirmed")
-        if root.exists():
-            if root.parent.resolve(strict=True) != runner_temp or root.is_symlink() or root.drive.upper() == "C:":
-                raise RuntimeError("refusing to clean outside owned D-drive runner temp")
-            shutil.rmtree(root)
+        for owned in (stage, root):
+            if owned.exists():
+                resolved = owned.resolve(strict=True)
+                if (resolved.parent != runner_temp or owned.is_symlink()
+                        or resolved.drive.upper() == "C:"):
+                    raise RuntimeError("refusing to clean outside owned D-drive runner temp")
+                shutil.rmtree(owned)
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)
     args.summary_out.write_text(json.dumps(summary, sort_keys=True, indent=2) + "\n",
                                 encoding="utf-8")
