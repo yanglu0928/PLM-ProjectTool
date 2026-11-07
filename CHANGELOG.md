@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（CR-EXEC-048：PLG-03-A02 Windows 进程树启动 containment）
+
+- 发现 `subprocess.CREATE_SUSPENDED` 不可用导致默认值为 0，已按 CR-EXEC-048 明确采用 Win32 `0x00000004)，使入口执行前完成 Job Object 归属，再恢复初始线程。受限诊断只输出白名单阶段/整数码。
+- Hosted Windows Server 2025 run [42319974381](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42319974381) 通过 8 项 Host 测试（含已启动 descendant 在超时后不能写入 marker）、后端全量 4,095 项、wheel、前端与父包回归；P25/P40/A17/A34/A35/P24/P39/A50成功。
+- 全链17 jobs中16成功，唯一失败仍为SUR-07-A08 `initdb` 3221225781，TEMP探测同码且未应用替代环境，按CR-EXEC-039停止。PLG-03-A02为 `PASS_SCOPE_LIMITED`，不代表Win11实机、正式Plugin trust、OS完整沙箱、Pilot/Gate/Release。无API/DB/Migration/生产Output变化；仅synthetic Hosted D盘。
+
 ## Unreleased · 2026-11-07（CR-EXEC-048：定位 Windows suspended-start 标志）
 
 - Hosted run [42319306937](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42319306937) 的安全诊断均为 `stage=thread_resume;native=0`。原因是 CPython subprocess 未导出 `CREATE_SUSPENDED`，原默认值表达式退化为 0，子进程实际未暂停。
