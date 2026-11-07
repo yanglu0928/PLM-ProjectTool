@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（父包 Hosted PG smoke 推进至 P32）
+- run [42365928514](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42365928514) 通过Backend/wheel、Frontend/build、父包组装、A05/A06/A07/A08 PG18及A17 PlanVersion。
+- 父包smoke越过PLG-03后在P32 OutputArtifact migration验收器的聚合升级断言失败。验证器仍检查head=0232而当前新增0233；先记录后仅同步head期望，其余Job保留/表/约束/触发器/降级往返检查保持。
+- 因父包PG前置失败，P40/P25未通过，P25真实HTTP/Edge未运行。SUR-07-A08环境阻塞继续停止；A17 PlanVersion流程成功。
+
+
 ## Unreleased · 2026-11-07（PLG-02诊断通过；PLG-03 migration verifier 待同步）
 - run [42364926754](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42364926754) 父包PG smoke越过PLG-02 downgrade refusal 后head保留断言，进入PLG-03 execution schema verifier。
 - PLG-03 verifier仍把升级后head固定为0232，因新增0233迁移而触发聚合断言；已先记录，计划只更新当前head期望，不更改产品迁移/约束。P40/P25未通过。
