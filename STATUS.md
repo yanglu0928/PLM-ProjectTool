@@ -3019,3 +3019,6 @@
 
 
 - 2026-11-07 第四轮 Hosted run [42333300077](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42333300077)：后端全量、前端、PG18侧车、父包组装、P40、A35成功；A05再次在Owner调用前由 initdb.exe 返回3221225781/0xC0000135。仅bin路径调整未奏效，不能认定具体缺失模块或产品缺陷。按CR-EXEC-052先记录并扩展为随包bin+lib受限PATH，Hosted复验；若复现则采集PE导入清单。本机/C盘未运行。
+
+
+- 2026-11-07 第五轮 Hosted run [42334361407](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42334361407)：同run的父包PG18生命周期/P40 smoke成功（PG18.6、pgvector 0.8.6），但独立A05仍在Owner前由 initdb.exe 返回3221225781/0xC0000135，bin+lib PATH未奏效。按CR-EXEC-052先记偏差；A05将对齐已通过父包smoke的直接解压/进程环境路径，在同一D盘隔离根执行并逐文件复核哈希，再验收Owner。本机/C盘未运行。

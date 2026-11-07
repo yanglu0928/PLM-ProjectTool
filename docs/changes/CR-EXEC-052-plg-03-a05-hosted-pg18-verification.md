@@ -66,3 +66,9 @@ Hosted run [42331887380](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42333300077](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42333300077) 的 backend 全量、frontend、PG18侧车构建、父包组装、P40和A35均成功；A05仍在调用Owner之前失败，随包 `initdb.exe` 同样返回 `3221225781 / 0xC0000135` 且无输出。前次仅把随包 `bin` 放入PATH并设置cwd未解决，故“仅缺bin搜索路径”假设不成立；仍不能据此认定产品或PG包根因。
 
 修正前记录：下一轮将随包已校验的 `bin` 与 `lib` 两个目录按固定顺序置于子进程PATH首位，继续继承Hosted环境，并执行A05 PG18针对验收。此更改仅在A05验证器内，不调整父包、产品代码、Schema/Migration或生产装配。若仍为同一NTSTATUS，下一步改为记录受限PE导入依赖清单/文件存在性，避免继续猜测路径。
+
+## 第五轮 Hosted A05 启动失败与 extraction 路径对齐（修正前记录）
+
+Hosted run [42334361407](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42334361407) 再次在Owner调用前收到 initdb.exe exit 3221225781 / 0xC0000135；即使加入随包 bin+lib 到PATH仍未改变。该run同提交、同父包的 Clean extraction, PG18 lifecycle, and P40 live Edge download job 成功，报告 PARENT_PG18_TEMP_LIFECYCLE_PASS_LIMITED，PG18.6/pgvector 0.8.6真实临时库通过。对照已通过的 tools/smoke_windows_parent_package_pg_cloud.py，A05明显差异是PG二进制由通用候选stager解压后直接启动，而父包烟测先用stager校验/清理，再按包解压语义直接解压并逐文件复核哈希后启动。
+
+实施前记录：A05改为先运行同一候选stager并验证收据，随后立即清理该验收副本；再将原同一ZIP直接解压到本run独占的RUNNER_TEMP根目录，检查清单、目录清单、路径/链接边界和全部payload SHA-256。取消自行定制的PATH/cwd，采用父包PG smoke相同的继承进程环境与目录布局。验收范围仍仅A05 Owner/Repository/Audit；不改产品或父包，不运行插件，不使用客户数据。若仍失败再采集受限原生依赖诊断，不再尝试路径猜测。

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -10,7 +11,8 @@ import subprocess
 import sys
 import time
 import uuid
-from pathlib import Path
+import zipfile
+from pathlib import Path, PurePosixPath
 
 import psycopg
 from sqlalchemy import URL, create_engine, text
@@ -34,7 +36,60 @@ from plm_assistant.modules.plugin.infrastructure.execution_admission_repository 
     SqlAlchemyPluginExecutionAdmissionRepository,
 )
 from plm_assistant.modules.platform.infrastructure.migration import upgrade_database
-from stage_windows_parent_candidate_cloud import stage_candidate
+from stage_windows_parent_candidate_cloud import safe_name, sha_file, stage_candidate
+
+
+def _extract_parent_like_smoke(archive: Path, target: Path, expected_archive_sha256: str) -> int:
+    """Extract like the already passing parent PG smoke, with full digest checks."""
+    runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
+    if (target.is_symlink() or not target.is_dir() or any(target.iterdir())
+            or target.parent.resolve(strict=True) != runner_temp
+            or target.drive.upper() == "C:"):
+        raise ValueError("A05 direct extraction target is not an owned empty D-drive root")
+    if sha_file(archive) != expected_archive_sha256:
+        raise ValueError("A05 parent archive changed after staging validation")
+    with zipfile.ZipFile(archive) as bundle:
+        infos = bundle.infolist()
+        names = [safe_name(info.filename) for info in infos]
+        if len(names) != len(set(name.casefold() for name in names)):
+            raise ValueError("A05 archive contains duplicate or case-conflicting paths")
+        if any((info.external_attr >> 16) & 0o170000 == 0o120000 for info in infos):
+            raise ValueError("A05 parent archive symlink rejected")
+        manifest_bytes = bundle.read("manifest.json")
+        sums = bundle.read("payload-sha256sums.txt")
+        manifest = json.loads(manifest_bytes)
+        if (manifest.get("kind") != "WINDOWS_PARENT_PACKAGE_NON_RELEASE_CANDIDATE"
+                or manifest.get("release_eligible") is not False
+                or manifest.get("legal_clearance") is not False
+                or hashlib.sha256(sums).hexdigest()
+                != manifest.get("payload_sha256sums_sha256")):
+            raise ValueError("A05 parent package manifest or checksum-list identity rejected")
+        expected = {}
+        for line in sums.decode("ascii").splitlines():
+            digest, separator, name = line.partition("  ")
+            safe_name(name)
+            if (separator != "  " or len(digest) != 64
+                    or any(ch not in "0123456789abcdef" for ch in digest)
+                    or name in expected):
+                raise ValueError("A05 parent checksum list malformed")
+            expected[name] = digest
+        if (len(expected) != manifest.get("payload_file_count")
+                or set(names) != set(expected) | {"manifest.json", "payload-sha256sums.txt"}):
+            raise ValueError("A05 parent archive inventory mismatch")
+        (target / "manifest.json").write_bytes(manifest_bytes)
+        (target / "payload-sha256sums.txt").write_bytes(sums)
+        for name, digest in expected.items():
+            info = bundle.getinfo(name)
+            destination = target.joinpath(*PurePosixPath(name).parts)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            actual = hashlib.sha256()
+            with bundle.open(info) as source, destination.open("xb") as output:
+                for block in iter(lambda: source.read(1024 * 1024), b""):
+                    output.write(block)
+                    actual.update(block)
+            if actual.hexdigest() != digest:
+                raise ValueError("A05 direct extraction payload hash mismatch")
+        return len(expected)
 
 
 class SyntheticOutputAdmission:
@@ -209,28 +264,29 @@ def main() -> int:
     try:
         receipt = stage_candidate(args.archive, args.verification_summary, stage)
         staged = True
-        pg_root = stage / "payload" / "pgsql"
-        pg_bin = (pg_root / "bin").resolve(strict=True)
-        pg_lib = (pg_root / "lib").resolve(strict=True)
+        if (receipt.get("status") != "HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED"
+                or receipt.get("installation_performed") is not False
+                or receipt.get("services_started") is not False):
+            raise ValueError("A05 parent staging receipt rejected")
+        if stage.parent.resolve(strict=True) != runner_temp or stage.drive.upper() == "C:":
+            raise ValueError("A05 staging root escaped its D-drive runner temp")
+        shutil.rmtree(stage)
+        staged = False
+        _extract_parent_like_smoke(args.archive, root, receipt["archive_sha256"])
+        pg_root = root / "payload" / "pgsql"
+        pg_bin = pg_root / "bin"
         initdb, pg_ctl = (pg_bin / name for name in ("initdb.exe", "pg_ctl.exe"))
-        if (not pg_bin.is_dir() or not pg_lib.is_dir()
+        if (not pg_bin.is_dir()
                 or any(p.is_symlink() or not p.is_file() for p in (initdb, pg_ctl))):
             raise ValueError("verified parent package PostgreSQL runtime missing")
-        # EDB's packaged bin/lib directories may both contain native runtime DLLs.
-        # Preserve the hosted environment and prepend only these verified candidate paths.
-        pg_env = os.environ.copy()
-        pg_env["PATH"] = os.pathsep.join(
-            (str(pg_bin), str(pg_lib), pg_env.get("PATH", ""))
-        )
         _checked([str(initdb), "-D", str(data_dir), "-U", "postgres",
-                  "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"],
-                 cwd=pg_bin, env=pg_env)
+                  "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"])
         start = subprocess.run(
             [str(pg_ctl), "-D", str(data_dir), "-l", str(pg_log),
              "-o", f"-h 127.0.0.1 -p {port} -c listen_addresses=127.0.0.1",
              "-w", "start"],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
-            cwd=pg_bin, env=pg_env, timeout=180, check=False,
+            timeout=180, check=False,
         )
         if start.returncode:
             raise RuntimeError("temporary packaged PG18 failed to start: " +
@@ -411,8 +467,8 @@ def main() -> int:
             pg_ctl = stage / "payload" / "pgsql" / "bin" / "pg_ctl.exe"
             stop = subprocess.run(
                 [str(pg_ctl), "-D", str(data_dir), "-m", "fast", "-w", "stop"],
-                cwd=pg_bin, env=pg_env, capture_output=True, text=True,
-                encoding="utf-8", errors="replace", timeout=180, check=False,
+                capture_output=True, text=True, encoding="utf-8",
+                errors="replace", timeout=180, check=False,
             )
             if stop.returncode:
                 raise RuntimeError("temporary PostgreSQL shutdown was not confirmed")
