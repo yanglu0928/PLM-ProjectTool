@@ -200,7 +200,7 @@ class PluginExecutionStartOwner:
                 or type(claim.job_id) is not uuid.UUID or not claim.job_id.int
                 or type(claim.project_id) is not uuid.UUID or not claim.project_id.int
                 or type(claim.fencing_token) is not int or claim.fencing_token < 1
-                or type(claim.attempt_no) is not int or claim.attempt_no != 1):
+                or type(claim.attempt_no) is not int or claim.attempt_no < 1):
             raise PluginExecutionStartError()
         PluginExecutionStartOwner._payload_ids(claim.payload_refs)
 
