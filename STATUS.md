@@ -3016,3 +3016,6 @@
 
 
 - 2026-11-07 第三轮A05 Hosted run [42331887380](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42331887380)：随包 initdb.exe 返回3221225781（0xC0000135）且无输出；PG未初始化，A05 Owner未调用。该Windows状态码指向DLL装载失败，但具体缺失模块未确认，不能记产品缺陷或PASS。已按CR-EXEC-052先登记只改验收器的子进程启动环境调整：传入校验过的随包 pgsql/bin 为PATH首项并作为cwd、其余环境继承但不回显，再走Hosted复验。本机/C盘未运行。
+
+
+- 2026-11-07 第四轮 Hosted run [42333300077](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42333300077)：后端全量、前端、PG18侧车、父包组装、P40、A35成功；A05再次在Owner调用前由 initdb.exe 返回3221225781/0xC0000135。仅bin路径调整未奏效，不能认定具体缺失模块或产品缺陷。按CR-EXEC-052先记录并扩展为随包bin+lib受限PATH，Hosted复验；若复现则采集PE导入清单。本机/C盘未运行。

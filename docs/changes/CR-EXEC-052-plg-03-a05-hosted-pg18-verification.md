@@ -60,3 +60,9 @@ Hosted run [42330769351](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42331887380](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42331887380) 的A05 job已完成父包SHA/清单校验和PG verifier依赖安装，但随包 `initdb.exe` 以Windows进程退出码 `3221225781` 退出，折合 `0xC0000135`，没有标准输出/错误；PG实例未初始化，Admission Owner未调用。该状态码指向DLL装载失败，尚未证明具体缺失模块或产品问题。A05仍未通过。
 
 修正前记录的唯一调整：为验收器启动的每个随包PostgreSQL进程设置显式子进程环境，将已经校验的 `payload/pgsql/bin` 置于PATH首位并设为工作目录；继承其它Hosted环境，禁止打印环境变量，不更改父包内容、业务实现、DB Schema/Migration或产品装配。随后在同run父包上重跑A05；若原生加载错误仍存在，再以受限且不回显环境的Windows依赖诊断定位模块，不将假设记为根因。
+
+## 第四轮 Hosted A05 启动失败（修正前记录）
+
+Hosted run [42333300077](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42333300077) 的 backend 全量、frontend、PG18侧车构建、父包组装、P40和A35均成功；A05仍在调用Owner之前失败，随包 `initdb.exe` 同样返回 `3221225781 / 0xC0000135` 且无输出。前次仅把随包 `bin` 放入PATH并设置cwd未解决，故“仅缺bin搜索路径”假设不成立；仍不能据此认定产品或PG包根因。
+
+修正前记录：下一轮将随包已校验的 `bin` 与 `lib` 两个目录按固定顺序置于子进程PATH首位，继续继承Hosted环境，并执行A05 PG18针对验收。此更改仅在A05验证器内，不调整父包、产品代码、Schema/Migration或生产装配。若仍为同一NTSTATUS，下一步改为记录受限PE导入依赖清单/文件存在性，避免继续猜测路径。

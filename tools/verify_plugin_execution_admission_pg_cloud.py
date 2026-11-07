@@ -211,13 +211,17 @@ def main() -> int:
         staged = True
         pg_root = stage / "payload" / "pgsql"
         pg_bin = (pg_root / "bin").resolve(strict=True)
+        pg_lib = (pg_root / "lib").resolve(strict=True)
         initdb, pg_ctl = (pg_bin / name for name in ("initdb.exe", "pg_ctl.exe"))
-        if not all(p.is_file() and not p.is_symlink() for p in (initdb, pg_ctl)):
+        if (not pg_bin.is_dir() or not pg_lib.is_dir()
+                or any(p.is_symlink() or not p.is_file() for p in (initdb, pg_ctl))):
             raise ValueError("verified parent package PostgreSQL runtime missing")
-        # PostgreSQL child processes can load runtime DLLs from this packaged bin.
-        # Keep the inherited hosted environment intact and prepend only this verified path.
+        # EDB's packaged bin/lib directories may both contain native runtime DLLs.
+        # Preserve the hosted environment and prepend only these verified candidate paths.
         pg_env = os.environ.copy()
-        pg_env["PATH"] = str(pg_bin) + os.pathsep + pg_env.get("PATH", "")
+        pg_env["PATH"] = os.pathsep.join(
+            (str(pg_bin), str(pg_lib), pg_env.get("PATH", ""))
+        )
         _checked([str(initdb), "-D", str(data_dir), "-U", "postgres",
                   "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"],
                  cwd=pg_bin, env=pg_env)
