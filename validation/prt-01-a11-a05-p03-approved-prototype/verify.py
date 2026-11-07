@@ -1508,16 +1508,22 @@ def main(*, mixed_not_required: bool = False,
     scratch = Path(tempfile.mkdtemp(prefix="plm-prt-a05-p03-", dir=temp_root)).resolve()
     if not scratch.is_relative_to(temp_root) or not str(scratch).isascii():
         raise RuntimeError("isolated ASCII temporary PostgreSQL path required")
-    install = scratch / "pgsql"
-    try:
-        for name in ("bin", "lib", "share"):
-            shutil.copytree(PG_SOURCE / name, install / name)
-        shutil.copy2(VECTOR_SOURCE / "vector.dll", install / "lib/vector.dll")
-        shutil.copy2(VECTOR_SOURCE / "vector.control", install / "share/extension/vector.control")
-        for path in (VECTOR_SOURCE / "sql").glob("vector--*.sql"):
-            shutil.copy2(path, install / "share/extension" / path.name)
-        binaries = install / "bin"
-        data, log = scratch / "data", scratch / "postgres.log"
+    install = PG_SOURCE.resolve(strict=True)
+    if not install.is_dir() or install.is_symlink() or not install.is_relative_to(ROOT.resolve()):
+        raise RuntimeError("verified PostgreSQL runtime must remain inside the repository fixture root")
+    binaries = install / "bin"
+    extension_dir = install / "share" / "extension"
+    required_runtime_files = (
+        binaries / "initdb.exe",
+        binaries / "pg_ctl.exe",
+        install / "lib" / "vector.dll",
+        extension_dir / "vector.control",
+    )
+    if not all(path.is_file() and not path.is_symlink() for path in required_runtime_files):
+        raise RuntimeError("verified PostgreSQL/pgvector runtime files are incomplete")
+    if not any(extension_dir.glob("vector--*.sql")):
+        raise RuntimeError("verified pgvector SQL extension scripts are missing")
+    data, log = scratch / "data", scratch / "postgres.log"
         _run([str(binaries / "initdb.exe"), "-D", str(data), "-U", "poc_admin",
               "-A", "trust", "--no-locale", "-E", "UTF8"])
         _run([str(binaries / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
