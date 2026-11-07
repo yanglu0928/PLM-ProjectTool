@@ -260,6 +260,14 @@ def main() -> int:
         )
         rejected_without_write(stale)
         rejected_without_write(claim, "wrong.worker")
+        bad_binding = ClaimedJob(
+            job_id=claim.job_id, job_type=claim.job_type, scope=claim.scope,
+            project_id=claim.project_id,
+            payload_refs={"output_request_id": str(uuid.uuid4()),
+                          "context_snapshot_id": claim.payload_refs["context_snapshot_id"]},
+            trace_id=claim.trace_id, fencing_token=19, attempt_no=1,
+        )
+        rejected_without_write(bad_binding)
         retry = ClaimedJob(
             job_id=claim.job_id, job_type=claim.job_type, scope=claim.scope,
             project_id=claim.project_id, payload_refs=claim.payload_refs,
@@ -275,6 +283,12 @@ def main() -> int:
                 "retryable=false,lock_version=lock_version+1 "
                 "WHERE plugin_execution_id=:id"
             ), {"id": admitted.plugin_execution_id})
+            conn.execute(text(
+                "INSERT INTO plm.plg_execution_state_events "
+                "(plugin_execution_id,project_id,from_state,to_state,reason_code,trace_id) "
+                "VALUES (:id,:project,'RUNNING','FAILED','SYNTHETIC_FAILURE',:trace)"
+            ), {"id": admitted.plugin_execution_id, "project": ids["project"],
+                "trace": ids["trace"]})
         rejected_without_write(claim)
 
         summary = {

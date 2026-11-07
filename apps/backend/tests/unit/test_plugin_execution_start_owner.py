@@ -16,13 +16,16 @@ from plm_assistant.modules.plugin.application.execution_start import (
 
 def fixtures():
     job_id, project_id = uuid.uuid4(), uuid.uuid4()
+    request_id, context_id = uuid.uuid4(), uuid.uuid4()
     claim = ClaimedJob(
         job_id=job_id, job_type="OUTPUT_GENERATE", scope="PROJECT",
-        project_id=project_id, payload_refs={"output_request_id": str(uuid.uuid4())},
+        project_id=project_id, payload_refs={"output_request_id": str(request_id),
+                      "context_snapshot_id": str(context_id)},
         trace_id=str(uuid.uuid4()), fencing_token=7, attempt_no=1,
     )
     facts = PluginExecutionStartFacts(
         plugin_execution_id=uuid.uuid4(), project_id=project_id, job_id=job_id,
+        output_request_id=request_id, output_context_snapshot_id=context_id,
         attempt_no=1, execution_state="PENDING", lock_version=0, changed=False,
     )
     return claim, facts
@@ -152,6 +155,16 @@ class PluginExecutionStartOwnerTests(unittest.TestCase):
             owner.start(StartPluginExecutionCommand(claim, "worker-1"))
         self.assertEqual(len(jobs.transactions), 1)
         self.assertEqual(repo.transactions, [])
+        self.assertEqual(repo.start_calls, [])
+        self.assertEqual(repo.events, [])
+        self.assertEqual(audit.events, [])
+
+    def test_execution_output_binding_mismatch_is_rejected(self):
+        claim, facts = fixtures()
+        mismatched = replace(facts, output_context_snapshot_id=uuid.uuid4())
+        owner, _uow, _jobs, repo, audit = self.create(claim, mismatched)
+        with self.assertRaises(PluginExecutionStartError):
+            owner.start(StartPluginExecutionCommand(claim, "worker-1"))
         self.assertEqual(repo.start_calls, [])
         self.assertEqual(repo.events, [])
         self.assertEqual(audit.events, [])
