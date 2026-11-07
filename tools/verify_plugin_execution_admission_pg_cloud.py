@@ -160,9 +160,10 @@ def _seed(engine, *, user_id: uuid.UUID, project_id: uuid.UUID,
             "payload_refs,idempotency_key,state,attempt_count,max_attempts,fencing_token,"
             "lease_expires_at) "
             "VALUES (:id,'output','OUTPUT_GENERATE','PROJECT',:project,:user,:trace,"
-            "'{}'::jsonb,:key,'RUNNING',1,3,:token,"
+            "jsonb_build_object('output_request_id',:request,'context_snapshot_id',:context),:key,'RUNNING',1,3,:token,"
             "statement_timestamp()+interval '10 minutes')"
         ), {"id": job_id, "project": project_id, "user": user_id, "trace": str(trace_id),
+            "request": request_id, "context": context_id,
             "key": "plg03-a05-" + job_id.hex, "token": token})
         conn.execute(text(
             "INSERT INTO plm.job_leases "
@@ -340,7 +341,10 @@ def main() -> int:
                   worker=worker, operation=operation, seed_plugin=(suffix == "success"))
             claim = ClaimedJob(
                 job_id=ids["job"], job_type="OUTPUT_GENERATE", scope="PROJECT",
-                project_id=ids["project"], payload_refs={}, trace_id=str(ids["trace"]),
+                project_id=ids["project"], payload_refs={
+                    "output_request_id": str(ids["request"]),
+                    "context_snapshot_id": str(ids["context"]),
+                }, trace_id=str(ids["trace"]),
                 fencing_token=19, attempt_no=1,
             )
             fact = _admission(job_id=ids["job"], project_id=ids["project"],
