@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-054：A07 第二轮验收偏差）
+- PG18验收器的手工构造Claim被既有Output start Owner以固定码拒绝；A07 Failure Owner未调用。先记录后只读比较P30真实lease claim fixture，修正Harness，不放宽产品校验。
+- A07未通过，等待后续Hosted复验。
+
 ## Unreleased · 2026-11-07（CR-EXEC-054：A07 Hosted首轮偏差）
 - A07专项Job在PG18 fixture准备后、调用Owner前因验证器遗漏OutputGenerationStartOwner导入失败；无A07业务状态写入。已按CR先登记，仅补验收器导入并复跑，不调整验收合同或产品Owner。
 - A07保持未通过，下一提交云端重跑后再结论。

@@ -41,3 +41,8 @@
 - run 42352260652 的A07专项job 128344614988完成PG18临时环境与合成数据准备后，在调用Output/Plugin状态Owner之前抛出NameError：验证器未导入 OutputGenerationStartOwner；因此没有执行A07状态转移，也不能判定产品Owner通过/失败。
 - 修复计划：仅补齐验收器中既有Output start Owner及Repository导入，保持业务代码、数据库Schema、验收标准、锁顺序及业务行为不变，再运行新Hosted提交的Backend全量/wheel及同一父包PG18 A07专项。
 - 合成fixture在临时数据库内被本job清理；没有客户数据、插件子进程、外部调用或产品业务状态转换。A07仍未通过。
+## 第二轮 Hosted 验收偏差（修复前登记，2026-11-07）
+
+- run 42353151341 的A07专项job 128347507564中，PG18 fixture已准备，补齐导入后进入既有 OutputGenerationStartOwner，但其固定错误码 OUTPUT_START_NOT_ELIGIBLE 拒绝当前验收claim。A07 Failure Owner尚未调用，不能据此判定A07产品实现通过或失败。
+- 源码与Harness对照发现：验收器手工构造 ClaimedJob，而生产Output start前置应验证 Jobs Repository签发的当前claim。具体拒绝原因尚未由固定错误暴露，不能假定插件/Output产品缺陷。
+- 修复计划：只读核实 P30 已通过的PG18 Harness如何取得并传递 claim，以及 Output start 的校验条件；在已登记范围内对齐合成fixture到真实Jobs claim_next_output返回值，然后从干净PG18临时库重跑A07。不得放宽Owner校验或伪造lease字段。A07仍未通过。
