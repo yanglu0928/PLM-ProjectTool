@@ -92,3 +92,12 @@ Hosted run [42339772925](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 最新 Hosted run [42340859323](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42340859323) 已越过临时 PostgreSQL 18 启动，并成功写入上下文快照、Job/Lease/Attempt 与 OutputRequest 合成数据；随后在插件包 manifest fixture 写入处，SQLAlchemy text 将 JSON 字面量 {"schema_version":1} 的冒号解析成 :1 绑定参数并报缺失参数。Admission Owner仍未调用，故本轮A05未通过。此为首次fixture修复未全面枚举含冒号JSON SQL的同类问题，不是产品Owner失败。
 
 实施前记录：对A05验收器全文件搜索SQLAlchemy text()使用的JSON字面量，删除其中所有直接内嵌的冒号键值JSON；manifest_snapshot改用 jsonb_build_object('schema_version',1)，上下文来源已改用 jsonb_build_*。无冒号JSON数组可以保持原样。静态复核所有 text() SQL string 后，在GitHub Hosted D盘重跑完整A05 Owner/Repository/Audit断言及本次PG18生命周期。影响仅合成验收夹具；不改Owner/API/Schema/Migration/包，回滚仅恢复脚本表达式。
+
+
+## 第九轮 Hosted A05 首次调用 Owner 后被 Output admission 拒绝（修正前记录）
+
+Hosted run [42341698193](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42341698193) 已成功启动并迁移同run临时PG18、插入两组完整的合成 Job/Output/Plugin 数据，且首个真实 PluginExecutionAdmissionOwner 调用发生。Owner以固定错误码 PLUGIN_EXECUTION_NOT_ADMITTED fail closed，尚无任何成功断言或PASS证据。
+
+只读核查定位到测试输入缺失而非产品错误：OutputJobExecutionAdmissionOwner._validate_claim 要求 ClaimedJob.payload_refs 精确含 output_request_id 与 context_snapshot_id，并要求二者为规范UUID字符串；当前 A05 验证器把 Job 行和传入 ClaimedJob.payload_refs 都设为 {}。因此真实 Owner 在读取并授权 Output 前按既有契约拒绝。冻结契约和产品实现符合要求，不能放宽。
+
+实施前记录：仅修正A05 fixture，使 Job.payload_refs 通过 jsonb_build_object 存储其对应 OutputRequest/ContextSnapshot ID，并向 ClaimedJob 传入两个对应规范UUID字符串；保持数据库读取结果与命令逐字段相同。复验前增加静态夹具绑定断言/单元级脚本校验，随后Hosted D盘PG18重跑A05既定正向、幂等、陈旧fencing拒绝、attempt拒绝、Audit回滚、DB guard等断言。只改验证器与必要记录，不改Output/Plugin Owner或冻结合同。回滚为还原夹具数据和payload projection。
