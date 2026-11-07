@@ -36,3 +36,10 @@ PRT P25专项job 128400386400：Backend dependencies安装与同run PostgreSQL 1
 ## 第二轮 Hosted 诊断缺口（2026-11-07）
 
 PRT job 128402481517现已保留安全摘要：RuntimeError，调用帧为验证器包入口及物理PG验证器line 1521，marker仅PRT_HOST_RESOURCE_SUMMARY。源行对应initdb启动边界，但共享物理PG helper把子进程returncode省略在通用RuntimeError中；未能区分加载错误/其他初始化错误。下一步先记录并仅把整数returncode添加到内部固定异常摘要，由CI白名单提取命令basename+数值码；不输出stdout/stderr/路径/消息，不重复同一initdb猜测环境变量。依据退出码若为已知DLL装载失败，则按CR-EXEC-039原则停止该环境路径，保留P95未判定。
+
+
+## 第三轮实施方案（2026-11-07）
+
+Hosted run [42372561151](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42372561151) 的受限摘要确定：失败命令initdb.exe，exit code 3221225781 (0xC0000135)，调用帧落在PRT验证器将本轮runtime复制到scratch之后的初始化步骤。该run同轮PG18 sidecar构建成功，前轮父包 smoke 也已从完整候选包启动隔离PG18成功。证据差异是 PRT 验证器复制 bin/lib/share 后使用副本，而父包直接使用已校验包布局；不改变TEMP/TMP或Loader搜索假设。
+
+选择的最小方案：PRT只读复用由本轮固定摘要旁包解压并校验的完整PG18/pgvector运行目录，数据库 data/log仍仅放置本run D盘scratch；启动前检查必需二进制/扩展文件，缺失立即停止。删除PG目录复制和二次复制vector扩展。该变更仅验证Harness布局，回滚为恢复原copytree行为；不改产品/DB/API/性能门槛。完整Hosted PRT验收复跑，若仍0xC0000135则停止本运行路径，不尝试TEMP/PATH猜测。
