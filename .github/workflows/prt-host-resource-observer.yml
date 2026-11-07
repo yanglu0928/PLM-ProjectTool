@@ -1,0 +1,36 @@
+name: PRT Hosted Resource Observer
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "validation/prt-01-a11-a05-p04-read-load/**"
+      - ".github/workflows/prt-host-resource-observer.yml"
+  push:
+    branches: ["feature/**"]
+    paths:
+      - "validation/prt-01-a11-a05-p04-read-load/**"
+      - ".github/workflows/prt-host-resource-observer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-observer-tests:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Compile diagnostic sources
+        run: >-
+          python -B -m py_compile
+          validation/prt-01-a11-a05-p04-read-load/resource_observer.py
+          validation/prt-01-a11-a05-p04-read-load/verify.py
+      - name: Run observer unit tests
+        run: >-
+          python -B -m unittest discover
+          -s validation/prt-01-a11-a05-p04-read-load
+          -p "test_*.py"
