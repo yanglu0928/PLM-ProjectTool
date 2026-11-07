@@ -1,4 +1,4 @@
-"""Atomic, fail-closed creation of a first PluginExecution admission."""
+"""Atomic, fail-closed creation of one PluginExecution per Job attempt."""
 
 from __future__ import annotations
 
@@ -91,6 +91,7 @@ class PluginExecutionTargetReaderPort(Protocol):
 class PluginExecutionAdmissionRepositoryPort(Protocol):
     def find_by_job(
         self, transaction: object, *, job_id: uuid.UUID,
+        attempt_no: int,
     ) -> PluginExecutionAdmissionSnapshot | None: ...
     def authorize_owner_writes(self, transaction: object) -> None: ...
     def create_pending(
@@ -106,7 +107,7 @@ class PluginExecutionAdmissionRepositoryPort(Protocol):
 
 
 class PluginExecutionAdmissionOwner:
-    """Persist one initial PENDING attempt; this owner never runs a Plugin."""
+    """Persist one PENDING PluginExecution per Job attempt; never runs a Plugin."""
 
     def __init__(
         self, *, unit_of_work: Callable[[], UnitOfWork],
@@ -166,6 +167,7 @@ class PluginExecutionAdmissionOwner:
 
                 existing = self._repository.find_by_job(
                     transaction, job_id=current.job_id,
+                    attempt_no=current.attempt_no,
                 )
                 if existing is not None:
                     self._check_replay(existing, admission, target, current)
@@ -177,7 +179,7 @@ class PluginExecutionAdmissionOwner:
                     )
 
                 execution_id = uuid.uuid4()
-                idempotency_key = f"plugin-execution:{current.job_id}"
+                idempotency_key = f"plugin-execution:{current.job_id}:{current.attempt_no}"
                 self._repository.authorize_owner_writes(transaction)
                 created = self._repository.create_pending(
                     transaction, plugin_execution_id=execution_id,
@@ -235,7 +237,7 @@ class PluginExecutionAdmissionOwner:
                 or type(claim.fencing_token) is not int
                 or claim.fencing_token < 1
                 or type(claim.attempt_no) is not int
-                or claim.attempt_no != 1):
+                or claim.attempt_no < 1):
             raise PluginExecutionAdmissionError()
 
     @staticmethod

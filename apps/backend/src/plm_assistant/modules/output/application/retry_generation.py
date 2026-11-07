@@ -63,73 +63,98 @@ class OutputGenerationRetryOwner:
 
     def retry(self, claim: ClaimedJob, *, worker_ref: str, error_code: str
               ) -> OutputGenerationRetryResult:
-        # Reuse the strict immutable claim parser without exposing failure details.
         try:
-            request_id, snapshot_id, trace_id = OutputGenerationFailureOwner._validate_claim(
-                claim, worker_ref)
+            OutputGenerationFailureOwner._validate_claim(claim, worker_ref)
         except OutputGenerationFailureError:
             raise OutputGenerationRetryError() from None
         if type(error_code) is not str or error_code not in RETRYABLE_OUTPUT_CODES:
             raise OutputGenerationRetryError()
-        execution_id = uuid.uuid5(claim.job_id, "output-generation:" + str(claim.fencing_token))
         try:
             with self._uow() as transaction:
-                candidate = self._repo.lock_candidate(
-                    transaction, claim=claim, execution_id=execution_id)
-                if (type(candidate) is not OutputGenerationFailureFacts
-                        or candidate.output_request_id != request_id
-                        or candidate.context_snapshot_id != snapshot_id
-                        or candidate.job_id != claim.job_id
-                        or candidate.project_id != claim.project_id
-                        or candidate.execution_id != execution_id
-                        or candidate.state != "GENERATING" or candidate.changed
-                        or candidate.lock_version < 1):
-                    raise OutputGenerationRetryError()
-                current = self._jobs.check_output_claim(
-                    transaction, job_id=claim.job_id,
-                    fencing_token=claim.fencing_token, worker_ref=worker_ref)
-                if (type(current) is not ClaimedJob or current != claim
-                        or current.job_type != "OUTPUT_GENERATE"
-                        or current.project_id != claim.project_id
-                        or current.payload_refs != claim.payload_refs):
-                    raise OutputGenerationRetryError()
-                job_state = self._jobs.retry_or_fail(
-                    transaction, job_id=claim.job_id,
-                    fencing_token=claim.fencing_token, worker_ref=worker_ref,
-                    error_code=error_code, retryable=True,
-                    delay_seconds=OUTPUT_RETRY_DELAY_SECONDS,
+                result = self.retry_in_transaction(
+                    transaction, claim, worker_ref=worker_ref, error_code=error_code,
                 )
-                target = {"RETRY_WAIT": "QUEUED", "FAILED": "FAILED"}.get(job_state)
-                if target is None:
-                    raise OutputGenerationRetryError()
-                facts = self._repo.transition_retry(
-                    transaction, claim=claim, execution_id=execution_id,
-                    expected_lock_version=candidate.lock_version, target_state=target)
-                if (type(facts) is not OutputGenerationFailureFacts
-                        or facts.output_request_id != request_id
-                        or facts.context_snapshot_id != snapshot_id
-                        or facts.job_id != claim.job_id or facts.project_id != claim.project_id
-                        or facts.execution_id != execution_id or facts.state != target
-                        or facts.lock_version != candidate.lock_version + 1
-                        or not facts.changed):
-                    raise OutputGenerationRetryError()
-                action = ("OUTPUT_GENERATION_RETRY_SCHEDULED"
-                          if job_state == "RETRY_WAIT"
-                          else "OUTPUT_GENERATION_RETRY_EXHAUSTED")
-                self._audit.append(transaction, AuditEventDraft(
-                    trace_id=trace_id, event_scope="PROJECT",
-                    target_project_id=facts.project_id, actor_type="SYSTEM",
-                    actor_id=self._system_actor_id, original_actor_id=facts.requested_by,
-                    actor_hint_digest=None, action=action,
-                    outcome="SUCCESS" if job_state == "RETRY_WAIT" else "FAILED",
-                    target_owner_module="output", target_object_type="OUT-01",
-                    target_object_id=facts.output_request_id,
-                    before_state="GENERATING", after_state=target,
-                ))
                 transaction.commit()
-                return OutputGenerationRetryResult(
-                    facts, job_state,
-                    OUTPUT_RETRY_DELAY_SECONDS if job_state == "RETRY_WAIT" else 0)
+                return result
+        except OutputGenerationRetryError:
+            raise
+        except (JobLeaseError, OutputGenerationFailureError):
+            raise OutputGenerationRetryError() from None
+        except Exception:
+            raise OutputGenerationRetryError("SYSTEM_UNAVAILABLE") from None
+
+    def retry_in_transaction(
+        self, transaction: object, claim: ClaimedJob, *,
+        worker_ref: str, error_code: str,
+    ) -> OutputGenerationRetryResult:
+        """Apply retry state within a caller-owned UoW; never commits it."""
+        try:
+            request_id, snapshot_id, trace_id = OutputGenerationFailureOwner._validate_claim(
+                claim, worker_ref)
+            if type(error_code) is not str or error_code not in RETRYABLE_OUTPUT_CODES:
+                raise OutputGenerationRetryError()
+            execution_id = uuid.uuid5(
+                claim.job_id, "output-generation:" + str(claim.fencing_token),
+            )
+            candidate = self._repo.lock_candidate(
+                transaction, claim=claim, execution_id=execution_id,
+            )
+            if (type(candidate) is not OutputGenerationFailureFacts
+                    or candidate.output_request_id != request_id
+                    or candidate.context_snapshot_id != snapshot_id
+                    or candidate.job_id != claim.job_id
+                    or candidate.project_id != claim.project_id
+                    or candidate.execution_id != execution_id
+                    or candidate.state != "GENERATING" or candidate.changed
+                    or candidate.lock_version < 1):
+                raise OutputGenerationRetryError()
+            current = self._jobs.check_output_claim(
+                transaction, job_id=claim.job_id,
+                fencing_token=claim.fencing_token, worker_ref=worker_ref,
+            )
+            if (type(current) is not ClaimedJob or current != claim
+                    or current.job_type != "OUTPUT_GENERATE"
+                    or current.project_id != claim.project_id
+                    or current.payload_refs != claim.payload_refs):
+                raise OutputGenerationRetryError()
+            job_state = self._jobs.retry_or_fail(
+                transaction, job_id=claim.job_id,
+                fencing_token=claim.fencing_token, worker_ref=worker_ref,
+                error_code=error_code, retryable=True,
+                delay_seconds=OUTPUT_RETRY_DELAY_SECONDS,
+            )
+            target = {"RETRY_WAIT": "QUEUED", "FAILED": "FAILED"}.get(job_state)
+            if target is None:
+                raise OutputGenerationRetryError()
+            facts = self._repo.transition_retry(
+                transaction, claim=claim, execution_id=execution_id,
+                expected_lock_version=candidate.lock_version, target_state=target,
+            )
+            if (type(facts) is not OutputGenerationFailureFacts
+                    or facts.output_request_id != request_id
+                    or facts.context_snapshot_id != snapshot_id
+                    or facts.job_id != claim.job_id or facts.project_id != claim.project_id
+                    or facts.execution_id != execution_id or facts.state != target
+                    or facts.lock_version != candidate.lock_version + 1
+                    or not facts.changed):
+                raise OutputGenerationRetryError()
+            action = ("OUTPUT_GENERATION_RETRY_SCHEDULED"
+                      if job_state == "RETRY_WAIT"
+                      else "OUTPUT_GENERATION_RETRY_EXHAUSTED")
+            self._audit.append(transaction, AuditEventDraft(
+                trace_id=trace_id, event_scope="PROJECT",
+                target_project_id=facts.project_id, actor_type="SYSTEM",
+                actor_id=self._system_actor_id, original_actor_id=facts.requested_by,
+                actor_hint_digest=None, action=action,
+                outcome="SUCCESS" if job_state == "RETRY_WAIT" else "FAILED",
+                target_owner_module="output", target_object_type="OUT-01",
+                target_object_id=facts.output_request_id,
+                before_state="GENERATING", after_state=target,
+            ))
+            return OutputGenerationRetryResult(
+                facts, job_state,
+                OUTPUT_RETRY_DELAY_SECONDS if job_state == "RETRY_WAIT" else 0,
+            )
         except OutputGenerationRetryError:
             raise
         except (JobLeaseError, OutputGenerationFailureError):

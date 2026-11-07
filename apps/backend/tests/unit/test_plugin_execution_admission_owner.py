@@ -92,13 +92,13 @@ class _Targets:
 
 class _Repository:
     def __init__(self):
-        self.existing = None
+        self.existing = {}
         self.writes = []
         self.events = []
         self.authorized = 0
 
-    def find_by_job(self, transaction, *, job_id):
-        return self.existing
+    def find_by_job(self, transaction, *, job_id, attempt_no):
+        return self.existing.get((job_id, attempt_no))
 
     def authorize_owner_writes(self, transaction):
         self.authorized += 1
@@ -119,7 +119,7 @@ class _Repository:
             job_id=claim.job_id, attempt_no=claim.attempt_no,
             execution_state="PENDING",
         )
-        self.existing = row
+        self.existing[(claim.job_id, claim.attempt_no)] = row
         self.writes.append(kwargs)
         return row
 
@@ -186,19 +186,24 @@ class PluginExecutionAdmissionOwnerTests(unittest.TestCase):
         self.assertEqual(len(repo.writes), 1)
         self.assertEqual(len(repo.events), 1)
 
-    def test_retry_attempt_is_rejected_until_predecessor_proof_exists(self):
+    def test_each_attempt_has_its_own_idempotent_execution(self):
         claim, admission, target = fixtures()
-        owner, _uow, jobs, _output, targets, repo, audit = self.create(
-            replace(claim, attempt_no=2), admission, target,
+        repo = _Repository()
+        attempt_two = replace(claim, attempt_no=2, fencing_token=8)
+        owner, _uow, _jobs, _output, _targets, repo, audit = self.create(
+            attempt_two, admission, target, repo=repo,
         )
-        with self.assertRaises(PluginExecutionAdmissionError):
-            owner.admit(AdmitPluginExecutionCommand(
-                replace(claim, attempt_no=2), "worker-1",
-            ))
-        self.assertEqual(jobs.transactions, [])
-        self.assertEqual(targets.transactions, [])
-        self.assertEqual(repo.writes, [])
-        self.assertEqual(audit.events, [])
+        first = owner.admit(AdmitPluginExecutionCommand(attempt_two, "worker-1"))
+        replay = owner.admit(AdmitPluginExecutionCommand(attempt_two, "worker-1"))
+        self.assertTrue(first.created)
+        self.assertFalse(replay.created)
+        self.assertEqual(first.execution_state, "PENDING")
+        self.assertEqual(first.plugin_execution_id, replay.plugin_execution_id)
+        self.assertEqual(len(repo.writes), 1)
+        self.assertEqual(repo.writes[0]["idempotency_key"],
+                         "plugin-execution:" + str(claim.job_id) + ":2")
+        self.assertEqual(len(repo.events), 1)
+        self.assertEqual(len(audit.events), 1)
 
     def test_stale_claim_and_output_rejection_are_fail_closed(self):
         claim, admission, target = fixtures()

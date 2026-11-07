@@ -470,7 +470,7 @@ class PluginExecutionRow(Base):
                          name="uq_plg_executions__id_request_project"),
         UniqueConstraint("project_id", "idempotency_key",
                          name="uq_plg_executions__project_idempotency"),
-        UniqueConstraint("job_id", name="uq_plg_executions__job"),
+        UniqueConstraint("job_id", "attempt_no", name="uq_plg_executions__job_attempt"),
         ForeignKeyConstraint(
             ["project_id"], ["plm.prj_projects.project_id"],
             name="fk_plg_executions__project", ondelete="NO ACTION"),

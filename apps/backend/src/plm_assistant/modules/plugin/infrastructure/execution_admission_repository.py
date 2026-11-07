@@ -86,10 +86,12 @@ class SqlAlchemyPluginExecutionAdmissionRepository:
 
     def find_by_job(
         self, transaction: object, *, job_id: uuid.UUID,
+        attempt_no: int,
     ) -> PluginExecutionAdmissionSnapshot | None:
         row = self._session(transaction).execute(
             select(PluginExecutionRow).where(
                 PluginExecutionRow.job_id == job_id,
+                PluginExecutionRow.attempt_no == attempt_no,
             ).with_for_update()
         ).scalar_one_or_none()
         if row is None:

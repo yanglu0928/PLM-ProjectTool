@@ -24,10 +24,12 @@ class PluginExecutionSchemaTests(unittest.TestCase):
             "fk_plg_executions__manifest_operation",
             "fk_plg_executions__job",
             "uq_plg_executions__project_idempotency",
+            "uq_plg_executions__job_attempt",
             "ck_plg_executions__operation",
             "ck_plg_executions__state",
             "ck_plg_executions__result_shape",
         }.issubset(constraints))
+        self.assertNotIn("uq_plg_executions__job", constraints)
         self.assertIn(
             "ix_plg_executions__project_state_created",
             {index.name for index in execution.indexes})
