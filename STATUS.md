@@ -1,3 +1,8 @@
+|Execution Note|2026-11-07 Hosted run [42360552157](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42360552157)：Backend全量/wheel、Frontend/build、嵌入式运行时和Windows父包组装成功；A08 PG18在attempt 2时被PluginExecutionStartOwner现有attempt_no==1校验拒绝（PLUGIN_EXECUTION_NOT_STARTABLE），A08未通过。父包PG smoke另因共享migration verifier仍期望schema head 0232、实际0233而失败。两项偏差均已先记CR-EXEC-056，分别修Owner的逐attempt校验及Harness head期望，再Hosted复验；不推断P40失败于产品代码，不标A08通过。仅Hosted D盘，本机/C盘未运行。|
+|Current WBS|PLG-03-A08：修正Start Owner支持有效Job attempt，并更新共享父包migration verifier当前head；分别复跑PG18专项验收。|
+|Current WBS Status|A08代码候选与初轮Backend全量回归通过；A08 PG18 attempt2尚未通过，父包PG smoke受陈旧head断言阻断。偏差和限定修正已记录于CR-EXEC-056。正式trust/Worker/W11/Pilot/Gate/Release未通过。|
+|Next WBS|PLG-03-A08：先扩展Start Owner attempt校验并覆盖单测；更新parent PG migration verifier将current head期望改为20261106_0233（保留有意的旧revision断言），之后Hosted完整复验。|
+
 |Execution Note|2026-11-07 PLG-03-A08首轮Hosted run [42359578240](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42359578240) Backend 4,127项中仅迁移head契约测试失败：实际唯一head已为20261106_0233，但执行的apps/backend/tests/unit/test_migration_contract.py仍断言20261105_0232。根因是先前改到了同名非unit测试文件。已先在CR-EXEC-056登记偏差；仅修正unit测试head/down_revision期望后Hosted重跑，不动迁移/产品逻辑。A08尚未通过，PG18专项验收尚未运行；仅Hosted，未在本机/C盘运行。|
 |Current WBS|PLG-03-A08：完成迁移契约断言修正，重跑Backend全量/wheel与Hosted PG18 retry专项验收。|
 |Current WBS Status|A08实现已推PR分支；首轮Hosted后端发现1个陈旧测试期望，偏差见CR-EXEC-056。PG18 A08专项因后端前置失败而跳过；A08仍未通过，正式Plugin trust/Worker接线/W11/Pilot/Gate/Release未通过。|
