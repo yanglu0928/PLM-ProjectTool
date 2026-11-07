@@ -1,3 +1,8 @@
+|Execution Note|2026-11-07 Hosted run [42365928514](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42365928514)：父包烟测越过PLG-03，推进至P32 OutputArtifact migration verifier；该脚本仍将升级后head断言为0232，聚合检查失败（head/table/既有Job条件未逐项显示），偏差先记CR-EXEC-056，仅修head期望0233并完整复验。Backend/wheel、Frontend、父包组装、A05/A06/A07/A08 PG18和A17 PlanVersion均通过。P40/P25因共享父包PG smoke失败未通过；P25 HTTP/Edge未执行。SUR-07-A08 initdb.exe与未应用TEMP探针同为3221225781，按CR-EXEC-039停止；A08 packaged SurveyVersion受同阻塞影响，不代表PluginExecution A08。|
+|Current WBS|父包PG18迁移验收推进：修复P32 verifier升级后head期望0232→0233，保留其他contract断言。|
+|Current WBS Status|A08 PASS_SCOPE_LIMITED再次通过；A17 packaged PlanVersion通过。P40与P25仍受父包烟测P32聚合断言阻断，P32子验收器当前head疑似过期且需复验其他条件；P25 HTTP/Edge流程未运行。SUR-07-A08为独立已知Windows initdb阻塞，不重复尝试TEMP假设。|
+|Next WBS|更新validation/out-01-a01-p32-output-artifact/verify.py的升级后head期望至20261106_0233；Hosted执行完整父包PG smoke并依据所有标记/断言推进。|
+
 |Execution Note|2026-11-07 Hosted run [42364926754](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42364926754)：PLG-03-A08 PG18与Backend/Frontend通过；父包链在PLG-02拒绝降级后head诊断中未触发断言，说明0233预期下head保持检查通过，关闭该疑点。随后PLG-03 schema verifier源码仍要求head 0232，触发DDL constraints/guards/additive mismatch；先记录后仅改其当前head期望为0233复验。P40/P25未通过；SUR-07-A08仍为initdb与未应用TEMP探针均3221225781，按CR-EXEC-039停止。|
 |Current WBS|父包PG18共享迁移验收脚本更新：PLG-03 schema verifier当前head断言0232→0233。|
 |Current WBS Status|A08 PASS_SCOPE_LIMITED并复验；P40/P25等待全父包PG smoke通过。PLG-02 rollback保护在head=0233时通过；当前父包烟测因PLG-03下游验证器head过期而失败，不代表迁移DDL失败。SUR-07-A08独立环境阻塞，不复用失败TEMP探针。|
