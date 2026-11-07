@@ -1,0 +1,46 @@
+# CR-EXEC-056：PLG-03-A08 PluginExecution 可重试失败与逐 attempt 持久化
+
+- 日期：2026-11-07
+- 阶段/WBS：Phase 2 Platform Core / PLG-03-A08
+- 状态：编码前检查完成；依据持续授权进入实施，Hosted验收未运行
+- 基线：PluginExecution Migration `20261105_0231`、冻结 Data Model Candidate V1、CR-EXEC-050～054、Jobs Lease 与 Output Generation Retry Owner。
+- 类型：在保留各 JobAttempt 与 PluginExecution 历史的前提下，使 Output/Job/Plugin 对暂时性插件失败共享事务并允许下一次独立执行；需要可追溯 DB Schema 修订；不接 Worker/ProcessHost、不实际运行插件。
+
+## 编码前检查
+
+```text
+当前Phase：Phase 2 Platform Core
+当前WBS：PLG-03-A08 可重试失败的事务收敛与逐attempt PluginExecution历史
+输入基线：冻结 PluginExecution 状态模型；CR-EXEC-051 admission、052 hosted验证、053 start Owner、054 non-retryable failure Owner；既有 OutputGenerationRetryOwner/Jobs.retry_or_fail(retryable=true)。
+前置任务：PLG-03-A07 PASS_SCOPE_LIMITED（run 42354245934 / job 128350519897）；同轮 Backend/wheel 与 Frontend/build通过。
+涉及模块：Plugin Execution admission/failure application + repository；Output retry application入口；Jobs Lease Repository；Plugin ORM/Migration/Audit。
+涉及实体：PluginExecution root/event、OutputRequest、Job/Lease/Attempt、Audit。
+涉及API：无。
+涉及权限：仅当前输出Job有效worker/fencing claim；Plugin安装/操作/Project/Output/Context绑定沿用既有Admission校验。
+验收标准：attempt 1 transient failure 原子进入Plugin FAILED(retryable=true)、Output QUEUED、Job RETRY_WAIT，Audit/事件一致；attempt 2有独立PluginExecution root与事件；同attempt重放幂等；attempt耗尽失败关闭；旧fence/错worker/错绑定零写；Audit故障全回滚；Hosted PG18迁移与全量回归通过。
+风险：冻结Migration 0231对PluginExecution设有每Job唯一，Admission只接受attempt 1，幂等键亦只按Job生成；Output retry则允许同一Job产生后续JobAttempt。保持旧Schema会让第二次执行无法记录并破坏逐attempt历史。
+```
+
+## 源码/基线发现
+
+1. PluginExecution 数据模型将它定义为“一次隔离运行”，包含 `attempt_no`；Job拥有多条Attempt历史，OutputRequest关联0..N PluginExecution。
+2. Migration `20261105_0231` 当前以 `UNIQUE(job_id)` 限制每Job仅一个Execution；Admission拒绝 attempt_no != 1，固定幂等键为 `plugin-execution:{job_id}`。
+3. 既有 OutputGenerationRetryOwner 支持冻结错误码、同一Job fence下原子更新Output与Jobs至 RETRY_WAIT/QUEUED 或耗尽FAILED；A07 failure路径目前固定调用不可重试分支。
+4. 因此只添加 `retryable=true` 而复用原Execution行会覆盖“单次运行身份/不可变历史”语义；保留约束则第二次PluginExecution不能持久化。
+
+## 方案比较与选择
+
+- A（不支持插件失败重试）：保持当前约束并把插件失败一律不可重试。改动少，但与通用Output/Jobs重试合同及冻结 attempt 历史语义不一致，暂时性故障只能人工重新生成。
+- B（所选）：按 `(job_id, attempt_no)` 唯一保存单次Execution；迁移移除 `UNIQUE(job_id)` 并加入复合唯一约束；Admission允许有效attempt并按attempt生成幂等键。Plugin retry Owner复用可事务调用的Output retry与Jobs lease接口，固定允许 `OUTPUT_PLUGIN_BUSY`，原子写Output/Job/Lease/Attempt、Plugin FAILED(root/event)与两Owner Audit。每次重试建立新的Execution root，不重写旧Attempt。
+
+选择B，因为它保持 Data Model 的单次运行历史和 JobAttempt/PluginExecution attempt 对应关系，并使用已有Output重试队列与错误码合同；不放宽插件信任或运行权限。
+
+## 影响、迁移、回滚与验证
+
+- Migration `20261105_0232` 只调整 PluginExecution 的 per-job 唯一键；升级不改写现有行。若down时同一Job已有多attempt记录，必须在任何DDL前拒绝降级并保留历史，不得删除数据。
+- 幂等从 `plugin-execution:{job_id}` 改为 `plugin-execution:{job_id}:{attempt_no}`；同Job不同attempt各自独立，同attempt重放返回既有Execution。
+- 回滚移除 retry Owner/transaction wrapper 与新Admission行为，并down Migration；若存在多attempt历史则有意阻止down，须先导出/归档并经独立数据迁移方案处理，不静默丢记录。
+- 单测与Hosted PostgreSQL 18.6验证：0231→0232 upgrade、空库与既有单attempt行、attempt 1/2隔离、同attempt幂等、重试成功排队、attempt耗尽、Audit故障整体回滚、过期/旧fence与绑定错拒绝、down/up、含多attempt时down拒绝。
+- Backend全量/wheel、Frontend/build与 Secret 检查；仅GitHub Hosted Windows Server 2025 D: 临时环境，不运行真实插件/Worker，不使用客户数据或外部服务。
+- 不改API Contract；不宣称 Windows 11、正式trust、Gate 3、Pilot 或 Release 通过。
+

@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-056：PLG-03-A08 Retryable failure 编码前检查）
+- 检查发现现有 PluginExecution 每Job唯一、Admission只接受attempt 1；Jobs/Output允许同Job重试。选择按JobAttempt追加独立Execution root并在共享UoW原子推进Output/Jobs/Plugin的暂时性失败重试。
+- 需要Migration 0232调整唯一约束；down在发现同Job多attempt历史时安全拒绝。先记录差异后实施，Hosted PG18验收待执行；不接Worker/ProcessHost、不执行插件。
+
 ## Unreleased · 2026-11-07（CR-EXEC-054：PLG-03-A07 Hosted PG18验收）
 - PLG-03-A07 以 PASS_SCOPE_LIMITED 完成：Hosted PG18验证 Output/Job/Lease/Attempt/PluginExecution 原子不可重试失败、事件/Audit、Audit失败回滚与无效claim零写拒绝。
 - run [42354245934](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42354245934) 的A07、A05/A06、后端全量/wheel、前端/build、P25/P40/A17/A34/A35/P24/P39/A50均成功。20个Jobs唯一失败为独立A08 initdb 3221225781；按CR-EXEC-039停止TEMP/TMP假设，本轮不标workflow全绿。
