@@ -1,3 +1,8 @@
+|Execution Note|2026-11-07 PLG-03-A08首轮Hosted run [42359578240](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42359578240) Backend 4,127项中仅迁移head契约测试失败：实际唯一head已为20261106_0233，但执行的apps/backend/tests/unit/test_migration_contract.py仍断言20261105_0232。根因是先前改到了同名非unit测试文件。已先在CR-EXEC-056登记偏差；仅修正unit测试head/down_revision期望后Hosted重跑，不动迁移/产品逻辑。A08尚未通过，PG18专项验收尚未运行；仅Hosted，未在本机/C盘运行。|
+|Current WBS|PLG-03-A08：完成迁移契约断言修正，重跑Backend全量/wheel与Hosted PG18 retry专项验收。|
+|Current WBS Status|A08实现已推PR分支；首轮Hosted后端发现1个陈旧测试期望，偏差见CR-EXEC-056。PG18 A08专项因后端前置失败而跳过；A08仍未通过，正式Plugin trust/Worker接线/W11/Pilot/Gate/Release未通过。|
+|Next WBS|PLG-03-A08：修正apps/backend/tests/unit/test_migration_contract.py中唯一head为20261106_0233、down_revision为20261105_0232；Hosted复跑并依据PG18 marker判定。|
+
 |Execution Note|2026-11-07 CR-EXEC-056预提交复核发现0232已被OutputArtifact持久层migration占用；在任何代码变更前将PLG-03-A08迁移编号校正为20261106_0233，down_revision=20261105_0232。既有migration不改动。|
 |Execution Note|2026-11-07 PLG-03-A08编码前检查完成，见CR-EXEC-056。发现0231每Job唯一PluginExecution、Admission attempt仅1，与既有Output/Jobs重试和冻结逐attempt历史不匹配；选择每(job_id,attempt_no)独立Execution与同UoW重试Owner，按持续授权进入实现。迁移拟从0231前进0232，不改API、不接Worker、不执行插件；尚未验收。|
 |Current WBS|PLG-03-A08：按CR-EXEC-056支持暂时性插件失败原子重试，并按JobAttempt保留独立PluginExecution历史。|
