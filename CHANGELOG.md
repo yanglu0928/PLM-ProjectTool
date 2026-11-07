@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（CR-EXEC-050：共享事务 Admission application 入口）
+- 已完成编码前检查，确认 Jobs Lease 与 Output Admission 的 Repository 可用调用方事务，而对应 Application Owner 自行创建事务，阻止未来 PluginExecution admission 原子组合。
+- 下一步仅增加 transaction-scoped Application Interface，保留现有 wrappers；不改API/Schema/Migration，不执行插件、不接Production Worker。
+- 实现及全量测试只在GitHub Hosted Windows runner D盘；本机/C盘不运行项目代码。
+
 ## Unreleased · 2026-11-07（CR-EXEC-049：PLG-03-A03 派发边界检查）
 - 已只读确认 Output Admission、Plugin capability、安装物化、Process Host 与 PluginExecution schema 的接口边界及缺少执行生命周期 Owner；无产品代码/API/Schema/Migration改变，未执行插件。
 - 下一项 PLG-03-A04 实现 owner-controlled Execution admission/state Owner 前先验证 Job fencing/lease 与同事务一致性，Hosted Windows D 盘 PG18 synthetic验收；正式 Publisher trust 为空时 Production Output/Worker继续 fail-closed。
