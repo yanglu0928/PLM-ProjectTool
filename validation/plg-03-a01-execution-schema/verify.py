@@ -123,7 +123,7 @@ def main() -> int:
                 "WHERE n.nspname='plm' AND NOT tg.tgisinternal "
                 "AND t.relname = ANY(:tables)"
             ), {"tables": list(TABLES)}).scalar_one()
-        if (head != "20261105_0232" or not present
+        if (head != "20261106_0233" or not present
                 or after_table_count != existing_table_count + 5
                 or marker_after != marker_before
                 or not REQUIRED_CONSTRAINTS.issubset(constraints) or triggers != 6):
@@ -171,7 +171,7 @@ def main() -> int:
                 {"name": "plm." + name}).scalar_one() for name in TABLES)
             final_head = conn.execute(
                 text("SELECT version_num FROM plm.alembic_version")).scalar_one()
-        if not reup or final_head != "20261105_0232":
+        if not reup or final_head != "20261106_0233":
             raise AssertionError("re-upgrade did not restore PLG03 schema")
 
         print(json.dumps({
