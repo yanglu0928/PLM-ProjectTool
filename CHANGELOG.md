@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-07（Gate 3 当前证据重排；非发行版本）
+
+- 新增GATE-3-A03证据重排：Gate 3保持BLOCKED，Pilot保持NOT_READY。run 42374803790为20/22 jobs成功；PRT完整负载未执行、P95无新值，独立SUR-07-A08 initdb失败；同轮父包PG18/P40仅按范围通过。
+- 正式Publisher/License trust、服务身份与目录ACL、DB credential ref、TLS链未核验；真实Output Create继续失败关闭。历史AI分类48%、精确引用74%不因本次运行更新，新独立留出集证据仍缺。
+- 下一关键路径需要受控Windows 11环境中的真实信任与运行配置。不得传送私钥、密码或客户数据；未配置前不标Pilot/Gate/Release通过。
+
+
 ## Unreleased · 2026-11-07（PRT资源观测器通过、并发负载环境阻断；非发行版本）
 
 - PRT资源观测器在独立GitHub Hosted Windows Server 2025任务中通过定向测试和原生CPU/可用内存采样。完整Prototype 20并发验收在initdb数据目录权限类别处失败，负载未运行、P95无新测量；性能Gate仍FAIL。
