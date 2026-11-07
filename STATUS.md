@@ -3007,4 +3007,5 @@
 
 - 2026-11-04 路线更新：PLG-02-A08已按CR-PLG-013与run 41770188317完成。按CR-EXEC-002继续Output纵向链；A08提供的Plugin Package/Installation/EnabledOperation/RuntimeValidation owner事实使OUT-01-A01-P10之前因“无安装/启用Owner”而转向PLG-02的阻塞条件已变化。登记CR-OUT-008并完成OUT-01-A01-P11编码前检查：实现严格只读能力端口映射，任何缺失/过期/不一致或无正式publisher key均失败关闭。详见`docs/progress/out-01-a01-p11-plugin-operation-capability-precheck.md`。
 - 2026-11-07 PLG-03-A05代码提交6047ce3及锁顺序复核修正ff45e9c；Hosted run [42326604885](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42326604885) Backend 4,105 tests、wheel、frontend/build、same-run package assembly、P25与A17成功。全run非全绿：A08再次在initdb child exit 3221225781（既有CR-EXEC-039已记录TEMP探测同错，未应用）；父包P40在history-ready阶段失败，API仅见login与output-request history请求、无浏览器网络失败，待独立诊断。关键验收缺口：当前4,105测试为应用/Mock单元测试，尚未在PG18调用A05 Owner/Repository/Audit；A05保持进行中，先登记CR-EXEC-052并完成针对性PG18验证。本轮项目源码仅GitHub Hosted Windows Server 2025 D盘运行，本机/C盘未运行。|
-\n- 2026-11-07 CR-EXEC-052 已先记录A05 PG18证据缺口与验证方案；本提交新增独立PG18验收器/job，使用同run受校验父包的PG18，仅合成身份和Output admission port，不调用ProcessHost或生产Worker。本机/C盘未运行。\n
+
+- 2026-11-07 CR-EXEC-052 已先记录A05 PG18证据缺口与验证方案；本提交新增独立PG18验收器/job，使用同run受校验父包的PG18，仅合成身份和Output admission port，不调用ProcessHost或生产Worker。本机/C盘未运行。

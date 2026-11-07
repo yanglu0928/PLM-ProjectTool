@@ -23,7 +23,11 @@ Hosted run [42326604885](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 - 缺口：当前PG18 smoke验证迁移和其他Owners，但没有对新Admission Owner作数据库调用；A05只获得4,105项应用回归，不能替代该证据。
 - 唯一任务：增加独立Windows Hosted D盘 PG18 验收器，并从既有临时PG18 smoke在migration及PLG-03 schema完成后调用。
 - 验收：在独立合成数据库上迁移至当前Head，使用真实SQLAlchemy UoW、Plugin Execution Repository及AuditService；Jobs fencing/Output admission仅注入显式synthetic ports，不伪装为正式信任或客户事实。验证 PENDING root、state event、Audit 同事务持久化；相同绑定重放不增加记录；审计失败整体回滚；invalid attempt/stale claim在零持久化时拒绝；数据库guard关闭时写入仍失败。数据库及临时文件严格归GitHub Hosted runner D盘当前run，清理仅限自有随机数据库和目录。
-- 本验收不得安装/启动/运行插件，不开启Worker，不发客户数据，不加入生产装配。回滚为移除验收器/调用点；无需数据迁移。\n\n## 实施进展\n\n2026-11-07：针对性 Hosted PG18 verifier 与独立 Workflow job 已提交，等待该提交对应的 Windows runner 结果；在结果到达前 PLG-03-A05 不关闭。验证器使用真实 Jobs fencing Repository、Plugin Execution Repository、SQLAlchemy UoW 与 AuditService，Output admission 为明确 synthetic port。
+- 本验收不得安装/启动/运行插件，不开启Worker，不发客户数据，不加入生产装配。回滚为移除验收器/调用点；无需数据迁移。
+
+## 实施进展
+
+2026-11-07：针对性 Hosted PG18 verifier 与独立 Workflow job 已提交，等待该提交对应的 Windows runner 结果；在结果到达前 PLG-03-A05 不关闭。验证器使用真实 Jobs fencing Repository、Plugin Execution Repository、SQLAlchemy UoW 与 AuditService，Output admission 为明确 synthetic port。
 - 前置数据：只合成Project/User/OutputRequest/ContextSnapshot/Plugin package/install/manifest/Job；Publisher trust及用户客户数据均不参与。
 - Secret scan：提交前扫描全部新增/修改文件内容；Hosted Windows runner执行语法、PG18 smoke与后端全量/wheel。
 

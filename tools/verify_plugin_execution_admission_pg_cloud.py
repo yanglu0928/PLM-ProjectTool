@@ -73,6 +73,9 @@ def _seed(engine, *, user_id: uuid.UUID, project_id: uuid.UUID,
     token = 19
     with engine.begin() as conn:
         conn.execute(text(
+            "SELECT set_config('plm.plugin_installation_owner_write','on',true)"
+        ))
+        conn.execute(text(
             "INSERT INTO plm.auth_users (user_id,username_display,username_normalized) "
             "VALUES (:id,'Hosted synthetic admission','hosted_admission_' || :suffix)"
         ), {"id": user_id, "suffix": user_id.hex[:12]})
