@@ -24,9 +24,11 @@ class FakeRepository:
     def __init__(self, facts: OutputJobAdmissionFacts | None) -> None:
         self.facts = facts
         self.calls = 0
+        self.transactions = []
 
     def load(self, transaction, **kwargs):
         self.calls += 1
+        self.transactions.append(transaction)
         return self.facts
 
 
@@ -34,9 +36,11 @@ class FakeCapabilities:
     def __init__(self, value) -> None:
         self.value = value
         self.calls = 0
+        self.transactions = []
 
     def get_operation(self, transaction, *, operation_id):
         self.calls += 1
+        self.transactions.append(transaction)
         return self.value
 
 
@@ -102,6 +106,34 @@ class TestOutputJobAdmission(unittest.TestCase):
         self.assertFalse(hasattr(result, "context_payload"))
         self.assertEqual(repository.calls, 1)
         self.assertEqual(capabilities.calls, 1)
+
+    def test_in_transaction_uses_caller_transaction_without_opening_uow(self) -> None:
+        claim, facts, capability = fixtures()
+        repository = FakeRepository(facts)
+        capabilities = FakeCapabilities(capability)
+        owner = OutputJobExecutionAdmissionOwner(
+            unit_of_work=lambda: (_ for _ in ()).throw(
+                AssertionError("nested UnitOfWork must not be opened")
+            ),
+            repository=repository, plugin_capabilities=capabilities,
+        )
+        transaction = object()
+
+        result = owner.admit_in_transaction(transaction, claim)
+
+        self.assertIs(type(result), OutputExecutionAdmission)
+        self.assertEqual(repository.calls, 1)
+        self.assertEqual(capabilities.calls, 1)
+        self.assertIs(repository.transactions[0], transaction)
+        self.assertIs(capabilities.transactions[0], transaction)
+
+    def test_missing_transaction_fails_before_repository_read(self) -> None:
+        claim, facts, capability = fixtures()
+        owner, repository, capabilities = self.create_owner(facts, capability)
+        with self.assertRaises(OutputJobAdmissionError):
+            owner.admit_in_transaction(None, claim)
+        self.assertEqual(repository.calls, 0)
+        self.assertEqual(capabilities.calls, 0)
 
     def test_invalid_claims_are_rejected_before_repository_read(self) -> None:
         claim, facts, capability = fixtures()

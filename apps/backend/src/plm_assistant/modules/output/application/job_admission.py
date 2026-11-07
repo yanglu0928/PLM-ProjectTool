@@ -80,46 +80,60 @@ class OutputJobExecutionAdmissionOwner:
         self._plugin_capabilities = plugin_capabilities
 
     def admit(self, claim: ClaimedJob) -> OutputExecutionAdmission:
-        request_id, snapshot_id = self._validate_claim(claim)
-        if claim.job_type != "OUTPUT_GENERATE" or claim.scope != "PROJECT":
-            raise OutputJobAdmissionError()
         try:
             with self._unit_of_work() as transaction:
-                facts = self._repository.load(
-                    transaction, project_id=claim.project_id,
-                    output_request_id=request_id, job_id=claim.job_id,
-                    context_snapshot_id=snapshot_id,
-                )
-                if type(facts) is not OutputJobAdmissionFacts:
-                    raise OutputJobAdmissionError()
-                self._validate_facts(facts, claim, request_id, snapshot_id)
-                capability = self._plugin_capabilities.get_operation(
-                    transaction, operation_id=facts.plugin_operation,
-                )
-                if (type(capability) is not PluginOperationCapability
-                        or capability.operation_id != facts.plugin_operation
-                        or capability.enabled is not True
-                        or capability.trusted is not True
-                        or type(capability.output_types) is not tuple
-                        or facts.output_type not in capability.output_types):
-                    raise OutputJobAdmissionError()
-                return OutputExecutionAdmission(
-                    output_request_id=facts.output_request_id,
-                    project_id=facts.project_id,
-                    job_id=facts.job_id,
-                    context_snapshot_id=facts.context_snapshot_id,
-                    output_type=facts.output_type,
-                    template_version_ref=facts.template_version_ref,
-                    source_version_refs=facts.source_version_refs,
-                    output_policy_ref=facts.output_policy_ref,
-                    plugin_operation=facts.plugin_operation,
-                    input_fingerprint=facts.input_fingerprint,
-                    context_fingerprint=facts.context_fingerprint,
-                )
+                return self.admit_in_transaction(transaction, claim)
         except OutputJobAdmissionError:
             raise
         except Exception:
             # The admission boundary never converts unavailable facts into permission.
+            raise OutputJobAdmissionError() from None
+
+    def admit_in_transaction(
+        self, transaction: object, claim: ClaimedJob,
+    ) -> OutputExecutionAdmission:
+        """Read admission facts in the caller's active transaction; never commits."""
+        if transaction is None:
+            raise OutputJobAdmissionError()
+        request_id, snapshot_id = self._validate_claim(claim)
+        if claim.job_type != "OUTPUT_GENERATE" or claim.scope != "PROJECT":
+            raise OutputJobAdmissionError()
+        try:
+            facts = self._repository.load(
+                transaction, project_id=claim.project_id,
+                output_request_id=request_id, job_id=claim.job_id,
+                context_snapshot_id=snapshot_id,
+            )
+            if type(facts) is not OutputJobAdmissionFacts:
+                raise OutputJobAdmissionError()
+            self._validate_facts(facts, claim, request_id, snapshot_id)
+            capability = self._plugin_capabilities.get_operation(
+                transaction, operation_id=facts.plugin_operation,
+            )
+            if (type(capability) is not PluginOperationCapability
+                    or capability.operation_id != facts.plugin_operation
+                    or capability.enabled is not True
+                    or capability.trusted is not True
+                    or type(capability.output_types) is not tuple
+                    or facts.output_type not in capability.output_types):
+                raise OutputJobAdmissionError()
+            return OutputExecutionAdmission(
+                output_request_id=facts.output_request_id,
+                project_id=facts.project_id,
+                job_id=facts.job_id,
+                context_snapshot_id=facts.context_snapshot_id,
+                output_type=facts.output_type,
+                template_version_ref=facts.template_version_ref,
+                source_version_refs=facts.source_version_refs,
+                output_policy_ref=facts.output_policy_ref,
+                plugin_operation=facts.plugin_operation,
+                input_fingerprint=facts.input_fingerprint,
+                context_fingerprint=facts.context_fingerprint,
+            )
+        except OutputJobAdmissionError:
+            raise
+        except Exception:
+            # Missing or malformed owner facts never become permission.
             raise OutputJobAdmissionError() from None
 
     @staticmethod

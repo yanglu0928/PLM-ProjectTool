@@ -28,6 +28,56 @@ class _UnusedRepository:
         raise AssertionError("invalid command reached repository")
 
 
+class _ClaimRepository:
+    def __init__(self, result):
+        self.result = result
+        self.calls = []
+
+    def check_output_claim(self, transaction, **kwargs):
+        self.calls.append((transaction, kwargs))
+        return self.result
+
+
+class JobLeaseTransactionScopeTests(unittest.TestCase):
+    def test_output_claim_can_be_checked_in_the_caller_transaction(self) -> None:
+        expected = ClaimedJob(
+            uuid.uuid4(), "OUTPUT_GENERATE", "PROJECT", uuid.uuid4(),
+            {}, str(uuid.uuid4()), 4, 1,
+        )
+        repository = _ClaimRepository(expected)
+        service = JobLeaseService(
+            unit_of_work=lambda: (_ for _ in ()).throw(
+                AssertionError("nested UnitOfWork must not be opened")
+            ),
+            repository=repository,
+        )
+        transaction = object()
+
+        actual = service.check_output_claim_in_transaction(
+            transaction, job_id=expected.job_id,
+            fencing_token=expected.fencing_token, worker_ref="worker-1",
+        )
+
+        self.assertIs(actual, expected)
+        self.assertEqual(len(repository.calls), 1)
+        self.assertIs(repository.calls[0][0], transaction)
+
+    def test_invalid_transaction_scoped_claim_never_reaches_repository(self) -> None:
+        repository = _ClaimRepository(None)
+        service = JobLeaseService(unit_of_work=lambda: None, repository=repository)
+        for job_id, fencing_token, worker_ref in (
+            (uuid.uuid4(), 1, ""),
+            (uuid.UUID(int=0), 1, "worker-1"),
+            (uuid.uuid4(), 0, "worker-1"),
+        ):
+            with self.subTest(worker=worker_ref, token=fencing_token), self.assertRaises(JobLeaseError):
+                service.check_output_claim_in_transaction(
+                    object(), job_id=job_id, fencing_token=fencing_token,
+                    worker_ref=worker_ref,
+                )
+        self.assertEqual(repository.calls, [])
+
+
 class JobLeaseValidationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.service = JobLeaseService(unit_of_work=lambda: None,

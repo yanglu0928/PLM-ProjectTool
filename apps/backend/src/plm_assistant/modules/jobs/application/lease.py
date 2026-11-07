@@ -191,20 +191,33 @@ class JobLeaseService:
 
     def check_output_claim(self, *, job_id: uuid.UUID, fencing_token: int,
                            worker_ref: str) -> ClaimedJob:
+        with self._unit_of_work() as tx:
+            result = self.check_output_claim_in_transaction(
+                tx, job_id=job_id, fencing_token=fencing_token,
+                worker_ref=worker_ref,
+            )
+            tx.commit()
+            return result
+
+    def check_output_claim_in_transaction(
+        self, transaction: object, *, job_id: uuid.UUID,
+        fencing_token: int, worker_ref: str,
+    ) -> ClaimedJob:
+        """Validate a live output claim inside the caller's active transaction."""
         self._validate_worker(worker_ref)
+        if transaction is None:
+            raise JobLeaseError("INCONSISTENT_LEASE")
         if type(job_id) is not uuid.UUID or not job_id.int:
             raise JobLeaseError("INVALID_JOB_ID")
         if type(fencing_token) is not int or fencing_token < 1:
             raise JobLeaseError("INVALID_FENCING_TOKEN")
-        with self._unit_of_work() as tx:
-            result = self._repository.check_output_claim(
-                tx, job_id=job_id, fencing_token=fencing_token,
-                worker_ref=worker_ref,
-            )
-            if type(result) is not ClaimedJob:
-                raise JobLeaseError("INCONSISTENT_LEASE")
-            tx.commit()
-            return result
+        result = self._repository.check_output_claim(
+            transaction, job_id=job_id, fencing_token=fencing_token,
+            worker_ref=worker_ref,
+        )
+        if type(result) is not ClaimedJob:
+            raise JobLeaseError("INCONSISTENT_LEASE")
+        return result
 
     def heartbeat(self, *, job_id: uuid.UUID, fencing_token: int,
                   worker_ref: str, lease_seconds: int) -> None:
