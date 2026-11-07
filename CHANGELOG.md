@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（CR-EXEC-053：PLG-03-A06 PENDING→RUNNING）
+- PLG-03-A06 PASS_SCOPE_LIMITED：有效Job fencing下，PluginExecution状态/事件/Audit同一PG18 UoW原子写；Audit故障回滚；精确输出请求/上下文绑定，重放与失效claim拒绝验证通过。
+- Hosted run [42348507961](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42348507961) Backend/wheel、Frontend/build、P40、A34、A06通过；A08仍因initdb 3221225781独立失败。无插件/Worker/API/Schema/Migration，不能宣称Pilot或Release通过。
+- 下一项 PLG-03-A07 先处理不可重试 PluginExecution failure 与 Output/Jobs 的同事务终态。
+
 ## Unreleased · 2026-11-07（CR-EXEC-053：PLG-03-A06 PluginExecution PENDING→RUNNING）
 - 已同步事务状态Owner、SQLAlchemy Repository、单元测试及独立父包PG18 Hosted验收Job；使用有效Jobs fencing并精确绑定OutputRequest/ContextSnapshot，同事务写Execution、状态事件与Audit，重放不重复写。
 - 当前仅已提交，GitHub Hosted验收待运行；不执行插件、不接Worker/ProcessHost，API/Schema/Migration不变。Pilot/Gate/Release不受影响。

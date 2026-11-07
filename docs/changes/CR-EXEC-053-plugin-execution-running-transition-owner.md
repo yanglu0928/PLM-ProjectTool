@@ -1,7 +1,7 @@
 # CR-EXEC-053：PLG-03-A06 PluginExecution RUNNING transition Owner
 
 - 日期：2026-11-07
-- 状态：实现与验收器已同步到功能分支；GitHub Hosted PG18/全量验收待完成，不标PASS
+- 状态：PLG-03-A06 PASS_SCOPE_LIMITED；真实PG18.6与Backend全量/wheel均通过，限制见验收记录
 - 阶段/WBS：Phase 2 Platform Core / PLG-03-A06
 - 基线：Gate 2冻结PluginExecution Schema/Migration 20261105_0231；PLG-03-A05 / CR-EXEC-051/052；Jobs/Audit Application contracts。
 - 变更级别：在既有冻结状态模型内新增内部状态Owner，不改冻结Schema、Migration、API、默认组合或Worker/ProcessHost装配。
@@ -58,3 +58,10 @@
 - A06 Job 在下载同轮候选包步骤停止；日志显示 artifact 名称被按字面值解析为 `plm-windows-parent-candidate-${ github.sha }`，因此未找到产物。PG18未启动，A06 Owner/Verifier均未执行，不能据此判定实现通过或失败。
 - 根因是新增 workflow YAML 内表达式少了一层花括号。修复仅把该Job三个 artifact 名/path表达式恢复为标准 `${{ github.* }}`；不改产品代码、验收项、包内容或路径策略。
 - 下轮重新运行同一托管流程；Secret仍只扫描、不输出匹配内容。本机/C盘无项目代码运行。
+
+## 最终验收（2026-11-07）
+
+- GitHub Hosted run [42348507961](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42348507961)，A06 job [128333157541](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42348507961)：父包内PostgreSQL 18.6临时实例、真实SQLAlchemy UoW通过。首调原子提交PENDING→RUNNING、started_at、lock_version、状态事件和Audit；Audit失败回滚root/event；RUNNING重放changed=false且无重复；stale fencing、错worker、错OutputRequest/Context、attempt 2和终态均零状态/事件/Audit写。
+- Backend全量/wheel job 128331413371 与Frontend/build job 128331413374成功；P40 live Edge/PG18 job 128333157509和A34离线替换/手动恢复job 128333728484成功。整run唯一失败是A08 job 128333408803：initdb及TEMP/TMP对照均3221225781，环境未应用；A08维持NOT_PASSED，按CR-EXEC-039停止该假设。
+- 结论仅 PASS_SCOPE_LIMITED：无插件子进程、Worker、客户数据、外部调用或生产信任；没有API/Schema/Migration变化，未接默认/生产组合。不能推定Win11实机、Gate 3、Pilot或正式Release通过。
+- A06实现commit所在分支及workflow均为GitHub Hosted；Secret模式扫描为0命中，项目代码未在用户本机/C盘执行。
