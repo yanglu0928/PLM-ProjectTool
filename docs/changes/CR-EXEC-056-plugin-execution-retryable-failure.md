@@ -1,4 +1,12 @@
 
+## 第三轮 Hosted verifier 发现与修正计划（2026-11-07）
+
+- Hosted run [42361605909](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42361605909) 中Backend全量/wheel、Frontend/build、运行时与父包组装再次通过；A06/A05/A07专项通过。A08已成功执行attempt 1重试排队、down/up、attempt 2独立RUNNING、耗尽失败及多attempt历史保留，最后读取迁移版本表时因验证器SQL使用未限定的 `alembic_version`（实际位于 `plm.alembic_version`）触发UndefinedTable。属于验收器后置断言缺陷，A08仍未关闭。
+- 修正仅将A08验证器该查询限定为 `plm.alembic_version`；不变更数据库/schema/业务代码或A08验收标准。
+- 同run共享父包PG smoke已通过OUT head检查，但深入PLG-01 package schema verifier后发现其 `HEAD` 常量仍写0232，导致staging数据库当前revision 0233被拒绝。修正仅将该验证器的当前head常量更新为0233，保留历史版本路径/数据与迁移断言。
+- 两处脚本偏差修复后复跑Backend及父包PG smoke、A08 PG18；在专用marker出现前A08、P40不标通过。本机/C盘未运行代码。
+
+
 ## 第二轮 Hosted PG18 偏差与修正计划（2026-11-07）
 
 - Hosted run [42360552157](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42360552157) 的Backend全量/wheel、Frontend/build、运行时和父包组装成功；A08专项未通过，父包PG smoke也未通过。不得以全量单测通过代替两个专项验收。
