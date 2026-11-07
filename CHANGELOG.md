@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（PLG-03-A08复验通过；PLG-02 rollback head待查）
+- Hosted run [42363588328](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42363588328) A08 job 128378836416成功；A17 packaged PlanVersion成功；Backend/wheel、Frontend/build、PG18/runtime和父包组装成功。
+- P40父包PG smoke在PLG-02禁止降级后head核对失败。将expected head从0232改为0233仍复现，故旧常量不是充分根因；实际revision未打印。先记录后加受限诊断，再判断Alembic部分降级语义或产品回滚行为，不放松保护。
+- SUR-07-A08仍为initdb.exe 3221225781；TEMP探针同码且未应用。依CR-EXEC-039停用该环境路径。
+
+
 ## Unreleased · 2026-11-07（PLG-03-A08 PASS_SCOPE_LIMITED）
 - GitHub Hosted run [42362550450](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42362550450) job 128375724422输出 `PLG_03_A08_PG18_PASS`。PG18.6验证按attempt的独立PluginExecution、原子暂态重试/耗尽、idempotency与事件历史、Audit失败整体回滚、fencing负例、多attempt安全阻止down及单attempt迁移往返。
 - Backend全量/wheel、Frontend/build及A05/A06/A07同轮通过；Windows内嵌父包组装成功。A08为PASS_SCOPE_LIMITED，非正式插件信任/Worker/发行能力。
