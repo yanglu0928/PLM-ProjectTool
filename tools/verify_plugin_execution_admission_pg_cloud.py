@@ -61,8 +61,14 @@ def _checked(args: list[str], timeout: int = 180) -> str:
     result = subprocess.run(args, capture_output=True, text=True, encoding="utf-8",
                             errors="replace", timeout=timeout, check=False)
     if result.returncode:
-        detail = (result.stderr or result.stdout)[-2000:]
-        raise RuntimeError("hosted PostgreSQL command failed: " + detail)
+        child = Path(args[0]).name.casefold() if args else ""
+        if child not in {"initdb.exe", "pg_ctl.exe", "psql.exe"}:
+            child = "other"
+        detail = (result.stderr or result.stdout)[-2000:] or "no_output"
+        raise RuntimeError(
+            f"hosted PostgreSQL command failed child={child}; "
+            f"exit={result.returncode}; detail={detail}"
+        )
     return result.stdout.strip()
 
 
