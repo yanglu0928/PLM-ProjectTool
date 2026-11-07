@@ -1,4 +1,12 @@
 
+## 父包迁移验收推进至 P32（2026-11-07）
+
+- Hosted run [42365928514](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42365928514) 的PLG-03当前head断言更新后，父包smoke继续推进到 `validation/out-01-a01-p32-output-artifact/verify.py`；Backend/wheel、Frontend/build、父包组装、A05/A06/A07/A08独立PG18、A17 packaged PlanVersion均成功。
+- P32 的聚合断言 `head != 20261105_0232 or not present or old_job != 1` 失败。新迁移后当前head应为0233，而该旧验收器仍期望0232；该条件还包含表存在/既有synthetic Job保留，失败摘要未逐项报告，暂不宣称只是head问题。
+- 修正计划仅将该断言中升级后的当前head期望由0232更新为0233，保留pre_head=0231、既有Job保留、表/约束/触发器及后续降级/重升级全部验收，再由Hosted smoke确认其余条件。
+- 同run P40/P25共享父包PG smoke失败，P25 HTTP/Edge步骤因此跳过；P40/P25未通过。SUR-07-A08仍为Known Blocked: initdb.exe 3221225781，TEMP探针同码且未应用，按CR-EXEC-039停止；A08 packaged SurveyVersion同环境失败，不与A08 PluginExecution WBS混淆。A17 packaged PlanVersion通过。
+
+
 ## PLG-02 head 诊断关闭，PLG-03 当前 head 断言遗漏（2026-11-07）
 
 - Hosted run [42364926754](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42364926754) 中新增诊断断言没有再触发；PG smoke越过PLG-02 A08 downgrade-refusal head检查并进入PLG-03 execution schema verifier。因此PLG-02在期待0233下的head保留检查已通过，先前“仍需诊断/可能回滚原子性问题”判断据此关闭，不再修改PLG-02保护逻辑。
