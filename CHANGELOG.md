@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-07（CR-EXEC-046：PLG-03-A01 JSON-RPC 子进程 Host）
+
+- 新增最小进程传输层与 7 项单测，覆盖 JSON-RPC 单请求/单响应、包入口边界、环境过滤、敏感参数拒绝、错误脱敏、超时、输出/请求上限、崩溃及工作目录清理；不接生产 Output，不执行真实插件。
+- GitHub Hosted Windows Server 2025 run [42315760138](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42315760138)：后端 4,094 项测试、Plugin ceremony 5 项、wheel、前后端构建、PG18 父包及 A17/P25/P40/A34 等验证通过。17 jobs 中 16 成功；唯一失败是 SUR-07-A08 的 initdb 3221225781。其 TEMP 环境只读探测同错，未应用替代值，按 CR-EXEC-039 停止该排查路线。
+- 本项为 `PASS_SCOPE_LIMITED`：只证明 Hosted 合成子进程传输，不代表插件信任、生产接线、Windows 11 实机、Pilot、Gate 或 Release。
+- Secret 扫描顺序出现偏差：代码提交 `60a9e2e` 后才补扫两份新增文件，0 命中且未发现/外发秘密；详见 CR-EXEC-047。项目代码只在 GitHub Hosted D 盘运行。
+
 ## Unreleased · 2026-11-07（CR-EXEC-045：真实 PlanVersion 状态门 fail-closed）
 
 - OUT-01-A01-P46在Hosted A17同run PG18中通过：真实IN_REVIEW PlanVersion经生产FixedOutputSourceAdapter、内置不可变模板与仅APPROVED策略、真实TrustedOutputContextResolver及OutputRequestService，状态门返回VALIDATION_FAILED；六类Output持久化计数不变，Plan Owner实际读取1次，plugin execution=0。
