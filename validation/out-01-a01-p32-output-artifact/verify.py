@@ -125,7 +125,7 @@ def main() -> int:
                 "JOIN pg_catalog.pg_class c ON c.oid=t.tgrelid "
                 "WHERE NOT t.tgisinternal AND c.relnamespace='plm'::regnamespace"
             )).scalars())
-        if head != "20261105_0232" or not present or old_job != 1:
+        if head != "20261106_0233" or not present or old_job != 1:
             raise AssertionError("P32 upgrade failed or changed existing synthetic data")
         if not REQUIRED_CONSTRAINTS <= constraints:
             raise AssertionError("P32 required constraints missing")
@@ -204,7 +204,7 @@ def main() -> int:
             old_job_after = conn.execute(text(
                 "SELECT count(*) FROM plm.job_jobs WHERE job_id=:job"
             ), {"job":job_id}).scalar_one()
-        if reup != "20261105_0232" or old_job_after != 1:
+        if reup != "20261106_0233" or old_job_after != 1:
             raise AssertionError("re-upgrade failed or altered existing data")
 
         # Isolated adversarial trigger fixture: RI is bypassed solely to
@@ -290,12 +290,12 @@ def main() -> int:
             retained_job = conn.execute(text(
                 "SELECT count(*) FROM plm.job_jobs WHERE job_id=:job"
             ), {"job":job_id}).scalar_one()
-        if retained_head != "20261105_0232" or tuple(counts)!=(1,4) or retained_job!=1:
+        if retained_head != "20261106_0233" or tuple(counts)!=(1,4) or retained_job!=1:
             raise AssertionError("history refusal changed rows or migration head")
 
         print(json.dumps({
             "status":"PASS_SCOPE_LIMITED",
-            "migration_revision":"20261105_0232",
+            "migration_revision":"20261106_0233",
             "empty_database_upgrade":"PASS",
             "existing_synthetic_data_upgrade":"PASS",
             "empty_database_downgrade_reupgrade":"PASS",
