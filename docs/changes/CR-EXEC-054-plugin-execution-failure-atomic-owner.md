@@ -2,7 +2,7 @@
 
 - 日期：2026-11-07
 - 阶段/WBS：Phase 2 Platform Core / PLG-03-A07
-- 状态：编码前检查完成；实施与Hosted PG18验收待执行
+- 状态：PASS_SCOPE_LIMITED（2026-11-07，GitHub Hosted PG18.6专项验收通过；整轮workflow因独立A08失败未全绿）
 - 基线：冻结 PluginExecution Schema/Migration 20261105_0231；CR-EXEC-051/052/053；CR-OUT-026；Jobs Lease 与 Output failure contracts。
 - 类型：为PluginExecution的不可重试失败补齐跨Owner共享UoW衔接；不改Schema/Migration/API/默认组合，不接Worker/ProcessHost。
 
@@ -51,3 +51,10 @@
 - `OutputGenerationStartOwner` and `OutputGenerationFailureOwner` consume the transaction-scoped `check_output_claim(transaction, ...)` / `retry_or_fail(transaction, ...)` port. The verifier passed `JobLeaseService`, whose public methods open their own UoW and do not accept a transaction argument; the resulting TypeError is intentionally normalized to OUTPUT_START_NOT_ELIGIBLE. P30's passing harness passes `SqlAlchemyJobLeaseRepository` directly.
 - The manual claim itself is not shown invalid: PLG-03-A06 already used the same `_seed` plus canonical UUID claim shape and the live Job lease proof passed. The earlier proposal to replace it with a second Jobs claim API is therefore superseded.
 - Correction: instantiate one `SqlAlchemyJobLeaseRepository`; pass that repository to Output start/failure Owners, and retain `JobLeaseService` for Plugin admission/start Owners that require transaction-scoped Application methods. No Output/Jobs/Plugin contract or validation is loosened. Then rerun from a fresh hosted PG18 fixture.
+
+## 第三轮 Hosted PG18验收结果（2026-11-07）
+
+- run [42354245934](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42354245934)，A07 job 128350519897成功输出 `PLG_03_A07_PG18_PASS`，结论 `PASS_SCOPE_LIMITED`。同轮验证了Output/Job/Lease/Attempt/PluginExecution原子失败、事件和Audit、Audit失败整体回滚，以及stale fencing/错误worker/错绑/非白名单码零写拒绝。
+- Backend全量测试与wheel、Frontend测试/build、A05/A06、P25/P40、A17、A34/A35、P24/P39/A50等作业成功；20个Jobs中19成功。唯一失败是独立SUR-07-A08，`initdb.exe`退出3221225781，TEMP/TMP只读探针同码、未应用替代环境且无业务marker。按CR-EXEC-039停止该假设路线；本workflow不能标全绿。
+- 无API/Schema/Migration/Worker/ProcessHost变化，未执行插件、客户数据或外部调用；本机/C盘未运行。Windows 11实机、正式trust、Gate 3、Pilot和正式Release未通过。
+- 结果详见 [PLG-03-A07 Hosted验收结果](../progress/plg-03-a07-result.md)。首轮和第二轮仅为Harness错误，不构成业务Owner失败结论，历史偏差记录保留。

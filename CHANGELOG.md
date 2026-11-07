@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（CR-EXEC-054：PLG-03-A07 Hosted PG18验收）
+- PLG-03-A07 以 PASS_SCOPE_LIMITED 完成：Hosted PG18验证 Output/Job/Lease/Attempt/PluginExecution 原子不可重试失败、事件/Audit、Audit失败回滚与无效claim零写拒绝。
+- run [42354245934](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42354245934) 的A07、A05/A06、后端全量/wheel、前端/build、P25/P40/A17/A34/A35/P24/P39/A50均成功。20个Jobs唯一失败为独立A08 initdb 3221225781；按CR-EXEC-039停止TEMP/TMP假设，本轮不标workflow全绿。
+- 无API/Schema/Migration/Worker/ProcessHost变化；未执行插件、未用客户数据、本机/C盘未运行。详见 `docs/progress/plg-03-a07-result.md`。
+
 ## Unreleased · 2026-11-07（CR-EXEC-054：A07 Harness port 对齐）
 - 只读定位 Output start/failure Owner 要求事务内 Lease Repository，Harness误传了会另开UoW的JobLeaseService；P30已通过的Harness直接用Repository。已记录并仅修验收器依赖组合，不改claim或产品校验。
 - A07等待重跑，仍未通过。
