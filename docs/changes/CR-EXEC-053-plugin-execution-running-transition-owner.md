@@ -1,7 +1,7 @@
 # CR-EXEC-053：PLG-03-A06 PluginExecution RUNNING transition Owner
 
 - 日期：2026-11-07
-- 状态：编码前检查完成；待实现与 GitHub Hosted PG18 验收
+- 状态：实现与验收器已同步到功能分支；GitHub Hosted PG18/全量验收待完成，不标PASS
 - 阶段/WBS：Phase 2 Platform Core / PLG-03-A06
 - 基线：Gate 2冻结PluginExecution Schema/Migration 20261105_0231；PLG-03-A05 / CR-EXEC-051/052；Jobs/Audit Application contracts。
 - 变更级别：在既有冻结状态模型内新增内部状态Owner，不改冻结Schema、Migration、API、默认组合或Worker/ProcessHost装配。
@@ -32,3 +32,10 @@
 ## 持续限制
 
 真实Worker身份映射、fencing恢复/重试、SUCCEEDED/FAILED/CANCELLED终态、API、实际插件执行、正式信任及Pilot/Gate/Release均不在本WBS内，维持未完成。A08 packaged flow仍为独立阻塞，不因本任务变更或推定通过。
+
+## 实现同步（2026-11-07）
+
+- 新增 `execution_start.py` 事务Owner与 `execution_start_repository.py`，按Jobs租约→Execution行锁顺序校验；首次转换更新状态/started_at/lock_version，并在同一UoW追加状态事件和Audit。
+- RUNNING重放返回`changed=false`，不重复事件或Audit；终态、不匹配/过期fencing与Audit异常走固定拒绝。
+- 新增单元测试和 `tools/verify_plugin_execution_start_pg_cloud.py`，并新增Hosted Windows Server 2025 PG18验收Job。仅合成数据。
+- 生产调用/Worker/ProcessHost均未接线；代码和新测试尚未由Hosted workflow执行，任务保持Incomplete直到取得结果。

@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-053：PLG-03-A06 PluginExecution PENDING→RUNNING）
+- 已同步事务状态Owner、SQLAlchemy Repository、单元测试及独立父包PG18 Hosted验收Job；使用有效Jobs fencing，同事务写Execution、状态事件与Audit，重放不重复写。
+- 当前仅已提交，GitHub Hosted验收待运行；不执行插件、不接Worker/ProcessHost，API/Schema/Migration不变。Pilot/Gate/Release不受影响。
+
 ## Unreleased · 2026-11-07（CR-EXEC-051：PluginExecution Admission Owner）
 - 已完成编码前检查，下一项在同一 UoW 内复核 Jobs fencing、Output admission 与 Plugin 安装身份，并按 owner-write GUC 创建初始 PENDING root/state event/Audit。
 - 本 WBS 仅接受 attempt 1；attempt>1、真实插件执行和 Production Worker wiring 留后续任务。正式 Publisher trust 为空期间继续 fail closed。
