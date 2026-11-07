@@ -77,17 +77,66 @@ class _Tree:
         k.SetInformationJobObject.argtypes=[wintypes.HANDLE,ctypes.c_int,ctypes.c_void_p,wintypes.DWORD]; k.SetInformationJobObject.restype=wintypes.BOOL
         k.OpenProcess.argtypes=[wintypes.DWORD,wintypes.BOOL,wintypes.DWORD]; k.OpenProcess.restype=wintypes.HANDLE
         k.AssignProcessToJobObject.argtypes=[wintypes.HANDLE,wintypes.HANDLE]; k.AssignProcessToJobObject.restype=wintypes.BOOL
+        k.TerminateJobObject.argtypes=[wintypes.HANDLE,wintypes.UINT]; k.TerminateJobObject.restype=wintypes.BOOL
         k.CloseHandle.argtypes=[wintypes.HANDLE]; k.CloseHandle.restype=wintypes.BOOL
         job=k.CreateJobObjectW(None,None)
         if not job: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
-        limits=Extended(); limits.basic.flags=0x2000
-        ok=k.SetInformationJobObject(job,9,ctypes.byref(limits),ctypes.sizeof(limits))
-        ph=k.OpenProcess(0x0100|0x0001,False,proc.pid)
-        attached=bool(ok and ph and k.AssignProcessToJobObject(job,ph))
-        if ph: k.CloseHandle(ph)
-        if not attached:
-            k.CloseHandle(job); raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
         self.k,self.job=k,job
+        try:
+            limits=Extended(); limits.basic.flags=0x2000
+            if not k.SetInformationJobObject(job,9,ctypes.byref(limits),ctypes.sizeof(limits)):
+                raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
+            ph=k.OpenProcess(0x0100|0x0001,False,proc.pid)
+            attached=bool(ph and k.AssignProcessToJobObject(job,ph))
+            if ph: k.CloseHandle(ph)
+            if not attached: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
+            self._resume_primary_thread(proc.pid)
+        except PluginProcessHostError:
+            self._close_windows_job(); raise
+        except Exception:
+            self._close_windows_job()
+            raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED") from None
+    def _resume_primary_thread(self,pid):
+        from ctypes import wintypes
+        class ThreadEntry(ctypes.Structure):
+            _fields_=[("dwSize",wintypes.DWORD),("cntUsage",wintypes.DWORD),
+                      ("th32ThreadID",wintypes.DWORD),("th32OwnerProcessID",wintypes.DWORD),
+                      ("tpBasePri",wintypes.LONG),("tpDeltaPri",wintypes.LONG),("dwFlags",wintypes.DWORD)]
+        k=self.k
+        k.CreateToolhelp32Snapshot.argtypes=[wintypes.DWORD,wintypes.DWORD]
+        k.CreateToolhelp32Snapshot.restype=wintypes.HANDLE
+        k.Thread32First.argtypes=[wintypes.HANDLE,ctypes.POINTER(ThreadEntry)]
+        k.Thread32First.restype=wintypes.BOOL
+        k.Thread32Next.argtypes=[wintypes.HANDLE,ctypes.POINTER(ThreadEntry)]
+        k.Thread32Next.restype=wintypes.BOOL
+        k.OpenThread.argtypes=[wintypes.DWORD,wintypes.BOOL,wintypes.DWORD]
+        k.OpenThread.restype=wintypes.HANDLE
+        k.ResumeThread.argtypes=[wintypes.HANDLE]; k.ResumeThread.restype=wintypes.DWORD
+        snapshot=k.CreateToolhelp32Snapshot(0x00000004,0)
+        if not snapshot or snapshot==ctypes.c_void_p(-1).value:
+            raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
+        thread=None
+        try:
+            entry=ThreadEntry(); entry.dwSize=ctypes.sizeof(ThreadEntry)
+            found=k.Thread32First(snapshot,ctypes.byref(entry))
+            thread_id=None
+            while found:
+                if entry.th32OwnerProcessID==pid:
+                    thread_id=entry.th32ThreadID; break
+                found=k.Thread32Next(snapshot,ctypes.byref(entry))
+            if thread_id is None: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
+            thread=k.OpenThread(0x0002,False,thread_id)
+            if not thread: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
+            if k.ResumeThread(thread)!=1:
+                raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
+        finally:
+            if thread: k.CloseHandle(thread)
+            k.CloseHandle(snapshot)
+    def _close_windows_job(self):
+        if self.job:
+            try: self.k.TerminateJobObject(self.job,1)
+            finally:
+                self.k.CloseHandle(self.job); self.job=None
     def terminate(self):
         if self.job: self.k.TerminateJobObject(self.job,1)
         elif os.name=="posix":
@@ -142,7 +191,7 @@ class PluginProcessHost:
                 except OSError: pass
         try:
             flags=0; kwargs={}
-            if os.name=="nt": flags=getattr(subprocess,"CREATE_NO_WINDOW",0)|getattr(subprocess,"CREATE_NEW_PROCESS_GROUP",0)
+            if os.name=="nt": flags=getattr(subprocess,"CREATE_NO_WINDOW",0)|getattr(subprocess,"CREATE_NEW_PROCESS_GROUP",0)|getattr(subprocess,"CREATE_SUSPENDED",0)
             elif os.name=="posix": kwargs["start_new_session"]=True
             env={k:v for k,v in os.environ.items() if k.upper() in SAFE_ENV and type(v) is str}
             env.update({"TEMP":str(work),"TMP":str(work),"PYTHONIOENCODING":"utf-8","PYTHONUTF8":"1",
