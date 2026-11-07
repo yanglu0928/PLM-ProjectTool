@@ -66,3 +66,32 @@ P38和P39分别通过了服务端持久层/内容流与浏览器下载保存，�
 - 独立 A17 packaged PlanVersion/HTTPS/PG job 失败：包装服务在 /health/ready 前退出，现有日志只给出 stderr unavailable，未获得安全、可诊断的子进程退出原因。A17 不通过；这不是 P40 失败，也没有证据能推断产品具体启动根因。
 - 下一项单一问题：为 A17 Hosted harness 安全捕获并输出子进程退出码及有界、脱敏 stderr 诊断，然后重跑当前独立 A17 流程。不得输出凭据、请求头、正文、客户数据或私钥；若发现真实产品问题再单独记录并修复。
 - A34 limited 结果维持其边界：只验证合成包的替换、隔离/恢复标记保全和显式人工恢复；验证期间没有启动服务，legal_clearance=false，不代表生产升级/回滚获准。
+
+
+## PLG-03-A06 编码前检查（2026-11-07）
+
+```text
+当前Phase：Phase 2 Platform Core
+当前WBS：PLG-03-A06 PluginExecution PENDING→RUNNING transition Owner
+输入基线：冻结 PluginExecution ORM/Migration 20261105_0231；PLG-03-A05 admission Owner/CR-EXEC-052；JobLeaseService.check_output_claim_in_transaction；AuditService 与 append-only state event。
+前置任务：PLG-03-A05 Hosted PG18 专项 PASS_SCOPE_LIMITED（run 42344966652）；jobs、Output admission与PluginExecution持久化前置已完成。
+涉及模块：Plugin application/infrastructure；Jobs/Audit仅复用同一调用方UoW。
+涉及实体：Job/Lease claim、PluginExecution root、PluginExecutionStateEvent、Audit。
+涉及API：无，不改冻结API Contract。
+涉及权限：仅当前 OUTPUT_GENERATE、PROJECT、attempt 1 且项目/Job/claim完全匹配的有效worker fencing claim；Actor保持UNRESOLVED，不伪造服务账号。
+验收标准：同一事务先校验当前lease，再锁定Execution；PENDING可原子转RUNNING并写started_at/lock_version、RUNNING事件与Audit；事务失败整体回滚。有效重放返回 changed=false 且不重复事件/Audit；过期/错误fencing、Job/项目/attempt不匹配和非PENDING终态拒绝且零写。Hosted PG18合成验收、后端全量测试与wheel通过。
+风险：Schema不持久化Worker fencing token；Owner仅返回是否由本调用实际改态，调用方只有changed=true才能继续后续动作。当前无调用方/Worker接线，A06绝不启动ProcessHost或插件，也不视为执行成功；如Hosted证明该契约不足，先记录再停止本WBS，不擅改Schema。
+```
+
+### 决策、边界与回滚
+
+- 锁顺序为 Jobs lease proof → PluginExecution root，避免在本WBS中反向取得Jobs锁；不调用Output Owner，也不增加跨模块Repository直调。
+- 首次 transition 使用当前 claim 的 job_id/project_id/attempt_no校验Execution归属；DB owner GUC仅在全部事实核对后、同一事务中短暂开启。state event与Audit同UoW提交。
+- RUNNING精确重放只报告changed=false，不写任何状态、事件或审计；任何终态均不在A06处理。结果完成/失败/取消、retry、worker认证/身份映射、API与ProcessHost均留待后续独立WBS。
+- 风险：任何调度层若忽略changed=false可能重复执行。因此当前无production consumer；未来接线前必须有单独WBS和验收证明消费规则。
+- 回滚：仅移除A06 Owner/repository/tests/verifier及其workflow步骤；无Schema/Migration/API/生产接线与业务数据变更。
+- 验证：GitHub Hosted Windows Server 2025 D盘合成PG18；先新增单元测试与专项PG18事务/回滚/owner-guard verifier，再跑现有全量Hosted链。Secret扫描必须0命中；不在用户本机/C盘运行代码。
+
+### 前置链状态修正（2026-11-07）
+
+run [42344966652](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42344966652)中P40 live Edge下载与PG18父包smoke、A05 Admission Owner、A34包替换/人工恢复演练成功；整run仅A08失败。上一轮P40在`history-ready`阶段无summary，随后相同代码/流程在本run成功，按单次Hosted失败作为间歇性Harness/Edge事件保留，不据此改生产逻辑。A08 0xC0000135状态及 Pilot 限制保持原样。
