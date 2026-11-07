@@ -106,3 +106,11 @@
 - Backend全量/wheel、Frontend/build与 Secret 检查；仅GitHub Hosted Windows Server 2025 D: 临时环境，不运行真实插件/Worker，不使用客户数据或外部服务。
 - 不改API Contract；不宣称 Windows 11、正式trust、Gate 3、Pilot 或 Release 通过。
 
+
+
+## 2026-11-07 最终 Hosted 验收记录
+
+|Execution Note|2026-11-07 Hosted run [42367135854](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42367135854)：PLG-03-A08 PG18、Backend全量/wheel、Frontend/build、父包组装与PG18 smoke、P40 Edge下载、P25受信任失败关闭路径、A17、A34/A35均以各自限定范围通过。P40父包摘要保留正式公钥/License trust、DB credential ref、服务ACL/TLS阻断，Output Create仍拒绝未信任Publisher/空manifest；无产品服务、插件或客户数据。唯一失败job为独立SUR-07-A08 packaged SurveyVersion，initdb.exe 0xC0000135/3221225781；依CR-EXEC-039不复用TEMP假设，不代表已关闭的PLG-03-A08。整体Workflow非全绿。仅GitHub Hosted Windows Server 2025 D盘合成环境，本机/C盘未运行项目代码。|
+
+- A08专项标记 PLG_03_A08_PG18_PASS，结论 PASS_SCOPE_LIMITED；attempt1暂态重试、attempt2独立Execution、尝试耗尽、历史保留、down/up/多attempt降级保护、事件/Audit原子回滚和拒绝零写均已实测。父包迁移验收器head同步0233后，父包PG smoke、P40/P25及Edge流程通过。
+- 独立SUR-07-A08 packaged SurveyVersion仍因Hosted initdb环境 0xC0000135失败；TEMP假设既往同码，遵CR-EXEC-039停止，不重试或外推到PLG-03-A08。
