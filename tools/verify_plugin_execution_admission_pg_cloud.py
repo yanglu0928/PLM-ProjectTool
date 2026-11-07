@@ -191,7 +191,7 @@ def _seed(engine, *, user_id: uuid.UUID, project_id: uuid.UUID,
                 "manifest_snapshot,signature,signer_key_ref,compatibility_policy_ref,"
                 "package_state,verified_at) "
                 "VALUES (:id,'synthetic.admission','1.0.0',decode(repeat('4c',32),'hex'),"
-                "'{\"schema_version\":1}'::jsonb,decode('01','hex'),'synthetic-only',"
+                "jsonb_build_object('schema_version',1),decode('01','hex'),'synthetic-only',"
                 "'synthetic.compat.v1','VERIFIED',statement_timestamp())"
             ), {"id": package_id})
             conn.execute(text(
