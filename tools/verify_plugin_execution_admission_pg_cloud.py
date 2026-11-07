@@ -256,7 +256,7 @@ def main() -> int:
     data_dir = root / "pgdata"
     pg_log = root / "postgres.log"
     staged = False
-    started = False
+    start_attempted = False
     created_database = False
     engine = None
     database = "plm_plg03a05_" + run_id[-10:]
@@ -281,17 +281,32 @@ def main() -> int:
             raise ValueError("verified parent package PostgreSQL runtime missing")
         _checked([str(initdb), "-D", str(data_dir), "-U", "postgres",
                   "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"])
-        start = subprocess.run(
-            [str(pg_ctl), "-D", str(data_dir), "-l", str(pg_log),
-             "-o", f"-h 127.0.0.1 -p {port} -c listen_addresses=127.0.0.1",
-             "-w", "start"],
-            capture_output=True, text=True, encoding="utf-8", errors="replace",
-            timeout=180, check=False,
-        )
+        start_output = root / "pgctl-start.txt"
+        start_attempted = True
+        start_error = None
+        with start_output.open("w", encoding="utf-8") as output:
+            try:
+                start = subprocess.run(
+                    [str(pg_ctl), "-D", str(data_dir), "-l", str(pg_log),
+                     "-o", f"-h 127.0.0.1 -p {port} -c listen_addresses=127.0.0.1",
+                     "-w", "start"],
+                    stdout=output, stderr=subprocess.STDOUT, text=True,
+                    timeout=180, check=False,
+                )
+            except subprocess.TimeoutExpired:
+                output.flush()
+                start = None
+                start_error = "timeout"
+        if start_error is not None:
+            detail = start_output.read_text(encoding="utf-8", errors="replace")[-2000:]
+            raise RuntimeError("temporary packaged PG18 startup timed out: " +
+                               (detail or "no_output")) from None
+        if start is None:
+            raise RuntimeError("temporary packaged PG18 startup result missing")
         if start.returncode:
+            detail = start_output.read_text(encoding="utf-8", errors="replace")[-2000:]
             raise RuntimeError("temporary packaged PG18 failed to start: " +
-                               (start.stderr or start.stdout)[-2000:])
-        started = True
+                               (detail or "no_output"))
         admin_url = f"postgresql://postgres@127.0.0.1:{port}/postgres"
         with psycopg.connect(admin_url, autocommit=True) as conn:
             conn.execute(f'CREATE DATABASE "{database}"')
@@ -463,15 +478,24 @@ def main() -> int:
                     "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
                     "WHERE datname=%s AND pid<>pg_backend_pid()", (database,))
                 conn.execute(f'DROP DATABASE IF EXISTS "{database}"')
-        if started:
-            pg_ctl = stage / "payload" / "pgsql" / "bin" / "pg_ctl.exe"
-            stop = subprocess.run(
-                [str(pg_ctl), "-D", str(data_dir), "-m", "fast", "-w", "stop"],
-                capture_output=True, text=True, encoding="utf-8",
-                errors="replace", timeout=180, check=False,
+        if start_attempted:
+            pg_ctl = root / "payload" / "pgsql" / "bin" / "pg_ctl.exe"
+            status = subprocess.run(
+                [str(pg_ctl), "-D", str(data_dir), "status"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, timeout=20, check=False,
             )
-            if stop.returncode:
-                raise RuntimeError("temporary PostgreSQL shutdown was not confirmed")
+            if status.returncode == 0:
+                stop_output = root / "pgctl-stop.txt"
+                with stop_output.open("w", encoding="utf-8") as output:
+                    stop = subprocess.run(
+                        [str(pg_ctl), "-D", str(data_dir), "-m", "fast", "-w", "stop"],
+                        stdout=output, stderr=subprocess.STDOUT, text=True,
+                        timeout=180, check=False,
+                    )
+                if stop.returncode:
+                    raise RuntimeError("temporary PostgreSQL shutdown was not confirmed")
+            elif status.returncode != 3:
+                raise RuntimeError("temporary PostgreSQL status was not confirmed during cleanup")
         for owned in (stage, root):
             if owned.exists():
                 resolved = owned.resolve(strict=True)

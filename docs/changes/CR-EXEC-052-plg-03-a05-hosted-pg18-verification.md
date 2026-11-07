@@ -72,3 +72,9 @@ Hosted run [42333300077](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42334361407](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42334361407) 再次在Owner调用前收到 initdb.exe exit 3221225781 / 0xC0000135；即使加入随包 bin+lib 到PATH仍未改变。该run同提交、同父包的 Clean extraction, PG18 lifecycle, and P40 live Edge download job 成功，报告 PARENT_PG18_TEMP_LIFECYCLE_PASS_LIMITED，PG18.6/pgvector 0.8.6真实临时库通过。对照已通过的 tools/smoke_windows_parent_package_pg_cloud.py，A05明显差异是PG二进制由通用候选stager解压后直接启动，而父包烟测先用stager校验/清理，再按包解压语义直接解压并逐文件复核哈希后启动。
 
 实施前记录：A05改为先运行同一候选stager并验证收据，随后立即清理该验收副本；再将原同一ZIP直接解压到本run独占的RUNNER_TEMP根目录，检查清单、目录清单、路径/链接边界和全部payload SHA-256。取消自行定制的PATH/cwd，采用父包PG smoke相同的继承进程环境与目录布局。验收范围仍仅A05 Owner/Repository/Audit；不改产品或父包，不运行插件，不使用客户数据。若仍失败再采集受限原生依赖诊断，不再尝试路径猜测。
+
+## 第六轮 Hosted A05 超时与 PG child pipe 修复（修正前记录）
+
+Hosted run [42335600556](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42335600556) 的A05已通过父包校验、直接逐文件解压与 initdb，随后在 pg_ctl start 超时。日志显示 pg_ctl 使用 stdout/stderr capture pipes；Python 3.13 触发 TimeoutExpired 后，Windows communicate 仍等待 stdout reader thread join，直到整个45分钟Hosted job被取消。PG18 server child 可继承该管道，令EOF迟迟不来。这与父包烟测已成功的实现对照一致：其 pg_ctl stdout/stderr重定向至D盘文件，因此不是Owner阻塞或产品失败。另确认当前A05清理分支仍引用已删 staging 路径，需一并修正，防止未来数据库启动后残留。
+
+实施前记录：将pg_ctl start/stop输出重定向到本run D盘日志文件，不由Python捕获继承型子进程管道；启动超时后在关闭日志句柄后读取受限尾部诊断。对已经尝试启动的PG进程使用同包 pg_ctl status检查，并只在该run自有data目录存在运行实例时fast-stop；status不能证明已停则失败关闭、不删除运行目录。清理使用直接解压目录下 pg_ctl 路径。仅验收器/CR/STATUS变更，产品Owner、包、Schema、Migration不变；继续同run父包synthetic PG18复验。

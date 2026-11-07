@@ -3022,3 +3022,6 @@
 
 
 - 2026-11-07 第五轮 Hosted run [42334361407](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42334361407)：同run的父包PG18生命周期/P40 smoke成功（PG18.6、pgvector 0.8.6），但独立A05仍在Owner前由 initdb.exe 返回3221225781/0xC0000135，bin+lib PATH未奏效。按CR-EXEC-052先记偏差；A05将对齐已通过父包smoke的直接解压/进程环境路径，在同一D盘隔离根执行并逐文件复核哈希，再验收Owner。本机/C盘未运行。
+
+
+- 2026-11-07 第六轮 Hosted run [42335600556](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42335600556)：A05通过候选校验、逐文件直接解压及 initdb；随后 pg_ctl start 180秒超时。Python在Windows捕获的pg_ctl继承管道仍等待stdout reader join，最终45分钟job取消；尚未运行Admission Owner，不能PASS。按CR-EXEC-052先记录：pg_ctl输出改写D盘受控日志文件，超时后探测并清理仅本run数据库进程，同时将清理路径改指真实解压目录。此为验收Harness失效模式，不是产品Owner缺陷。本机/C盘未运行。
