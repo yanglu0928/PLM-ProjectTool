@@ -1,3 +1,8 @@
+|Execution Note|2026-11-07 Hosted run [42367135854](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42367135854)：PLG-03-A08 PG18、Backend全量/wheel、Frontend/build、父包组装与PG18 smoke、P40 Edge下载、P25受信任失败关闭路径、A17、A34/A35均以各自限定范围通过。正式公钥/License trust、DB credential ref、服务ACL/TLS仍阻断启动；Output Create拒绝未信任Publisher/空manifest。唯一失败job是独立SUR-07-A08 packaged SurveyVersion，initdb.exe 0xC0000135/3221225781；按CR-EXEC-039停止TEMP假设，不能推及PluginExecution A08。整体Workflow非全绿；仅Hosted Windows Server 2025 D盘合成环境，本机/C盘未运行项目代码。|
+|Current WBS|PRT-01-A11-A05-P04-P25：Hosted并发负载资源观测器，编码前检查已按CR-PRT-006完成。|
+|Current WBS Status|P23/P24功能断言通过但20并发非AI GET P95未达到500ms；P24与P23结果方向相反，性能Gate保持FAIL。A08为PASS_SCOPE_LIMITED；P40/P25/A17/A34/A35各有独立有限Hosted通过证据。Pilot仍NOT_READY，正式信任/DB凭据引用/服务ACL/TLS缺失。|
+|Next WBS|实现PRT-01-A11-A05-P04-P25只读资源观测与安全聚合摘要，保持原性能门槛和全部业务断言；仅GitHub Hosted D盘验证。|
+
 |Execution Note|2026-11-07 Hosted run [42365928514](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42365928514)：父包烟测越过PLG-03，推进至P32 OutputArtifact migration verifier；该脚本仍将升级后head断言为0232，聚合检查失败（head/table/既有Job条件未逐项显示），偏差先记CR-EXEC-056，仅修head期望0233并完整复验。Backend/wheel、Frontend、父包组装、A05/A06/A07/A08 PG18和A17 PlanVersion均通过。P40/P25因共享父包PG smoke失败未通过；P25 HTTP/Edge未执行。SUR-07-A08 initdb.exe与未应用TEMP探针同为3221225781，按CR-EXEC-039停止；A08 packaged SurveyVersion受同阻塞影响，不代表PluginExecution A08。|
 |Current WBS|父包PG18迁移验收推进：修复P32 verifier升级后head期望0232→0233，保留其他contract断言。|
 |Current WBS Status|A08 PASS_SCOPE_LIMITED再次通过；A17 packaged PlanVersion通过。P40与P25仍受父包烟测P32聚合断言阻断，P32子验收器当前head疑似过期且需复验其他条件；P25 HTTP/Edge流程未运行。SUR-07-A08为独立已知Windows initdb阻塞，不重复尝试TEMP假设。|
