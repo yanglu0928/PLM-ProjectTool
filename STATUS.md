@@ -1,3 +1,8 @@
+|Execution Note|2026-11-07 Hosted run [42361605909](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42361605909)：Backend全量/wheel、Frontend/build、运行时/父包组装及A05/A06/A07 PG18通过。A08已通过attempt1重试、down/up、attempt2独立启动/耗尽与历史保留，末尾仅因验收器查询未限定schema的alembic_version（应为plm.alembic_version）失败；父包PG smoke已越过OUT head检查，后在PLG-01验证器HEAD=0232陈旧常量处失败。均先记CR-EXEC-056后限定修正验证器并重跑；A08与P40尚未通过。仅Hosted D盘，本机/C盘未运行。|
+|Current WBS|PLG-03-A08：修正PG18 verifier的版本表schema限定，同时使PLG-01共享schema verifier认当前head 0233；Hosted复验。|
+|Current WBS Status|A08业务重试链已在PG18执行到最终验证器后置查询，Owner attempt2修正已跨过；当前失败为验证器版本表未限定schema。父包PG smoke当前受PLG-01子验证器HEAD陈旧常量阻断。A08/P40未通过，正式trust/Worker/W11/Pilot/Gate/Release未通过。|
+|Next WBS|先修tools/verify_plugin_execution_retry_pg_cloud.py版本查询为plm.alembic_version，并修validation/plg-01-a01-package-schema/verify.py的HEAD为20261106_0233；随后Hosted完整复验。|
+
 |Execution Note|2026-11-07 Hosted run [42360552157](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42360552157)：Backend全量/wheel、Frontend/build、嵌入式运行时和Windows父包组装成功；A08 PG18在attempt 2时被PluginExecutionStartOwner现有attempt_no==1校验拒绝（PLUGIN_EXECUTION_NOT_STARTABLE），A08未通过。父包PG smoke另因共享migration verifier仍期望schema head 0232、实际0233而失败。两项偏差均已先记CR-EXEC-056，分别修Owner的逐attempt校验及Harness head期望，再Hosted复验；不推断P40失败于产品代码，不标A08通过。仅Hosted D盘，本机/C盘未运行。|
 |Current WBS|PLG-03-A08：修正Start Owner支持有效Job attempt，并更新共享父包migration verifier当前head；分别复跑PG18专项验收。|
 |Current WBS Status|A08代码候选与初轮Backend全量回归通过；A08 PG18 attempt2尚未通过，父包PG smoke受陈旧head断言阻断。偏差和限定修正已记录于CR-EXEC-056。正式trust/Worker/W11/Pilot/Gate/Release未通过。|
