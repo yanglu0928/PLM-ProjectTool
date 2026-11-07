@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（PLG-02诊断通过；PLG-03 migration verifier 待同步）
+- run [42364926754](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42364926754) 父包PG smoke越过PLG-02 downgrade refusal 后head保留断言，进入PLG-03 execution schema verifier。
+- PLG-03 verifier仍把升级后head固定为0232，因新增0233迁移而触发聚合断言；已先记录，计划只更新当前head期望，不更改产品迁移/约束。P40/P25未通过。
+- SUR-07-A08仍出现initdb 3221225781，TEMP探针同错且未应用，按CR-EXEC-039停止路径。
+
+
 ## Unreleased · 2026-11-07（PLG-03-A08复验通过；PLG-02 rollback head待查）
 - Hosted run [42363588328](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42363588328) A08 job 128378836416成功；A17 packaged PlanVersion成功；Backend/wheel、Frontend/build、PG18/runtime和父包组装成功。
 - P40父包PG smoke在PLG-02禁止降级后head核对失败。将expected head从0232改为0233仍复现，故旧常量不是充分根因；实际revision未打印。先记录后加受限诊断，再判断Alembic部分降级语义或产品回滚行为，不放松保护。
