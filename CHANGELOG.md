@@ -1,3 +1,10 @@
+## Unreleased · 2026-11-07（PRT资源观测器通过、并发负载环境阻断；非发行版本）
+
+- PRT资源观测器在独立GitHub Hosted Windows Server 2025任务中通过定向测试和原生CPU/可用内存采样。完整Prototype 20并发验收在initdb数据目录权限类别处失败，负载未运行、P95无新测量；性能Gate仍FAIL。
+- 全量run [42374803790](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42374803790) 为20/22 jobs成功；另一个失败是独立SUR-07-A08 initdb 0xC0000135。父包PG18生命周期/P40 live Edge等本轮独立作业按限定范围成功，但整轮不全绿。
+- 按CR-PRT-006停止该Hosted initdb路径，不改ACL/产品配置/性能门槛。接续GATE-3-A03复核并选择独立任务。无Pilot/Gate/正式Release通过声明；仅Hosted D盘，本机/C盘未运行。
+
+
 ## Unreleased · 2026-11-07（A08重试与父包PG18/Edge复验；PRT性能前置）
 
 - PLG-03-A08 PG18.6 retry Owner以 PASS_SCOPE_LIMITED 完成：逐attempt Execution历史、暂态重试/耗尽、事件与Audit事务、down/up及历史保护通过。Backend/wheel、Frontend/build和父包PG18 smoke通过。

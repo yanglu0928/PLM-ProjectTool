@@ -58,3 +58,12 @@ Hosted run [42373351663](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## Hosted完整runtime权限分类与受控路径调整（2026-11-07）
 
 Hosted run [42373971747](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42373971747) 输出固定失败类别 DATA_DIRECTORY_ACCESS_DENIED，命令为initdb.exe、退出码1。PRT job当前将旁包解压runtime复制到GitHub workspace的artifacts路径；既有成功父包 smoke 则从同一runner-owned D盘TEMP完整候选目录启动PG。不能据此改产品数据根、安装ACL或服务权限。所选下一步只调整Harness，将完整、同run旁包验证的PG runtime直接保留于runner TEMP的owned目录，并让initdb/pg_ctl使用该D盘runtime，数据库data/log仍在D盘owned scratch；静态路径检查必须限定于本轮runner.temp边界。只复验一次；若权限类仍出现，即关闭本路径并标记性能阻塞，转其他WBS。
+
+
+## Hosted资源观测器与完整负载最终结果（2026-11-07）
+
+- 独立 prt-host-resource-observer workflow run [42374803580](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42374803580) 成功：采样数学/边界/固定摘要单测与 Hosted Windows Server 2025 实际 GetSystemTimes、GlobalMemoryStatusEx 计数均通过。
+- 完整云端 run [42374803790](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42374803790) 共22 jobs、20成功、2失败：PRT 专项job在20并发Prototype验证器执行前，因 initdb.exe 被分类为 DATA_DIRECTORY_ACCESS_DENIED 失败；同run runner-owned D盘TEMP、完整PG18 sidecar经哈希校验并原位使用。故Prototype业务负载没有运行、P95没有新测量。独立 SUR-07-A08 job再次出现 initdb.exe exit 3221225781（0xC0000135），不与PRT混为产品缺陷。
+- 按本CR既定“权限类别仍出现即关闭该运行路径”的停止条件，不再尝试TEMP/PATH、ACL、服务数据根或产品运行配置变更；PRT WBS保留为 BLOCKED_BY_HOSTED_INITDB_DATA_DIRECTORY_ACCESS。500ms性能门槛继续 FAIL，无性能PASS。
+- 当轮父包 PG18 生命周期和P40 live Edge下载、A17/A34/A35及其他独立任务按各自有限范围通过；整轮workflow非全绿。只限GitHub Hosted Windows Server 2025/D盘合成环境；不推定Windows 11，不关闭Gate 3、Pilot或正式Release。原始验证日志未上传；无客户数据/Secret外发，本机/C盘未执行。
+- 后续转至 GATE-3-A03 只读证据与不受影响任务重排，避免重复此初始化路径。
