@@ -31,3 +31,8 @@ Gate 3 当前阻塞明确包含 Prototype 非 AI GET 20 并发 P95 ≤500ms 未�
 ## 首轮完整 Hosted 负载偏差（2026-11-07）
 
 PRT P25专项job 128400386400：Backend dependencies安装与同run PostgreSQL 18 sidecar下载均成功；完整验证器执行后返回非零，任务失败。工作流只输出固定失败句并在finally清理原始D盘日志，未保留异常类别、阶段marker或源码位置。因此不能判定为产品性能缺陷、性能门槛失败或环境问题；本轮性能状态保持未判定。先记录后新增严格allowlist摘要：整数exit code、异常类名、最多8条源码basename:line和固定marker名；不输出异常正文、日志、SQL、请求/凭据/临时路径。复验后按摘要决定后续，原始日志继续不上传。
+
+
+## 第二轮 Hosted 诊断缺口（2026-11-07）
+
+PRT job 128402481517现已保留安全摘要：RuntimeError，调用帧为验证器包入口及物理PG验证器line 1521，marker仅PRT_HOST_RESOURCE_SUMMARY。源行对应initdb启动边界，但共享物理PG helper把子进程returncode省略在通用RuntimeError中；未能区分加载错误/其他初始化错误。下一步先记录并仅把整数returncode添加到内部固定异常摘要，由CI白名单提取命令basename+数值码；不输出stdout/stderr/路径/消息，不重复同一initdb猜测环境变量。依据退出码若为已知DLL装载失败，则按CR-EXEC-039原则停止该环境路径，保留P95未判定。
