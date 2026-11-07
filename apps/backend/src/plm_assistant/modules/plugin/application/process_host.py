@@ -11,8 +11,10 @@ MAX_TIMEOUT=300.0
 
 class PluginProcessHostError(RuntimeError):
     """Sanitized failure without request data or child text."""
-    def __init__(self, code: str):
+    def __init__(self, code: str, *, stage: str | None = None, native_code: int | None = None):
         self.code=code
+        self.stage=stage
+        self.native_code=native_code if type(native_code) is int else None
         super().__init__(code)
 
 @dataclass(frozen=True,slots=True)
@@ -57,7 +59,7 @@ def _validate(executable,package_root,entry_point,work_root):
 
 class _Tree:
     def __init__(self,proc):
-        self.proc=proc; self.job=None
+        self.proc=proc; self.job=None; self.stage=None
         if os.name=="nt": self._win(proc)
         elif os.name=="posix": self.group=proc.pid
         else: self.group=None
@@ -79,23 +81,28 @@ class _Tree:
         k.AssignProcessToJobObject.argtypes=[wintypes.HANDLE,wintypes.HANDLE]; k.AssignProcessToJobObject.restype=wintypes.BOOL
         k.TerminateJobObject.argtypes=[wintypes.HANDLE,wintypes.UINT]; k.TerminateJobObject.restype=wintypes.BOOL
         k.CloseHandle.argtypes=[wintypes.HANDLE]; k.CloseHandle.restype=wintypes.BOOL
-        job=k.CreateJobObjectW(None,None)
-        if not job: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
+        self.stage="job_create"; job=k.CreateJobObjectW(None,None)
+        if not job: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED",stage=self.stage,native_code=ctypes.get_last_error())
         self.k,self.job=k,job
         try:
+            self.stage="job_configure"
             limits=Extended(); limits.basic.flags=0x2000
             if not k.SetInformationJobObject(job,9,ctypes.byref(limits),ctypes.sizeof(limits)):
-                raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
-            ph=k.OpenProcess(0x0100|0x0001,False,proc.pid)
-            attached=bool(ph and k.AssignProcessToJobObject(job,ph))
-            if ph: k.CloseHandle(ph)
-            if not attached: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
+                raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED",stage=self.stage,native_code=ctypes.get_last_error())
+            self.stage="process_open"; ph=k.OpenProcess(0x0100|0x0001,False,proc.pid)
+            if not ph: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED",stage=self.stage,native_code=ctypes.get_last_error())
+            self.stage="job_assign"; attached=bool(k.AssignProcessToJobObject(job,ph))
+            native=ctypes.get_last_error() if not attached else None
+            k.CloseHandle(ph)
+            if not attached: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED",stage=self.stage,native_code=native)
             self._resume_primary_thread(proc.pid)
+            self.stage="running"
         except PluginProcessHostError:
             self._close_windows_job(); raise
         except Exception:
+            stage=self.stage; native=ctypes.get_last_error()
             self._close_windows_job()
-            raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED") from None
+            raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED",stage=stage,native_code=native) from None
     def _resume_primary_thread(self,pid):
         from ctypes import wintypes
         class ThreadEntry(ctypes.Structure):
@@ -105,30 +112,30 @@ class _Tree:
         k=self.k
         k.CreateToolhelp32Snapshot.argtypes=[wintypes.DWORD,wintypes.DWORD]
         k.CreateToolhelp32Snapshot.restype=wintypes.HANDLE
-        k.Thread32First.argtypes=[wintypes.HANDLE,ctypes.POINTER(ThreadEntry)]
-        k.Thread32First.restype=wintypes.BOOL
-        k.Thread32Next.argtypes=[wintypes.HANDLE,ctypes.POINTER(ThreadEntry)]
-        k.Thread32Next.restype=wintypes.BOOL
-        k.OpenThread.argtypes=[wintypes.DWORD,wintypes.BOOL,wintypes.DWORD]
-        k.OpenThread.restype=wintypes.HANDLE
+        k.Thread32First.argtypes=[wintypes.HANDLE,ctypes.POINTER(ThreadEntry)]; k.Thread32First.restype=wintypes.BOOL
+        k.Thread32Next.argtypes=[wintypes.HANDLE,ctypes.POINTER(ThreadEntry)]; k.Thread32Next.restype=wintypes.BOOL
+        k.OpenThread.argtypes=[wintypes.DWORD,wintypes.BOOL,wintypes.DWORD]; k.OpenThread.restype=wintypes.HANDLE
         k.ResumeThread.argtypes=[wintypes.HANDLE]; k.ResumeThread.restype=wintypes.DWORD
-        snapshot=k.CreateToolhelp32Snapshot(0x00000004,0)
+        self.stage="thread_snapshot"; snapshot=k.CreateToolhelp32Snapshot(0x00000004,0)
         if not snapshot or snapshot==ctypes.c_void_p(-1).value:
-            raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
+            raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED",stage=self.stage,native_code=ctypes.get_last_error())
         thread=None
         try:
+            self.stage="thread_enumerate"
             entry=ThreadEntry(); entry.dwSize=ctypes.sizeof(ThreadEntry)
-            found=k.Thread32First(snapshot,ctypes.byref(entry))
-            thread_id=None
+            found=k.Thread32First(snapshot,ctypes.byref(entry)); thread_id=None
             while found:
                 if entry.th32OwnerProcessID==pid:
                     thread_id=entry.th32ThreadID; break
                 found=k.Thread32Next(snapshot,ctypes.byref(entry))
-            if thread_id is None: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
-            thread=k.OpenThread(0x0002,False,thread_id)
-            if not thread: raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
-            if k.ResumeThread(thread)!=1:
-                raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED")
+            if thread_id is None:
+                raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED",stage=self.stage,native_code=ctypes.get_last_error())
+            self.stage="thread_open"; thread=k.OpenThread(0x0002,False,thread_id)
+            if not thread:
+                raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED",stage=self.stage,native_code=ctypes.get_last_error())
+            self.stage="thread_resume"; previous=k.ResumeThread(thread)
+            if previous!=1:
+                raise PluginProcessHostError("PLUGIN_PROCESS_START_FAILED",stage=self.stage,native_code=int(previous))
         finally:
             if thread: k.CloseHandle(thread)
             k.CloseHandle(snapshot)
