@@ -47,3 +47,11 @@
 - 失败均来自新的 Windows suspended-start/Job Object 接线返回固定 `PLUGIN_PROCESS_START_FAILED`，未泄露 child 输出，过程 fail-closed。尚未通过用例证明进程树语义，也未达到该 WBS 验收。
 - 具体 API 子阶段未知；不依据调用顺序猜测根因。下一步仅增加阶段枚举与 Win32 整数错误码的内部诊断，保留外部错误码与失败关闭行为，不输出原始异常文本。
 - 此测试失败不是产品信任绕过或客户影响；运行只在 Hosted runner D 盘，合成数据；未改数据库/API/信任/Output。修复前保持 PLG-03-A02 `INCOMPLETE`。
+
+
+## 受限诊断与根因
+
+- Diagnostic run [42319306937](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42319306937) 的 7 次启动均输出固定白名单 `stage=thread_resume;native=0`。Win32 `ResumeThread` 返回 0 表示该线程此前没有挂起计数；调用链未输出原始异常或子进程内容。
+- 源码核对发现启动参数使用 `getattr(subprocess,"CREATE_SUSPENDED",0)`，而 CPython 3.13 的 `subprocess` Windows 导出列表未包含 `CREATE_SUSPENDED`，故该表达式回退为 0，子进程并非 suspended。该结论解释了当前证据；不是产品已发生插件逃逸的证据。
+- 修正：在 Windows 分支显式使用 Win32 `CREATE_SUSPENDED` 常量值 `0x00000004`；保留“创建→Job 归属→恢复主线程”的fail-closed顺序，并用同一Hosted测试验证。
+
