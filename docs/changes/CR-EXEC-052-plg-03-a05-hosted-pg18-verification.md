@@ -101,3 +101,10 @@ Hosted run [42341698193](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 只读核查定位到测试输入缺失而非产品错误：OutputJobExecutionAdmissionOwner._validate_claim 要求 ClaimedJob.payload_refs 精确含 output_request_id 与 context_snapshot_id，并要求二者为规范UUID字符串；当前 A05 验证器把 Job 行和传入 ClaimedJob.payload_refs 都设为 {}。因此真实 Owner 在读取并授权 Output 前按既有契约拒绝。冻结契约和产品实现符合要求，不能放宽。
 
 实施前记录：仅修正A05 fixture，使 Job.payload_refs 通过 jsonb_build_object 存储其对应 OutputRequest/ContextSnapshot ID，并向 ClaimedJob 传入两个对应规范UUID字符串；保持数据库读取结果与命令逐字段相同。复验前增加静态夹具绑定断言/单元级脚本校验，随后Hosted D盘PG18重跑A05既定正向、幂等、陈旧fencing拒绝、attempt拒绝、Audit回滚、DB guard等断言。只改验证器与必要记录，不改Output/Plugin Owner或冻结合同。回滚为还原夹具数据和payload projection。
+
+
+## 第十轮 Hosted A05 Lease 时间夹具不一致（修正前记录）
+
+Hosted run [42342572247](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42342572247) 已通过父包校验/解压、PG18迁移与两组fixture准备；Admission Owner调用仍以固定码PLUGIN_EXECUTION_NOT_ADMITTED拒绝，A05未通过。异常栈显示Admission Owner将Jobs/Output admission异常收敛为固定错误；只读代码追踪显示SyntheticOutputAdmission按Job ID返回绑定正确的Output事实。Jobs SqlAlchemyRepository.check_output_claim明确要求 job.lease_expires_at 与 lease.lease_expires_at 逐值相等，而fixture在Job和Lease两条独立INSERT中分别计算 statement_timestamp()+10 minutes，因此时间值不保证相等，符合当前唯一可见的Jobs拒绝条件。
+
+实施前记录：在同一fixture事务中先由PostgreSQL只计算一次 statement_timestamp()+interval '10 minutes'，将返回的同一个timestamp参数分别写入 Job.lease_expires_at 与 JobLease.lease_expires_at；避免使用本机时钟或放宽Jobs校验。仅修改A05 synthetic fixture，产品Jobs/Output/Plugin Owner及Schema/Migration不变。Hosted D盘复验需越过Admission Owner首个调用并完成全部原定原子性/重放/陈旧token/attempt/Audit回滚/DB guard断言；回滚为恢复两个SQL时间表达式。
