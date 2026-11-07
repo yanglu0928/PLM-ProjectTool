@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（CR-EXEC-056：PLG-03-A08 首轮 Hosted 全量回归偏差）
+- Hosted run [42359578240](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42359578240) Backend 4,127项仅1项失败：实际执行的unit迁移契约测试仍期望唯一head 0232，实际migration head为0233。
+- 根因是此前更新了同名的非unit测试路径，漏改真正运行的 `apps/backend/tests/unit/test_migration_contract.py`。偏差先记录在CR-EXEC-056；修正范围仅限该测试的head/down_revision断言，不改产品/迁移逻辑。Hosted全量及PG18 A08专项复验待运行，A08未通过。
+
+
 ## Unreleased · 2026-11-07（CR-EXEC-056：Migration编号预提交校正）
 - 首稿拟用的0232已由OutputArtifact持久层Migration占用；读取当前迁移目录及动态head断言后，在任何代码修改前将Plugin retry migration目标校正为0233（down_revision 0232）。未改业务代码。
 
