@@ -1,3 +1,12 @@
+## Unreleased · 2026-11-07（A08重试与父包PG18/Edge复验；PRT性能前置）
+
+- PLG-03-A08 PG18.6 retry Owner以 PASS_SCOPE_LIMITED 完成：逐attempt Execution历史、暂态重试/耗尽、事件与Audit事务、down/up及历史保护通过。Backend/wheel、Frontend/build和父包PG18 smoke通过。
+- 父包P40 Edge下载、P25受信任失败关闭HTTP、A17 PlanVersion Edge/HTTPS/PG、A34替换/人工恢复、A35有限交接均按各自范围通过。未启动正式产品服务；正式Publisher/License trust、DB凭据引用、服务ACL/TLS仍缺；Output Create保留失败关闭，Pilot/Gate/Release未通过。
+- 整体Hosted run [42367135854](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42367135854) 非全绿：独立SUR-07-A08 packaged SurveyVersion job仍因initdb 0xC0000135失败；遵CR-EXEC-039停止重复TEMP探测。此环境失败不否定插件A08专项结果。
+- PRT-01-A11-A05-P04-P25编码前检查已完成，CR-PRT-006限定为Harness只读CPU/内存/阶段观测；不改产品、连接池、API或Schema，不把Server 2025结果推定为Windows 11性能。本机/C盘未运行项目代码。
+
+
+
 ## Unreleased · 2026-11-07（父包 Hosted PG smoke 推进至 P32）
 - run [42365928514](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42365928514) 通过Backend/wheel、Frontend/build、父包组装、A05/A06/A07/A08 PG18及A17 PlanVersion。
 - 父包smoke越过PLG-03后在P32 OutputArtifact migration验收器的聚合升级断言失败。验证器仍检查head=0232而当前新增0233；先记录后仅同步head期望，其余Job保留/表/约束/触发器/降级往返检查保持。
