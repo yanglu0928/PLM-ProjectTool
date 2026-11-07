@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import socket
 import subprocess
@@ -28,7 +29,7 @@ from plm_assistant.modules.platform.infrastructure.migration import create_migra
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PG_SOURCE = ROOT / "artifacts/poc-02/windows/runtime/postgresql-18.6/pgsql"
+PG_SOURCE = Path(os.environ.get("PLM_PRT_PG_SOURCE", ROOT / "artifacts/poc-02/windows/runtime/postgresql-18.6/pgsql"))
 VECTOR_SOURCE = ROOT / "artifacts/poc-02/windows/source/pgvector-0.8.6"
 USER = "poc_admin"
 
