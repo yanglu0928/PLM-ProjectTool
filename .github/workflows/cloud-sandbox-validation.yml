@@ -804,7 +804,37 @@ jobs:
             } finally {
               Pop-Location
             }
-            if ($exit -ne 0) { throw "PRT 20-concurrent verifier failed" }
+            $rawLines = @(Get-Content -LiteralPath $raw)
+            if ($exit -ne 0) {
+              $exceptionClass = "UNKNOWN"
+              foreach ($entry in $rawLines) {
+                if ($entry -match "^([A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))(?::|$)") { $exceptionClass = $Matches[1]; break }
+              }
+              $frames = @()
+              foreach ($entry in $rawLines) {
+                if ($entry -match 'File "([^"]+)", line ([0-9]+)') {
+                  $frames += (([IO.Path]::GetFileName($Matches[1])) + ":" + $Matches[2])
+                  if ($frames.Count -ge 8) { break }
+                }
+              }
+              $markerNames = @()
+              foreach ($entry in $rawLines) {
+                if ($entry -match "^((?:PRT|REQ)_[A-Z0-9_]+)") { $markerNames += $Matches[1] }
+              }
+              $failure = @{
+                wbs = "PRT-01-A11-A05-P04-P25"
+                status = "FAILURE_DIAGNOSTIC"
+                exit_code = [int]$exit
+                exception_class = $exceptionClass
+                source_frames = $frames
+                marker_names = $markerNames
+                raw_output_uploaded = $false
+              }
+              $failureJson = $failure | ConvertTo-Json -Depth 5 -Compress
+              Set-Content -LiteralPath $report -Value $failureJson -Encoding utf8
+              Write-Output ("PRT_P25_FAILURE_SUMMARY=" + $failureJson)
+              throw "PRT 20-concurrent verifier failed; see bounded summary"
+            }
             $line = Select-String -LiteralPath $raw -Pattern "^PRT_HOST_RESOURCE_SUMMARY=" | Select-Object -Last 1
             if (-not $line) { throw "Bounded resource summary missing" }
             $metrics = $line.Line.Substring("PRT_HOST_RESOURCE_SUMMARY=".Length) | ConvertFrom-Json
@@ -828,6 +858,7 @@ jobs:
             if ($repoArtifacts.StartsWith($workspacePrefix, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $repoArtifacts)) { Remove-Item -LiteralPath $repoArtifacts -Recurse -Force }
           }
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: prt-p25-hosted-resource-summary-${{ github.sha }}
           path: ${{ runner.temp }}/plm-prt-p25-summary-${{ github.run_id }}.json
