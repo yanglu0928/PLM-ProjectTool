@@ -516,7 +516,7 @@ def main() -> int:
                     "SELECT version_num FROM plm.alembic_version"
                 ).fetchone()[0]
             if current_revision != "20261106_0233":
-                raise AssertionError("A08 downgrade refusal changed migration head")
+                raise AssertionError(f"A08 downgrade refusal migration head mismatch: expected=20261106_0233 actual={current_revision!r}")
         else:
             raise AssertionError("A08 result-bearing downgrade was not refused")
         result["plugin_installation_disable_api_validation"] = {
