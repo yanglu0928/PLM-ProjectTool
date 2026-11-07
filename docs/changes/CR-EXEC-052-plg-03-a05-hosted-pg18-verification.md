@@ -78,3 +78,10 @@ Hosted run [42334361407](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 Hosted run [42335600556](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42335600556) 的A05已通过父包校验、直接逐文件解压与 initdb，随后在 pg_ctl start 超时。日志显示 pg_ctl 使用 stdout/stderr capture pipes；Python 3.13 触发 TimeoutExpired 后，Windows communicate 仍等待 stdout reader thread join，直到整个45分钟Hosted job被取消。PG18 server child 可继承该管道，令EOF迟迟不来。这与父包烟测已成功的实现对照一致：其 pg_ctl stdout/stderr重定向至D盘文件，因此不是Owner阻塞或产品失败。另确认当前A05清理分支仍引用已删 staging 路径，需一并修正，防止未来数据库启动后残留。
 
 实施前记录：将pg_ctl start/stop输出重定向到本run D盘日志文件，不由Python捕获继承型子进程管道；启动超时后在关闭日志句柄后读取受限尾部诊断。对已经尝试启动的PG进程使用同包 pg_ctl status检查，并只在该run自有data目录存在运行实例时fast-stop；status不能证明已停则失败关闭、不删除运行目录。清理使用直接解压目录下 pg_ctl 路径。仅验收器/CR/STATUS变更，产品Owner、包、Schema、Migration不变；继续同run父包synthetic PG18复验。
+
+
+## 第七轮 Hosted A05 SQLAlchemy fixture 失败（修正前记录）
+
+Hosted run [42339772925](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42339772925) 已成功验证同run父包、直接解压与临时 PostgreSQL 18 启动，并进入合成 fixture 数据准备；随后 SQLAlchemy 在 _seed 插入 out_context_snapshots.source_version_refs 时，将 SQL 字符串 JSON 字面量中的 :true 误解析为命名绑定参数，抛出 InvalidRequestError: A value is required for bind parameter 'true'。失败发生在 Admission Owner 首次调用之前；无Owner验收marker，未证明产品Owner错误，也未生成通过证据。该run其它并行任务状态独立记录，不混入A05结论。
+
+实施前记录：只调整 Hosted 验收器合成fixture，将含冒号的内嵌 JSON SQL 字面量替换为 PostgreSQL jsonb_build_array(jsonb_build_object(...)) 构造（或等效的显式绑定值），不改产品Owner、冻结Schema/Migration、父包或验收范围。修复后在GitHub Hosted D盘对同run打包的合成PG18重跑A05全部原验收断言；若越过fixture后失败，依据新的固定断言/脱敏诊断再处置。回滚为还原单个fixture SQL。仅合成数据，无插件执行、客户数据或外发。
