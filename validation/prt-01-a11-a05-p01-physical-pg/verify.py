@@ -40,7 +40,7 @@ def _run(arguments: list[str], *, detached: bool = False) -> None:
         text=True, errors="replace", timeout=120, check=False,
     )
     if result.returncode:
-        raise RuntimeError(f"isolated PostgreSQL command failed: {Path(arguments[0]).name}")
+        raise RuntimeError(f"isolated PostgreSQL command failed: {Path(arguments[0]).name} exit_code={result.returncode}")
 
 
 def _free_port() -> int:
