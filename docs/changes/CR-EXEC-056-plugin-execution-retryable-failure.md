@@ -21,6 +21,11 @@
 风险：冻结Migration 0231对PluginExecution设有每Job唯一，Admission只接受attempt 1，幂等键亦只按Job生成；Output retry则允许同一Job产生后续JobAttempt。保持旧Schema会让第二次执行无法记录并破坏逐attempt历史。
 ```
 
+## 预提交路径校正（2026-11-07）
+
+- 编码前检查初稿将下一 Migration 编号写为 `20261105_0232`；进一步读取当前 Alembic versions 目录及 migration_contract 后确认，`20261105_0232_output_artifact_persistence.py` 已占用该编号且当前唯一 head 为 `20261105_0232`。本任务尚未改代码或提交迁移。
+- 已在编码前将本 CR 与验收计划校正为新 Migration `20261106_0233`，down_revision=`20261105_0232`；不改动已存在的 OutputArtifact migration。此编号校正已先记录后实施。
+
 ## 源码/基线发现
 
 1. PluginExecution 数据模型将它定义为“一次隔离运行”，包含 `attempt_no`；Job拥有多条Attempt历史，OutputRequest关联0..N PluginExecution。
@@ -37,10 +42,10 @@
 
 ## 影响、迁移、回滚与验证
 
-- Migration `20261105_0232` 只调整 PluginExecution 的 per-job 唯一键；升级不改写现有行。若down时同一Job已有多attempt记录，必须在任何DDL前拒绝降级并保留历史，不得删除数据。
+- Migration `20261105_0233` 只调整 PluginExecution 的 per-job 唯一键；升级不改写现有行。若down时同一Job已有多attempt记录，必须在任何DDL前拒绝降级并保留历史，不得删除数据。
 - 幂等从 `plugin-execution:{job_id}` 改为 `plugin-execution:{job_id}:{attempt_no}`；同Job不同attempt各自独立，同attempt重放返回既有Execution。
 - 回滚移除 retry Owner/transaction wrapper 与新Admission行为，并down Migration；若存在多attempt历史则有意阻止down，须先导出/归档并经独立数据迁移方案处理，不静默丢记录。
-- 单测与Hosted PostgreSQL 18.6验证：0231→0232 upgrade、空库与既有单attempt行、attempt 1/2隔离、同attempt幂等、重试成功排队、attempt耗尽、Audit故障整体回滚、过期/旧fence与绑定错拒绝、down/up、含多attempt时down拒绝。
+- 单测与Hosted PostgreSQL 18.6验证：0231→0233 upgrade、空库与既有单attempt行、attempt 1/2隔离、同attempt幂等、重试成功排队、attempt耗尽、Audit故障整体回滚、过期/旧fence与绑定错拒绝、down/up、含多attempt时down拒绝。
 - Backend全量/wheel、Frontend/build与 Secret 检查；仅GitHub Hosted Windows Server 2025 D: 临时环境，不运行真实插件/Worker，不使用客户数据或外部服务。
 - 不改API Contract；不宣称 Windows 11、正式trust、Gate 3、Pilot 或 Release 通过。
 

@@ -1,3 +1,6 @@
+## Unreleased · 2026-11-07（CR-EXEC-056：Migration编号预提交校正）
+- 首稿拟用的0232已由OutputArtifact持久层Migration占用；读取当前迁移目录及动态head断言后，在任何代码修改前将Plugin retry migration目标校正为0233（down_revision 0232）。未改业务代码。
+
 ## Unreleased · 2026-11-07（CR-EXEC-056：PLG-03-A08 Retryable failure 编码前检查）
 - 检查发现现有 PluginExecution 每Job唯一、Admission只接受attempt 1；Jobs/Output允许同Job重试。选择按JobAttempt追加独立Execution root并在共享UoW原子推进Output/Jobs/Plugin的暂时性失败重试。
 - 需要Migration 0232调整唯一约束；down在发现同Job多attempt历史时安全拒绝。先记录差异后实施，Hosted PG18验收待执行；不接Worker/ProcessHost、不执行插件。
