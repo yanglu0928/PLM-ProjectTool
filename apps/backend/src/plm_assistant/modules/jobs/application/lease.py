@@ -93,7 +93,7 @@ class JobLeaseRepositoryPort(Protocol):
 
 
 class JobLeaseService:
-    """Every method owns a short database transaction; no external work runs inside it."""
+    """Owns short lease transactions and exposes explicit caller-transaction checks."""
 
     def __init__(self, *, unit_of_work: Callable[[], object],
                  repository: JobLeaseRepositoryPort) -> None:

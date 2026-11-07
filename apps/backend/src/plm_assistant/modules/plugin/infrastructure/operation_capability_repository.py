@@ -63,6 +63,7 @@ class SqlAlchemyPluginOperationCapabilityRepository:
             )
             .order_by(PluginInstallationRow.plugin_installation_id)
             .limit(2)
+            .with_for_update(of=PluginInstallationRow)
         ).scalars().all()
         enabled = False
         if (len(installations) == 1
