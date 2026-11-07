@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（CR-EXEC-056：第三轮 Hosted verifier 偏差）
+- Hosted A08已验证PG18 attempt1重试、attempt2独立启动/耗尽和两条历史保留；仅末尾版本表查询漏限定plm schema。先记偏差，下一修正仅改为plm.alembic_version。
+- 父包 smoke继续进入PLG-01 schema verifier后受HEAD常量0232阻断（数据库head已为0233）；作为另一处共享验收脚本陈旧基线先记录，更新常量后复验。
+- A08/P40不标通过；只使用GitHub Hosted Windows Server 2025 D盘。
+
+
 ## Unreleased · 2026-11-07（CR-EXEC-056：第二轮 Hosted PG18 验收偏差）
 - Backend全量/wheel、Frontend/build及父包组装通过；Hosted A08 PG18在第二attempt被PluginExecutionStartOwner固定attempt=1断言拒绝，说明逐attempt实现尚不完整。先记录后修Owner正整数attempt校验并补单测/复验。
 - 同run父包PG smoke的共享migration verifier仍期望schema head 0232，实际已推进到0233；记录为独立Harness陈旧基线，仅更新current-head断言后复验。A08/P40均不据此宣称通过。
