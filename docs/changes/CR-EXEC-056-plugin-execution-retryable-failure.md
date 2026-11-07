@@ -1,4 +1,14 @@
 
+## 第二轮 Hosted PG18 偏差与修正计划（2026-11-07）
+
+- Hosted run [42360552157](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42360552157) 的Backend全量/wheel、Frontend/build、运行时和父包组装成功；A08专项未通过，父包PG smoke也未通过。不得以全量单测通过代替两个专项验收。
+- A08专项在真实合成PG18中完成Migration、attempt 1重试排队和down/up后，第二attempt开始Execution时，`PluginExecutionStartOwner._validate` 将 claim.attempt_no 固定为1，抛出 `PLUGIN_EXECUTION_NOT_STARTABLE`。根因是Start Owner未随CR-EXEC-056已批准的逐attempt admission方案扩展；这属于产品Owner能力缺口，不是夹具问题。
+- 修正计划：在保持Job类型/scope、fencing、worker、payload、绑定和PENDING状态校验不变的前提下，允许正整数attempt；补充Owner单测覆盖attempt 1/2及无效attempt；由现有Repository/Audit和真实PG18 A08 verifier确认attempt 2独立RUNNING root及后续重试完整原子性。未改代码；复验前A08不通过。
+- 同run父包PG18 smoke在空库升级后读得当前schema head 0233，却由`validation/out-01-a01-p01-migration/verify.py`硬编码期望0232而断言失败。该共享验证器未随Migration 0233更新，未到P40后续验收步骤。
+- 修正计划：仅将该验证器的“当前唯一head”期望更新为0233，保留向旧固定revision做升级/降级的专门断言不变；随后复跑Hosted父包PG smoke。记录为独立Harness基线遗漏，不推断P40功能失败/通过。
+- 两个修正分别验证；不改API、冻结数据模型、Migration行为或Worker/ProcessHost接线，不运行真实插件/客户数据。本机/C盘未运行代码。
+
+
 ## Hosted Backend 首轮偏差与修正计划（2026-11-07）
 
 - GitHub Hosted run [42359578240](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42359578240) 的Backend全量套件执行4,127项，4,126项通过，1项失败。失败为 `unit.test_migration_contract.MigrationContractTests.test_configuration_revision_follows_platform_baseline` 仍将唯一head固定断言为 `20261105_0232`；当前实际head为本CR新增的 `20261106_0233`，并非迁移运行或业务Owner失败。
