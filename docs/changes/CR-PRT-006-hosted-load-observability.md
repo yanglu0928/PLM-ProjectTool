@@ -21,3 +21,8 @@ Gate 3 当前阻塞明确包含 Prototype 非 AI GET 20 并发 P95 ≤500ms 未�
 - 方案C：降低500ms门槛或剔除权限、Review、source checks。拒绝：违反冻结验收和安全边界。
 - API/Schema/数据库/产品运行配置无变化，无迁移或用户数据影响。回滚为删除Harness采样器、其单测和workflow调用；原产品与P23/P24基准保持不变。
 - GitHub Hosted Windows Server 2025 D盘全量Backend/Frontend和专用合成PG18/Edge回归；Secret检查。禁止用户本机/C盘运行代码。未通过或测量不可用则如实保留FAIL，转向独立任务。
+
+
+## 实施前静态复核偏差
+
+首次采样器草稿将可用内存值误接到CPU汇总数组，静态逐行复核在执行前发现。草稿尚未运行、未用于报告；先登记后调整采样接口为独立返回CPU百分比与可用内存值，并增加计算/汇总/不可用状态单测。若Hosted验证未能证明每项CPU样本来自SystemTimes差值，则不采纳性能观测结论。
