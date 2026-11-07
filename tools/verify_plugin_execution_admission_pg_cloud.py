@@ -138,6 +138,9 @@ def _seed(engine, *, user_id: uuid.UUID, project_id: uuid.UUID,
         conn.execute(text(
             "SELECT set_config('plm.plugin_installation_owner_write','on',true)"
         ))
+        lease_expires_at = conn.execute(text(
+            "SELECT statement_timestamp()+interval '10 minutes'"
+        )).scalar_one()
         conn.execute(text(
             "INSERT INTO plm.auth_users (user_id,username_display,username_normalized) "
             "VALUES (:id,'Hosted synthetic admission','hosted_admission_' || :suffix)"
@@ -161,15 +164,17 @@ def _seed(engine, *, user_id: uuid.UUID, project_id: uuid.UUID,
             "lease_expires_at) "
             "VALUES (:id,'output','OUTPUT_GENERATE','PROJECT',:project,:user,:trace,"
             "jsonb_build_object('output_request_id',:request,'context_snapshot_id',:context),:key,'RUNNING',1,3,:token,"
-            "statement_timestamp()+interval '10 minutes')"
+            ":lease_expires_at)"
         ), {"id": job_id, "project": project_id, "user": user_id, "trace": str(trace_id),
             "request": request_id, "context": context_id,
-            "key": "plg03-a05-" + job_id.hex, "token": token})
+            "key": "plg03-a05-" + job_id.hex, "token": token,
+            "lease_expires_at": lease_expires_at})
         conn.execute(text(
             "INSERT INTO plm.job_leases "
             "(job_id,worker_ref,fencing_token,state,lease_expires_at) "
-            "VALUES (:job,:worker,:token,'ACTIVE',statement_timestamp()+interval '10 minutes')"
-        ), {"job": job_id, "worker": worker, "token": token})
+            "VALUES (:job,:worker,:token,'ACTIVE',:lease_expires_at)"
+        ), {"job": job_id, "worker": worker, "token": token,
+            "lease_expires_at": lease_expires_at})
         conn.execute(text(
             "INSERT INTO plm.job_attempts (job_id,attempt_no,worker_ref,fencing_token) "
             "VALUES (:job,1,:worker,:token)"
