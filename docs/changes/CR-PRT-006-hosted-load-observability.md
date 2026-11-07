@@ -53,3 +53,8 @@ Hosted run [42372561151](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## 完整runtime复用后的initdb普通错误（2026-11-07）
 
 Hosted run [42373351663](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42373351663) 的PRT job 128406629804已越过Windows loader错误，但完整runtime上的initdb返回1；当前摘要仅有命令/exit code/源位置，stderr被有意省略。因此完整Prototype负载仍未执行，性能仍未判定。先记录后从stderr仅映射有限错误类别：权限拒绝、目录已存在、目录创建/路径拒绝、locale/编码、参数错误或OTHER；禁止输出异常/错误文本与路径。只做一次Hosted复验；如果类目指向用户/产品目录或账户权限问题，不调整服务权限或数据根，保留阻塞并转其他任务。
+
+
+## Hosted完整runtime权限分类与受控路径调整（2026-11-07）
+
+Hosted run [42373971747](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42373971747) 输出固定失败类别 DATA_DIRECTORY_ACCESS_DENIED，命令为initdb.exe、退出码1。PRT job当前将旁包解压runtime复制到GitHub workspace的artifacts路径；既有成功父包 smoke 则从同一runner-owned D盘TEMP完整候选目录启动PG。不能据此改产品数据根、安装ACL或服务权限。所选下一步只调整Harness，将完整、同run旁包验证的PG runtime直接保留于runner TEMP的owned目录，并让initdb/pg_ctl使用该D盘runtime，数据库data/log仍在D盘owned scratch；静态路径检查必须限定于本轮runner.temp边界。只复验一次；若权限类仍出现，即关闭本路径并标记性能阻塞，转其他WBS。
