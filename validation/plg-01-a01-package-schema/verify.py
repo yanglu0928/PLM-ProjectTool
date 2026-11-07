@@ -20,7 +20,7 @@ from plm_assistant.modules.platform.infrastructure.migration import (  # noqa: E
     upgrade_database,
 )
 
-HEAD = "20261105_0232"
+HEAD = "20261106_0233"
 PARENT = "20261103_0223"
 _TABLES = (
     "plg_packages",
