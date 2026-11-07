@@ -11,7 +11,7 @@ Gate 3 当前阻塞明确包含 Prototype 非 AI GET 20 并发 P95 ≤500ms 未�
 - Phase：2 Platform Core；单一WBS：PRT-01-A11-A05-P04-P25，只增强现有20并发合成负载Harness的资源观察能力。
 - 输入基线：冻结Prototype资格/授权/来源完整性语义，非AI GET P95≤500ms；P23/P24结果；CR-EXEC-002的Win11 Pilot优先顺序。
 - 前置：P23/P24功能断言通过但性能未达；父包Hosted PG18 smoke与P40/P25已经各自PASS_LIMITED。当前不改变产品Owner、API、Schema、配置和连接池。
-- 验收：Hosted Windows Server 2025 D盘用合成数据运行既有负载；在负载前/过程中/后采样CPU、可用内存及固定阶段耗时；只输出聚合数值，不记录主机名、用户名、SQL参数、请求正文、Cookie或凭据；诊断失效不得使功能验收误报通过，且P95门槛仍独立判定。保留业务状态/强ETag/来源/文件证明与零写断言。
+- 验收：Hosted Windows Server 2025 D盘用合成数据运行既有负载；在完整负载Verifier进程运行期间以固定间隔采样CPU与可用内存，仅记录总运行时长和聚合P95/极值；采样范围覆盖夹具准备、HTTP负载及清理，不伪装为单独HTTP阶段计时；只输出聚合数值，不记录主机名、用户名、SQL参数、请求正文、Cookie或凭据；诊断失效不得使功能验收误报通过，且P95门槛仍独立判定。保留业务状态/强ETag/来源/文件证明与零写断言。
 - 限制：Hosted Windows Server 2025数据不能证明Windows 11 P95；该WBS只检验观测器和实验可解释性，不关闭性能Gate或Pilot。
 
 ## 方案、影响与恢复
