@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（CR-EXEC-056：第二轮 Hosted PG18 验收偏差）
+- Backend全量/wheel、Frontend/build及父包组装通过；Hosted A08 PG18在第二attempt被PluginExecutionStartOwner固定attempt=1断言拒绝，说明逐attempt实现尚不完整。先记录后修Owner正整数attempt校验并补单测/复验。
+- 同run父包PG smoke的共享migration verifier仍期望schema head 0232，实际已推进到0233；记录为独立Harness陈旧基线，仅更新current-head断言后复验。A08/P40均不据此宣称通过。
+- 仅Hosted Windows Server 2025 D:；本机/C盘未运行代码。
+
+
 ## Unreleased · 2026-11-07（CR-EXEC-056：PLG-03-A08 首轮 Hosted 全量回归偏差）
 - Hosted run [42359578240](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42359578240) Backend 4,127项仅1项失败：实际执行的unit迁移契约测试仍期望唯一head 0232，实际migration head为0233。
 - 根因是此前更新了同名的非unit测试路径，漏改真正运行的 `apps/backend/tests/unit/test_migration_contract.py`。偏差先记录在CR-EXEC-056；修正范围仅限该测试的head/down_revision断言，不改产品/迁移逻辑。Hosted全量及PG18 A08专项复验待运行，A08未通过。
