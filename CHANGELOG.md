@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（CR-EXEC-050：事务内 Jobs/Output Admission 入口）
+- 新增 `JobLeaseService.check_output_claim_in_transaction` 与 `OutputJobExecutionAdmissionOwner.admit_in_transaction`；原有独立 UnitOfWork 包装继续可用。调用方可在同一事务中验证租约、Output绑定和Plugin capability。
+- GitHub Hosted run [42324011767](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42324011767) 后端4,099 tests、wheel及前端/build通过；父包/A17/A35通过。P25/A08/A17全链仍在运行，未据此宣称整条workflow通过。
+- A04 为 `PASS_SCOPE_LIMITED`，未改 API/Schema/Migration、未执行插件或开放 Production Worker。下一项 PLG-03-A05 PluginExecution Admission Owner precheck。仅Hosted Windows runner；本机/C盘未运行项目代码。
+
 ## Unreleased · 2026-11-07（CR-EXEC-050：共享事务 Admission application 入口）
 - 已完成编码前检查，确认 Jobs Lease 与 Output Admission 的 Repository 可用调用方事务，而对应 Application Owner 自行创建事务，阻止未来 PluginExecution admission 原子组合。
 - 下一步仅增加 transaction-scoped Application Interface，保留现有 wrappers；不改API/Schema/Migration，不执行插件、不接Production Worker。
