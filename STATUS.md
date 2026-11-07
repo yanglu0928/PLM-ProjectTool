@@ -1,3 +1,8 @@
+|Execution Note|2026-11-07 PLG-03-A08以PASS_SCOPE_LIMITED关闭：Hosted run [42362550450](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42362550450)，job 128375724422 marker PLG_03_A08_PG18_PASS。真实PG18.6通过空/既有库0232→0233迁移、down/up及多attempt down保护；attempt1暂态失败排队，attempt2独立Execution启动并耗尽失败；事件/Audit幂等/回滚，stale fence/worker/错误码零写拒绝。Backend/wheel、Frontend、A05/A06/A07亦成功。仅Hosted Windows Server 2025 D盘合成环境，不接Worker、不执行插件；正式trust/W11/Pilot/Gate/Release不变。|
+|Current WBS|PLG-03-A08：PASS_SCOPE_LIMITED，见CR-EXEC-056。|
+|Current WBS Status|A08专用PG18验收及同轮Backend/Frontend通过。整体workflow仍非全绿：父包PG smoke在PLG-02子验证器中因rollback后当前head预期仍为0232、实际0233而失败；A08业务与迁移独立验收已通过，父包/P40不据此标PASS。|
+|Next WBS|修正validation/plg-02-a06-operation-disable/verify.py中当前head断言至20261106_0233并Hosted复跑父包PG18 smoke；完成后按STATUS原计划继续。|
+
 |Execution Note|2026-11-07 Hosted run [42361605909](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42361605909)：Backend全量/wheel、Frontend/build、运行时/父包组装及A05/A06/A07 PG18通过。A08已通过attempt1重试、down/up、attempt2独立启动/耗尽与历史保留，末尾仅因验收器查询未限定schema的alembic_version（应为plm.alembic_version）失败；父包PG smoke已越过OUT head检查，后在PLG-01验证器HEAD=0232陈旧常量处失败。均先记CR-EXEC-056后限定修正验证器并重跑；A08与P40尚未通过。仅Hosted D盘，本机/C盘未运行。|
 |Current WBS|PLG-03-A08：修正PG18 verifier的版本表schema限定，同时使PLG-01共享schema verifier认当前head 0233；Hosted复验。|
 |Current WBS Status|A08业务重试链已在PG18执行到最终验证器后置查询，Owner attempt2修正已跨过；当前失败为验证器版本表未限定schema。父包PG smoke当前受PLG-01子验证器HEAD陈旧常量阻断。A08/P40未通过，正式trust/Worker/W11/Pilot/Gate/Release未通过。|
