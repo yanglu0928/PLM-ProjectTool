@@ -44,3 +44,7 @@ Hosted run [42326604885](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## Hosted fixture与记录格式复核（2026-11-07，修正前记录）
 
 进一步检查冻结Plugin Installation迁移发现ENABLED installation/operation fixture受 plm.plugin_installation_owner_write 事务GUC保护。验收器必须仅在新建的合成PG数据库fixture写入事务内通过事务本地GUC准备安装事实；随后实际Admission Owner使用独立UoW并自行设置plm.plugin_execution_owner_write。此fixture办法只为建立合成输入，不验证/冒充安装Owner或正式trust。另发现上次文件写入把两个换行标记成字面反斜线n，导致CR和STATUS局部Markdown不整洁；本次修复前先记录，将恢复为真实换行且不改记录内容。
+
+## 首轮 Hosted 验收偏差（修正前记录）
+
+Hosted run [42329871400](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42329871400) 的新增A05 job在PG初始化前失败：复用的parent staging helper要求提取目标为RUNNER_TEMP的直接子目录，而首轮脚本将其放在本run根目录下的子目录。失败发生于路径边界检查，没有启动PG、没有调用Owner、没有产品代码副作用或外发数据。修正为同一个run拥有的D盘RUNNER_TEMP两个直接子目录（受校验包暂存目录、PG运行目录），并对二者分别验证边界后清理；随后重新Hosted复验。
