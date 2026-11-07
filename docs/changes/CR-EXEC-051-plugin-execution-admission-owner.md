@@ -40,3 +40,7 @@
 ## 实施前发现的低风险文档偏差
 
 CR-EXEC-050代码提交后复核发现 `JobLeaseService` 类级 docstring 仍写“每个方法均自行拥有事务”，与新加 `check_output_claim_in_transaction` 不一致。没有行为影响；将在A05同一提交组把描述改为“事务包装/transaction-scoped两类接口”，由 Hosted 全量回归覆盖。
+
+## 实现前代码复核（2026-11-07）
+
+在首次 Hosted 验收前静态复核发现两点需先收紧：attempt number 要求运行时精确为整数 1（避免 bool/float 的相等比较被接受）；target projection不应在已锁定 Installation 后反向锁 Package/Manifest，以避免和 Activation Owner 的锁顺序形成死锁。Package/Manifest 为不可变事实，实施将依赖 capability 查询已持有的 Installation行锁，并让target lookup只读Package/Manifest及启用关系。该调整先记后改；不改变Scope/API/Schema/Migration。
