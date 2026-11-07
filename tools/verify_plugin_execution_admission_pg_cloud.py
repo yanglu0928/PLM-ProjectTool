@@ -57,9 +57,11 @@ class FailingAudit:
         raise RuntimeError("synthetic audit failure")
 
 
-def _checked(args: list[str], timeout: int = 180) -> str:
-    result = subprocess.run(args, capture_output=True, text=True, encoding="utf-8",
-                            errors="replace", timeout=timeout, check=False)
+def _checked(args: list[str], timeout: int = 180, *,
+             cwd: Path | None = None, env: dict[str, str] | None = None) -> str:
+    result = subprocess.run(args, cwd=cwd, env=env, capture_output=True,
+                            text=True, encoding="utf-8", errors="replace",
+                            timeout=timeout, check=False)
     if result.returncode:
         child = Path(args[0]).name.casefold() if args else ""
         if child not in {"initdb.exe", "pg_ctl.exe", "psql.exe"}:
@@ -208,17 +210,23 @@ def main() -> int:
         receipt = stage_candidate(args.archive, args.verification_summary, stage)
         staged = True
         pg_root = stage / "payload" / "pgsql"
-        initdb, pg_ctl = (pg_root / "bin" / name for name in ("initdb.exe", "pg_ctl.exe"))
+        pg_bin = (pg_root / "bin").resolve(strict=True)
+        initdb, pg_ctl = (pg_bin / name for name in ("initdb.exe", "pg_ctl.exe"))
         if not all(p.is_file() and not p.is_symlink() for p in (initdb, pg_ctl)):
             raise ValueError("verified parent package PostgreSQL runtime missing")
+        # PostgreSQL child processes can load runtime DLLs from this packaged bin.
+        # Keep the inherited hosted environment intact and prepend only this verified path.
+        pg_env = os.environ.copy()
+        pg_env["PATH"] = str(pg_bin) + os.pathsep + pg_env.get("PATH", "")
         _checked([str(initdb), "-D", str(data_dir), "-U", "postgres",
-                  "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"])
+                  "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"],
+                 cwd=pg_bin, env=pg_env)
         start = subprocess.run(
             [str(pg_ctl), "-D", str(data_dir), "-l", str(pg_log),
              "-o", f"-h 127.0.0.1 -p {port} -c listen_addresses=127.0.0.1",
              "-w", "start"],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
-            timeout=180, check=False,
+            cwd=pg_bin, env=pg_env, timeout=180, check=False,
         )
         if start.returncode:
             raise RuntimeError("temporary packaged PG18 failed to start: " +
@@ -399,8 +407,8 @@ def main() -> int:
             pg_ctl = stage / "payload" / "pgsql" / "bin" / "pg_ctl.exe"
             stop = subprocess.run(
                 [str(pg_ctl), "-D", str(data_dir), "-m", "fast", "-w", "stop"],
-                capture_output=True, text=True, encoding="utf-8", errors="replace",
-                timeout=180, check=False,
+                cwd=pg_bin, env=pg_env, capture_output=True, text=True,
+                encoding="utf-8", errors="replace", timeout=180, check=False,
             )
             if stop.returncode:
                 raise RuntimeError("temporary PostgreSQL shutdown was not confirmed")

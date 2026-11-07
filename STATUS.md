@@ -3013,3 +3013,6 @@
 - 2026-11-07 A05首次独立Hosted验收 job在PG启动前因父包staging目标不是RUNNER_TEMP直接子目录而安全拒绝（run [42329871400](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42329871400)）；未执行Owner、未触碰项目/客户数据。已按CR-EXEC-052先记录路径边界复核，当前WBS仍未完成。
 
 - 2026-11-07 第二轮A05 PG18 job(run [42330769351](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42330769351))通过候选暂存后，packaged initdb.exe退出非零且无stdout/stderr；验收脚本遗漏exit code，故数据库未启动、Admission Owner未调用。先记CR-EXEC-052，需补受限进程阶段/数值退出码诊断后再复验；WBS仍未完成。
+
+
+- 2026-11-07 第三轮A05 Hosted run [42331887380](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42331887380)：随包 initdb.exe 返回3221225781（0xC0000135）且无输出；PG未初始化，A05 Owner未调用。该Windows状态码指向DLL装载失败，但具体缺失模块未确认，不能记产品缺陷或PASS。已按CR-EXEC-052先登记只改验收器的子进程启动环境调整：传入校验过的随包 pgsql/bin 为PATH首项并作为cwd、其余环境继承但不回显，再走Hosted复验。本机/C盘未运行。

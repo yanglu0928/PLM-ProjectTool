@@ -53,3 +53,10 @@ Hosted run [42329871400](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## 第二轮 Hosted 验收偏差（修正前记录）
 
 Hosted run [42330769351](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42330769351) 已通过路径暂存边界并校验父包，随后 packaged initdb.exe 返回非零，stdout/stderr均为空；PG尚未启动、数据库尚未创建，因此Owner未被调用。现有验证辅助函数只回显空输出，遗漏numeric process exit code，无法区分原生加载失败与其他初始化拒绝。此失败属于新建验收器/运行输入诊断，未证明产品Owner失败。实施前记录诊断调整：固定输出子进程basename与数值exit code，将该步骤Stage写入仅合成摘要；不回显任意环境或用户内容，不改产品代码。之后Hosted D盘重跑。
+
+
+## 第三轮 Hosted A05 启动失败（修正前记录）
+
+Hosted run [42331887380](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42331887380) 的A05 job已完成父包SHA/清单校验和PG verifier依赖安装，但随包 `initdb.exe` 以Windows进程退出码 `3221225781` 退出，折合 `0xC0000135`，没有标准输出/错误；PG实例未初始化，Admission Owner未调用。该状态码指向DLL装载失败，尚未证明具体缺失模块或产品问题。A05仍未通过。
+
+修正前记录的唯一调整：为验收器启动的每个随包PostgreSQL进程设置显式子进程环境，将已经校验的 `payload/pgsql/bin` 置于PATH首位并设为工作目录；继承其它Hosted环境，禁止打印环境变量，不更改父包内容、业务实现、DB Schema/Migration或产品装配。随后在同run父包上重跑A05；若原生加载错误仍存在，再以受限且不回显环境的Windows依赖诊断定位模块，不将假设记为根因。
