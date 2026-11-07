@@ -1,0 +1,31 @@
+# OUT-01-A01-P07：内置Output文件模板固定版本Registry实现
+
+- 日期：2026-11-04
+- 状态：PASS_SCOPE_LIMITED（实现与云端验收完成）
+- WBS：OUT-01-A01-P07
+- 依据：CR-OUT-006、OUT-01-A01-P06 PASS_SCOPE_LIMITED、冻结API-03/DM-04/DB Schema V1
+
+## 编码前检查
+
+- 数据Owner固定为Output模块；只读包内目录映射到现有OutputTemplateVersion DTO及OutputTemplateRegistryPort，不读取Prototype ORM或其他业务模块。
+- 固定ref一对一指向模板版本；不支持current/latest发现。旧ref保持稳定，未知ref拒绝。
+- 条目只包含UUID ref、受控output_type、source_kinds、immutable=true、published=true；不得包含可执行脚本、任意路径、客户数据或插件信任声明。
+- 不增加ORM/Migration/API/依赖；P07不接Resolver/OutputRequest生产组合，不开启Output Create。
+- 验收：单测固定ref映射、身份/字段白名单、重复/畸形/未知配置拒绝；A17 packaged runtime烟测检查打包Registry并输出专用marker；完整GitHub hosted workflow通过。
+- 回滚：删除新增内置Registry adapter/entries/test；原有resolver在port缺失时仍失败关闭。
+
+## 剩余编码前事项
+
+按CR-OUT-006开始单一的Output内置只读固定版本Registry实现。
+
+## 实现记录（2026-11-04，云端验收待完成）
+
+- Output Owner新增内置metadata Registry，暂含一个固定DOCX模板版本ref及REQUIREMENT_VERSION来源类型；不含渲染数据/模板文件，不支持自定义，且不接生产Output resolver。
+- Unit测试覆盖固定ref、不可变性、未知/重复/畸形拒绝；A17 hosted package smoke新增P07 marker。云端定向/全量及父包/A17/A34结果待本次工作流；P07尚未关闭。
+
+
+## 实现与验收结果（2026-11-04）
+
+- BuiltinOutputTemplateRegistry以只读MappingProxy目录映射一个固定DOCX/REQUIREMENT_VERSION metadata；未知/无效ref返回不存在，目录重复/字段不合法在构造时拒绝。该条目不是DOCX文件或渲染器。
+- 提交ab23b77e的hosted run [41688934347](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41688934347) 13/13 jobs通过；新增A17 marker明确验证打包运行时Registry。全链中的A17/A34、Windows父包、PG18/pgvector及后端/前端均成功。
+- 无Migration/API变化、无客户数据；仅合成托管验证，不是Win11设备验收。Output Create仍未开放，Policy、Plugin operation真实trust/enable和渲染/Artifact链待后续完成。本WBS结论PASS_SCOPE_LIMITED。

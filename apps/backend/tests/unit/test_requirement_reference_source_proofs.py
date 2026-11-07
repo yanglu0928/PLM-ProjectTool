@@ -37,7 +37,7 @@ class _EvidenceRepository:
 
 class RequirementReferenceSourceProofTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.ids = [uuid.uuid4() for _ in range(12)]
+        self.ids = [uuid.UUID(int=index + 1) for index in range(12)]
         (
             self.project, self.evidence, self.document, self.document_version,
             self.baseline_version, self.baseline, self.capability_item,

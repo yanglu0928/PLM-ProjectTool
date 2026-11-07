@@ -95,6 +95,7 @@ KEY_REFS = (
     "evidence-list-cursor-v1", "global-reference-list-cursor-v1",
     "project-global-reference-candidate-list-cursor-v1",
     "project-outline-list-cursor-v1", "project-outline-version-list-cursor-v1",
+    "output-request-list-cursor-v1",
     "project-plan-list-cursor-v1", "project-reference-list-cursor-v1",
     "project-section-list-cursor-v1", "project-section-version-list-cursor-v1",
     "project-structured-spec-version-list-cursor-v1",
@@ -168,12 +169,38 @@ def _startup_log_summary(path: Path) -> str:
     return "startup-log-sha256:" + hashlib.sha256(raw).hexdigest()[:12]
 
 
+def _caddy_startup_summary(path: Path) -> str:
+    """Return only a bounded fixed category or digest; never expose raw Caddy logs."""
+    try:
+        raw = path.read_bytes()[-65536:]
+    except OSError:
+        return "caddy-startup-log-unavailable"
+    text = raw.decode("utf-8", errors="replace").casefold()
+    categories = (
+        ("socket-bind-conflict", r"address already in use|only one usage of each socket address|bind:.*(?:in use|address)"),
+        ("permission-denied", r"access is denied|permission denied"),
+        ("missing-file", r"no such file or directory|cannot find the file specified"),
+        ("certificate-load-failure", r"failed to load certificate|loading certificate.*(?:failed|error)|certificate.*(?:not found|invalid)"),
+        ("config-rejected", r"unrecognized directive|unknown directive|parsing caddyfile.*error|adapt.*error"),
+        ("runtime-dependency-failure", r"failed to load.*(?:dll|library)|side-by-side configuration"),
+    )
+    for label, pattern in categories:
+        if re.search(pattern, text):
+            return "caddy-" + label
+    return "caddy-stderr-sha256:" + hashlib.sha256(raw).hexdigest()[:12]
+
+
 def _wait_http(client: httpx.Client, path: str, process: subprocess.Popen, *,
-               seconds: int = 30, diagnostic_log: Path | None = None) -> None:
+               seconds: int = 30, diagnostic_log: Path | None = None,
+               diagnostic_labeler: Callable[[Path], str] | None = None) -> None:
     deadline = time.monotonic() + seconds
     last_status: int | None = None
     while time.monotonic() < deadline:
         if process.poll() is not None:
+            if diagnostic_log is not None and diagnostic_labeler is not None:
+                diagnostic = diagnostic_labeler(diagnostic_log)
+                raise ValueError("packaged production child exited before ready: "
+                                 f"exit_code={process.returncode}; {diagnostic}")
             diagnostic = (_startup_log_summary(diagnostic_log)
                           if diagnostic_log is not None else "stderr unavailable")
             if diagnostic_log is None and process.stderr is not None:
@@ -314,6 +341,8 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
     data, log = pg_run / "pgdata", pg_run / "postgresql.log"
     api_process = caddy_process = None
     api_log = run / "packaged-api-startup.log"
+    caddy_startup_log = run / "caddy-startup.log"
+    caddy_log_handle = None
     pg_started = False
     pg_restart_count = 0
     pg_logical_restore_count = 0
@@ -608,13 +637,16 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                                  timeout=20, check=False)
         if checked.returncode:
             raise ValueError("packaged Caddy synthetic configuration rejected")
+        caddy_log_handle = caddy_startup_log.open("ab")
         caddy_process = subprocess.Popen([str(caddy), "run", "--config", str(caddy_config)],
                                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                         stderr=subprocess.DEVNULL, env=env,
+                                         stderr=caddy_log_handle, env=env,
                                          creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         with httpx.Client(base_url=origin, verify=str(cert), timeout=5,
                           follow_redirects=False, trust_env=False) as client:
-            _wait_http(client, "/health/ready", caddy_process)
+            _wait_http(client, "/health/ready", caddy_process,
+                       diagnostic_log=caddy_startup_log,
+                       diagnostic_labeler=_caddy_startup_summary)
             https_ready = client.get("/health/ready")
             https_live = client.get("/health/live")
             if any(response.status_code != 200 or response.content != b'{"status":"UP"}'
@@ -712,6 +744,11 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
                 _stop_process(process)
             except (OSError, subprocess.TimeoutExpired):
                 cleanup_errors.append(name)
+        if caddy_log_handle is not None:
+            try:
+                caddy_log_handle.close()
+            except OSError:
+                cleanup_errors.append("caddy-log-handle")
         pg_stopped = not pg_started
         if pg_started:
             try:

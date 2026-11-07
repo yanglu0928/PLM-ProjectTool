@@ -21,7 +21,17 @@ class MigrationContractTests(unittest.TestCase):
                 "postgresql+psycopg://app@127.0.0.1/plm"
             )
         )
-        self.assertEqual(scripts.get_heads(), ["20261026_0210"])
+        self.assertEqual(scripts.get_heads(), ["20261106_0233"])
+        self.assertEqual(scripts.get_revision("20261106_0233").down_revision, "20261105_0232")
+        self.assertEqual(scripts.get_revision("20261104_0225").down_revision, "20261103_0224")
+        self.assertEqual(scripts.get_revision("20261104_0227").down_revision, "20261104_0226")
+        self.assertEqual(scripts.get_revision("20261104_0228").down_revision, "20261104_0227")
+        self.assertEqual(scripts.get_revision("20261104_0229").down_revision, "20261104_0228")
+        self.assertEqual(scripts.get_revision("20261102_0222").down_revision, "20261102_0221")
+        self.assertEqual(scripts.get_revision("20261102_0221").down_revision,
+                         "20261102_0220")
+        self.assertEqual(scripts.get_revision("20261102_0220").down_revision,
+                         "20261026_0210")
         self.assertEqual(scripts.get_revision('20261026_0210').down_revision,
                          '20261026_0200')
         self.assertEqual(scripts.get_revision('20261026_0200').down_revision,
@@ -258,3 +268,18 @@ class MigrationContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PluginInstallationRetirementMigrationTests(unittest.TestCase):
+    def test_retirement_guard_is_one_way_and_requires_audit_and_no_active_operations(self) -> None:
+        scripts = ScriptDirectory.from_config(
+            create_migration_config("postgresql+psycopg://app@127.0.0.1/plm")
+        )
+        migration = scripts.get_revision("20261104_0229")
+        source = Path(migration.path).read_text(encoding="utf-8")
+        self.assertIn("NEW.installation_state <> 'RETIRED'", source)
+        self.assertIn("PLUGIN_INSTALLATION_RETIRE", source)
+        self.assertIn("INSTALLATION_RETIRED", source)
+        self.assertIn("NOT EXISTS (SELECT 1 FROM plm.plg_enabled_operations", source)
+        self.assertIn("NEW.updated_by", source)
+        self.assertIn("runtime history prevents downgrade", source)

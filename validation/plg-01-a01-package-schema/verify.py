@@ -1,0 +1,394 @@
+"""Verify PLG-01 package registry migration on isolated PostgreSQL 18 databases."""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+import uuid
+from pathlib import Path
+
+import psycopg
+from psycopg import errors, sql
+from sqlalchemy.engine import URL
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "apps" / "backend" / "src"))
+
+from plm_assistant.modules.platform.infrastructure.migration import (  # noqa: E402
+    downgrade_database,
+    upgrade_database,
+)
+
+HEAD = "20261106_0233"
+PARENT = "20261103_0223"
+_TABLES = (
+    "plg_packages",
+    "plg_manifest_operations",
+    "plg_manifest_dependencies",
+    "plg_package_verifications",
+)
+
+
+def _url(name: str, port: int) -> URL:
+    return URL.create("postgresql+psycopg", username="postgres",
+                      host="127.0.0.1", port=port, database=name)
+
+
+def _dsn(name: str, port: int) -> str:
+    return f"postgresql://postgres@127.0.0.1:{port}/{name}"
+
+
+def _create_database(admin_dsn: str, name: str) -> None:
+    with psycopg.connect(admin_dsn, autocommit=True) as conn:
+        conn.execute(sql.SQL("CREATE DATABASE {} TEMPLATE postgres").format(
+            sql.Identifier(name)))
+
+
+def _drop_database(admin_dsn: str, name: str) -> None:
+    with psycopg.connect(admin_dsn, autocommit=True) as conn:
+        conn.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(
+            sql.Identifier(name)))
+
+
+def _revision(dsn: str) -> str:
+    with psycopg.connect(dsn) as conn:
+        row = conn.execute("SELECT version_num FROM plm.alembic_version").fetchone()
+    if row is None:
+        raise AssertionError("database has no Alembic revision")
+    return row[0]
+
+
+def _assert_presence(dsn: str, expected: bool) -> None:
+    with psycopg.connect(dsn) as conn:
+        found = [
+            conn.execute("SELECT to_regclass(%s)", ("plm." + table,)).fetchone()[0]
+            for table in _TABLES
+        ]
+    if (all(found)) is not expected or (not expected and any(found)):
+        raise AssertionError(f"PLG-01 table presence mismatch: {found!r}")
+
+
+_INSTALLATION_TABLES = (
+    "plg_installations",
+    "plg_enabled_operations",
+    "plg_runtime_validations",
+    "plg_disable_results",
+)
+
+
+def _assert_installation_presence(dsn: str, expected: bool) -> None:
+    with psycopg.connect(dsn) as conn:
+        found = [
+            conn.execute("SELECT to_regclass(%s)", ("plm." + table,)).fetchone()[0]
+            for table in _INSTALLATION_TABLES
+        ]
+    if (all(found)) is not expected or (not expected and any(found)):
+        raise AssertionError(f"PluginInstallation table presence mismatch: {found!r}")
+
+
+def _assert_guards(dsn: str) -> None:
+    with psycopg.connect(dsn) as conn:
+        actual = conn.execute(
+            "SELECT count(*) FROM pg_trigger "
+            "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%' "
+            "AND tgrelid::regclass::text NOT IN "
+            "('plm.plg_executions','plm.plg_execution_result_files',"
+            "'plm.plg_execution_state_events')"
+        ).fetchone()[0]
+    if actual != 21:
+        raise AssertionError(f"expected 21 PLG-01/02 immutable/truncate/owner guards, got {actual}")
+    with psycopg.connect(dsn) as conn:
+        closed = conn.execute(
+            "SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal "
+            "AND tgname LIKE 'trg_plg_%__owner_closed'"
+        ).fetchone()[0]
+    if closed != 5:
+        raise AssertionError(f"expected five closed PLG-02 Owner guards through 0230, found {closed}")
+
+
+def _assert_guards_open_parent(dsn: str) -> None:
+    with psycopg.connect(dsn) as conn:
+        counts = conn.execute(
+            "SELECT count(*) FILTER (WHERE tgname LIKE 'trg_plg_%__immutable'),"
+            "count(*) FILTER (WHERE tgname LIKE 'trg_plg_%__no_truncate'),"
+            "count(*) FILTER (WHERE tgname LIKE 'trg_plg_%__owner_closed') "
+            "FROM pg_trigger WHERE NOT tgisinternal"
+        ).fetchone()
+    if counts != (4, 4, 0):
+        raise AssertionError(f"expected open 0223 Plugin owners and immutable guards, got {counts}")
+
+
+def _assert_guards_closed(dsn: str) -> None:
+    with psycopg.connect(dsn) as conn:
+        actual = conn.execute(
+            "SELECT count(*) FROM pg_trigger "
+            "WHERE NOT tgisinternal AND tgname LIKE 'trg_plg_%__owner_closed'"
+        ).fetchone()[0]
+    if actual != 4:
+        raise AssertionError(f"expected four closed PLG owner guards at historical 0222 downgrade, got {actual}")
+
+
+def _seed_synthetic_history(dsn: str) -> tuple[uuid.UUID, uuid.UUID]:
+    package_id, verification_id = uuid.uuid4(), uuid.uuid4()
+    with psycopg.connect(dsn) as conn:
+        conn.execute(
+            "INSERT INTO plm.plg_packages "
+            "(plugin_package_id,plugin_id_normalized,plugin_version,package_sha256,"
+            "manifest_snapshot,signature,signer_key_ref,compatibility_policy_ref,"
+            "package_state,created_at,lock_version) "
+            "VALUES (%s,'synthetic.echo','1.0.0',%s,"
+            """'{"schema_version":"1"}'::jsonb,%s,'test-key-ref','host-v1',"""
+            "'IMPORTED',statement_timestamp(),0)",
+            (package_id, b"\x11" * 32, b"synthetic-signature"),
+        )
+        conn.execute(
+            "INSERT INTO plm.plg_manifest_operations "
+            "(plugin_package_id,operation_id,output_types,plugin_api_version) "
+            "VALUES (%s,'document.render','[\"DOCX\"]'::jsonb,'1')",
+            (package_id,),
+        )
+        conn.execute(
+            "INSERT INTO plm.plg_manifest_dependencies "
+            "(dependency_id,plugin_package_id,dependency_name,version_spec,dependency_kind) "
+            "VALUES (%s,%s,'python-docx','>=1.0,<2','PYTHON')",
+            (uuid.uuid4(), package_id),
+        )
+        conn.execute(
+            "INSERT INTO plm.plg_package_verifications "
+            "(verification_id,plugin_package_id,verification_state,check_code,summary,"
+            "evidence_fingerprint,verified_at) "
+            "VALUES (%s,%s,'FAILED','SIGNATURE_CHECK','synthetic invalid signature',%s,"
+            "statement_timestamp())",
+            (verification_id, package_id, b"\x22" * 32),
+        )
+    return package_id, verification_id
+
+
+def _assert_immutability_and_insert_owner(dsn: str, package_id: uuid.UUID) -> None:
+    with psycopg.connect(dsn) as conn:
+        attempts = (
+            ("UPDATE", "UPDATE plm.plg_packages SET plugin_version='2.0' "
+             "WHERE plugin_package_id=%s"),
+            ("DELETE", "DELETE FROM plm.plg_manifest_operations WHERE plugin_package_id=%s"),
+            ("TRUNCATE", "TRUNCATE plm.plg_package_verifications"),
+        )
+        for operation, statement in attempts:
+            try:
+                if "%s" in statement:
+                    with conn.transaction():
+                        conn.execute(statement, (package_id,))
+                else:
+                    with conn.transaction():
+                        conn.execute(statement)
+            except errors.RaiseException:
+                continue
+            raise AssertionError(f"append-only package owner allowed {operation}")
+        with conn.transaction():
+            conn.execute("SAVEPOINT insert_owner_probe")
+            conn.execute(
+                "INSERT INTO plm.plg_packages "
+                "(plugin_id_normalized,plugin_version,package_sha256,manifest_snapshot,"
+                "signature,signer_key_ref,compatibility_policy_ref) "
+                "VALUES ('test.insert-probe','1.0',decode(repeat('33',32),'hex'),"
+                """'{"schema_version":"1"}'::jsonb,'x','key','host-v1')"""
+            )
+            conn.execute("ROLLBACK TO SAVEPOINT insert_owner_probe")
+
+
+
+
+def _assert_import_staging_presence(dsn: str, expected: bool) -> None:
+    with psycopg.connect(dsn) as conn:
+        found = conn.execute(
+            "SELECT to_regclass('plm.plg_package_import_stagings')"
+        ).fetchone()[0] is not None
+    if found is not expected:
+        raise AssertionError(f"Plugin import staging table presence mismatch: {found!r}")
+
+
+def _verify_import_staging_owner(admin_dsn: str, port: int, name: str) -> None:
+    _create_database(admin_dsn, name)
+    dsn, url = _dsn(name, port), _url(name, port)
+    try:
+        upgrade_database(url, "head")
+        if _revision(dsn) != HEAD:
+            raise AssertionError("staging database did not reach current head")
+        _assert_import_staging_presence(dsn, True)
+        upload_id = uuid.uuid4()
+        with psycopg.connect(dsn) as conn:
+            conn.execute(
+                "INSERT INTO plm.plg_package_import_stagings "
+                "(package_upload_id,package_sha256,package_size_bytes,"
+                "detached_signature,signer_key_ref) "
+                "VALUES (%s,%s,7,%s,'synthetic-test-key')",
+                (upload_id, bytes([0x31]) * 32, bytes([0x41]) * 64),
+            )
+        with psycopg.connect(dsn) as conn:
+            for operation, statement, params in (
+                ("UPDATE", "UPDATE plm.plg_package_import_stagings "
+                 "SET signer_key_ref='changed' WHERE package_upload_id=%s", (upload_id,)),
+                ("DELETE", "DELETE FROM plm.plg_package_import_stagings "
+                 "WHERE package_upload_id=%s", (upload_id,)),
+                ("TRUNCATE", "TRUNCATE plm.plg_package_import_stagings", ()),
+            ):
+                try:
+                    with conn.transaction():
+                        conn.execute(statement, params)
+                except errors.RaiseException:
+                    continue
+                raise AssertionError(f"staging history allowed {operation}")
+            retained = conn.execute(
+                "SELECT count(*),min(package_size_bytes) "
+                "FROM plm.plg_package_import_stagings WHERE package_upload_id=%s",
+                (upload_id,),
+            ).fetchone()
+        if retained != (1, 7):
+            raise AssertionError("append-only staging row changed")
+        try:
+            downgrade_database(url, PARENT)
+        except RuntimeError as exc:
+            if "staging history prevents downgrade" not in str(exc):
+                raise
+        else:
+            raise AssertionError("staging history did not prevent destructive downgrade")
+        if _revision(dsn) != HEAD:
+            raise AssertionError("blocked downgrade changed staging schema revision")
+    finally:
+        _drop_database(admin_dsn, name)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--run-id", required=True)
+    args = parser.parse_args()
+    if not 1 <= args.port <= 65535 or not re.fullmatch(r"[0-9]{1,12}", args.run_id):
+        raise ValueError("PLG-01 validation requires a loopback port and numeric run id")
+    suffix = args.run_id[-10:]
+    staging_db = f"plg01_{suffix}_staging"
+    empty = f"plg01_{suffix}_empty"
+    existing = f"plg01_{suffix}_existing"
+    admin = _dsn("postgres", args.port)
+    created: list[str] = []
+    result = {
+        "status": "PASS_LIMITED",
+        "head": HEAD,
+        "empty_upgrade": "PENDING",
+        "empty_downgrade_reupgrade": "PENDING",
+        "append_only_owner_guards": "PENDING",
+        "synthetic_history_retained": "PENDING",
+        "history_blocks_downgrade": "PENDING",
+        "preexisting_schema_data_retained": "PENDING",
+        "customer_data": False,
+        "external_calls": 0,
+        "production_database": False,
+    }
+    try:
+        _verify_import_staging_owner(admin, args.port, staging_db)
+        _create_database(admin, empty)
+        created.append(empty)
+        empty_url, empty_dsn = _url(empty, args.port), _dsn(empty, args.port)
+        upgrade_database(empty_url, "head")
+        if _revision(empty_dsn) != HEAD:
+            raise AssertionError("empty upgrade did not reach PLG-01 head")
+        _assert_presence(empty_dsn, True)
+        _assert_installation_presence(empty_dsn, True)
+        _assert_guards(empty_dsn)
+        result["empty_upgrade"] = "PASS"
+        result["append_only_owner_guards"] = "PASS"
+
+        downgrade_database(empty_url, PARENT)
+        if _revision(empty_dsn) != PARENT:
+            raise AssertionError("empty PLG-01 import staging downgrade did not stop at 0223")
+        _assert_presence(empty_dsn, True)
+        _assert_installation_presence(empty_dsn, False)
+        _assert_import_staging_presence(empty_dsn, False)
+        _assert_guards_open_parent(empty_dsn)
+        downgrade_database(empty_url, "20261102_0222")
+        if _revision(empty_dsn) != "20261102_0222":
+            raise AssertionError("empty Plugin owner downgrade did not stop at 0222")
+        _assert_guards_closed(empty_dsn)
+        downgrade_database(empty_url, "20261102_0221")
+        if _revision(empty_dsn) != "20261102_0221":
+            raise AssertionError("empty PLG-01 schema downgrade did not stop at 0221")
+        _assert_presence(empty_dsn, False)
+        upgrade_database(empty_url, "head")
+        if _revision(empty_dsn) != HEAD:
+            raise AssertionError("empty PLG-01 re-upgrade failed")
+        _assert_presence(empty_dsn, True)
+        _assert_installation_presence(empty_dsn, True)
+        _assert_import_staging_presence(empty_dsn, True)
+        result["empty_downgrade_reupgrade"] = "PASS"
+
+        package_id, verification_id = _seed_synthetic_history(empty_dsn)
+        _assert_immutability_and_insert_owner(empty_dsn, package_id)
+        with psycopg.connect(empty_dsn) as conn:
+            counts = conn.execute(
+                "SELECT (SELECT count(*) FROM plm.plg_packages),"
+                "(SELECT count(*) FROM plm.plg_manifest_operations),"
+                "(SELECT count(*) FROM plm.plg_manifest_dependencies),"
+                "(SELECT count(*) FROM plm.plg_package_verifications)"
+            ).fetchone()
+            history = conn.execute(
+                "SELECT verification_id FROM plm.plg_package_verifications"
+            ).fetchone()[0]
+        if counts != (1, 1, 1, 1) or history != verification_id:
+            raise AssertionError("synthetic package history changed during guard checks")
+        result["synthetic_history_retained"] = "PASS"
+        downgrade_database(empty_url, PARENT)
+        if _revision(empty_dsn) != PARENT:
+            raise AssertionError("history-preserving staging downgrade did not stop at 0223")
+        _assert_presence(empty_dsn, True)
+        _assert_installation_presence(empty_dsn, False)
+        _assert_import_staging_presence(empty_dsn, False)
+        _assert_guards_open_parent(empty_dsn)
+        with psycopg.connect(empty_dsn) as conn:
+            retained = conn.execute(
+                "SELECT count(*) FROM plm.plg_package_verifications "
+                "WHERE verification_id=%s", (verification_id,)
+            ).fetchone()[0]
+        if retained != 1:
+            raise AssertionError("owner downgrade changed synthetic package history")
+        try:
+            downgrade_database(empty_url, "20261102_0221")
+        except RuntimeError as exc:
+            if "history prevents downgrade" not in str(exc):
+                raise
+        else:
+            raise AssertionError("package history did not prevent destructive downgrade")
+        if _revision(empty_dsn) != PARENT:
+            raise AssertionError("failed destructive downgrade changed the revision")
+        result["history_blocks_downgrade"] = "PASS"
+
+        _create_database(admin, existing)
+        created.append(existing)
+        existing_url, existing_dsn = _url(existing, args.port), _dsn(existing, args.port)
+        upgrade_database(existing_url, PARENT)
+        with psycopg.connect(existing_dsn) as conn:
+            baseline = conn.execute(
+                "SELECT state,lock_version,changed_at FROM plm.plt_maintenance_state "
+                "WHERE state_id=1"
+            ).fetchone()
+        upgrade_database(existing_url, "head")
+        if _revision(existing_dsn) != HEAD:
+            raise AssertionError("existing synthetic database upgrade did not reach PLG-01 head")
+        _assert_presence(existing_dsn, True)
+        _assert_installation_presence(existing_dsn, True)
+        with psycopg.connect(existing_dsn) as conn:
+            after = conn.execute(
+                "SELECT state,lock_version,changed_at FROM plm.plt_maintenance_state "
+                "WHERE state_id=1"
+            ).fetchone()
+        if baseline is None or after != baseline:
+            raise AssertionError("pre-existing synthetic database state changed")
+        result["preexisting_schema_data_retained"] = "PASS"
+    finally:
+        for name in reversed(created):
+            _drop_database(admin, name)
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

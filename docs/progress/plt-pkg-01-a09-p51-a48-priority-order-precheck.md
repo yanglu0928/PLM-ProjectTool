@@ -1,0 +1,35 @@
+# PLT-PKG-01-A09-P51-A48：就绪阻断项优先顺序（编码前检查）
+
+- 日期：2026-11-02
+- 状态：PASS_LIMITED；编码前检查与覆盖偏差均保留。
+
+## 单一目标
+
+为 readiness 报告生成一个固定、可追溯的建议处理顺序，将已知的启动前置缺项按其依赖关系排成步骤；每步引用现有 blocker code、字段、A47静态责任角色与下一步动作。报告仍只是建议，不自动关闭blocker，也不授权启动/发行。
+
+## 顺序与边界
+
+1. 先核对正式产品公钥及 License 信任材料/证据引用（发行与License责任方）。
+2. 再核对受控数据库凭据目标与范围（数据库运维）。
+3. 再核对服务账户及安装/数据目录ACL（Windows运维/安全）。
+4. 最后核对 TLS 证书链/Thumbprint、域名与续期证据（证书责任方）。
+5. 仅对当前缺失项输出；已完成引用不展示。缺项或启动阻断仍需独立验证。
+
+该顺序为基于固定启动门禁依赖关系的AI实施建议，不能代替正式架构/法务验收。模板schema、输入登记值、报告true/false信任字段保持不变。
+
+## 验收标准
+
+- 缺项结果稳定排序，重复运行顺序相同；每步只引用静态键名/code/owner/action。
+- 完整合成登记不列补充步骤且仍显式“不授权/需独立核验”。
+- 注入值、路径、秘密或未知字段不得出现在排序输出。
+- 父包readiness smoke、JSON和中文可读模式、A17/A34/PG18全组合在GitHub hosted Windows Server 2025 D盘runner temp验收；不得用户本机运行或推断Windows 11。
+- 无产品安装/服务启动/API/数据库连接、文件持久写入或外部网络访问。
+
+## 兼容/回滚
+
+新增JSON字段和可读文本块，既有键/退出码不变。回滚移除固定排序函数、渲染与测试；无需迁移，不修改CR-LIC-001/API/DB。
+
+
+## 最终验收结果（2026-11-02）
+
+首轮 `41385387249` 的边界覆盖差异已按前置记录补齐。最终提交 `4158bde7dd805cbd78a50fe8275c941694fdd692` 的 hosted run [41386839114](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41386839114) 12/12 jobs成功。真实父包smoke：正常缺项四组顺序正确；完整登记但startup blockers仍存在继续列步骤；零blocker临时manifest+完整登记下步骤为空，但JSON/text仍提示独立核验且pilot/launch/release/legal均false；不回显合成数据，候选manifest和hash清单不变。父ZIP SHA `8e642dc1c4393fdae80935622349b094122b18509816fc8ce4a9d7805aa48948`，20,122 files；A17/A34/PG组合通过。仅hosted Windows Server 2025/D盘runner temp，非Windows11实测。

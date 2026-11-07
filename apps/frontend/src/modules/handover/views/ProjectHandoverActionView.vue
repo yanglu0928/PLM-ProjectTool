@@ -8,20 +8,24 @@ import { HandoverActionReadClient, HandoverActionReadError, type HandoverActionC
   type HandoverActionDetail, type HandoverActionSummary } from "@/modules/handover/api/handoverActionReadClient";
 import { HandoverActionWriteClient, HandoverActionWriteError, type HandoverActionFirstReceipt,
   type HandoverActionType, type HandoverActionPriority } from "@/modules/handover/api/handoverActionWriteClient";
+import { HandoverActionSourceLocationClient, HandoverActionSourceLocationError,
+  type HandoverActionSourceLocation } from "@/modules/handover/api/handoverActionSourceLocationClient";
 
 const props = defineProps<{ session?: SessionClient; actions?: HandoverActionReadClient; writes?: HandoverActionWriteClient;
-  evidence?: EvidenceViewerClient }>();
+  evidence?: EvidenceViewerClient; sourceLocations?: HandoverActionSourceLocationClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const actions = toRaw(props.actions ?? new HandoverActionReadClient());
 const writes = toRaw(props.writes ?? new HandoverActionWriteClient(session));
 const evidence = toRaw(props.evidence ?? new EvidenceViewerClient());
+const sourceLocations = toRaw(props.sourceLocations ?? new HandoverActionSourceLocationClient());
 const identity = session.view; const route = useRoute(); const items = ref<readonly HandoverActionSummary[]>([]);
 const cursor = ref<HandoverActionCursor | null>(null); const loaded = ref(false); const busy = ref(false); const error = ref("");
 const detail = ref<HandoverActionDetail | null>(null); const detailBusy = ref(false); const detailError = ref("");
 const located = ref<EvidenceViewerDescriptor | null>(null); const locationError = ref(""); const locationBusy = ref(false);
+const sourceLocation = ref<HandoverActionSourceLocation | null>(null); const sourceError = ref(""); const sourceBusy = ref(false);
 const createOpen = ref(false); const operation = ref<"patch" | "start" | "submit" | "verify" | "cancel" | null>(null);
 const mutationBusy = ref(false); const mutationError = ref(""); const mutationMessage = ref("");
-let generation = 0; let detailGeneration = 0; let locationGeneration = 0; let mounted = true;
+let generation = 0; let detailGeneration = 0; let locationGeneration = 0; let sourceGeneration = 0; let mounted = true;
 
 const stateLabels = Object.freeze({ OPEN: "待开始", IN_PROGRESS: "处理中", SUBMITTED: "已提交待验证", VERIFIED: "已验证待关闭",
   CLOSED: "已关闭", CANCELLED: "已取消" });
@@ -53,7 +57,8 @@ type MutationReceipt = HandoverActionFirstReceipt<{ readonly action_item_id: str
 interface PendingMutation { label: string; task: () => Promise<MutationReceipt>; after: (receipt: MutationReceipt) => Promise<void>; }
 const pendingRetry = ref<PendingMutation | null>(null);
 
-function clearDetail() { detailGeneration += 1; locationGeneration += 1; detail.value = null; detailError.value = ""; located.value = null;
+function clearDetail() { detailGeneration += 1; locationGeneration += 1; sourceGeneration += 1; detail.value = null; detailError.value = ""; located.value = null;
+  sourceLocation.value = null; sourceError.value = ""; sourceBusy.value = false;
   locationError.value = ""; operation.value = null; mutationError.value = ""; mutationMessage.value = ""; pendingRetry.value = null; }
 function summary(value: HandoverActionDetail): HandoverActionSummary { return Object.freeze({ action_item_id: value.action_item_id,
   source_kind: value.source_kind, action_type: value.action_type, title: value.title, owner_ref: value.owner_ref, due_at: value.due_at,
@@ -72,11 +77,33 @@ async function load(next: HandoverActionCursor | null = null, replace = false) {
     error.value = failure instanceof HandoverActionReadError ? failure.message : "暂时无法读取交接待办。"; } }
   finally { if (mounted && current === generation) busy.value = false; } }
 async function show(item: HandoverActionSummary | string) { if (!mayRead() || detailBusy.value) return; const project = projectId(); const current = ++detailGeneration;
-  locationGeneration += 1; detail.value = null; located.value = null; locationError.value = ""; detailError.value = ""; operation.value = null;
+  locationGeneration += 1; sourceGeneration += 1; detail.value = null; located.value = null; sourceLocation.value = null;
+  sourceError.value = ""; sourceBusy.value = false; locationError.value = ""; detailError.value = ""; operation.value = null;
   mutationError.value = ""; mutationMessage.value = ""; pendingRetry.value = null; detailBusy.value = true;
   try { const value = await actions.get(project, typeof item === "string" ? item : item.action_item_id); if (!mounted || current !== detailGeneration || projectId() !== project || !mayRead()) return; detail.value = value; }
   catch (failure) { if (mounted && current === detailGeneration) detailError.value = failure instanceof HandoverActionReadError ? failure.message : "暂时无法读取待办详情。"; }
   finally { if (mounted && current === detailGeneration) detailBusy.value = false; } }
+async function locateSource() {
+  const currentDetail = detail.value;
+  if (!currentDetail || currentDetail.source_kind !== "ANALYSIS_ITEM" || sourceBusy.value) return;
+  const project = projectId(); const actionId = currentDetail.action_item_id; const current = ++sourceGeneration;
+  sourceLocation.value = null; sourceError.value = ""; sourceBusy.value = true;
+  try {
+    const value = await sourceLocations.get(project, actionId);
+    if (!mounted || current !== sourceGeneration || projectId() !== project
+        || detail.value?.action_item_id !== actionId || !mayRead()) return;
+    if (value.source_kind !== "ANALYSIS_ITEM" || value.resolution_state !== "LOCATABLE" || !value.target
+        || value.target.project_id !== project
+        || value.target.handover_analysis_version_id !== currentDetail.source_analysis_version_ref
+        || value.target.analysis_item_id !== currentDetail.source_item_id) {
+      throw new HandoverActionSourceLocationError("HANDOVER_ACTION_SOURCE_UNAVAILABLE");
+    }
+    sourceLocation.value = value;
+  } catch (failure) {
+    if (mounted && current === sourceGeneration) sourceError.value = failure instanceof HandoverActionSourceLocationError
+      ? failure.message : "暂时无法定位待办来源。";
+  } finally { if (mounted && current === sourceGeneration) sourceBusy.value = false; }
+}
 async function locate(evidenceId: string) { if (!detail.value || !detail.value.evidence.some(item => item.evidence_id === evidenceId) || locationBusy.value) return;
   const project = projectId(); const actionId = detail.value.action_item_id; const current = ++locationGeneration; located.value = null; locationError.value = ""; locationBusy.value = true;
   try { const value = await evidence.get({ kind: "PROJECT", projectId: project }, evidenceId); if (!mounted || current !== locationGeneration
@@ -178,6 +205,15 @@ onUnmounted(() => { mounted = false; generation += 1; clearDetail(); });
       <p v-if="detail.action_state === 'SUBMITTED'" class="status-warning">响应已经提交，但尚未验证和关闭。</p>
       <p v-if="detail.action_state === 'VERIFIED'" class="status-warning">响应已经验证，但尚未关闭，也未形成最终 Resolution Trace。</p>
       <p><strong>创建原因：</strong>{{ detail.created_reason }}</p><p v-if="detail.human_source_reason"><strong>人工来源：</strong>{{ detail.human_source_reason }}</p>
+      <section><h3>原始来源</h3>
+        <p v-if="detail.source_kind === 'HUMAN'">人工来源没有固定文档锚点：{{ detail.human_source_reason }}。请按人工记录说明查看原始调研材料。</p>
+        <template v-else><button type="button" :disabled="sourceBusy" @click="locateSource">{{ sourceBusy ? '正在核验来源…' : '定位原始问题和文档位置' }}</button>
+          <p v-if="sourceError" role="alert">{{ sourceError }}</p>
+          <RouterLink v-if="sourceLocation?.target" :to="{ name: 'project-handover-detail',
+            params: { projectId: sourceLocation.target.project_id, analysisId: sourceLocation.target.handover_analysis_id },
+            query: { fixedVersionId: sourceLocation.target.handover_analysis_version_id, sourceItemId: sourceLocation.target.analysis_item_id } }">打开原始问题与证据位置</RouterLink>
+        </template>
+      </section>
       <section><h3>需要维护的信息</h3><ul><li v-for="field in detail.requested_input_spec.fields" :key="field.name"><strong>{{ field.name }}</strong>
         · {{ field.required ? '必填' : '选填' }} · {{ field.format }} · 示例：{{ field.example }}</li></ul></section>
       <section><h3>响应文档</h3><p v-if="!detail.responses.length">尚未提交响应文档。</p><ul><li v-for="response in detail.responses" :key="response.document_version_id">

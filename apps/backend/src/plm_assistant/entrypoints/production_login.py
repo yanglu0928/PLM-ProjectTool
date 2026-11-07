@@ -105,6 +105,21 @@ from plm_assistant.entrypoints.windows_solution_outline_cursor import (
 from plm_assistant.entrypoints.windows_plan import (
     create_windows_plan_create_router, create_windows_plan_read_routers,
 )
+from plm_assistant.entrypoints.windows_output import (
+    create_windows_output_cancel_router,
+)
+from plm_assistant.entrypoints.windows_output_create import (
+    create_windows_output_request_create_router,
+)
+from plm_assistant.entrypoints.windows_output_read import (
+    create_windows_output_request_read_router,
+)
+from plm_assistant.entrypoints.windows_output_list import (
+    create_windows_output_request_list_router,
+)
+from plm_assistant.entrypoints.windows_output_list_cursor import (
+    create_windows_output_request_list_cursor_codec,
+)
 from plm_assistant.entrypoints.windows_plan_version import (
     create_windows_plan_version_validation_composition,
     create_windows_plan_version_review_submission_router,
@@ -416,6 +431,20 @@ from plm_assistant.modules.document.infrastructure.upload_commit_repository impo
 from plm_assistant.modules.document.infrastructure.upload_abort_repository import SqlAlchemyUploadAbortRepository
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobQueue
 from plm_assistant.modules.jobs.infrastructure.parse_enqueue_repository import SqlAlchemyParseJobQueueRepository
+from plm_assistant.modules.plugin.api.installation_metadata import create_plugin_installation_metadata_router
+from plm_assistant.modules.plugin.api.installation_disable import create_plugin_installation_disable_router
+from plm_assistant.modules.plugin.application.installation_metadata import PluginInstallationMetadataService
+from plm_assistant.modules.plugin.application.activation_owner import PluginActivationOwner
+from plm_assistant.modules.plugin.application.installation_disable import PluginInstallationDisableService
+from plm_assistant.modules.plugin.infrastructure.installation_metadata_repository import SqlAlchemyPluginInstallationMetadataRepository
+from plm_assistant.modules.plugin.infrastructure.activation_owner_repository import SqlAlchemyPluginActivationRepository
+from plm_assistant.modules.plugin.infrastructure.installation_disable_result_repository import SqlAlchemyPluginDisableResultRepository
+from plm_assistant.modules.plugin.api.package_import import create_plugin_package_import_router
+from plm_assistant.modules.plugin.application.package_import_job_queue import PluginPackageImportQueue
+from plm_assistant.modules.plugin.application.package_import_service import PluginPackageImportService
+from plm_assistant.modules.plugin.application.package_import_spool import PluginPackageImportSpool
+from plm_assistant.modules.plugin.infrastructure.package_import_job_queue_repository import SqlAlchemyPluginPackageImportQueueRepository
+from plm_assistant.modules.plugin.infrastructure.package_import_staging_repository import SqlAlchemyPluginPackageImportStagingRepository
 
 
 class ProductionLoginStartupError(RuntimeError):
@@ -670,8 +699,15 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_department_create_router = None
         project_department_patch_router = None
         project_department_deactivate_router = None
+        output_request_cancel_router = None
+        output_request_create_router = None
+        output_request_read_router = None
+        output_request_list_router = None
         document_upload_create_router = None
         document_upload_content_router = None
+        plugin_installation_metadata_router = None
+        plugin_installation_disable_router = None
+        plugin_package_import_router = None
         document_upload_finalize_router = None
         document_read_router = None
         document_version_read_router = None
@@ -759,6 +795,15 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 create_windows_license_services,
             )
             licenses = create_windows_license_services(runtime, settings)
+            output_request_read_router = create_windows_output_request_read_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+            )
+            output_request_list_router = create_windows_output_request_list_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+                cursors=create_windows_output_request_list_cursor_codec(),
+            )
             if include_trace_graph:
                 trace_graph_router = create_windows_trace_graph_router(
                     runtime=runtime, sessions=sessions, origins=origins,
@@ -1337,6 +1382,15 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_list_router = create_secret_metadata_list_router(
                 sessions=sessions, metadata=metadata, origins=origins, cursors=cursors,
             )
+            plugin_installation_metadata_router = create_plugin_installation_metadata_router(
+                sessions=sessions, origins=origins,
+                installations=PluginInstallationMetadataService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyDeploymentReadAccess(),
+                    license_guard=licenses.guard,
+                    repository=SqlAlchemyPluginInstallationMetadataRepository(),
+                ),
+            )
             ai_provider_read_router = create_ai_provider_read_router(
                 sessions=sessions, origins=origins,
                 providers=AIProviderMetadataService(
@@ -1565,6 +1619,14 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                output_request_cancel_router = create_windows_output_cancel_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                )
+                output_request_create_router = create_windows_output_request_create_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                )
                 if settings.rag_retrieval_policies:
                     rag_api = create_windows_rag_retrieval_api(
                         runtime, sessions=sessions, origins=origins,
@@ -1902,6 +1964,44 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     sessions=sessions, origins=origins, service_factory=content_service,
                 )
 
+                plugin_installation_disable_router = create_plugin_installation_disable_router(
+                    sessions=sessions, origins=origins,
+                    disables=PluginInstallationDisableService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyLicenseImportAccess(),
+                        owner=PluginActivationOwner(
+                            unit_of_work=runtime.unit_of_work,
+                            repository=SqlAlchemyPluginActivationRepository(),
+                            audit=audit,
+                        ),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        results=SqlAlchemyPluginDisableResultRepository(),
+                        license_guard=licenses.guard,
+                    ),
+                )
+
+                plugin_import_spool = PluginPackageImportSpool(
+                    storage=LocalFileStorage(settings.data_root),
+                )
+
+                def plugin_import_service(token: bytes, csrf: bytes) -> PluginPackageImportService:
+                    return PluginPackageImportService(
+                        unit_of_work=runtime.unit_of_work,
+                        spool=plugin_import_spool,
+                        queue=PluginPackageImportQueue(
+                            SqlAlchemyPluginPackageImportQueueRepository(),
+                        ),
+                        staging_repository=SqlAlchemyPluginPackageImportStagingRepository(),
+                        admin_access=SqlAlchemyDeploymentReadAccess(),
+                        license_guard=licenses.guard,
+                        audit=audit,
+                    )
+
+                plugin_package_import_router = create_plugin_package_import_router(
+                    sessions=sessions, origins=origins,
+                    service_factory=plugin_import_service,
+                )
+
                 def finalize_access(token: bytes, csrf: bytes) -> DocumentUploadAccess:
                     return DocumentUploadAccess(
                         session_token=token, csrf_token=csrf,
@@ -1945,6 +2045,10 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
 
         return create_app(
             readiness_checks=(runtime.is_ready,),
+            output_request_cancel_router=output_request_cancel_router,
+            output_request_create_router=output_request_create_router,
+            output_request_read_router=output_request_read_router,
+            output_request_list_router=output_request_list_router,
             login_router=router,
             session_router=session_router,
             session_renew_router=renew_router,
@@ -2007,6 +2111,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_department_deactivate_router=project_department_deactivate_router,
             document_upload_create_router=document_upload_create_router,
             document_upload_content_router=document_upload_content_router,
+            plugin_installation_metadata_router=plugin_installation_metadata_router,
+            plugin_installation_disable_router=plugin_installation_disable_router,
+            plugin_package_import_router=plugin_package_import_router,
             document_upload_finalize_router=document_upload_finalize_router,
             document_read_router=document_read_router,
             document_version_read_router=document_version_read_router,

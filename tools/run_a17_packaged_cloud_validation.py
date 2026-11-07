@@ -127,7 +127,15 @@ def main() -> int:
                                timeout=5400, check=False)
     output = completed.stdout + completed.stderr
     required = ("P51_A17_PACKAGED_PLANVERSION_EDGE_PASS",
-                "P51_A17_PACKAGED_PLANVERSION_PG_PASS")
+                "P51_A17_PACKAGED_PLANVERSION_PG_PASS",
+                "OUT_01_A01_P45_REAL_PLAN_SNAPSHOT_PG_PASS",
+                "OUT_01_A01_P46_REAL_PLAN_REVIEW_STATE_ZERO_WRITES_PASS",
+                "OUT_01_A01_P05_REQUIREMENT_FIXED_SOURCE_PG_PASS",
+                "OUT_01_A01_P07_BUILTIN_TEMPLATE_REGISTRY_PASS",
+                "OUT_01_A01_P09_BUILTIN_POLICY_REGISTRY_PASS",
+                "PLG_04_A02_PG18_PASS",
+                "PLG_04_A03_PG18_PASS",
+                "PLG_04_A03_TAMPERED_HOST_ZERO_FACTS_PG18_PASS")
     if completed.returncode or any(marker not in output for marker in required):
         raise RuntimeError("A17 packaged flow did not pass: " + output[-12000:])
 

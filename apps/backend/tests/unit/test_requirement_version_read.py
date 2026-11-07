@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from plm_assistant.modules.requirement.application.read_versions import (
     RequirementAcceptanceView, RequirementSourceEvidenceView,
     RequirementSourceView,
-    RequirementVersionPage, RequirementVersionReadError,
+    RequirementOutputSourceProjection, RequirementVersionPage, RequirementVersionReadError,
     RequirementVersionReadQuery, RequirementVersionReadService,
     RequirementVersionSummary, RequirementVersionView,
     RequirementVersionTraceFacts,
@@ -51,13 +51,16 @@ class RequirementVersionReadTests(unittest.TestCase):
         )
         self.query = RequirementVersionReadQuery(
             b"s" * 32, uuid.uuid4(), self.project)
+        self.authorization_calls = []
+        authorization = SimpleNamespace(require_in_transaction=lambda tx, **kwargs:
+            (self.authorization_calls.append((tx, kwargs)) or SimpleNamespace(
+                user_id=kwargs["user_id"], project_id=kwargs["project_id"],
+                operation=kwargs["operation"])))
         self.service = RequirementVersionReadService(
             unit_of_work=Tx,
             access=SimpleNamespace(authenticated_user=lambda *_a, **_k: self.actor),
             license_guard=SimpleNamespace(require_valid=lambda **_k: object()),
-            authorization=SimpleNamespace(require_in_transaction=lambda *_a, **kwargs:
-                SimpleNamespace(user_id=self.actor, project_id=self.project,
-                                operation=kwargs["operation"])),
+            authorization=authorization,
             repository=self.repo, clock=lambda: self.now,
         )
 
@@ -141,6 +144,47 @@ class RequirementVersionReadTests(unittest.TestCase):
     def test_session_token_is_redacted(self):
         self.assertNotIn("s" * 32, repr(self.query))
 
+
+    def test_output_source_read_rechecks_project_authorization_and_fixed_identity(self):
+        self.authorization = SimpleNamespace(require_in_transaction=lambda *a, **kw:
+            SimpleNamespace(user_id=self.actor, project_id=self.project, operation="REQ_VERSION_GET"))
+        self.repo.get_output_source = lambda _tx, **kw: RequirementOutputSourceProjection(
+            requirement_version_id=self.version, project_id=self.project,
+            version_state="APPROVED", fields={"statement": "Fixed"},
+        )
+        projection = self.service.read_output_source(
+            Tx(), actor_id=self.actor, project_id=self.project, requirement_version_id=self.version,
+        )
+        self.assertEqual(projection.version_state, "APPROVED")
+        self.assertEqual(projection.fields["statement"], "Fixed")
+
+    def test_output_source_reads_exact_authorized_version_and_preserves_state(self):
+        fields = {"statement": "Synthetic statement"}
+        projection = RequirementOutputSourceProjection(
+            self.version, self.project, "IN_REVIEW", fields)
+        tx = Tx()
+        calls = []
+        self.repo.get_output_source = lambda transaction, **kwargs: (
+            calls.append((transaction, kwargs)) or projection)
+        result = self.service.read_output_source(
+            tx, actor_id=self.actor, project_id=self.project,
+            requirement_version_id=self.version)
+        self.assertIs(result, projection)
+        self.assertEqual(self.authorization_calls[0], (tx, {
+            "user_id": self.actor, "project_id": self.project,
+            "operation": "REQ_VERSION_GET"}))
+        self.assertEqual(calls[0], (tx, {
+            "project_id": self.project,
+            "requirement_version_id": self.version}))
+        self.assertEqual(result.version_state, "IN_REVIEW")
+        self.assertEqual(result.fields["statement"], "Synthetic statement")
+
+    def test_output_source_rejects_missing_version(self):
+        self.repo.get_output_source = lambda *_a, **_k: None
+        with self.assertRaises(RequirementVersionReadError):
+            self.service.read_output_source(
+                Tx(), actor_id=self.actor, project_id=self.project, requirement_version_id=self.version,
+            )
 
 if __name__ == "__main__":
     unittest.main()

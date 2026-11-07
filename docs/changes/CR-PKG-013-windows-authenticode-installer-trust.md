@@ -1,0 +1,45 @@
+# CR-PKG-013：Windows 安装代码包外 Authenticode 信任校验
+
+- 日期：2026-11-02
+- 状态：已实现并经 hosted Windows 验收，PASS_LIMITED；不代表真实产品信任建立。
+- 来源：CR-PKG-012 约束未签名父包不得承载安装脚本；A40 已完成受限暂存，但正式安装仍需要可验证的包外代码信任链。
+
+## 变更目标
+
+新增只读 Windows 安装代码校验器：安装执行前验证候选安装脚本/二进制具有有效 Authenticode 签名，且签发者证书指纹与包外固定输入完全匹配。验证器不得从候选包自身读取或接受信任指纹，不修改系统证书存储，不启动被验证文件。无签名、签名无效、证书链不可信、指纹缺失/不匹配、文件变化或 PowerShell/系统无法给出确定结果时均 fail closed。
+
+本变更只建立“是否允许进入后续人工安装流程”的证据，不授权真正安装、启动服务、读取产品 License 私钥、连接DB/API，也不宣称目标生产证书已提供。指纹真实性仍需从包外受控来源配置；合成证书仅用于云端负例/正例测试，不能作为产品信任锚。
+
+## 方案与取舍
+
+- A：继续只依赖 ZIP SHA 与 manifest。可以证明候选文件和摘要一致，但不能独立证明安装代码签发者身份。
+- B：使用 Windows 原生 Authenticode 状态与包外签发者指纹双重检查，拒绝时不产生副作用。采用 B；不引入新生产依赖、不生成或保存真实签名私钥，也不改变冻结 API/数据库/License 协议。
+
+## 风险、迁移及回滚
+
+- 风险：错误配置或过期的外部指纹会拒绝合法文件；操作系统证书链可能受离线状态影响；自签测试证书不得被误作正式信任。
+- 迁移：当前父包未包含安装器，因此本项只增加独立校验工具及测试，现有父包布局保持不变。后续安装器接入须由单独验收确认真实外部指纹来源。
+- 回滚：移除新验证器、测试和说明；无需回滚数据库/API/安装目录或系统信任存储。
+
+## 验收计划
+
+1. GitHub hosted Windows sandbox 定向测试：签名缺失、篡改、证书链错误、指纹缺失/不匹配均拒绝；合成可信测试签名且指纹匹配时只报告校验通过，不启动文件。
+2. 证明验证过程只读候选文件与证书状态，不联网、不改系统信任存储，不写C盘；临时测试证书及文件限定在非C RUNNER_TEMP，并在作业结束清理。
+3. 无真实发布者证书时结果只能标为测试证据，不可记为生产安装器信任已建立。
+4. 云端 hosted Windows Server 2025 结果不推定 Windows 11。Pilot/Gate/Release 状态按其它阻断项维持未通过。
+
+## A41 实施与验收结果（2026-11-02）
+
+新增 `tools/verify_windows_authenticode.py`，使用Windows原生 `Get-AuthenticodeSignature`，仅在签名状态为Valid且签发者Thumbprint与调用者提供的40位外部指纹完全匹配时报告 `AUTHENTICODE_VERIFIED_TEST_ONLY`。拒绝结果不回显候选路径、签名命令输出或异常文本；校验器不执行候选文件、不改证书存储、不联网。
+
+GitHub hosted Windows run [41370436650](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41370436650) 完成：24项定向测试全通过，并在真实Windows环境用已签名PowerShell程序验证匹配指纹正例、用D盘未签名临时文件验证拒绝负例。只作为验证器功能证据；测试正例的系统签名不能替代本产品真实发布者指纹。尚未将验证器作为安装执行器，也没有安装或启动产品。
+
+## A42 暂存CLI接入前置（2026-11-02）
+
+在A40非发行ZIP暂存CLI增加成对的可选参数 `--installer` 与 `--expected-thumbprint`。调用者提供安装程序时，CLI必须先调用A41只读校验器；参数缺失、签名非Valid或指纹不匹配时禁止创建ZIP暂存目标。成功时在固定暂存回执标记代码签名校验结果为TEST_ONLY，并保持installation_performed=false。未提供独立安装器时，CLI仍只能暂存ZIP数据，不能启动任何包内内容。验收使用真实hosted系统签名文件+匹配pin正例及错误pin负例，后者断言目标不存在；不安装或执行安装器。
+
+## A42 暂存CLI接入验收（2026-11-02）
+
+`tools/stage_windows_parent_candidate_offline.py` 增加可选的 `--installer` 与 `--expected-thumbprint` 成对参数。提供安装器时先调用A41校验器，再进行ZIP暂存；验证拒绝时不会创建目标目录。成功回执增加 `installer_signature_status=AUTHENTICODE_VERIFIED_TEST_ONLY`；未提供安装器时仍仅暂存数据包。
+
+GitHub hosted Windows run [41370763918](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41370763918) 的26项测试及集成均通过：真实系统签名与匹配指纹通过；错误指纹在ZIP暂存前拒绝，目标不存在；A35 20,119项暂存及BLOCKED启动诊断同轮通过。未安装/启动产品。真实产品签发者证书/指纹缺失，结果不构成生产信任或Windows 11实测。

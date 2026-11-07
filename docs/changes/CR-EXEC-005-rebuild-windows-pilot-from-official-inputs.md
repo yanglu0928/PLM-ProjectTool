@@ -26,3 +26,39 @@ A17 原构建流程把本机忽略区中的 P45 父 ZIP SHA-256 `30c9d59852af7e7
 验收依序要求：官方输入固定摘要通过；独立核验新父包完整来源树、文件全集和哈希；当前源码后端 wheel/前端 dist/pgvector 注入同一提交并验证；在新 ASCII 临时目录清洁解包；只启动本次 runner 拥有的 PG18/HTTPS/API；合成 Edge 完成 A17 PlanVersion 流程；SQL/Audit/Receipt/Decision 计数满足 A17；清理本次资源且最终候选摘要不变。法律/正式信任/Windows 11 实机/Pilot/Gate/正式发行仍独立开放，不因构建 PASS 自动关闭。
 
 若任一输入不可取得、来源与哈希不符、runner 资源不足或编译结果无法验证，停止该组件并记录偏差，保留历史候选；可对可复现部分继续推进，不降低验收或标记通过。回滚为弃用全新候选/工作流，不删除或改写旧输入与历史证明。
+
+## A43 云端重建结果（2026-11-02）
+
+按本 CR 固定来源与禁止发行边界，GitHub hosted Windows run [41370951575](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41370951575) 全12项job成功；PR #61 head `4cbf2c140a1515029e5823bba1bd6935a5c33399` 对应GitHub pull_request合并提交 `9713443955f7698a687c620ab3647971f8700847`。父包内ZIP SHA-256 `63ed5c8d209f09cb9fa22aeacf9245aeb8cfebf0cff8397beea26e591dc05a7a`、20,118个payload文件，artifact ID `13109214144`，容器摘要 `1a7ec0c2a26a8eb2252817598d5a83cb1c9e94d3b4e57968dcc808843168255b`。同run完成暂存/清洁包、PG18/pgvector临时生命周期、A17合成Edge/HTTPS/PG流与A34隔离替换/手动恢复。
+
+该结果仅为 `PASS_LIMITED`。启动入口仍因数据库凭据拒绝；正式公钥/License trust/DB凭据身份/服务账户ACL/TLS仍缺，未安装或启动产品。没有Windows 11新运行、正式信任、法律放行、Gate、Pilot或Release结论。详见 `docs/progress/plt-pkg-01-a09-p51-a43-hosted-rebuild-result.md`。
+
+
+## A44 云端结果（2026-11-02）
+
+当前 PR 源码完整 run [41376505925](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41376505925) 12/12 jobs success；A44包内非秘密 Pilot readiness report通过缺项、完整但不授权、非法值不回显三组实测；A17/A34/PG smoke同run成功。父包内ZIP SHA-256 `8e3e4e37224ad3653c2f2d758d024e23a5c6591fde89cb85efd375bc304f801d`，20,122 files。PR head `f182eb37cb572da99b6615746655d7c7a0e2b30c` 对应 merge commit `325ce2e90b298d657ca3acceb98bcb8a54968abe`。见 A44 进度结果。未提供正式产品信任，Pilot/Gate/Release不变。
+
+
+## A45 结果（2026-11-02）
+
+当前固定来源重建流程在 hosted Windows Server 2025 run [41378263123](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41378263123) 12/12 jobs成功。新父ZIP SHA-256 `e2858a6b6af852ada906e84671b539dee25c2571387940e4680346dd2c0256ca`、20,122 files；A17 29 API合成PlanVersion流、A34替换/恢复和PG18/pgvector通过。仅证明 hosted Windows Server 2025，不是Windows 11实测或release。正式信任与启动阻断仍保持。
+
+
+## A46 云端结果（2026-11-02）
+
+Hosted Windows Server 2025 run [41382282100](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41382282100) 全12 jobs成功。父包可读模式对不完整/完整/无效输入三态实测，UTF-8中文提示正确，完整仍不授权、秘密哨兵不回显，默认JSON兼容。父ZIP SHA-256 `c9b6d945f359e6777396b6a12309c62b7deff141b0f6808f340d195a407164d3`，20,122 files。A17 29 API、A34显式恢复、PG18/pgvector通过。未进行Windows 11新测试；Pilot/Gate/Release保持NOT_READY。
+
+
+## A47 云端验收（2026-11-02）
+
+Hosted Windows Server 2025 run [41383869172](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41383869172) 12/12 jobs成功。9项登记缺失均显示静态责任角色及下一步；完整/无效登记不授权且不回显注入值。父ZIP SHA-256 `1db6e14e10fb878cf290add82cb69b5ebd387ccaca783c0da23e2c6d1452d370`、20,122 files；A17/A34/PG smoke成功。该run不构成Windows 11新测试、Pilot/Gate或Release通过。
+
+
+## A48 云端验收（2026-11-02）
+
+Hosted Windows Server 2025 run [41386839114](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41386839114) 12/12 jobs成功。父包完整组合流程覆盖固定阻断顺序与零blocker+完整登记边界；后者仍需独立核验、所有授权布尔值false，正式manifest/hash保持不变。父ZIP SHA-256 `8e642dc1c4393fdae80935622349b094122b18509816fc8ce4a9d7805aa48948`，20,122 files。A17/A34通过；不构成Windows 11新测、Pilot/Gate或Release通过。
+
+
+## A49 云端验收（2026-11-02）
+
+Hosted run [41388401825](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41388401825) 全12 jobs成功。可读模式突出第一条动作，JSON第一项引用一致；零待办仍显示独立核验且false授权。父ZIP SHA-256 `07d74e91529ef35f3215dd6d5045a59152fc778345825df8aa37a0f49c88920c`、20,122 files。仅hosted Windows Server 2025，非Windows 11新验证。

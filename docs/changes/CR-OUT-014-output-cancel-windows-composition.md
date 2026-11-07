@@ -1,0 +1,60 @@
+# CR-OUT-014：OutputRequest取消HTTP接入显式Windows write composition
+
+- 日期：2026-11-04
+- 状态：P18 PASS_SCOPE_LIMITED；P19转CR-OUT-015
+- 来源：CR-OUT-012/P16 opt-in取消HTTP、CR-OUT-013/P17 PostgreSQL 18事务验收
+- 基线：遵守冻结API Contract V1的OUTPUT_REQUEST_CANCEL路径、角色、请求与响应；不改架构、Schema、Migration或API合同
+
+## 问题与证据
+
+P17证明OutputRequest/OUTPUT_GENERATE Job取消Owner的PG18事务边界，但当前取消HTTP只存在于modules/output/api/cancel_request.py，entrypoints/api.py:create_app没有对应可选Router参数，entrypoints/production_login.py也没有构造或挂载取消服务。生产登录/默认app与Windows显式write模式均不能通过HTTP调用该能力。
+
+现有Windows生产组合已具有同一UOW runtime、SessionService、Origin policy、License guard、AuditService及Idempotency receipts，并在include_secret_write控制的显式write模式装载写路由。现有SqlAlchemyProjectWriteAccess可在同事务核验Session/CSRF；ProjectAuthorizationService目前只有OUTPUT_REQUEST_LIST只读策略，需增加只允许ProjectManager的OUTPUT_REQUEST_CANCEL操作，并在Output Cancel Access中另行允许请求创建者。P16冻结控制要求creator或ProjectManager，不能误将ImplementationMember等普通写角色授权取消。
+
+## 实施方案
+
+P18仅接入既有单个取消端点：添加Output Cancel生产Access/Windows composition factory；以同UOW Session身份、创建者例外、ProjectManager强授权、License guard、Output与Jobs repository、幂等收据及Audit构造既有Service；向create_app增加默认None的可选router并仅在Windows显式write composition传入。默认login、平台只读模式不挂载；不改变路由合同、不开放其它Output API。
+
+如授权policy code需加入ProjectAuthorization，应保持OUTPUT_REQUEST_CANCEL只限ProjectManager，并让创建者分支按真实OutputRequest.requested_by精确比较；授权失败仍按RESOURCE_NOT_FOUND失败关闭。只触碰本任务的Output取消装配和必要授权，不接Output Create/Read/List或Worker。
+
+## 影响、风险、回滚
+
+- 风险：write composition的调用范围广；若错误挂载到普通或只读模式会提前暴露写API。通过默认None、只在include_secret_write设置Router，并测试各模式404/目标模式匹配来隔离。
+- 风险：ProjectManager与创建者授权组合或项目成员撤销时的语义误配。以冻结契约为准；PG18/HTTP测试覆盖owner、manager、implementation member、跨Project、被禁Session、缺License、CSRF/Origin、If-Match及重放。
+- 无数据迁移。回滚为移除新工厂、access/policy、app参数和write组合注入；冻结URL保持未默认暴露。
+- 正式信任缺口仍由当前启动门禁关闭；Hosted synthetic组合不得冒充Win11真实信任或Pilot。
+
+## 验收计划
+
+1. backend定向单元/HTTP集成测试；验证default/readonly router不挂载，显式write composition注入后才可调用。
+2. GitHub hosted PG18.6合成Session/Project/License实例，实际触发HTTP端点并断言creator与ProjectManager授权、其他角色/跨项目拒绝及持久审计/幂等。
+3. backend全量测试/wheel与完整Cloud parent/A17/A34/A35/A50链；secret扫描；仅hosted runner D盘临时区执行。
+4. 结果仅按证据记为PASS_SCOPE_LIMITED；真实Windows 11、正式License公钥/来源、服务账户ACL/TLS及Output Worker仍分别追踪。
+
+## 编码前检查结论
+
+PASS_WITH_LIMITATION。证据已确认API router与默认App均解耦，Windows显式write模式具备Session/Origin/License/Audit/UOW/幂等基础依赖，Output/Jobs P17 repository已通过PG18.6合成事务验收。缺口是取消Access生产实现、ProjectManager policy和Router组合。可按上方案编码；无Schema/Migration和冻结合同变更。
+
+## 实施偏差记录（hosted run 41805787695，首次验收）
+
+- 2026-11-04，代码提交 `7e540bfd3433a1df431dc37d32e8d059c3e7528a` 的 hosted run [41805787695](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41805787695) 未通过：后端全量测试执行 4,013 项，其中 1 项新路由装配单测失败、1 项既有 ProductionLogin 组合合同测试错误；随后 key ceremony、wheel 与依赖的父包验收被工作流跳过。Frontend/build、Python/PG sidecar rebuild、A17 harness syntax 与 A50 Edge job均成功。
+- 当前根因尚在定位；日志定位到显式 App 路由断言未找到 POST，以及基线 ProductionLogin 无写模式启动抛出 `ProductionLoginStartupError`。在定位前不判定为产品代码缺陷或单纯测试误报。
+- 影响：P18仍未通过；没有 Gate/Pilot/Release 状态变化。未产生客户数据或生产副作用。
+- 处理：先基于失败栈检查App挂载方式与显式/默认组合初始化，再作最小修复；保持默认路由关闭、显式写组合才开放。修复后重跑完整 hosted workflow；若失败再次记录后再改。
+
+- 后续诊断（仍基于同一失败run）：第一项根因确认为 `output_request_cancel_router` 的默认 `None` 初始化被放在 secret-write 专属代码块内，导致默认登录构造读取未绑定局部变量；第二项根因是当前 FastAPI 的 `app.routes` 使用延迟路由包装，单测内部实现断言看不到路径。修复将把默认初始化移至无条件路由声明区、保留实际router仅在写模式生成，并改用公开 OpenAPI schema 验证默认无路由/显式有 POST。该失败没有揭示其它业务逻辑缺陷；仍以修复后的全量 hosted 证据为准。
+
+## 第二轮托管验收偏差（run 41807887551）
+
+- 后端全量 4,013 项/wheel、前端测试构建、运行时组件重建和同run父包组装通过；父包 PostgreSQL smoke 在启动 P18 HTTP 验证器时失败，后续 A17/P18 完整组合被阻断。
+- 原因：仅为验证器合成夹具的一次 `session.add_all(Project, Department, Members)` 没有建立 ORM 依赖关系排序；PG18 实际先插部门并触发项目外键。失败发生在请求/取消业务逻辑前，不是应用授权、取消或 Audit 结果。
+- 另检查发现该验证器的默认路由缺失断言依赖 FastAPI 延迟 `app.routes` 包装，可能产生假阴性；本次一并加强为公开 OpenAPI 路径断言。
+- 处理：夹具显式先 flush 项目，再插部门/成员；保留合成数据隔离和事务；推送后重跑完整 hosted workflow。P18 仍未通过，未产生客户数据或生产副作用。
+
+## 最终验收（P18）
+
+- 最终提交72a81f749ee5e4788d7b6933f6e34d5f8508920b；hosted run 41809547922 13/13 jobs成功，backend 4,013 tests/wheel、前端测试构建、PG18/pgvector、A17/A34/A35/A50成功。
+- PG18.6隔离合成HTTP：creator与ProjectManager取消通过；ImplementationMember 404且Output/Job/Audit/receipt无持久变化；成功动作有Audit和receipt。默认App OpenAPI无取消路由。
+- 非发行父包20,199项，内部归档SHA-256 076c3d844a771d5d63100cab51f15c72f2a99fa569e41b4fe377cea5ca08d947；D盘runner临时区清洁解包PG18生命周期、A17、A34通过；无客户数据/产品服务。
+- 两轮失败与修复均留在本CR；最终完整回归成功。限制：取消仅显式write composition，RUNNING只登记取消请求，Worker未实现；正式publisher/License信任/Win11实机未验证。仅PASS_SCOPE_LIMITED，不改变Gate/Pilot/Release。
+- 下一项P19按CR-OUT-015核查OUTPUT_REQUEST_CREATE显式组合。

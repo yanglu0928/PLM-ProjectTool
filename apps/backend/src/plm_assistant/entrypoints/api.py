@@ -96,6 +96,9 @@ def create_app(
     project_department_deactivate_router: APIRouter | None = None,
     document_upload_create_router: APIRouter | None = None,
     document_upload_content_router: APIRouter | None = None,
+    plugin_installation_metadata_router: APIRouter | None = None,
+    plugin_installation_disable_router: APIRouter | None = None,
+    plugin_package_import_router: APIRouter | None = None,
     document_upload_finalize_router: APIRouter | None = None,
     document_read_router: APIRouter | None = None,
     document_version_read_router: APIRouter | None = None,
@@ -176,6 +179,10 @@ def create_app(
     review_list_router: APIRouter | None = None,
     review_read_router: APIRouter | None = None,
     review_command_router: APIRouter | None = None,
+    output_request_cancel_router: APIRouter | None = None,
+    output_request_create_router: APIRouter | None = None,
+    output_request_read_router: APIRouter | None = None,
+    output_request_list_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
@@ -321,6 +328,14 @@ def create_app(
         app.include_router(job_cancel_router)
     if job_retry_router is not None:
         app.include_router(job_retry_router)
+    if output_request_cancel_router is not None:
+        app.include_router(output_request_cancel_router)
+    if output_request_create_router is not None:
+        app.include_router(output_request_create_router)
+    if output_request_read_router is not None:
+        app.include_router(output_request_read_router)
+    if output_request_list_router is not None:
+        app.include_router(output_request_list_router)
     if project_create_router is not None:
         app.include_router(project_create_router)
     if project_patch_router is not None:
@@ -349,6 +364,12 @@ def create_app(
         app.include_router(document_upload_create_router)
     if document_upload_content_router is not None:
         app.include_router(document_upload_content_router)
+    if plugin_installation_metadata_router is not None:
+        app.include_router(plugin_installation_metadata_router)
+    if plugin_installation_disable_router is not None:
+        app.include_router(plugin_installation_disable_router)
+    if plugin_package_import_router is not None:
+        app.include_router(plugin_package_import_router)
     if document_upload_finalize_router is not None:
         app.include_router(document_upload_finalize_router)
     if document_read_router is not None:

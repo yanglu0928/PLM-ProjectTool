@@ -352,6 +352,729 @@ _handover_review["browser_probe"] = types.FunctionType(
 )
 
 
+
+def _plugin_package_import_pg_smoke(context: dict, *, actor_id: uuid.UUID) -> None:
+    """Verify the A08 service against the same disposable PostgreSQL 18 database."""
+    import tempfile
+    import hashlib
+    import io
+    import json
+    import time
+    import zipfile
+
+    from sqlalchemy import func, select
+    from sqlalchemy.engine import URL
+
+    from plm_assistant.modules.audit.application.public import AuditService
+    from plm_assistant.modules.audit.infrastructure.audit_repository import (
+        SqlAlchemyAuditRepository,
+    )
+    from plm_assistant.modules.audit.infrastructure.audit_orm import AuditEventRow
+    from plm_assistant.modules.jobs.infrastructure.orm import JobRow, OutboxEventRow
+    from plm_assistant.modules.platform.application.idempotency import IdempotencyScope
+    from plm_assistant.modules.plugin.application.package_import_job_queue import (
+        PluginPackageImportQueue,
+    )
+    from plm_assistant.modules.plugin.application.package_import_service import (
+        PluginPackageImportError, PluginPackageImportService, SubmitPluginPackageImport,
+    )
+    from plm_assistant.modules.plugin.application.package_import_spool import (
+        PluginPackageImportSpool,
+    )
+    from plm_assistant.modules.plugin.infrastructure.orm import (
+        PluginInstallationRow, PluginPackageImportStagingRow,
+        PluginRuntimeValidationRow,
+    )
+    from plm_assistant.modules.plugin.infrastructure.package_import_job_queue_repository import (
+        SqlAlchemyPluginPackageImportQueueRepository,
+    )
+    from plm_assistant.modules.plugin.infrastructure.package_import_staging_repository import (
+        SqlAlchemyPluginPackageImportStagingRepository,
+    )
+    from plm_assistant.modules.jobs.application.lease import JobLeaseService
+    from plm_assistant.modules.jobs.infrastructure.lease_repository import (
+        SqlAlchemyJobLeaseRepository,
+    )
+    from plm_assistant.modules.plugin.application.host_compatibility import (
+        HostPlatformsPluginCompatibility,
+    )
+    from plm_assistant.modules.plugin.application.manifest_parser import PluginManifestParser
+    from plm_assistant.modules.plugin.application.package_archive_inspector import (
+        PluginPackageArchiveInspector,
+    )
+    from plm_assistant.modules.plugin.application.package_import_worker import (
+        PluginPackageImportWorker,
+    )
+    from plm_assistant.modules.plugin.application.package_registration import (
+        PluginPackageRegistrationService,
+    )
+    from dataclasses import replace
+    from plm_assistant.modules.plugin.application.installation_owner import (
+        PluginInstallationEvidence, PluginInstallationOwner,
+        PluginInstallationOwnerError, RecordPluginInstallationCommand,
+    )
+    from plm_assistant.modules.plugin.infrastructure.installation_owner_repository import (
+        SqlAlchemyPluginInstallationRepository,
+    )
+    from plm_assistant.modules.plugin.infrastructure.package_archive_evidence import (
+        LocalPluginPackageArchiveEvidence,
+    )
+    from plm_assistant.modules.plugin.infrastructure.local_installation_materializer import (
+        LocalPluginInstallationMaterializer,
+    )
+    from plm_assistant.modules.plugin.application.signature_verifier import (
+        PluginPackageSignatureVerifier, TrustedPluginSigner,
+    )
+    from plm_assistant.modules.plugin.infrastructure.orm import PluginPackageRow
+    from plm_assistant.modules.plugin.infrastructure.package_import_worker_repository import (
+        SqlAlchemyPluginPackageImportSource,
+    )
+    from plm_assistant.modules.plugin.infrastructure.package_registration_repository import (
+        SqlAlchemyPluginPackageRegistrationRepository,
+    )
+    from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+    from plm_assistant.modules.platform.infrastructure.database import (
+        create_database_runtime,
+    )
+
+    class SyntheticAdminAccess:
+        def authorized_admin(self, transaction, *, session_token, now):
+            assert len(session_token) == 32 and now.tzinfo is not None
+            return actor_id
+
+    class FailingAudit:
+        def append(self, transaction, draft):
+            raise RuntimeError("synthetic audit sink failure")
+
+    fixture_db = context["fixture_db"]
+    runtime = create_database_runtime(URL.create(
+        "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
+        port=fixture_db.pg_port, database=fixture_db.database,
+    ))
+    audit = AuditService(SqlAlchemyAuditRepository())
+
+    class SyntheticLicenseGuard:
+        @staticmethod
+        def require_valid(*, trace_id):
+            assert isinstance(trace_id, uuid.UUID) and trace_id.int
+            return object()
+
+    license_guard = SyntheticLicenseGuard()
+    test_root = Path(os.environ["PLM_P51_TEMP_ROOT"]).resolve()
+    payload = b"PK" + bytes((3, 4)) + b" synthetic package import payload"
+    signature = b"s" * 64
+    signer_ref = "test-key:packaged-a08"
+    digest = __import__("hashlib").sha256(payload).digest()
+    with tempfile.TemporaryDirectory(prefix="a08-import-", dir=test_root) as storage_root:
+        storage = LocalFileStorage(Path(storage_root))
+        spool = PluginPackageImportSpool(storage=storage)
+        queue = PluginPackageImportQueue(SqlAlchemyPluginPackageImportQueueRepository())
+        staging = SqlAlchemyPluginPackageImportStagingRepository()
+
+        def make_service(*, audit_service=audit):
+            return PluginPackageImportService(
+                unit_of_work=runtime.unit_of_work,
+                spool=spool,
+                queue=queue,
+                staging_repository=staging,
+                admin_access=SyntheticAdminAccess(),
+                license_guard=license_guard,
+                audit=audit_service,
+            )
+
+        scope = IdempotencyScope.from_key(
+            actor_id=actor_id, project_id=None,
+            operation="V1_PLUGIN_PACKAGE_IMPORT",
+            key="a08-packaged-pg18-import-idempotency",
+        )
+
+        def command(*, content=payload, request_scope=scope,
+                request_signature=signature, request_signer=signer_ref):
+            return SubmitPluginPackageImport(
+                scope=request_scope, session_token=b"a" * 32,
+                trace_id=uuid.uuid4(), declared_length=len(content),
+                declared_sha256=__import__("hashlib").sha256(content).digest(),
+                detached_signature=request_signature, signer_key_ref=request_signer,
+                chunks=(content[:5], content[5:]),
+            )
+
+        service = make_service()
+        first = service.submit(command())
+        replay = service.submit(command())
+        if replay != first:
+            raise AssertionError("A08 idempotent replay changed JobRef")
+        files = [item for item in Path(storage_root).rglob("*") if item.is_file()]
+        if len(files) != 1:
+            raise AssertionError("A08 replay did not discard its duplicate staged file")
+
+        with runtime.unit_of_work() as tx:
+            session = tx.session
+            job = session.execute(
+                select(JobRow).where(JobRow.job_id == first.job_id)
+            ).scalar_one()
+            event = session.execute(
+                select(OutboxEventRow).where(OutboxEventRow.event_id == first.event_id)
+            ).scalar_one()
+            metadata = session.execute(
+                select(PluginPackageImportStagingRow).where(
+                    PluginPackageImportStagingRow.package_upload_id == first.package_upload_id
+                )
+            ).scalar_one()
+            audit_count = session.execute(
+                select(func.count()).select_from(AuditEventRow).where(
+                    AuditEventRow.action == "PLUGIN_PACKAGE_IMPORT_SUBMIT",
+                    AuditEventRow.target_object_id == first.package_upload_id,
+                )
+            ).scalar_one()
+            if (set(job.payload_refs) != {"package_upload_id", "sha256", "size_bytes"}
+                    or job.payload_refs["sha256"] != digest.hex()
+                    or event.payload_refs != {
+                        "job_id": str(first.job_id),
+                        "package_upload_id": str(first.package_upload_id),
+                    }
+                    or metadata.package_sha256 != digest
+                    or metadata.package_size_bytes != len(payload)
+                    or metadata.detached_signature != signature
+                    or metadata.signer_key_ref != signer_ref
+                    or audit_count != 1):
+                raise AssertionError("A08 Job/Outbox/staging metadata/Audit facts diverged")
+            if any(value in str(job.payload_refs).encode("utf-8")
+                   for value in (payload, signature, signer_ref.encode("utf-8"))):
+                raise AssertionError("A08 Job payload contains package or signature content")
+            tx.commit()
+
+        conflicting = b"PK" + bytes((3, 4)) + b" different payload"
+        try:
+            service.submit(command(content=conflicting))
+        except PluginPackageImportError as exc:
+            if exc.code != "CONFLICT_IDEMPOTENCY":
+                raise
+        else:
+            raise AssertionError("A08 idempotency accepted different package content")
+
+        before = {}
+        with runtime.unit_of_work() as tx:
+            session = tx.session
+            for name, model in (
+                ("jobs", JobRow), ("outbox", OutboxEventRow),
+                ("staging", PluginPackageImportStagingRow),
+            ):
+                before[name] = session.execute(
+                    select(func.count()).select_from(model).where(
+                        model.owner_module == "plugin",
+                    ) if name in {"jobs", "outbox"} else
+                    select(func.count()).select_from(model)
+                ).scalar_one()
+            tx.commit()
+        failing_scope = IdempotencyScope.from_key(
+            actor_id=actor_id, project_id=None,
+            operation="V1_PLUGIN_PACKAGE_IMPORT",
+            key="a08-packaged-pg18-audit-rollback",
+        )
+        try:
+            make_service(audit_service=FailingAudit()).submit(
+                command(request_scope=failing_scope)
+            )
+        except PluginPackageImportError as exc:
+            if exc.code != "JOB_STORE_UNAVAILABLE":
+                raise
+        else:
+            raise AssertionError("A08 Audit failure did not abort import transaction")
+        with runtime.unit_of_work() as tx:
+            session = tx.session
+            after = {
+                "jobs": session.execute(
+                    select(func.count()).select_from(JobRow).where(
+                        JobRow.owner_module == "plugin",
+                    )
+                ).scalar_one(),
+                "outbox": session.execute(
+                    select(func.count()).select_from(OutboxEventRow).where(
+                        OutboxEventRow.owner_module == "plugin",
+                    )
+                ).scalar_one(),
+                "staging": session.execute(
+                    select(func.count()).select_from(PluginPackageImportStagingRow)
+                ).scalar_one(),
+            }
+            tx.commit()
+        if after != before:
+            raise AssertionError("A08 Audit rollback left partial PG import rows")
+        # Run the actual fenced worker against PostgreSQL 18. One intentionally
+        # untrusted package must fail closed; a synthetic signed archive may only
+        # register verified metadata, and its entry point must remain unexecuted.
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+        private_key = Ed25519PrivateKey.generate()
+        public_key = private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        valid_signer_ref = "test-key:packaged-a08-worker"
+        manifest = {
+            "schema_version": "plm.plugin.manifest.v1",
+            "plugin_id": "synthetic.a08worker",
+            "name": "Synthetic A08 Worker",
+            "version": "1.0.0",
+            "plugin_api_version": "1.0.0",
+            "supported_os": ["windows-11", "windows-server-2025", "debian-13"],
+            "architecture": "x86_64",
+            "entry_point": "plugin/main.py",
+            "operations": [{"operation_id": "synthetic.read", "output_types": ["application/json"]}],
+            "dependencies": [],
+        }
+        archive_stream = io.BytesIO()
+        with zipfile.ZipFile(archive_stream, "w", compression=zipfile.ZIP_STORED) as archive:
+            archive.writestr("manifest.json", json.dumps(
+                manifest, sort_keys=True, separators=(",", ":"),
+            ).encode("utf-8"))
+            archive.writestr("plugin/main.py", b"raise RuntimeError('must not execute')\n")
+        valid_archive = archive_stream.getvalue()
+        valid_digest = hashlib.sha256(valid_archive).digest()
+        signature_message = (
+            b"PLM-PLUGIN-PACKAGE\x00v1\x00"
+            + len(valid_signer_ref.encode("utf-8")).to_bytes(2, "big")
+            + valid_signer_ref.encode("utf-8")
+            + valid_digest
+        )
+        valid_signature = private_key.sign(signature_message)
+
+        class SyntheticSignerResolver:
+            def resolve_trusted_signer(self, signer_key_ref):
+                if signer_key_ref != valid_signer_ref:
+                    return None
+                return TrustedPluginSigner(
+                    signer_key_ref=valid_signer_ref, public_key_raw=public_key,
+                )
+
+        worker_repo = SqlAlchemyJobLeaseRepository()
+        registration_service = PluginPackageRegistrationService(
+            unit_of_work=runtime.unit_of_work,
+            inspector=PluginPackageArchiveInspector(
+                PluginManifestParser(),
+                PluginPackageSignatureVerifier(SyntheticSignerResolver()),
+            ),
+            compatibility=HostPlatformsPluginCompatibility(),
+            repository=SqlAlchemyPluginPackageRegistrationRepository(),
+            audit=audit,
+        )
+        worker = PluginPackageImportWorker(
+            unit_of_work=runtime.unit_of_work,
+            leases=JobLeaseService(
+                unit_of_work=runtime.unit_of_work, repository=worker_repo,
+            ),
+            lease_repository=worker_repo,
+            source=SqlAlchemyPluginPackageImportSource(),
+            storage=storage,
+            archive_store=storage,
+            registration=registration_service,
+            license_guard=license_guard,
+            worker_ref="a08-pg18-smoke-worker",
+            lease_seconds=60,
+        )
+        failed_state = worker.run_once()
+        with runtime.unit_of_work() as tx:
+            failed_job = tx.session.execute(
+                select(JobRow).where(JobRow.job_id == first.job_id)
+            ).scalar_one()
+            if failed_state != "FAILED" or failed_job.state != "FAILED":
+                raise AssertionError("A08 untrusted package did not fail closed")
+            tx.commit()
+
+        valid_scope = IdempotencyScope.from_key(
+            actor_id=actor_id, project_id=None,
+            operation="V1_PLUGIN_PACKAGE_IMPORT",
+            key="a08-packaged-pg18-worker-valid",
+        )
+        valid_job = service.submit(command(
+            content=valid_archive, request_scope=valid_scope,
+            request_signature=valid_signature, request_signer=valid_signer_ref,
+        ))
+        if worker.run_once() != "SUCCEEDED":
+            raise AssertionError("A08 worker did not register the synthetic signed package")
+        with runtime.unit_of_work() as tx:
+            job_row = tx.session.execute(
+                select(JobRow).where(JobRow.job_id == valid_job.job_id)
+            ).scalar_one()
+            package_row = tx.session.execute(
+                select(PluginPackageRow).where(
+                    PluginPackageRow.plugin_id_normalized == "synthetic.a08worker",
+                    PluginPackageRow.plugin_version == "1.0.0",
+                )
+            ).scalar_one()
+            registered_audits = tx.session.execute(
+                select(func.count()).select_from(AuditEventRow).where(
+                    AuditEventRow.action == "PLUGIN_PACKAGE_REGISTER",
+                    AuditEventRow.target_object_id == package_row.plugin_package_id,
+                )
+            ).scalar_one()
+            if (job_row.state != "SUCCEEDED" or package_row.package_state != "VERIFIED"
+                    or package_row.package_sha256 != valid_digest or registered_audits != 1):
+                raise AssertionError("A08 worker Job/package/Audit facts diverged")
+            registered_package_id = package_row.plugin_package_id
+            tx.commit()
+
+        installation_inspector = PluginPackageArchiveInspector(
+            PluginManifestParser(),
+            PluginPackageSignatureVerifier(SyntheticSignerResolver()),
+        )
+        archive_evidence = LocalPluginPackageArchiveEvidence(
+            storage=storage, inspector=installation_inspector,
+        )
+        installation_repository = SqlAlchemyPluginInstallationRepository()
+        with runtime.unit_of_work() as tx:
+            installable_package = installation_repository.find_verified_package(
+                tx, package_id=registered_package_id,
+            )
+            if installable_package is None:
+                raise AssertionError("A03 exact verified package disappeared")
+            tx.commit()
+        installation_command = RecordPluginInstallationCommand(
+            plugin_installation_id=uuid.uuid4(),
+            plugin_package_id=registered_package_id,
+            actor_id=actor_id,
+            trace_id=uuid.uuid4(),
+        )
+        installation_materializer = LocalPluginInstallationMaterializer(
+            storage=storage,
+            inspector=installation_inspector,
+            runtime_snapshot_provider=lambda: {
+                "schema_version": "1",
+                "os": "windows-11",
+                "architecture": "x86_64",
+                "python_version": "3.13.15",
+                "dependency_versions": {},
+            },
+        )
+        installation_materializer.materialize(
+            installable_package,
+            installation_id=installation_command.plugin_installation_id,
+        )
+        installation_owner = PluginInstallationOwner(
+            unit_of_work=runtime.unit_of_work,
+            evidence=installation_materializer,
+            archive_evidence=archive_evidence,
+            repository=installation_repository,
+            audit=audit,
+        )
+        installation = installation_owner.record(installation_command)
+        if (installation.installation_state != "INSTALLED"
+                or installation.plugin_package_id != registered_package_id):
+            raise AssertionError("A02 owner did not record the exact verified package")
+        with runtime.unit_of_work() as tx:
+            installation_row = tx.session.execute(
+                select(PluginInstallationRow).where(
+                    PluginInstallationRow.plugin_installation_id
+                    == installation.plugin_installation_id,
+                )
+            ).scalar_one()
+            validation_count = tx.session.execute(
+                select(func.count()).select_from(PluginRuntimeValidationRow).where(
+                    PluginRuntimeValidationRow.plugin_installation_id
+                    == installation.plugin_installation_id,
+                )
+            ).scalar_one()
+            installation_audits = tx.session.execute(
+                select(func.count()).select_from(AuditEventRow).where(
+                    AuditEventRow.action == "PLUGIN_INSTALLATION_RECORD",
+                    AuditEventRow.target_object_id
+                    == installation.plugin_installation_id,
+                )
+            ).scalar_one()
+            if (installation_row.installation_state != "INSTALLED"
+                    or installation_row.plugin_package_id != registered_package_id
+                    or validation_count != 1 or installation_audits != 1):
+                raise AssertionError(
+                    "A02 PostgreSQL installation/runtime-validation/Audit facts diverged"
+                )
+            tx.commit()
+        print(
+            "PLG_04_A02_INSTALLATION_OWNER_PG18_PASS: exact signed archive verified; "
+            "materialized exact signed members; UUID-bound Host evidence; installation/runtime validation/Audit persisted",
+            flush=True,
+        )
+
+        def assert_no_installation_fact(command, *, label: str) -> None:
+            with runtime.unit_of_work() as tx:
+                installation_count = tx.session.execute(
+                    select(func.count()).select_from(PluginInstallationRow).where(
+                        PluginInstallationRow.plugin_installation_id
+                        == command.plugin_installation_id,
+                    )
+                ).scalar_one()
+                validation_count = tx.session.execute(
+                    select(func.count()).select_from(PluginRuntimeValidationRow).where(
+                        PluginRuntimeValidationRow.plugin_installation_id
+                        == command.plugin_installation_id,
+                    )
+                ).scalar_one()
+                audit_count = tx.session.execute(
+                    select(func.count()).select_from(AuditEventRow).where(
+                        AuditEventRow.action == "PLUGIN_INSTALLATION_RECORD",
+                        AuditEventRow.target_object_id
+                        == command.plugin_installation_id,
+                    )
+                ).scalar_one()
+                if (installation_count, validation_count, audit_count) != (0, 0, 0):
+                    raise AssertionError(
+                        f"A02 {label} failure left Installation/validation/Audit facts"
+                    )
+                tx.commit()
+
+        bad_materialization_command = RecordPluginInstallationCommand(
+            plugin_installation_id=uuid.uuid4(),
+            plugin_package_id=registered_package_id,
+            actor_id=actor_id,
+            trace_id=uuid.uuid4(),
+        )
+        with tempfile.TemporaryDirectory(
+                prefix="plg-a03-negative-", dir=test_root) as negative_root:
+            negative_storage = LocalFileStorage(Path(negative_root))
+            negative_storage.store_plugin_package_archive(
+                package_id=registered_package_id,
+                archive_bytes=valid_archive,
+                expected_sha256=valid_digest,
+                expected_size=len(valid_archive),
+            )
+            negative_materializer = LocalPluginInstallationMaterializer(
+                storage=negative_storage,
+                inspector=installation_inspector,
+                runtime_snapshot_provider=lambda: {
+                    "schema_version": "1", "os": "windows-11",
+                    "architecture": "x86_64", "python_version": "3.13.15",
+                    "dependency_versions": {},
+                },
+            )
+            negative_materializer.materialize(
+                installable_package,
+                installation_id=bad_materialization_command.plugin_installation_id,
+            )
+            bad_file = (
+                Path(negative_root) / "plugins" / "installations"
+                / bad_materialization_command.plugin_installation_id.hex
+                / "plugin" / "main.py"
+            )
+            bad_file.write_bytes(b"tampered synthetic member")
+            negative_owner = PluginInstallationOwner(
+                unit_of_work=runtime.unit_of_work,
+                evidence=negative_materializer,
+                archive_evidence=archive_evidence,
+                repository=installation_repository,
+                audit=audit,
+            )
+            try:
+                negative_owner.record(bad_materialization_command)
+            except PluginInstallationOwnerError as exc:
+                if exc.code != "PLUGIN_INSTALLATION_EVIDENCE_UNAVAILABLE":
+                    raise
+            else:
+                raise AssertionError("A03 tampered host tree was accepted")
+            assert_no_installation_fact(
+                bad_materialization_command, label="tampered materialized member",
+            )
+        print(
+            "PLG_04_A03_TAMPERED_HOST_ZERO_FACTS_PG18_PASS: changed member rejected "
+            "after valid archive proof and left no Installation/validation/Audit",
+            flush=True,
+        )
+        _a03_pg_smoke_completed.append(True)
+
+        class CountingSyntheticHostEvidence:
+            def __init__(self, *, available: bool) -> None:
+                self.available = available
+                self.calls = 0
+
+            def inspect_installed_package(self, package, *, installation_id):
+                self.calls += 1
+                if not self.available:
+                    return None
+                return PluginInstallationEvidence(
+                    plugin_installation_id=installation_id,
+                    plugin_package_id=package.plugin_package_id,
+                    installed_package_sha256=package.package_sha256,
+                    installation_present=True,
+                    compatible=True,
+                    runtime_snapshot={
+                        "schema_version": "1", "os": "windows-11",
+                        "architecture": "x86_64", "python_version": "3.13.15",
+                        "dependency_versions": {},
+                    },
+                )
+
+        archive_locator = storage.plugin_package_locators(
+            package_id=registered_package_id,
+        )[1]
+        archive_path = Path(storage_root).joinpath(*archive_locator.split("/"))
+        original_archive = archive_path.read_bytes()
+
+        # A damaged private archive must fail before the synthetic host is queried.
+        damaged_command = RecordPluginInstallationCommand(
+            uuid.uuid4(), registered_package_id, actor_id, uuid.uuid4(),
+        )
+        archive_path.write_bytes(
+            original_archive[:-1] + bytes((original_archive[-1] ^ 0x01,))
+        )
+        damaged_host = CountingSyntheticHostEvidence(available=True)
+        try:
+            damaged_owner = PluginInstallationOwner(
+                unit_of_work=runtime.unit_of_work,
+                evidence=damaged_host,
+                archive_evidence=archive_evidence,
+                repository=SqlAlchemyPluginInstallationRepository(),
+                audit=audit,
+            )
+            try:
+                damaged_owner.record(damaged_command)
+            except PluginInstallationOwnerError as exc:
+                if exc.code != "PLUGIN_PACKAGE_ARCHIVE_EVIDENCE_UNAVAILABLE":
+                    raise
+            else:
+                raise AssertionError("A02 accepted a corrupted private archive")
+        finally:
+            archive_path.write_bytes(original_archive)
+        if damaged_host.calls != 0:
+            raise AssertionError("A02 queried host evidence before archive integrity passed")
+        assert_no_installation_fact(damaged_command, label="damaged archive")
+
+        # A wrong signature value from the locked Package projection must be
+        # rejected by the real archive verifier before any Host probe or write.
+        class MismatchedSignatureRepository:
+            def __init__(self, delegate) -> None:
+                self._delegate = delegate
+
+            def __getattr__(self, name):
+                return getattr(self._delegate, name)
+
+            def find_verified_package(self, transaction, *, package_id):
+                package = self._delegate.find_verified_package(
+                    transaction, package_id=package_id,
+                )
+                return replace(package, signature=b"x" * 64) if package else None
+
+        signature_command = RecordPluginInstallationCommand(
+            uuid.uuid4(), registered_package_id, actor_id, uuid.uuid4(),
+        )
+        signature_host = CountingSyntheticHostEvidence(available=True)
+        signature_owner = PluginInstallationOwner(
+            unit_of_work=runtime.unit_of_work,
+            evidence=signature_host,
+            archive_evidence=archive_evidence,
+            repository=MismatchedSignatureRepository(
+                SqlAlchemyPluginInstallationRepository(),
+            ),
+            audit=audit,
+        )
+        try:
+            signature_owner.record(signature_command)
+        except PluginInstallationOwnerError as exc:
+            if exc.code != "PLUGIN_PACKAGE_ARCHIVE_EVIDENCE_UNAVAILABLE":
+                raise
+        else:
+            raise AssertionError("A02 accepted an archive with a mismatched signature")
+        if signature_host.calls != 0:
+            raise AssertionError("A02 queried host evidence before signature verification")
+        assert_no_installation_fact(signature_command, label="signature mismatch")
+
+        # A valid archive still cannot replace independent Host installation evidence.
+        host_command = RecordPluginInstallationCommand(
+            uuid.uuid4(), registered_package_id, actor_id, uuid.uuid4(),
+        )
+        missing_host = CountingSyntheticHostEvidence(available=False)
+        host_owner = PluginInstallationOwner(
+            unit_of_work=runtime.unit_of_work,
+            evidence=missing_host,
+            archive_evidence=archive_evidence,
+            repository=SqlAlchemyPluginInstallationRepository(),
+            audit=audit,
+        )
+        try:
+            host_owner.record(host_command)
+        except PluginInstallationOwnerError as exc:
+            if exc.code != "PLUGIN_INSTALLATION_EVIDENCE_UNAVAILABLE":
+                raise
+        else:
+            raise AssertionError("A02 treated archive presence as installation evidence")
+        if missing_host.calls != 1:
+            raise AssertionError("A02 did not require its independent Host evidence")
+        assert_no_installation_fact(host_command, label="missing host evidence")
+        print(
+            "PLG_04_A02_FAIL_CLOSED_PG18_PASS: damaged archive, mismatched signature, "
+            "and missing host evidence left zero Installation/validation/Audit facts",
+            flush=True,
+        )
+
+        # Exercise a bounded retry on a transient staging read failure, then
+        # restore the exact synthetic file and allow the fenced generation to finish.
+        retry_scope = IdempotencyScope.from_key(
+            actor_id=actor_id, project_id=None,
+            operation="V1_PLUGIN_PACKAGE_IMPORT",
+            key="a08-packaged-pg18-worker-retry",
+        )
+        retry_job = service.submit(command(
+            content=valid_archive, request_scope=retry_scope,
+            request_signature=valid_signature, request_signer=valid_signer_ref,
+        ))
+        retry_locator, _ = storage.locators(
+            scope="GLOBAL", project_id=None, file_object_id=retry_job.package_upload_id,
+        )
+        staged_path = Path(storage_root).joinpath(*retry_locator.split("/"))
+        held_path = staged_path.with_name(staged_path.name + ".temporarily-held")
+        staged_path.replace(held_path)
+        retry_state = worker.run_once()
+        held_path.replace(staged_path)
+        if retry_state != "RETRY_WAIT":
+            raise AssertionError("A08 transient staging failure did not enter bounded retry")
+        time.sleep(5.2)
+        if worker.run_once() != "SUCCEEDED":
+            raise AssertionError("A08 bounded retry did not complete after staging recovery")
+        with runtime.unit_of_work() as tx:
+            retry_row = tx.session.execute(
+                select(JobRow).where(JobRow.job_id == retry_job.job_id)
+            ).scalar_one()
+            if retry_row.state != "SUCCEEDED" or retry_row.attempt_count != 2:
+                raise AssertionError("A08 retry did not advance its fenced attempt")
+            tx.commit()
+
+        files = [item for item in Path(storage_root).rglob("*") if item.is_file()]
+        plugin_archives = [
+            item for item in files
+            if "plugins" in item.parts and "packages" in item.parts
+        ]
+        plugin_installations = [
+            item for item in files
+            if "plugins" in item.parts and "installations" in item.parts
+        ]
+        original_storage_files = [
+            item for item in files
+            if item not in plugin_archives and item not in plugin_installations
+        ]
+        with zipfile.ZipFile(io.BytesIO(valid_archive), "r") as source_archive:
+            expected_install_files = {
+                item.filename for item in source_archive.infolist()
+                if not item.is_dir()
+            }
+        install_root = (
+            Path(storage_root) / "plugins" / "installations"
+            / installation_command.plugin_installation_id.hex
+        )
+        observed_install_files = {
+            item.relative_to(install_root).as_posix()
+            for item in plugin_installations if install_root in item.parents
+        }
+        if (len(original_storage_files) != 3
+                or len(plugin_archives) != 1
+                or plugin_archives[0].read_bytes() != valid_archive
+                or observed_install_files != expected_install_files
+                or len(plugin_installations) != len(expected_install_files)):
+            raise AssertionError(
+                "A08/A03 smoke did not preserve source storage and exact installed package members"
+            )
+    runtime.dispose()
+    print("PLG_01_A08_PACKAGE_IMPORT_PG18_PASS: atomic upload; scoped claim; terminal signature rejection; "
+          "verified metadata registration; bounded retry recovery; Audit rollback",
+          flush=True)
+
 def packaged_planversion_probe(**context) -> None:
     # Reuse the P51 disposable project and account, but do not make PlanVersion
     # acceptance depend on the unrelated Prototype Package catalog UI.
@@ -388,6 +1111,100 @@ def packaged_planversion_probe(**context) -> None:
     context["user_id"] = actor
     requirement, requirement_version, _source_document, document_version = (
         a05["seed_current_requirement"](context, project))
+
+    # P05 verifies Requirement-owned exact-version reads under real PostgreSQL
+    # authorization before the composition root maps the owner DTO to Output.
+    from sqlalchemy.engine import URL
+    from plm_assistant.entrypoints.output_requirement_source_adapter import (
+        RequirementOutputSourceAdapter,
+    )
+    from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
+    from plm_assistant.modules.project.infrastructure.authorization_repository import (
+        SqlAlchemyProjectAuthorizationRepository,
+    )
+    from plm_assistant.modules.requirement.application.read_versions import (
+        RequirementVersionReadError, RequirementVersionReadService,
+    )
+    from plm_assistant.modules.requirement.infrastructure.version_read_repository import (
+        SqlAlchemyRequirementVersionReadRepository,
+    )
+    from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
+
+    source_runtime = create_database_runtime(URL.create(
+        "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
+        port=fixture_db.pg_port, database=fixture_db.database,
+    ))
+    source_reader = RequirementVersionReadService(
+        unit_of_work=source_runtime.unit_of_work,
+        access=object(), license_guard=object(),
+        authorization=ProjectAuthorizationService(
+            unit_of_work=source_runtime.unit_of_work,
+            repository=SqlAlchemyProjectAuthorizationRepository(),
+        ),
+        repository=SqlAlchemyRequirementVersionReadRepository(),
+    )
+    source_adapter = RequirementOutputSourceAdapter(source_reader)
+    with source_runtime.unit_of_work() as tx:
+        source = source_adapter.read_authorized_fixed_version(
+            tx, actor_id=actor, project_id=project,
+            source_version_ref=requirement_version,
+        )
+        tx.commit()
+    if (source.source_version_ref != requirement_version
+            or source.project_id != project
+            or source.source_kind != "REQUIREMENT_VERSION"
+            or source.review_state != "APPROVED"
+            or source.fields.get("statement") != "项目应形成可追溯的受控原型评审记录"):
+        raise AssertionError("OUT-01-A01-P05 exact Requirement source projection mismatch")
+    try:
+        with source_runtime.unit_of_work() as tx:
+            source_adapter.read_authorized_fixed_version(
+                tx, actor_id=uuid.uuid4(), project_id=project,
+                source_version_ref=requirement_version,
+            )
+    except RequirementVersionReadError:
+        pass
+    else:
+        raise AssertionError("OUT-01-A01-P05 accepted a non-member actor")
+    source_runtime.dispose()
+    print("OUT_01_A01_P05_REQUIREMENT_FIXED_SOURCE_PG_PASS: scoped/versioned/authorized",
+          flush=True)
+
+    from plm_assistant.modules.output.infrastructure.builtin_template_registry import (
+        BUILTIN_REQUIREMENT_DOCX_TEMPLATE_VERSION_ID, BuiltinOutputTemplateRegistry,
+    )
+    packaged_template = BuiltinOutputTemplateRegistry().get_immutable_version(
+        None, template_version_ref=BUILTIN_REQUIREMENT_DOCX_TEMPLATE_VERSION_ID,
+    )
+    if (packaged_template is None or packaged_template.output_type != "DOCX"
+            or packaged_template.source_kinds != ("REQUIREMENT_VERSION",)
+            or packaged_template.immutable is not True
+            or packaged_template.published is not True):
+        raise AssertionError("OUT-01-A01-P07 packaged builtin template mismatch")
+    print("OUT_01_A01_P07_BUILTIN_TEMPLATE_REGISTRY_PASS: fixed-ref/immutable",
+          flush=True)
+
+    from plm_assistant.modules.output.infrastructure.builtin_policy_registry import (
+        BUILTIN_REQUIREMENT_DOCX_POLICY_REF, BuiltinOutputPolicyRegistry,
+    )
+    packaged_policy = BuiltinOutputPolicyRegistry().get_policy(
+        None, policy_ref=BUILTIN_REQUIREMENT_DOCX_POLICY_REF,
+    )
+    if (packaged_policy is None
+            or packaged_policy.allowed_template_versions != (
+                BUILTIN_REQUIREMENT_DOCX_TEMPLATE_VERSION_ID,)
+            or packaged_policy.allowed_output_types != ("DOCX",)
+            or packaged_policy.allowed_review_states != ("APPROVED",)
+            or dict(packaged_policy.fields_by_source_kind) != {
+                "REQUIREMENT_VERSION": (
+                    "title", "statement", "acceptance_criteria",
+                ),
+            }
+            or packaged_policy.max_sources != 4
+            or packaged_policy.max_context_bytes != 8192):
+        raise AssertionError("OUT-01-A01-P09 packaged policy mismatch")
+    print("OUT_01_A01_P09_BUILTIN_POLICY_REGISTRY_PASS: fixed-ref/allowlist",
+          flush=True)
     with fixture_db() as db:
         approved = db.execute(
             "SELECT 1 FROM plm.sol_outlines WHERE project_id=%s "
@@ -605,12 +1422,214 @@ def packaged_planversion_probe(**context) -> None:
             f"packaged PlanVersion PG state mismatch: plan={plan}, version={version}, "
             f"children={counts}, review={review}, round={round_state}, decisions={decisions}"
         )
+    from sqlalchemy.engine import URL
+    from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
+    from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
+    from plm_assistant.modules.project.infrastructure.authorization_repository import (
+        SqlAlchemyProjectAuthorizationRepository,
+    )
+    from plm_assistant.modules.plan.application.read_plan_version import (
+        PlanVersionReadError, PlanVersionReadService,
+    )
+    from plm_assistant.modules.plan.infrastructure.plan_version_read_repository import (
+        SqlAlchemyPlanVersionReadRepository,
+    )
+
+    source_runtime = create_database_runtime(URL.create(
+        "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
+        port=fixture_db.pg_port, database=fixture_db.database,
+    ))
+    try:
+        source_reader = PlanVersionReadService(
+            unit_of_work=source_runtime.unit_of_work, access=object(),
+            license_guard=object(),
+            authorization=ProjectAuthorizationService(
+                unit_of_work=source_runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository(),
+            ),
+            repository=SqlAlchemyPlanVersionReadRepository(),
+        )
+        with source_runtime.unit_of_work() as tx:
+            projection = source_reader.read_output_source(
+                tx, actor_id=actor, project_id=project,
+                plan_version_id=version_id,
+            )
+            tx.commit()
+        actual_wbs = projection.fields.get("wbs_items")
+        if (projection.project_id != project
+                or projection.plan_version_id != version_id
+                or projection.version_state != "IN_REVIEW"
+                or projection.fields.get("version_no") != 1
+                or not isinstance(actual_wbs, list) or len(actual_wbs) != 2
+                or [item.get("name") for item in actual_wbs]
+                    != ["合成实施任务一", "合成实施任务二"]
+                or actual_wbs[1].get("wbs_code") != "TASK-002"
+                or not all("acceptance_criteria" in item for item in actual_wbs)):
+            raise AssertionError("real Plan Owner snapshot projection did not match persisted A17 facts")
+        try:
+            with source_runtime.unit_of_work() as tx:
+                source_reader.read_output_source(
+                    tx, actor_id=actor, project_id=uuid.uuid4(),
+                    plan_version_id=version_id,
+                )
+        except PlanVersionReadError as error:
+            if error.code != "RESOURCE_NOT_FOUND":
+                raise
+        else:
+            raise AssertionError("real Plan Owner exposed a version across projects")
+        # P46 sends the actual Owner projection through the production Output adapter and policy.
+        from sqlalchemy import text
+        from plm_assistant.entrypoints.output_fixed_source_adapter import FixedOutputSourceAdapter
+        from plm_assistant.modules.audit.application.public import AuditService
+        from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
+        from plm_assistant.modules.jobs.application.output_enqueue import OutputJobQueue
+        from plm_assistant.modules.jobs.infrastructure.output_enqueue_repository import SqlAlchemyOutputJobQueueRepository
+        from plm_assistant.modules.output.application.create_request import (
+            CreateOutputRequest, OutputRequestError, OutputRequestService,
+        )
+        from plm_assistant.modules.output.application.resolve_context import (
+            PluginOperationCapability, TrustedOutputContextResolver,
+        )
+        from plm_assistant.modules.output.infrastructure.builtin_policy_registry import (
+            BUILTIN_PLAN_DOCX_POLICY_REF, BuiltinOutputPolicyRegistry,
+        )
+        from plm_assistant.modules.output.infrastructure.builtin_template_registry import (
+            BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID, BuiltinOutputTemplateRegistry,
+        )
+        from plm_assistant.modules.output.infrastructure.create_request_repository import (
+            SqlAlchemyOutputRequestRepository,
+        )
+        from plm_assistant.modules.platform.infrastructure.idempotency_receipts import (
+            SqlAlchemyIdempotencyReceipts,
+        )
+
+        class _P46PlanRepository(SqlAlchemyPlanVersionReadRepository):
+            def __init__(self) -> None:
+                self.output_reads = 0
+
+            def get_output_source(self, transaction, *, project_id, plan_version_id):
+                self.output_reads += 1
+                return super().get_output_source(
+                    transaction, project_id=project_id, plan_version_id=plan_version_id,
+                )
+
+        # Rebind the already-real Plan Owner to a counting repository for P46 only.
+        plan_repository = _P46PlanRepository()
+        source_reader._repository = plan_repository
+
+        class _NoRequirementMatch:
+            def read_output_source(self, _transaction, **_kwargs):
+                return None
+
+        class _P46Access:
+            def authorized_creator(self, *_args, **_kwargs):
+                return actor
+
+        class _P46License:
+            def require_valid(self, *, trace_id):
+                return True
+
+        class _P46TestCapability:
+            def get_operation(self, _transaction, *, operation_id):
+                if operation_id != "word.generate":
+                    return None
+                return PluginOperationCapability(
+                    "word.generate", ("DOCX",), enabled=True, trusted=True,
+                )
+
+        fixed_sources = FixedOutputSourceAdapter(
+            requirements=_NoRequirementMatch(), plans=source_reader,
+        )
+        output_resolver = TrustedOutputContextResolver(
+            sources=fixed_sources,
+            templates=BuiltinOutputTemplateRegistry(),
+            policies=BuiltinOutputPolicyRegistry(),
+            operations=_P46TestCapability(),
+        )
+        output_service = OutputRequestService(
+            unit_of_work=source_runtime.unit_of_work,
+            access=_P46Access(), license_guard=_P46License(), resolver=output_resolver,
+            repository=SqlAlchemyOutputRequestRepository(),
+            jobs=OutputJobQueue(SqlAlchemyOutputJobQueueRepository()),
+            receipts=SqlAlchemyIdempotencyReceipts(),
+            audit=AuditService(SqlAlchemyAuditRepository()),
+        )
+        p46_request = CreateOutputRequest(
+            b"synthetic-session", b"synthetic-csrf", uuid.uuid4(), project,
+            "DOCX", BUILTIN_PLAN_DOCX_TEMPLATE_VERSION_ID, (version_id,),
+            BUILTIN_PLAN_DOCX_POLICY_REF, "word.generate",
+        )
+        p46_queries = (
+            "SELECT count(*) FROM plm.out_context_snapshots WHERE project_id=:project",
+            "SELECT count(*) FROM plm.out_output_requests WHERE project_id=:project",
+            "SELECT count(*) FROM plm.job_jobs WHERE project_id=:project AND owner_module='output'",
+            "SELECT count(*) FROM plm.job_outbox_events WHERE project_id=:project AND owner_module='output'",
+            "SELECT count(*) FROM plm.aud_events WHERE target_project_id=:project AND action='OUTPUT_REQUEST_CREATE'",
+            "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE project_id=:project AND operation='V1_OUTPUT_REQUEST_CREATE'",
+        )
+
+        def p46_output_counts():
+            with source_runtime.unit_of_work() as tx:
+                counts = tuple(
+                    tx.session.execute(text(query), {"project": project}).scalar_one()
+                    for query in p46_queries
+                )
+                tx.commit()
+            return counts
+
+        def p46_execution_count():
+            with source_runtime.unit_of_work() as tx:
+                count = tx.session.execute(
+                    text("SELECT count(*) FROM plm.plg_executions WHERE project_id=:project"),
+                    {"project": project},
+                ).scalar_one()
+                tx.commit()
+            return count
+
+        plan_repository.output_reads = 0
+        p46_before = p46_output_counts()
+        p46_exec_before = p46_execution_count()
+        try:
+            output_service.create(
+                p46_request, idempotency_key="p46-inreview-plan-key-000001",
+            )
+        except OutputRequestError as error:
+            if error.code != "VALIDATION_FAILED":
+                raise
+        else:
+            raise AssertionError("P46 accepted a real IN_REVIEW PlanVersion for Output")
+        p46_after = p46_output_counts()
+        p46_exec_after = p46_execution_count()
+        if (plan_repository.output_reads != 1 or p46_after != p46_before
+                or p46_exec_after != p46_exec_before or p46_exec_after != 0):
+            raise AssertionError(
+                "P46 state-gate rejection did not reach the real Plan Owner or left side effects"
+            )
+        print(
+            "OUT_01_A01_P46_REAL_PLAN_REVIEW_STATE_ZERO_WRITES_PASS: "
+            "production fixed-source adapter; real IN_REVIEW owner; resolver rejected; "
+            "six Output counts unchanged; plugin execution=0",
+            flush=True,
+        )
+        print(
+            "OUT_01_A01_P45_REAL_PLAN_SNAPSHOT_PG_PASS: migrated PostgreSQL rows; "
+            "fixed UUID/project authorization; IN_REVIEW preserved; WBS=2; cross-project hidden",
+            flush=True,
+        )
+    finally:
+        source_runtime.dispose()
     print(f"P51_A17_PACKAGED_PLANVERSION_PG_PASS: state={version[0]}; "
           f"WBS/requirement/validation={counts}; Review/Round={review[0]}/{round_state[0]}; decisions=0",
           flush=True)
+    _plugin_package_import_pg_smoke(context, actor_id=actor)
+    _a02_pg_smoke_completed.append(True)
 
 
 a05["prototype_probe"].__globals__["prototype_probe"] = packaged_planversion_probe
+
+
+_a02_pg_smoke_completed: list[bool] = []
+_a03_pg_smoke_completed: list[bool] = []
 
 
 if __name__ == "__main__":
@@ -626,4 +1645,40 @@ if __name__ == "__main__":
     os.environ["PLM_TEST_TEMP_ROOT"] = str(test_temp)
     import tempfile
     tempfile.tempdir = None
-    sys.exit(a05["main"]())
+    runner = a05["p51"]["handover_review"]["base"]["base"]["project"]["base"].base.base
+    original_smoke = runner.smoke
+    marker_state = {"a02": False, "a03": False}
+
+    def smoke_with_plugin_installation_markers(*args, **kwargs):
+        result = original_smoke(*args, **kwargs)
+        if _a02_pg_smoke_completed != [True] or _a03_pg_smoke_completed != [True]:
+            raise AssertionError("A02/A03 PG18 probes must complete before the A05 result is accepted")
+        if not isinstance(result, dict):
+            raise AssertionError("A05 smoke result must remain a structured mapping")
+        markers = result.setdefault("markers", [])
+        if not isinstance(markers, list):
+            raise AssertionError("A05 smoke result markers field is not a list")
+        marker = (
+            "PLG_04_A02_PG18_PASS: exact archive + Host evidence recorded; damaged archive, "
+            "signature mismatch, and missing Host evidence failed closed with zero facts"
+        )
+        if marker not in markers:
+            markers.append(marker)
+        marker_state["a02"] = marker in markers
+        a03_marker = (
+            "PLG_04_A03_PG18_PASS: signed synthetic package materialized under exact "
+            "installation UUID; full tree revalidated and Owner recorded UUID-bound proof"
+        )
+        if a03_marker not in markers:
+            markers.append(a03_marker)
+        marker_state["a03"] = a03_marker in markers
+        return result
+
+    runner.smoke = smoke_with_plugin_installation_markers
+    exit_code = a05["main"]()
+    if exit_code != 0:
+        sys.exit(exit_code)
+    if (_a02_pg_smoke_completed != [True] or _a03_pg_smoke_completed != [True]
+            or marker_state != {"a02": True, "a03": True}):
+        raise AssertionError("A02/A03 PG18 markers were not captured in A05 structured output")
+    sys.exit(0)

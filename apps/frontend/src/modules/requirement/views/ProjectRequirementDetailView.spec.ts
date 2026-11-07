@@ -62,6 +62,18 @@ describe("ProjectRequirementDetailView", () => {
     expect(text).toContain("验证方法"); expect(text).toContain("所需数据"); expect(text).toContain("所需环境"); expect(text).toContain("证据要求");
     expect(text).toContain("需要人工确认"); expect(text).toContain("假设"); expect(text).toContain("排除项"); expect(text).toContain("依赖");
     expect(text).toContain("AI 建议任务"); expect(result.wrapper.find("form").exists()).toBe(false); result.wrapper.unmount(); });
+  it("offers DOCX only for the currently approved fixed version", async () => { const bundle = clients();
+    const approved = { ...detail, state: "APPROVED" as const, classification: "STANDARD_FUNCTION" as const };
+    vi.mocked(bundle.requirements.getRequirement).mockResolvedValue({ ...root, current_approved_version_ref: versionId });
+    vi.mocked(bundle.requirements.listVersions).mockResolvedValue({ items: [approved], next_cursor: null, has_more: false });
+    vi.mocked(bundle.requirements.getVersion).mockResolvedValue(approved);
+    const result = await view(await session(), bundle);
+    await result.wrapper.findAll("button").find(button => button.text().includes("详情与原文入口"))!.trigger("click");
+    await flushPromises();
+    expect(result.wrapper.text()).toContain("请求生成 DOCX");
+    expect(result.wrapper.text()).toContain("请求受理不代表文件已生成");
+    result.wrapper.unmount();
+  });
   it("locates evidence only after explicit click and links to the business record", async () => { const result = await view(await session());
     await result.wrapper.findAll("button").find(button => button.text().includes("详情与原文入口"))!.trigger("click"); await flushPromises();
     expect(result.evidence.get).not.toHaveBeenCalled(); expect(result.wrapper.get(`a[href^="/projects/${project}/handover/${sourceId}"]`).text()).toContain("业务记录");

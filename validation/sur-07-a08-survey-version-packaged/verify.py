@@ -4,18 +4,34 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import runpy
+import shutil
 import subprocess
 import sys
 import tempfile
+import traceback
 import uuid
 from pathlib import Path
 
 import httpx
 
 ROOT = Path(__file__).resolve().parents[2]
+_CURRENT_STAGE = "none"
+
+
+def mark_stage(stage: str) -> None:
+    global _CURRENT_STAGE
+    if not re.fullmatch(r"[A-Z0-9_]{1,64}", stage):
+        raise ValueError("invalid diagnostic stage")
+    _CURRENT_STAGE = "SUR_07_A08_STAGE_" + stage
+    print(_CURRENT_STAGE, flush=True)
+
+
 sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "apps" / "backend" / "src"))
+extract_verified = runpy.run_path(str(ROOT / "tools/run_a17_packaged_cloud_validation.py"))["extract_verified"]
 survey_create = runpy.run_path(str(ROOT / "validation/sur-07-a03-survey-create-packaged/verify.py"))
 handover_review = survey_create["prior"]
 _seed_observer = handover_review["seed_observer"]
@@ -39,7 +55,9 @@ handover_review["browser_probe"].__globals__["seed_observer"] = seed_project_man
 
 
 def after_approval(state: dict, **context) -> None:
+    mark_stage("APPROVAL_FIXTURE_START")
     survey_create["after_approval"](state, **context)
+    mark_stage("APPROVAL_FIXTURE_READY")
     project, survey = state["project"], state["survey"]
     origin = context["origin"]
     observer = context["observer_client"]
@@ -70,6 +88,7 @@ def after_approval(state: dict, **context) -> None:
         assert membership is not None and membership[0] in {
             "CUSTOMER_MANAGER", "CUSTOMER_MEMBER"
         }, membership
+    mark_stage("EDGE_START")
     edge = subprocess.run([
         "node", str(Path(__file__).with_name("run-survey-version-edge.mjs")),
         origin, str(project), str(survey), str(context["observer_id"]),
@@ -80,6 +99,7 @@ def after_approval(state: dict, **context) -> None:
         raise AssertionError("packaged SurveyVersion Edge failed: "
                              + edge.stdout[-9000:] + edge.stderr[-9000:])
     result = json.loads(edge.stdout.strip().splitlines()[-1])
+    mark_stage("EDGE_PASS")
     assert result["status"] == "SUR_07_A12_P05_PACKAGED_EDGE_PASS", result
     assert result["review_ui_subject_label"] is True
     assert result["review_ui_fixed_version_link"].endswith(
@@ -227,7 +247,9 @@ def after_approval(state: dict, **context) -> None:
 
 
 def after_expiry(state: dict, **context) -> None:
+    mark_stage("LICENSE_EXPIRY_FIXTURE_START")
     survey_create["after_expiry"](state, **context)
+    mark_stage("LICENSE_EXPIRY_FIXTURE_READY")
     project, survey = state["project"], state["survey"]
     denied = context["observer_client"].post(
         f"/api/v1/projects/{project}/surveys/{survey}/versions", headers={
@@ -243,12 +265,15 @@ def after_expiry(state: dict, **context) -> None:
 
 def browser_probe(**context) -> None:
     state: dict = {}
+    mark_stage("BROWSER_CALLBACK_START")
     handover_review["browser_probe"](**context,
         after_approval_probe=lambda **values: after_approval(state, **values),
         after_expiry_probe=lambda **values: after_expiry(state, **values))
+    mark_stage("BROWSER_CALLBACK_PASS")
 
 
 def main() -> int:
+    mark_stage("VERIFIER_START")
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("candidate", "stage", "pristine", "target"):
         parser.add_argument("--" + name, type=Path, required=True)
@@ -262,12 +287,168 @@ def main() -> int:
                 or root.name != "PLMToolTemp" or root.drive.upper() != "D:"):
             raise ValueError("alternate temp root rejected")
         tempfile.tempdir = str(root)
-    runner = handover_review["base"]["base"]["project"]["base"].base.base
-    result = runner.smoke(
-        args.candidate, args.stage, args.pristine, args.target, args.expected_sha256,
-        synthetic_license_document_factory=runner.synthetic_document,
-        licensed_https_probe=browser_probe,
+    mark_stage("TEMP_ROOT_READY")
+    temp = Path(tempfile.gettempdir()).resolve(strict=True)
+    stage_parent = args.stage.parent.resolve(strict=True)
+    if (stage_parent != temp or not str(args.stage).isascii()
+            or not args.stage.name.startswith("plm-current-app-stage-")
+            or args.stage.exists() or args.stage.is_symlink()):
+        raise ValueError("current-app stage root rejected")
+    mark_stage("CANDIDATE_STAGE_EXTRACT_START")
+    extract_verified(args.candidate, args.expected_sha256, args.stage)
+    mark_stage("CANDIDATE_STAGE_EXTRACT_PASS")
+    stage_initdb = args.stage / "payload" / "pgsql" / "bin" / "initdb.exe"
+    if not stage_initdb.is_file() or stage_initdb.is_symlink():
+        raise ValueError("verified candidate initdb path rejected")
+    mark_stage("STAGE_INITDB_PROBE_START")
+    initdb_probe = subprocess.run(
+        [str(stage_initdb), "--version"], capture_output=True, text=True,
+        encoding="utf-8", errors="replace", timeout=30, check=False,
     )
+    if initdb_probe.returncode:
+        mark_stage("STAGE_INITDB_PROBE_FAIL")
+        raise RuntimeError(
+            "synthetic packaged migration command failed: initdb.exe, exit="
+            + str(initdb_probe.returncode) + ", output="
+        )
+    mark_stage("STAGE_INITDB_PROBE_PASS")
+    target_root = args.target
+    if (target_root.parent.resolve(strict=True) != temp or not str(target_root).isascii()
+            or not target_root.name.startswith("plm-install-rehearsal-target-")
+            or target_root.exists() or target_root.is_symlink()):
+        raise ValueError("target rehearsal root rejected")
+    original_path = os.environ.get("PATH", "")
+    os.environ["PATH"] = os.pathsep.join((
+        str(target_root / "runtime" / "pgsql" / "bin"),
+        str(target_root / "runtime" / "pgsql" / "lib"),
+        original_path,
+    ))
+    mark_stage("BUNDLED_PG_DLL_PATH_READY")
+    runner = handover_review["base"]["base"]["project"]["base"].base.base
+    platform_write_globals = runner.smoke.__globals__["original_smoke"].__globals__
+    original_pg_run = platform_write_globals["_run"]
+    target_pg_bin = target_root / "runtime" / "pgsql" / "bin"
+    target_pg_probes = {
+        "initdb": "not_run", "postgres": "not_run", "temp_env": "not_run",
+        "temp_env_applied": "no",
+    }
+
+    def a08_pg_run(arguments, *, env=None, timeout=120):
+        actual_env = dict(env if env is not None else os.environ)
+        if (arguments and Path(arguments[0]).name.casefold() == "initdb.exe"
+                and target_pg_probes["initdb"] == "not_run"):
+            for name in ("initdb", "postgres"):
+                try:
+                    probe = subprocess.run(
+                        [str(target_pg_bin / (name + ".exe")), "--version"],
+                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL, timeout=30, check=False, env=actual_env,
+                    )
+                    target_pg_probes[name] = str(probe.returncode)
+                except subprocess.TimeoutExpired:
+                    target_pg_probes[name] = "timeout"
+                except OSError:
+                    target_pg_probes[name] = "launch_error"
+
+            pg_temp_value = actual_env.get("TEMP", "")
+            pg_temp = Path(pg_temp_value)
+            owned_temp = Path(tempfile.gettempdir()).resolve(strict=True)
+            probe_root = None
+            try:
+                if (not pg_temp_value or pg_temp.is_symlink()
+                        or pg_temp.resolve(strict=True).parent != owned_temp
+                        or not pg_temp.name.startswith("plm-pg18-platform-write-")
+                        or owned_temp.drive.upper() != "D:"
+                        or not str(pg_temp).isascii()):
+                    target_pg_probes["temp_env"] = "unsafe_boundary"
+                else:
+                    pg_temp = pg_temp.resolve(strict=True)
+                    probe_root = pg_temp / "a08-initdb-base-temp-probe"
+                    if probe_root.exists() or probe_root.is_symlink():
+                        target_pg_probes["temp_env"] = "unsafe_boundary"
+                    else:
+                        probe_root.mkdir()
+                        probe_args = list(arguments)
+                        pgdata_indexes = [
+                            index for index, value in enumerate(probe_args)
+                            if value.startswith("--pgdata=")
+                        ]
+                        if len(pgdata_indexes) != 1:
+                            target_pg_probes["temp_env"] = "invalid_args"
+                        else:
+                            probe_args[pgdata_indexes[0]] = "--pgdata=" + str(probe_root / "data")
+                            alternate_env = dict(actual_env)
+                            alternate_env["TEMP"] = str(owned_temp)
+                            alternate_env["TMP"] = str(owned_temp)
+                            try:
+                                probe = subprocess.run(
+                                    probe_args, stdin=subprocess.DEVNULL,
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                    timeout=60, check=False, env=alternate_env,
+                                )
+                                target_pg_probes["temp_env"] = str(probe.returncode)
+                                if probe.returncode == 0:
+                                    actual_env["TEMP"] = str(owned_temp)
+                                    actual_env["TMP"] = str(owned_temp)
+                                    target_pg_probes["temp_env_applied"] = "yes"
+                            except subprocess.TimeoutExpired:
+                                target_pg_probes["temp_env"] = "timeout"
+                            except OSError:
+                                target_pg_probes["temp_env"] = "launch_error"
+            finally:
+                if probe_root is not None and probe_root.exists() and not probe_root.is_symlink():
+                    resolved_probe = probe_root.resolve(strict=True)
+                    if (resolved_probe.parent == pg_temp.resolve(strict=True)
+                            and resolved_probe.name == "a08-initdb-base-temp-probe"
+                            and resolved_probe.drive.upper() == "D:"
+                            and str(resolved_probe).isascii()):
+                        shutil.rmtree(resolved_probe)
+            mark_stage("TARGET_PG_TEMP_ENV_PROBE_DONE")
+        return original_pg_run(arguments, env=actual_env, timeout=timeout)
+
+    platform_write_globals["_run"] = a08_pg_run
+    mark_stage("PACKAGED_SMOKE_START")
+    try:
+        result = runner.smoke(
+            args.candidate, args.stage, args.pristine, args.target, args.expected_sha256,
+            synthetic_license_document_factory=runner.synthetic_document,
+            licensed_https_probe=browser_probe,
+        )
+    except Exception as exc:
+        frames = []
+        for frame in traceback.extract_tb(exc.__traceback__)[-8:]:
+            filename = re.sub(r"[^A-Za-z0-9_.-]", "_", Path(frame.filename).name)[:80]
+            frames.append(filename + ":" + str(frame.lineno))
+        exception_name = re.sub(r"[^A-Za-z0-9_.-]", "_", type(exc).__name__)[:80]
+        winerror = getattr(exc, "winerror", None)
+        if not isinstance(winerror, int):
+            winerror = "none"
+        child = "none"
+        child_exit = "none"
+        error_message = exc.args[0] if len(exc.args) == 1 and isinstance(exc.args[0], str) else ""
+        child_match = re.match(
+            r"synthetic packaged migration command failed: ([A-Za-z0-9_.-]{1,80}), "
+            r"exit=(-?\d{1,10}), output=",
+            error_message,
+        )
+        if child_match and child_match.group(1).casefold() in {
+            "initdb.exe", "pg_ctl.exe", "psql.exe", "postgres.exe", "python.exe",
+        }:
+            child, child_exit = child_match.groups()
+        print("SUR_07_A08_SAFE_DIAG: exception=" + exception_name
+              + "; winerror=" + str(winerror)
+              + "; child=" + child
+              + "; child_exit=" + child_exit
+              + "; target_initdb_probe=" + target_pg_probes["initdb"]
+              + "; target_postgres_probe=" + target_pg_probes["postgres"]
+              + "; target_initdb_temp_env_probe=" + target_pg_probes["temp_env"]
+              + "; target_initdb_temp_env_applied=" + target_pg_probes["temp_env_applied"]
+              + "; stage=" + _CURRENT_STAGE
+              + "; frames=" + (">".join(frames) if frames else "none"), flush=True)
+        raise
+    finally:
+        platform_write_globals["_run"] = original_pg_run
+    mark_stage("PACKAGED_SMOKE_PASS")
     print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
     return 0
 

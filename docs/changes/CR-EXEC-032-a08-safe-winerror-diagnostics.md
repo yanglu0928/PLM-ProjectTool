@@ -1,0 +1,37 @@
+# CR-EXEC-032：SUR-07-A08 WinError 脱敏诊断补齐
+
+日期：2026-11-07  
+状态：实施前记录；A08 未通过。
+
+## 证据
+
+GitHub Hosted workflow run [42259742947](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42259742947) 的 A08 packaged SurveyVersion Edge HTTPS PostgreSQL flow job 在 Windows Server 2025 Hosted runner 上，通过同 run A17 非发行候选下载及身份校验、D盘目录边界和语法检查。随后包内验收 exit=1、无 A08 业务通过标记。安全摘要显示异常类别 WinError、末帧 <frozen ntpath>:709、last_stage=none。原始验收器输出未上传，D盘临时根按所有权清理。
+
+该摘要没有 WinError 数值和业务阶段，无法判断错误源于路径操作、子进程、浏览器或产品业务。不得据此修改产品或宣布 WBS 通过。
+
+## 单点变更
+
+仅修改 validation/sur-07-a08-survey-version-packaged/verify.py 与其 A08 Workflow 包装诊断：
+
+- 验收器在 smoke 入口、浏览器验收入口和关键回调边界写出固定阶段枚举；
+- 捕获失败时输出异常类型、整数 WinError（若存在）和最多 8 个 traceback basename:line；排除异常消息、绝对/相对路径、请求/响应、客户数据、环境变量与日志正文；
+- Workflow 只提取符合严格字符/长度白名单的该诊断字段，成功标记与所有原断言保持不变；
+- 不改产品、API、Schema、数据库、权限、正式信任与验收门槛。
+
+## 风险与回滚
+
+风险：有限调用栈仍可能只显示路径库末帧；阶段枚举能补充调用阶段。诊断不得用于放宽验收。回滚仅还原 A08 验收器和 Workflow 的诊断增量，不改已生成产品包内容或基线。
+
+## 验证计划与数据边界
+
+在 GitHub Hosted Windows Server 2025 runner 的 D盘运行；同 run、非发行候选，隔离 PG18、真实 Edge/HTTPS、仅合成一次性项目/用户/调研数据。验证必须继续通过三个既有标记：A08 PG、A12 P05 Edge 与 A08 License denial。原始输出不上传，测试目录仅清理精确 owned 根。不在用户本机或 C盘运行项目代码，不外发客户资料、不调用外部 AI、不执行插件。
+
+
+## 实施记录（2026-11-07）
+
+已将上述诊断接入 A08 verifier 与 Workflow：固定枚举阶段覆盖 verifier/temp-root/smoke、浏览器回调、审批夹具、Edge、License expiry；异常摘要不含异常消息和路径，只含异常类、可选整数 WinError、最多 8 个净化 basename:line。Workflow 的诊断正则对字符集与总字段长度作约束，原始临时输出仍不上传并按owned根清理。A08 所有三项通过标记和原业务断言未改。Python/PowerShell运行验收等待下一GitHub Hosted workflow；若诊断后仍失败，按新证据继续记录，不转为产品缺陷推断。
+
+
+## 后续夹具偏差与修正（2026-11-07，CR-EXEC-033）
+
+run 42263308077 的 CR-EXEC-032 安全摘要显示 FileNotFoundError/WinError 2，固定阶段 PACKAGED_SMOKE_START；有界调用帧为 verify.py:291、smoke_current_app_packaged_https.py:160、该文件:71、_local.py:670、净化的 frozen ntpath 帧:709。源码确认 smoke 的 _inputs 要求 stage 已存在，A08 尚未准备；A17既有runner通过 extract_verified 哈希校验并解包相同非发行候选。下一单点仅复用该现有函数并调整stage路径名前缀。验收门槛、产品逻辑和pristine/target清理边界不变；Hosted D盘验证待进行。

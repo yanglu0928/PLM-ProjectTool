@@ -7,6 +7,7 @@ import concurrent.futures
 import hashlib
 import json
 import math
+import os
 import re
 import runpy
 import shutil
@@ -110,7 +111,7 @@ PG_SOURCE, VECTOR_SOURCE = physical["PG_SOURCE"], physical["VECTOR_SOURCE"]
 seed_user = runpy.run_path(str(
     ROOT / "validation/ai-02-a02-model-create/verify.py"
 ))["seed_user"]
-PORT = 55434  # Required by the existing Requirement verifier.
+PG_HOST, PORT, PG_USER = "127.0.0.1", 55434, "poc_admin"  # Synthetic verifier connection only.
 ORIGIN = "http://localhost"
 ITEMS = ("PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE")
 
@@ -515,7 +516,7 @@ def _probe_review_pipeline(database: str, review_id: uuid.UUID,
     )
     params = (review_id, round_id)
     assert psycopg.Pipeline.is_supported()
-    with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+    with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER,
                          dbname=database) as db:
         def sequential(connection):
             return tuple(connection.execute(statement, params).fetchall()
@@ -561,7 +562,7 @@ def _probe_review_pipeline(database: str, review_id: uuid.UUID,
 
             def worker() -> float:
                 with psycopg.connect(
-                    host="127.0.0.1", port=PORT, user="poc_admin",
+                    host=PG_HOST, port=PORT, user=PG_USER,
                     dbname=database,
                 ) as connection:
                     assert method(connection) == expected
@@ -622,7 +623,7 @@ def _probe_review_bundle(database: str, runtime, project_id: uuid.UUID,
             buckets[bucket].append(payload)
         return tuple(tuple(buckets[index]) for index, _ in children)
 
-    with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+    with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER,
                          dbname=database) as db:
         expected = sequential(db)
         assert expected == bundled(db)
@@ -647,8 +648,7 @@ def _probe_review_bundle(database: str, runtime, project_id: uuid.UUID,
             barrier = threading.Barrier(20)
 
             def worker() -> float:
-                with psycopg.connect(host="127.0.0.1", port=PORT,
-                                     user="poc_admin", dbname=database) as connection:
+                with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER, dbname=database) as connection:
                     assert method(connection) == expected
                     barrier.wait(timeout=15)
                     started = time.perf_counter()
@@ -671,7 +671,7 @@ def _probe_review_bundle(database: str, runtime, project_id: uuid.UUID,
         assert review_reader.get_round(
             tx, "PROJECT", project_id, review_id, round_id,
         ) is not None
-    with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+    with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER,
                          dbname=database, autocommit=True) as db:
         decision_event = db.execute(
             "SELECT round_event_id,actor_id FROM plm.rvw_round_events "
@@ -748,7 +748,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         staging, locator, expected_sha256=digest,
         expected_size=len(payload), max_bytes=100_000_000,
     )
-    with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+    with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER,
                          dbname=database, autocommit=True) as db:
         template_id, template_version = uuid.uuid4(), uuid.uuid4()
         with db.transaction():
@@ -963,7 +963,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         current_validator=current, receipts=receipts, audit=audit,
     )
     if isolation_checks:
-        with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+        with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER,
                              dbname=database, autocommit=True) as db:
             other_token = b"x" * 32
             other_pm = seed_user(
@@ -1000,7 +1000,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             assert error.code == "RESOURCE_NOT_FOUND", error.code
         else:
             raise AssertionError("cross-project Link must not be created")
-        with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+        with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER,
                              dbname=database, autocommit=True) as db:
             assert db.execute(
                 "SELECT count(*) FROM plm.prt_requirement_links WHERE project_id=%s",
@@ -1096,7 +1096,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                         headers=read_headers,
                     )
                     assert conflict.status_code == 409, conflict.text
-            with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+            with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER,
                                  dbname=database, autocommit=True) as db:
                 assert db.execute(
                     "SELECT count(*) FROM plm.wfl_checklist_records "
@@ -1188,7 +1188,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                 assert parallel_reader.result(timeout=5).project_role == "PROJECT_MANAGER"
             try:
                 with psycopg.connect(
-                    host="127.0.0.1", port=PORT, user="poc_admin",
+                    host=PG_HOST, port=PORT, user=PG_USER,
                     dbname=database, autocommit=True,
                 ) as db, db.transaction():
                     db.execute("SET LOCAL lock_timeout='200ms'")
@@ -1356,8 +1356,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             _print_file_proof_timing(storage, file_proof_since, "network")
     with TestClient(app, base_url=ORIGIN) as client:
         if isolation_checks:
-            with psycopg.connect(host="127.0.0.1", port=PORT,
-                                 user="poc_admin", dbname=database,
+            with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER, dbname=database,
                                  autocommit=True) as db:
                 db.execute(
                     "UPDATE plm.prj_project_members SET state='SUSPENDED' "
@@ -1381,8 +1380,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             )
             assert denied_write.status_code == 404, denied_write.text
             assert denied_write.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
-            with psycopg.connect(host="127.0.0.1", port=PORT,
-                                 user="poc_admin", dbname=database,
+            with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER, dbname=database,
                                  autocommit=True) as db:
                 db.execute(
                     "UPDATE plm.prj_project_members SET state='ACTIVE' "
@@ -1473,7 +1471,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         assert transition.status_code == 200, transition.text
         assert transition.json()["data"]["to_stage"] == "SOLUTION"
         assert transition.headers["etag"] == '"v13"'
-    with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+    with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER,
                          dbname=database, autocommit=True) as db:
         assert db.execute(
             "SELECT current_stage_key,lock_version FROM plm.wfl_project_workflows "
@@ -1496,35 +1494,71 @@ def main(*, mixed_not_required: bool = False,
          phase_diagnostic: bool = False,
          timeline_diagnostic: bool = False,
          external_client: bool = False,
-         external_pool_comparison: bool = False) -> None:
+         external_pool_comparison: bool = False,
+         reuse_postgres: tuple[str, int, str] | None = None) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
         raise ValueError("unknown coverage mode")
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-        if probe.connect_ex(("127.0.0.1", PORT)) == 0:
-            raise RuntimeError("port 55434 is occupied; existing PostgreSQL untouched")
+    global PG_HOST, PORT, PG_USER
+    if reuse_postgres is None:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            if probe.connect_ex(("127.0.0.1", PORT)) == 0:
+                raise RuntimeError("port 55434 is occupied; existing PostgreSQL untouched")
+    else:
+        host, port, user = reuse_postgres
+        if host != "127.0.0.1" or type(port) is not int or not 1 <= port <= 65535:
+            raise ValueError("reused PostgreSQL must be a validated loopback endpoint")
+        if not user or not user.isascii() or not user.replace("_", "").isalnum():
+            raise ValueError("reused PostgreSQL role name rejected")
+        PG_HOST, PORT, PG_USER = host, port, user
+        runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
+        if runner_temp.drive.upper() == "C:" or not str(runner_temp).isascii():
+            raise RuntimeError("reused PostgreSQL verification requires non-C Hosted RUNNER_TEMP")
+        if Path(tempfile.gettempdir()).resolve(strict=True) != runner_temp:
+            raise RuntimeError("Hosted TEMP must equal the owned RUNNER_TEMP")
+    install = PG_SOURCE.resolve(strict=True)
     temp_root = Path(tempfile.gettempdir()).resolve(strict=True)
+    source_override = bool(os.environ.get("PLM_PRT_PG_SOURCE"))
+    allowed_source = (
+        install.is_relative_to(temp_root) and str(install).isascii() and install.name == "pgsql"
+        if source_override else install.is_relative_to(ROOT.resolve())
+    )
+    if not install.is_dir() or install.is_symlink() or not allowed_source:
+        raise RuntimeError("verified PostgreSQL runtime is outside the allowed fixture root")
+    binaries = install / "bin"
+    extension_dir = install / "share" / "extension"
+    required_runtime_files = (
+        binaries / "initdb.exe",
+        binaries / "pg_ctl.exe",
+        install / "lib" / "vector.dll",
+        extension_dir / "vector.control",
+    )
+    if not all(path.is_file() and not path.is_symlink() for path in required_runtime_files):
+        raise RuntimeError("verified PostgreSQL/pgvector runtime files are incomplete")
+    if not any(extension_dir.glob("vector--*.sql")):
+        raise RuntimeError("verified pgvector SQL extension scripts are missing")
     scratch = Path(tempfile.mkdtemp(prefix="plm-prt-a05-p03-", dir=temp_root)).resolve()
     if not scratch.is_relative_to(temp_root) or not str(scratch).isascii():
         raise RuntimeError("isolated ASCII temporary PostgreSQL path required")
-    install = scratch / "pgsql"
+    data, log = scratch / "data", scratch / "postgres.log"
     try:
-        for name in ("bin", "lib", "share"):
-            shutil.copytree(PG_SOURCE / name, install / name)
-        shutil.copy2(VECTOR_SOURCE / "vector.dll", install / "lib/vector.dll")
-        shutil.copy2(VECTOR_SOURCE / "vector.control", install / "share/extension/vector.control")
-        for path in (VECTOR_SOURCE / "sql").glob("vector--*.sql"):
-            shutil.copy2(path, install / "share/extension" / path.name)
-        binaries = install / "bin"
-        data, log = scratch / "data", scratch / "postgres.log"
-        _run([str(binaries / "initdb.exe"), "-D", str(data), "-U", "poc_admin",
-              "-A", "trust", "--no-locale", "-E", "UTF8"])
-        _run([str(binaries / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
-              "-o", f"-h 127.0.0.1 -p {PORT}", "-w", "start"], detached=True)
+        if reuse_postgres is None:
+            _run([str(binaries / "initdb.exe"), "-D", str(data), "-U", PG_USER,
+                  "-A", "trust", "--no-locale", "-E", "UTF8"])
+            _run([str(binaries / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
+                  "-o", f"-h {PG_HOST} -p {PORT}", "-w", "start"], detached=True)
+        else:
+            with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER,
+                                 dbname="postgres", connect_timeout=5) as db:
+                server_version = db.execute("SELECT current_setting('server_version_num')").fetchone()[0]
+                vector = db.execute(
+                    "SELECT extversion FROM pg_extension WHERE extname='vector'"
+                ).fetchone()
+                if int(server_version) < 180000 or not vector:
+                    raise RuntimeError("reused Hosted PostgreSQL 18/pgvector identity rejected")
         if pool_budget_probe:
-            with psycopg.connect(host="127.0.0.1", port=PORT,
-                                 user="poc_admin", dbname="postgres") as db:
+            with psycopg.connect(host=PG_HOST, port=PORT, user=PG_USER, dbname="postgres") as db:
                 limits = dict(db.execute(
                     "SELECT name,setting FROM pg_settings WHERE name IN "
                     "('max_connections','superuser_reserved_connections',"
@@ -1536,7 +1570,7 @@ def main(*, mixed_not_required: bool = False,
                 _require_twenty_fixed_pool_budget,
             )
             budget_runtime = create_database_runtime(
-                f"postgresql+psycopg://poc_admin@127.0.0.1:{PORT}/postgres",
+                f"postgresql+psycopg://{PG_USER}@{PG_HOST}:{PORT}/postgres",
             )
             try:
                 _require_twenty_fixed_pool_budget(budget_runtime)
@@ -1545,6 +1579,10 @@ def main(*, mixed_not_required: bool = False,
             print("PRT_A05_P04_P21_OPTIONAL_POOL_BUDGET_PASS: "
                   "isolated PostgreSQL capacity gate accepted")
         req = runpy.run_path(str(ROOT / "validation/req-01-a12-a05-workflow-pg/verify.py"))
+        req.update({"HOST": PG_HOST, "PORT": PORT, "USER": PG_USER})
+        req["connect"].__globals__.update(
+            {"HOST": PG_HOST, "PORT": PORT, "USER": PG_USER}
+        )
         req["main"](
             include_second=mixed_not_required,
             include_extra_criterion=(coverage_mode == "partial" or multi_prototype),
@@ -1612,7 +1650,7 @@ def main(*, mixed_not_required: bool = False,
                   "two PASS and SOLUTION transition")
     finally:
         control, data = install / "bin/pg_ctl.exe", scratch / "data"
-        if control.is_file() and data.is_dir():
+        if reuse_postgres is None and control.is_file() and data.is_dir():
             status = subprocess.run(
                 [str(control), "-D", str(data), "status"],
                 stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,

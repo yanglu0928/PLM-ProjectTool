@@ -17,6 +17,7 @@ from plm_assistant.modules.handover.application.read_actions import (
     HandoverActionCurrentEventView, HandoverActionDetailView,
     HandoverActionEvidenceView, HandoverActionPage, HandoverActionReadError,
     HandoverActionReadQuery, HandoverActionReadService,
+    HandoverActionSourceLocationView,
     HandoverActionResponseView, HandoverActionSummaryView,
 )
 from plm_assistant.modules.platform.application.errors import ApplicationError
@@ -144,6 +145,33 @@ def _detail(view: HandoverActionDetailView, project_id: uuid.UUID) -> dict[str, 
     return data
 
 
+def _source_location(view: HandoverActionSourceLocationView,
+                     project_id: uuid.UUID) -> dict[str, object]:
+    if type(view) is not HandoverActionSourceLocationView:
+        raise ApplicationError("SYSTEM_UNAVAILABLE")
+    target: dict[str, object] | None
+    if view.source_kind == "ANALYSIS_ITEM" and view.resolution_state == "LOCATABLE":
+        if (not _valid_uid(view.analysis_id) or not _valid_uid(view.version_id)
+                or not _valid_uid(view.item_id) or view.unavailable_reason is not None):
+            raise ApplicationError("SYSTEM_UNAVAILABLE")
+        target = {
+            "project_id": str(project_id),
+            "handover_analysis_id": str(view.analysis_id),
+            "handover_analysis_version_id": str(view.version_id),
+            "analysis_item_id": str(view.item_id),
+        }
+    elif (view.source_kind == "HUMAN" and view.resolution_state == "UNAVAILABLE"
+          and view.analysis_id is None and view.version_id is None and view.item_id is None
+          and view.unavailable_reason == "MANUAL_SOURCE_NOT_FIXED"):
+        target = None
+    else:
+        raise ApplicationError("SYSTEM_UNAVAILABLE")
+    return {
+        "source_kind": view.source_kind, "resolution_state": view.resolution_state,
+        "target": target, "unavailable_reason": view.unavailable_reason,
+    }
+
+
 def _error(exc: HandoverActionReadError) -> ApplicationError:
     return ApplicationError({
         "AUTH_ACCESS_DENIED": "AUTH_SESSION_EXPIRED",
@@ -250,4 +278,26 @@ def create_handover_action_read_router(*, sessions: SessionService,
             {"data": _detail(view, project_id), "trace_id": request.state.trace_id},
             headers={"Cache-Control": "no-store", "ETag": view.summary.etag},
         )
+    @router.get("/api/v1/projects/{project_id}/handover-action-items/{action_item_id}/source-location")
+    async def get_action_source(project_id: uuid.UUID, action_item_id: uuid.UUID,
+                                request: Request) -> JSONResponse:
+        query = await _query(request, project_id, sessions=sessions, origins=origins)
+        if request.url.query or action_item_id.int == 0:
+            raise ApplicationError(
+                "REQUEST_MALFORMED" if request.url.query else "RESOURCE_NOT_FOUND",
+            )
+        try:
+            view = await run_in_threadpool(
+                actions.source_location, query, action_item_id,
+            )
+        except HandoverActionReadError as exc:
+            raise _error(exc) from None
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+        data = _source_location(view, project_id)
+        return JSONResponse(
+            {"data": data, "trace_id": request.state.trace_id},
+            headers={"Cache-Control": "no-store"},
+        )
+
     return router

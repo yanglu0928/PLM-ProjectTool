@@ -56,6 +56,17 @@ class Actions:
             tail.action_item_id if tail else None, more,
         )
 
+    def source_location(self, query, action_item_id):
+        self.calls += 1
+        if self.fail:
+            raise HandoverActionReadError(self.fail)
+        if query.project_id != self.project or action_item_id not in self.ids:
+            raise HandoverActionReadError("RESOURCE_NOT_FOUND")
+        from plm_assistant.modules.handover.application.read_actions import HandoverActionSourceLocationView
+        return HandoverActionSourceLocationView(
+            "HUMAN", "UNAVAILABLE", None, None, None, "MANUAL_SOURCE_NOT_FIXED",
+        )
+
     def get(self, query, action_item_id):
         self.calls += 1
         if self.fail:
@@ -113,6 +124,17 @@ class HandoverActionReadApiTests(unittest.TestCase):
         body = detail.json()["data"]
         self.assertEqual("SUBMITTED", body["current_event"]["to_state"])
         self.assertNotIn("trace_id", body["current_event"])
+        source = self.get(self.path + "/" + str(self.actions.ids[0]) + "/source-location")
+        self.assertEqual(200, source.status_code)
+        self.assertEqual("no-store", source.headers["cache-control"])
+        self.assertEqual("UNAVAILABLE", source.json()["data"]["resolution_state"])
+        self.assertIsNone(source.json()["data"]["target"])
+
+    def test_source_location_hides_missing_action_and_rejects_query(self):
+        before = self.actions.calls
+        self.assertEqual(404, self.get(self.path + "/" + str(uuid.uuid4()) + "/source-location").status_code)
+        self.assertEqual(400, self.get(self.path + "/" + str(self.actions.ids[0]) + "/source-location?x=1").status_code)
+        self.assertEqual(before + 1, self.actions.calls)
 
     def test_cursor_context_and_query_fail_before_owner(self):
         cursor = self.get(self.path + "?page_size=2").json()["data"]["next_cursor"]

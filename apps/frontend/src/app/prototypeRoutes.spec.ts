@@ -17,6 +17,7 @@ describe("Prototype application routes", () => {
     ["project-prototype-packages", `/projects/${projectId}/prototype-packages`, { projectId }],
     ["project-prototype-templates", `/projects/${projectId}/prototype-templates`, { projectId }],
     ["project-prototype-links", `/projects/${projectId}/prototype-links`, { projectId }],
+    ["project-output-requests", `/projects/${projectId}/output-requests`, { projectId }],
     ["project-references", `/projects/${projectId}/reference-solutions`, { projectId }],
     ["project-reference-detail", `/projects/${projectId}/reference-solutions/${prototypeId}`,
       { projectId, referenceId: prototypeId }],

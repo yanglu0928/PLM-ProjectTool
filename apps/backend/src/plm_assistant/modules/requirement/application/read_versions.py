@@ -144,6 +144,7 @@ class RequirementVersionPage:
 
 
 class RequirementVersionReadRepositoryPort(Protocol):
+    def get_output_source(self, transaction: object, *, project_id: uuid.UUID, requirement_version_id: uuid.UUID) -> RequirementOutputSourceProjection | None: ...
     def list_versions(self, transaction: object, *, project_id: uuid.UUID,
                       requirement_id: uuid.UUID, after_version_no: int | None,
                       limit: int) -> tuple[RequirementVersionSummary, ...]: ...
@@ -154,6 +155,16 @@ class RequirementVersionReadRepositoryPort(Protocol):
                         requirement_id: uuid.UUID,
                         requirement_version_id: uuid.UUID) -> RequirementVersionTraceFacts | None: ...
 
+
+
+
+@dataclass(frozen=True, slots=True)
+class RequirementOutputSourceProjection:
+    """Minimal immutable source projection for Output, owned by Requirement."""
+    requirement_version_id: uuid.UUID
+    project_id: uuid.UUID
+    version_state: str
+    fields: dict = field(repr=False)
 
 class RequirementVersionReadService:
     def __init__(self, *, unit_of_work: Callable[[], object], access: object,
@@ -206,6 +217,37 @@ class RequirementVersionReadService:
             self._complete(row)
             return row
         return self._run(query, "REQ_VERSION_GET", read)
+
+    def read_output_source(self, transaction: object, *, actor_id: uuid.UUID, project_id: uuid.UUID, requirement_version_id: uuid.UUID) -> RequirementOutputSourceProjection:
+        """Read one exact version for Output after Requirement-owned authorization."""
+        self._identity(actor_id)
+        self._identity(project_id)
+        self._identity(requirement_version_id)
+        if transaction is None:
+            raise RequirementVersionReadError("RESOURCE_NOT_FOUND")
+        try:
+            authorized = self._authorization.require_in_transaction(
+                transaction, user_id=actor_id, project_id=project_id,
+                operation="REQ_VERSION_GET",
+            )
+            if (authorized.user_id != actor_id or authorized.project_id != project_id
+                    or authorized.operation != "REQ_VERSION_GET"):
+                raise RequirementVersionReadError("RESOURCE_NOT_FOUND")
+            projection = self._repository.get_output_source(
+                transaction, project_id=project_id,
+                requirement_version_id=requirement_version_id,
+            )
+            if (type(projection) is not RequirementOutputSourceProjection
+                    or projection.project_id != project_id
+                    or projection.requirement_version_id != requirement_version_id):
+                raise RequirementVersionReadError("RESOURCE_NOT_FOUND")
+            return projection
+        except RequirementVersionReadError:
+            raise
+        except ProjectAuthorizationError as error:
+            raise RequirementVersionReadError(error.code) from None
+        except Exception:
+            raise RequirementVersionReadError() from None
 
     def get_version_for_trace(self, transaction: object,
                               query: RequirementVersionReadQuery, *,

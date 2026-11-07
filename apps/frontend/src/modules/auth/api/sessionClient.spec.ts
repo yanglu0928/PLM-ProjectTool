@@ -1729,4 +1729,22 @@ describe("SessionClient", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(api.canSubmit).toBe(true);
   });
+
+  it("posts the frozen OutputRequest Create path with private CSRF and caller idempotency key", async () => {
+    const created = new Response(JSON.stringify({ data: { output_request_id: projectId }, trace_id: id }),
+      { status: 202, headers: { "Content-Type": "application/json" } });
+    const { api, fetcher } = client(response(session()), created);
+    await api.login("user", "synthetic-only");
+    const body = JSON.stringify({ output_type: "DOCX", template_version_ref: id,
+      source_version_refs: [projectId], output_policy_ref: "output.policy.requirement-docx.v1",
+      plugin_operation: "word.generate" });
+    await expect(api.postProjectOutputRequestCreate(projectId, body, "synthetic-output-request-0001"))
+      .resolves.toBe(created);
+    expect(fetcher.mock.calls[1]).toEqual(["/api/v1/projects/" + projectId + "/output-requests", expect.objectContaining({
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", body,
+      headers: { Accept: "application/json", "Content-Type": "application/json",
+        "X-CSRF-Token": token, "Idempotency-Key": "synthetic-output-request-0001" },
+    })]);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
 });

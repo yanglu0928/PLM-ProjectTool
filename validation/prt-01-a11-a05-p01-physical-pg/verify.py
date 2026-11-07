@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import socket
 import subprocess
@@ -28,7 +29,7 @@ from plm_assistant.modules.platform.infrastructure.migration import create_migra
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PG_SOURCE = ROOT / "artifacts/poc-02/windows/runtime/postgresql-18.6/pgsql"
+PG_SOURCE = Path(os.environ.get("PLM_PRT_PG_SOURCE", ROOT / "artifacts/poc-02/windows/runtime/postgresql-18.6/pgsql"))
 VECTOR_SOURCE = ROOT / "artifacts/poc-02/windows/source/pgvector-0.8.6"
 USER = "poc_admin"
 
@@ -40,7 +41,28 @@ def _run(arguments: list[str], *, detached: bool = False) -> None:
         text=True, errors="replace", timeout=120, check=False,
     )
     if result.returncode:
-        raise RuntimeError(f"isolated PostgreSQL command failed: {Path(arguments[0]).name}")
+        command_name = Path(arguments[0]).name
+        diagnostic = "\\n".join(
+            value for value in (result.stdout, result.stderr) if isinstance(value, str)
+        ).casefold()
+        failure_class = "OTHER"
+        if command_name.casefold() == "initdb.exe":
+            if "cannot be run as" in diagnostic or "must not be run as" in diagnostic:
+                failure_class = "ACCOUNT_PRIVILEGE_REJECTED"
+            elif "permission denied" in diagnostic or "access is denied" in diagnostic:
+                failure_class = "DATA_DIRECTORY_ACCESS_DENIED"
+            elif "already exists" in diagnostic or "directory exists" in diagnostic:
+                failure_class = "DATA_DIRECTORY_EXISTS"
+            elif "could not create directory" in diagnostic or "could not create" in diagnostic:
+                failure_class = "DATA_DIRECTORY_CREATE_FAILED"
+            elif "locale" in diagnostic or "encoding" in diagnostic:
+                failure_class = "LOCALE_OR_ENCODING_FAILURE"
+            elif "invalid" in diagnostic or "unrecognized option" in diagnostic:
+                failure_class = "INVALID_ARGUMENT"
+        raise RuntimeError(
+            f"isolated PostgreSQL command failed: {command_name} "
+            f"exit_code={result.returncode} failure_class={failure_class}"
+        )
 
 
 def _free_port() -> int:

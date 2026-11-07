@@ -1,0 +1,133 @@
+name: P51 A40-A41 hosted package trust validation
+on:
+  push:
+    branches:
+      - feature/p51-a33-launcher-checksum-recovery
+    paths:
+      - tools/verify_windows_authenticode.py
+      - tools/tests/test_verify_windows_authenticode.py
+      - tools/stage_windows_parent_candidate_cloud.py
+      - tools/stage_windows_parent_candidate_offline.py
+      - tools/tests/test_stage_windows_parent_candidate_offline.py
+      - .github/workflows/pilot-offline-staging-validation.yml
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  windows-sandbox:
+    name: Windows hosted sandbox staging and fail-closed checks
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Prepare isolated non-C sandbox paths
+        shell: pwsh
+        run: |
+          $workspace = (Resolve-Path $env:GITHUB_WORKSPACE).Path
+          $runnerTempRoot = (Resolve-Path $env:RUNNER_TEMP).Path
+          if ([IO.Path]::GetPathRoot($workspace) -eq 'C:\' -or [IO.Path]::GetPathRoot($runnerTempRoot) -eq 'C:\') {
+            throw "Hosted sandbox paths must not use C:"
+          }
+          $sandboxTemp = Join-Path $runnerTempRoot ("plm-a40-" + $env:GITHUB_RUN_ID)
+          if (Test-Path -LiteralPath $sandboxTemp) { throw "A40 temp directory already exists" }
+          New-Item -ItemType Directory -Path $sandboxTemp | Out-Null
+          "TEMP=$runnerTempRoot" >> $env:GITHUB_ENV
+          "TMP=$runnerTempRoot" >> $env:GITHUB_ENV
+          "PYTHONPYCACHEPREFIX=$sandboxTemp\pycache" >> $env:GITHUB_ENV
+          "PLM_A40_ARTIFACT_DIR=$runnerTempRoot\plm-a40-artifact-$env:GITHUB_RUN_ID" >> $env:GITHUB_ENV
+          "PLM_A40_EVIDENCE_DIR=$sandboxTemp\evidence" >> $env:GITHUB_ENV
+      - name: Run A37, A38, A40 and A34 focused regression
+        run: |
+          python -B -m unittest tools.tests.test_validate_windows_pilot_input_register tools.tests.test_windows_pilot_readiness_report tools.tests.test_stage_windows_parent_candidate_offline tools.tests.test_rehearse_windows_parent_candidate_upgrade_cloud tools.tests.test_verify_windows_authenticode -v
+      - name: Exercise Authenticode verifier against hosted Windows signatures
+        shell: pwsh
+        run: |
+          $signedBinary = Join-Path $PSHOME 'pwsh.exe'
+          $signature = Get-AuthenticodeSignature -LiteralPath $signedBinary
+          if ($signature.Status -ne 'Valid' -or -not $signature.SignerCertificate) {
+            throw "Hosted PowerShell binary does not have a valid Authenticode signature"
+          }
+          $pin = $signature.SignerCertificate.Thumbprint
+          $verified = & python -B tools/verify_windows_authenticode.py --file $signedBinary --expected-thumbprint $pin | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $verified.status -ne 'AUTHENTICODE_VERIFIED_TEST_ONLY') {
+            throw "Valid hosted signature with matching external pin was rejected"
+          }
+          $unsigned = Join-Path $env:RUNNER_TEMP ("a41-unsigned-" + $env:GITHUB_RUN_ID + ".ps1")
+          Set-Content -LiteralPath $unsigned -Value 'Write-Output "fixture"' -Encoding ascii
+          $rejected = & python -B tools/verify_windows_authenticode.py --file $unsigned --expected-thumbprint $pin | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 2 -or $rejected.reason_code -ne 'SIGNATURE_NOT_VALID') {
+            throw "Unsigned hosted fixture did not fail closed"
+          }
+          Remove-Item -LiteralPath $unsigned
+          $global:LASTEXITCODE = 0
+          Write-Host "Authenticode live check: signed publisher pin accepted; unsigned D-drive fixture rejected."
+      - name: Download A35 verified parent candidate from hosted run
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-7c3e083dd558c0b50b4f2ebf8da0c658043bf699
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: 41026213054
+          path: ${{ runner.temp }}/plm-a40-artifact-${{ github.run_id }}
+      - name: Stage candidate and verify it remains blocked
+        shell: pwsh
+        run: |
+          $candidateFiles = @(Get-ChildItem -LiteralPath $env:PLM_A40_ARTIFACT_DIR -Recurse -File -Filter '*.zip')
+          $summaryFiles = @(Get-ChildItem -LiteralPath $env:PLM_A40_ARTIFACT_DIR -Recurse -File -Filter 'verification-summary.json')
+          if ($candidateFiles.Count -ne 1 -or $summaryFiles.Count -ne 1) {
+            throw "A35 artifact did not contain one parent ZIP and one verification summary"
+          }
+          $target = Join-Path $env:RUNNER_TEMP ("plm-a40-staged-" + $env:GITHUB_RUN_ID)
+          $signedBinary = Join-Path $PSHOME 'pwsh.exe'
+          $signature = Get-AuthenticodeSignature -LiteralPath $signedBinary
+          if ($signature.Status -ne 'Valid' -or -not $signature.SignerCertificate) { throw "Hosted test signature unavailable" }
+          $pin = $signature.SignerCertificate.Thumbprint
+          $stageOutput = & python -B tools/stage_windows_parent_candidate_offline.py --candidate $candidateFiles[0].FullName --verification-summary $summaryFiles[0].FullName --target $target --installer $signedBinary --expected-thumbprint $pin
+          Write-Host "A40 staging result (path-free): $stageOutput"
+          if ($LASTEXITCODE -ne 0) { throw "A40 staging CLI rejected the A35 parent candidate" }
+          $badTarget = Join-Path $env:RUNNER_TEMP ("plm-a42-rejected-" + $env:GITHUB_RUN_ID)
+          $badOutput = & python -B tools/stage_windows_parent_candidate_offline.py --candidate $candidateFiles[0].FullName --verification-summary $summaryFiles[0].FullName --target $badTarget --installer $signedBinary --expected-thumbprint ('0' * 40) | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 2 -or $badOutput.reason_code -ne 'INSTALLER_AUTHENTICODE_REJECTED' -or (Test-Path -LiteralPath $badTarget)) { throw "A42 invalid publisher pin did not fail before staging" }
+          $global:LASTEXITCODE = 0
+          $receipt = Get-Content -LiteralPath (Join-Path $target 'candidate-staging-receipt.json') -Raw | ConvertFrom-Json
+          if ($receipt.status -ne 'HOSTED_WINDOWS_CANDIDATE_STAGING_PASS_LIMITED' -or
+              $receipt.payload_file_count -ne 20119 -or $receipt.installation_performed -ne $false -or
+              $receipt.services_started -ne $false -or $receipt.release_eligible -ne $false -or
+              $receipt.legal_clearance -ne $false) { throw "A40 receipt contract mismatch" }
+          $register = Join-Path $env:GITHUB_WORKSPACE 'docs/templates/windows-pilot-input-register.template.json'
+          $manifest = Join-Path $target 'manifest.json'
+          $reportOutput = & python -B tools/windows_pilot_readiness_report.py --manifest $manifest --register $register
+          if ($LASTEXITCODE -ne 0) { throw "A38 report generation failed" }
+          $report = $reportOutput | ConvertFrom-Json
+          Write-Host "A38 report: status=$($report.status); blockers=$($report.startup_blocker_codes.Count); pilot_ready=$($report.pilot_ready); launch_authorized=$($report.launch_authorized)"
+          if ($report.status -ne 'DIAGNOSTIC_ONLY_NOT_READY' -or $report.pilot_ready -ne $false -or
+              $report.launch_authorized -ne $false -or $report.release_eligible -ne $false -or
+              $report.legal_clearance -ne $false -or $report.startup_blocker_codes.Count -ne 5) {
+            throw "A38 report must preserve all five startup blockers"
+          }
+          $diagnostic = Join-Path $target 'payload/check-startup.ps1'
+          $diagnosticOutput = & pwsh -NoProfile -File $diagnostic
+          $diagnosticExit = $LASTEXITCODE
+          $diagnosticText = $diagnosticOutput -join [Environment]::NewLine
+          Write-Host "Packaged diagnostic result: $diagnosticText; exit=$diagnosticExit"
+          $diagnosticObject = $diagnosticText | ConvertFrom-Json
+          $diagnosticPass = ($diagnosticExit -eq 2 -and $diagnosticObject.status -eq 'BLOCKED')
+          Write-Host "Packaged diagnostic assertion: exit_ok=$($diagnosticExit -eq 2); status=$($diagnosticObject.status)"
+          if (-not $diagnosticPass) { throw "Packaged read-only diagnostic did not fail closed" }
+          $global:LASTEXITCODE = 0
+          New-Item -ItemType Directory -Path $env:PLM_A40_EVIDENCE_DIR | Out-Null
+          $receipt | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $env:PLM_A40_EVIDENCE_DIR 'candidate-staging-receipt.json') -Encoding utf8
+          $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $env:PLM_A40_EVIDENCE_DIR 'readiness-report.json') -Encoding utf8
+          @{ status = $diagnosticObject.status; exit_code = $diagnosticExit } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $env:PLM_A40_EVIDENCE_DIR 'startup-diagnostic.json') -Encoding utf8
+          Write-Host 'A40 hosted staging evidence files written.'
+      - name: Upload compact non-secret A40 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p51-a40-offline-staging-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/plm-a40-${{ github.run_id }}/evidence/*
+          if-no-files-found: error
+          retention-days: 14

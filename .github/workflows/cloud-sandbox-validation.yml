@@ -41,6 +41,8 @@ jobs:
         run: python -B -m unittest discover -s ../../tools/tests -p "test_smoke_current_app_packaged_https.py"
       - name: Run backend test suite
         run: python -m unittest discover -s tests -p "test_*.py"
+      - name: Run synthetic Developer Workbench Plugin key ceremony tests
+        run: python -B -m unittest discover -s ../../tools/tests -p "test_plugin_key_ceremony.py"
       - name: Build backend wheel
         run: python -m pip wheel --no-deps --wheel-dir dist .
       - name: Create build provenance manifest
@@ -236,7 +238,26 @@ jobs:
           $base = "https://github.com/caddyserver/caddy/releases/download/v2.11.4"
           foreach ($asset in @("windows_amd64.zip", "windows_amd64.sbom", "buildable-artifact.tar.gz", "checksums.txt")) {
             $file = "caddy_2.11.4_$asset"
-            Invoke-WebRequest -Uri "$base/$file" -OutFile (Join-Path $caddyDir $file)
+            $destination = Join-Path $caddyDir $file
+            $partial = "$destination.partial"
+            $attempt = 0
+            while ($true) {
+              $attempt++
+              try {
+                Invoke-WebRequest -Uri "$base/$file" -OutFile $partial -TimeoutSec 90 -ErrorAction Stop
+                if (!(Test-Path -LiteralPath $partial) -or (Get-Item -LiteralPath $partial).Length -eq 0) {
+                  throw "Pinned Caddy download produced an empty asset: $file"
+                }
+                Move-Item -LiteralPath $partial -Destination $destination -Force
+                break
+              } catch {
+                Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
+                if ($attempt -ge 3) { throw }
+                $delay = [int][Math]::Pow(2, $attempt)
+                Write-Host "Caddy asset download attempt $attempt failed; retrying in $delay seconds."
+                Start-Sleep -Seconds $delay
+              }
+            }
           }
           python .\tools\audit_caddy_windows_offline_input.py --input-root $caddyDir --output (Join-Path $caddyDir "caddy-audit.json")
           if ($LASTEXITCODE -ne 0) { throw "Pinned Caddy input audit failed" }
@@ -276,8 +297,8 @@ jobs:
           if (([IO.Path]::GetPathRoot($root)).TrimEnd('\\') -eq "C:") { throw "A27 requires non-C RUNNER_TEMP" }
           New-Item -ItemType Directory -Path $temp -Force | Out-Null
           $env:PYTHONPYCACHEPREFIX = Join-Path $temp "pycache"
-          python -B -m py_compile validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py tools/run_a17_packaged_cloud_validation.py tools/package_windows_current_app_candidate.py
-          if ($LASTEXITCODE -ne 0) { throw "A17 Python harness syntax validation failed" }
+          python -B -m py_compile validation/plt-pkg-01-a09-p51-a17-planversion-packaged/verify.py validation/out-01-a01-p17-cancel-owner/verify.py validation/out-01-a01-p18-cancel-http/verify.py validation/out-01-a01-p33-output-completion/verify.py tools/run_a17_packaged_cloud_validation.py tools/package_windows_current_app_candidate.py
+          if ($LASTEXITCODE -ne 0) { throw "Hosted validation harness syntax validation failed" }
           node --check validation/plt-pkg-01-a09-p51-a17-planversion-packaged/run-edge-browser.mjs
           if ($LASTEXITCODE -ne 0) { throw "A17 Edge harness syntax validation failed" }
           $resolved = (Resolve-Path $temp).Path
@@ -404,8 +425,132 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  smoke-parent-postgresql:
-    name: Clean extraction and temporary PostgreSQL lifecycle smoke
+  run-sur-07-a08-packaged-survey-version:
+    name: A08 packaged SurveyVersion Edge HTTPS PostgreSQL flow
+    needs: [assemble-a17-current-app-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: apps/backend/pyproject.toml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install packaged-flow harness dependencies on D-drive temp
+        working-directory: apps/backend
+        shell: pwsh
+        env:
+          PIP_CACHE_DIR: ${{ runner.temp }}/plm-sur-a08-pip-cache
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $installRoot = Join-Path $env:RUNNER_TEMP ("plm-sur-a08-deps-" + $env:GITHUB_RUN_ID)
+          New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+          $env:TEMP = $installRoot
+          $env:TMP = $installRoot
+          $env:PYTHONDONTWRITEBYTECODE = "1"
+          $env:PYTHONPYCACHEPREFIX = Join-Path $installRoot "pycache"
+          python -m pip install --disable-pip-version-check --upgrade pip
+          if ($LASTEXITCODE -ne 0) { throw "SUR-07-A08 pip bootstrap failed" }
+          python -m pip install --disable-pip-version-check -e ".[test]"
+          if ($LASTEXITCODE -ne 0) { throw "SUR-07-A08 harness dependency install failed" }
+          Remove-Item -LiteralPath $installRoot -Recurse -Force
+      - name: Download same-run A17 non-release current-app candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-a17-current-app-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-sur-a08-input
+      - name: Check A08 harness syntax and D-drive boundary
+        shell: pwsh
+        run: |
+          $runnerTemp = [System.IO.Path]::GetFullPath($env:RUNNER_TEMP)
+          if ([System.IO.Path]::GetPathRoot($runnerTemp).ToUpperInvariant() -eq "C:\") { throw "SUR-07-A08 may not run project files on C:" }
+          node --check validation/sur-07-a08-survey-version-packaged/run-survey-version-edge.mjs
+          if ($LASTEXITCODE -ne 0) { throw "SUR-07-A08 Edge harness syntax failed" }
+          python -B -c "import ast,pathlib; ast.parse(pathlib.Path('validation/sur-07-a08-survey-version-packaged/verify.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw "SUR-07-A08 Python verifier syntax failed" }
+      - name: Run packaged SurveyVersion flow on D-drive temp
+        shell: pwsh
+        run: |
+          $runnerTemp = [System.IO.Path]::GetFullPath($env:RUNNER_TEMP)
+          $runRoot = Join-Path $runnerTemp ("plm-p51-a27-a08-" + $env:GITHUB_RUN_ID)
+          if (([System.IO.Path]::GetPathRoot($runnerTemp).ToUpperInvariant() -eq "C:\") -or (Test-Path $runRoot)) { throw "SUR-07-A08 requires a fresh non-C runner temp root" }
+          $tempRoot = Join-Path $runRoot "PLMToolTemp"
+          $summaryOut = Join-Path $runnerTemp ("plm-sur-a08-result-" + $env:GITHUB_RUN_ID + ".json")
+          $rawOutput = Join-Path $runRoot "verifier-output.log"
+          New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+          $env:TEMP = $tempRoot
+          $env:TMP = $tempRoot
+          $env:PLM_TEST_TEMP_ROOT = $tempRoot
+          $env:PLM_P51_TEMP_ROOT = $tempRoot
+          $env:PYTHONDONTWRITEBYTECODE = "1"
+          $env:PYTHONPYCACHEPREFIX = Join-Path $tempRoot "pycache"
+          try {
+            $inputRoot = Join-Path $env:RUNNER_TEMP "plm-sur-a08-input"
+            $candidate = Get-ChildItem -LiteralPath $inputRoot -Filter "*.zip" | Select-Object -First 1
+            $candidateSummaryPath = Join-Path $inputRoot "verification-summary.json"
+            if (-not $candidate -or -not (Test-Path -LiteralPath $candidateSummaryPath)) { throw "SUR-07-A08 same-run candidate artifact incomplete" }
+            $candidateSummary = Get-Content -LiteralPath $candidateSummaryPath -Raw | ConvertFrom-Json
+            $candidateHash = (Get-FileHash -LiteralPath $candidate.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($candidateHash -ne $candidateSummary.archive_sha256 -or $candidateSummary.release_eligible -ne $false -or $candidateSummary.legal_clearance -ne $false) { throw "SUR-07-A08 candidate identity or non-release scope mismatch" }
+            $stage = Join-Path $tempRoot ("plm-current-app-stage-a08-" + $env:GITHUB_RUN_ID)
+            $pristine = Join-Path $tempRoot ("plm-install-rehearsal-pristine-a08-" + $env:GITHUB_RUN_ID)
+            $target = Join-Path $tempRoot ("plm-install-rehearsal-target-a08-" + $env:GITHUB_RUN_ID)
+            $markers = @("SUR_07_A08_PACKAGED_PG_PASS", "SUR_07_A12_P05_PACKAGED_EDGE_PASS", "SUR_07_A08_PACKAGED_LICENSE_DENIAL_PASS")
+            python -B validation/sur-07-a08-survey-version-packaged/verify.py --candidate $candidate.FullName --stage $stage --pristine $pristine --target $target --expected-sha256 $candidateHash --temp-root $tempRoot *> $rawOutput
+            $verifyExitCode = $LASTEXITCODE
+            $raw = if (Test-Path -LiteralPath $rawOutput) { Get-Content -LiteralPath $rawOutput -Raw } else { "" }
+            $seen = @($markers | Where-Object { $raw.Contains($_) })
+            if ($verifyExitCode -ne 0 -or $seen.Count -ne $markers.Count) {
+              $safeDiagMatches = [regex]::Matches($raw, 'SUR_07_A08_SAFE_DIAG: exception=([A-Za-z0-9_.-]{1,80}); winerror=(-?\d{1,10}|none); child=(initdb\.exe|pg_ctl\.exe|psql\.exe|postgres\.exe|python\.exe|none); child_exit=(-?\d{1,10}|none); target_initdb_probe=(-?\d{1,10}|timeout|launch_error|not_run); target_postgres_probe=(-?\d{1,10}|timeout|launch_error|not_run); target_initdb_temp_env_probe=(-?\d{1,10}|timeout|launch_error|unsafe_boundary|invalid_args|not_run); target_initdb_temp_env_applied=(yes|no); stage=(SUR_07_A08_STAGE_[A-Z0-9_]{1,64}|none); frames=([A-Za-z0-9_.:>,_-]{1,800}|none)')
+              $safeDiag = "unavailable"
+              if ($safeDiagMatches.Count -gt 0) { $safeDiag = $safeDiagMatches[$safeDiagMatches.Count - 1].Value }
+              $markerSummary = if ($seen.Count) { $seen -join "," } else { "none" }
+              Write-Output ("SUR-07-A08 safe diagnostic: exit=" + $verifyExitCode + "; markers=" + $markerSummary + "; " + $safeDiag)
+              throw "SUR-07-A08 packaged SurveyVersion flow did not satisfy its required markers"
+            }
+            $summary = [ordered]@{
+              status = "PASS_LIMITED"
+              wbs = "SUR-07-A08"
+              workflow_run = $env:GITHUB_RUN_ID
+              runner_os = "GitHub hosted Windows Server 2025"
+              runner_drive = [System.IO.Path]::GetPathRoot($runnerTemp).Substring(0, 2)
+              candidate_sha256 = $candidateHash
+              markers = $markers
+              synthetic_data = $true
+              customer_data = $false
+              external_calls = 0
+              customer_decisions = 0
+              plugin_executed = $false
+              formal_license_trust = $false
+              release_eligible = $false
+              legal_clearance = $false
+            }
+            $summary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $summaryOut -Encoding utf8
+          }
+          finally {
+            if (Test-Path -LiteralPath $runRoot) {
+              $resolvedRoot = (Resolve-Path -LiteralPath $runRoot).Path
+              $resolvedTemp = (Resolve-Path -LiteralPath $runnerTemp).Path
+              if ([System.IO.Path]::GetPathRoot($resolvedRoot).ToUpperInvariant() -eq "C:\" -or (Split-Path -Parent $resolvedRoot) -ne $resolvedTemp -or (Split-Path -Leaf $resolvedRoot) -ne ("plm-p51-a27-a08-" + $env:GITHUB_RUN_ID)) { throw "SUR-07-A08 cleanup ownership check failed" }
+              Remove-Item -LiteralPath $resolvedRoot -Recurse -Force
+            }
+          }
+          if (-not (Test-Path -LiteralPath $summaryOut)) { throw "SUR-07-A08 bounded success summary missing" }
+      - name: Upload bounded SurveyVersion Edge and PG evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-sur-07-a08-survey-version-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-sur-a08-result-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  plg-03-a05-admission-pg18:
+    name: PLG-03-A05 PluginExecution admission owner on temporary PG18
     needs: [assemble-parent-candidate]
     runs-on: windows-2025
     timeout-minutes: 45
@@ -414,25 +559,788 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+      - name: Download same-run parent package candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plg03-a05-parent-input
+      - name: Install minimal PG18 admission verifier dependencies
+        shell: pwsh
+        env:
+          PIP_CACHE_DIR: ${{ runner.temp }}/plg03-a05-pip-cache
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          python -m pip install --disable-pip-version-check "Alembic==1.20.0" "SQLAlchemy==2.0.54" "psycopg[binary]==3.3.5" "pgvector==0.5.0" "fastapi==0.141.1" "cryptography==50.0.1" "uvicorn==0.53.0"
+          if ($LASTEXITCODE -ne 0) { throw "A05 verifier dependency install failed" }
+      - name: Run A05 application owner against isolated packaged PostgreSQL
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          $inputRoot = Join-Path $env:RUNNER_TEMP "plg03-a05-parent-input"
+          $archive = Get-ChildItem -LiteralPath $inputRoot -Filter "*.zip" | Select-Object -First 1
+          $verification = Join-Path $inputRoot "verification-summary.json"
+          $summary = Join-Path $env:RUNNER_TEMP ("plg03-a05-summary-" + $env:GITHUB_RUN_ID + ".json")
+          $runRoot = Join-Path $env:RUNNER_TEMP ("plg03-a05-run-" + $env:GITHUB_RUN_ID)
+          if (-not $archive -or -not (Test-Path -LiteralPath $verification)) { throw "A05 candidate input incomplete" }
+          python -B .\tools\verify_plugin_execution_admission_pg_cloud.py --archive $archive.FullName --verification-summary $verification --run-root $runRoot --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "A05 isolated PG18 admission validation failed" }
+          if (-not (Test-Path -LiteralPath $summary)) { throw "A05 evidence summary missing" }
+          Get-Content -LiteralPath $summary -Raw
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plg03-a05-admission-pg18-${{ github.sha }}
+          path: ${{ runner.temp }}/plg03-a05-summary-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  plg-03-a06-start-pg18:
+    name: PLG-03-A06 PluginExecution start owner on temporary PG18
+    needs: [assemble-parent-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download same-run parent package candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plg03-a06-parent-input
+      - name: Install minimal PG18 transition verifier dependencies
+        shell: pwsh
+        env:
+          PIP_CACHE_DIR: ${{ runner.temp }}/plg03-a06-pip-cache
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          python -m pip install --disable-pip-version-check "Alembic==1.20.0" "SQLAlchemy==2.0.54" "psycopg[binary]==3.3.5" "pgvector==0.5.0" "fastapi==0.141.1" "cryptography==50.0.1" "uvicorn==0.53.0"
+          if ($LASTEXITCODE -ne 0) { throw "A06 verifier dependency install failed" }
+      - name: Run A06 state transition against isolated packaged PostgreSQL
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          $inputRoot = Join-Path $env:RUNNER_TEMP "plg03-a06-parent-input"
+          $archive = Get-ChildItem -LiteralPath $inputRoot -Filter "*.zip" | Select-Object -First 1
+          $verification = Join-Path $inputRoot "verification-summary.json"
+          $summary = Join-Path $env:RUNNER_TEMP ("plg03-a06-summary-" + $env:GITHUB_RUN_ID + ".json")
+          $runRoot = Join-Path $env:RUNNER_TEMP ("plg03-a06-run-" + $env:GITHUB_RUN_ID)
+          if (-not $archive -or -not (Test-Path -LiteralPath $verification)) { throw "A06 candidate input incomplete" }
+          python -B tools/verify_plugin_execution_start_pg_cloud.py --archive $archive.FullName --verification-summary $verification --run-root $runRoot --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "A06 isolated PG18 transition validation failed" }
+          if (-not (Test-Path -LiteralPath $summary)) { throw "A06 evidence summary missing" }
+          Get-Content -LiteralPath $summary -Raw
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plg03-a06-start-pg18-${{ github.sha }}
+          path: ${{ runner.temp }}/plg03-a06-summary-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  plg-03-a07-failure-pg18:
+    name: PLG-03-A07 PluginExecution failure owner on temporary PG18
+    needs: [assemble-parent-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download same-run parent package candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plg03-a07-parent-input
+      - name: Install minimal PG18 transition verifier dependencies
+        shell: pwsh
+        env:
+          PIP_CACHE_DIR: ${{ runner.temp }}/plg03-a07-pip-cache
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          python -m pip install --disable-pip-version-check "Alembic==1.20.0" "SQLAlchemy==2.0.54" "psycopg[binary]==3.3.5" "pgvector==0.5.0" "fastapi==0.141.1" "cryptography==50.0.1" "uvicorn==0.53.0"
+          if ($LASTEXITCODE -ne 0) { throw "A07 verifier dependency install failed" }
+      - name: Run A07 atomic failure transition against isolated packaged PostgreSQL
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          $inputRoot = Join-Path $env:RUNNER_TEMP "plg03-a07-parent-input"
+          $archive = Get-ChildItem -LiteralPath $inputRoot -Filter "*.zip" | Select-Object -First 1
+          $verification = Join-Path $inputRoot "verification-summary.json"
+          $summary = Join-Path $env:RUNNER_TEMP ("plg03-a07-summary-" + $env:GITHUB_RUN_ID + ".json")
+          $runRoot = Join-Path $env:RUNNER_TEMP ("plg03-a07-run-" + $env:GITHUB_RUN_ID)
+          if (-not $archive -or -not (Test-Path -LiteralPath $verification)) { throw "A07 candidate input incomplete" }
+          python -B tools/verify_plugin_execution_failure_pg_cloud.py --archive $archive.FullName --verification-summary $verification --run-root $runRoot --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "A07 isolated PG18 transition validation failed" }
+          if (-not (Test-Path -LiteralPath $summary)) { throw "A07 evidence summary missing" }
+          Get-Content -LiteralPath $summary -Raw
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plg03-a07-start-pg18-${{ github.sha }}
+          path: ${{ runner.temp }}/plg03-a07-summary-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  plg-03-a08-retry-pg18:
+    name: PLG-03-A08 PluginExecution retry owner on temporary PG18
+    needs: [assemble-parent-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download same-run parent package candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plg03-a08-parent-input
+      - name: Install minimal PG18 retry verifier dependencies
+        shell: pwsh
+        env:
+          PIP_CACHE_DIR: ${{ runner.temp }}/plg03-a08-pip-cache
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          python -m pip install --disable-pip-version-check "Alembic==1.20.0" "SQLAlchemy==2.0.54" "psycopg[binary]==3.3.5" "pgvector==0.5.0" "fastapi==0.141.1" "cryptography==50.0.1" "uvicorn==0.53.0"
+          if ($LASTEXITCODE -ne 0) { throw "A08 verifier dependency install failed" }
+      - name: Run A08 per-attempt retry validation against isolated packaged PostgreSQL
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          $inputRoot = Join-Path $env:RUNNER_TEMP "plg03-a08-parent-input"
+          $archive = Get-ChildItem -LiteralPath $inputRoot -Filter "*.zip" | Select-Object -First 1
+          $verification = Join-Path $inputRoot "verification-summary.json"
+          $summary = Join-Path $env:RUNNER_TEMP ("plg03-a08-summary-" + $env:GITHUB_RUN_ID + ".json")
+          $runRoot = Join-Path $env:RUNNER_TEMP ("plg03-a08-run-" + $env:GITHUB_RUN_ID)
+          if (-not $archive -or -not (Test-Path -LiteralPath $verification)) { throw "A08 candidate input incomplete" }
+          python -B -c "import ast,pathlib; ast.parse(pathlib.Path('tools/verify_plugin_execution_retry_pg_cloud.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw "A08 verifier syntax failed" }
+          python -B tools/verify_plugin_execution_retry_pg_cloud.py --archive $archive.FullName --verification-summary $verification --run-root $runRoot --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "A08 isolated PG18 retry validation failed" }
+          if (-not (Test-Path -LiteralPath $summary)) { throw "A08 evidence summary missing" }
+          Get-Content -LiteralPath $summary -Raw
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plg03-a08-retry-pg18-${{ github.sha }}
+          path: ${{ runner.temp }}/plg03-a08-summary-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  smoke-parent-postgresql:
+    name: Clean extraction, PG18 lifecycle, PRT load, and P40 live Edge
+    needs: [assemble-parent-candidate, frontend]
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
       - name: Download same-run non-release parent candidate
         uses: actions/download-artifact@v4
         with:
           name: plm-windows-parent-candidate-${{ github.sha }}
           path: ${{ runner.temp }}/plm-parent-smoke-input
-      - name: Extract on runner temp and smoke PostgreSQL/pgvector
+      - name: Download same-run frontend build for P40
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p40-frontend
+      - name: Install backend and verification dependencies
+        working-directory: apps/backend
+        shell: pwsh
+        env:
+          PIP_CACHE_DIR: ${{ runner.temp }}/plm-migration-pip-cache
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          python -m pip install --disable-pip-version-check --upgrade pip
+          python -m pip install -e ".[test]"
+          if ($LASTEXITCODE -ne 0) { throw "Parent PG/PRT verification dependency install failed" }
+      - name: Verify P40 same-run frontend provenance on D-drive
         shell: pwsh
         run: |
+          $dist = Join-Path $env:RUNNER_TEMP "plm-out-p40-frontend"
+          $manifest = Get-Content -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Raw | ConvertFrom-Json
+          if ($manifest.source_commit -ne $env:GITHUB_SHA -or [string]$manifest.workflow_run -ne $env:GITHUB_RUN_ID -or $manifest.release_eligible -ne $false) { throw "P40 frontend provenance mismatch" }
+          if (-not (Test-Path (Join-Path $dist "index.html"))) { throw "P40 production frontend build missing" }
+          Remove-Item -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Force
+          node --check validation/out-01-a01-p39-edge-download/run.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P39/P40 Edge harness syntax failed" }
+          python -B -c "import ast,pathlib; ast.parse(pathlib.Path('validation/out_01_a01_p40_live_edge_download/verify.py').read_text(encoding='utf-8')); ast.parse(pathlib.Path('validation/out-01-a01-p33-output-completion/verify.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw "P40 Python harness syntax failed" }
+      - name: Extract on runner temp, smoke PostgreSQL/pgvector, and measure PRT load
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $env:PLM_P40_EDGE_DIST = Join-Path $env:RUNNER_TEMP "plm-out-p40-frontend"
           $work = Join-Path $env:RUNNER_TEMP ("plm-parent-pg-smoke-" + $env:GITHUB_RUN_ID)
           $out = Join-Path $env:RUNNER_TEMP ("plm-parent-pg-smoke-summary-" + $env:GITHUB_RUN_ID)
           $archive = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-parent-smoke-input") -Filter "*.zip" | Select-Object -First 1
           $summary = Join-Path $env:RUNNER_TEMP "plm-parent-smoke-input/verification-summary.json"
           if (-not $archive -or -not (Test-Path $summary)) { throw "Parent candidate artifact is incomplete" }
-          python .\tools\smoke_windows_parent_package_pg_cloud.py --archive $archive.FullName --verification-summary $summary --work-root $work --summary-out (Join-Path $out "pg-smoke.json")
+          python .\tools\smoke_windows_parent_package_pg_cloud.py --archive $archive.FullName --verification-summary $summary --work-root $work --summary-out (Join-Path $out "pg-smoke.json") --prt-hosted-load
           if ($LASTEXITCODE -ne 0) { throw "Parent package PostgreSQL smoke failed" }
-      - name: Upload bounded PostgreSQL smoke evidence
+      - name: Upload bounded PostgreSQL smoke and P40 Edge evidence
         uses: actions/upload-artifact@v4
         with:
           name: plm-parent-pg-smoke-${{ github.sha }}
-          path: ${{ runner.temp }}/plm-parent-pg-smoke-summary-${{ github.run_id }}/pg-smoke.json
+          path: |
+            ${{ runner.temp }}/plm-parent-pg-smoke-summary-${{ github.run_id }}/pg-smoke.json
+            ${{ runner.temp }}/plm-out-p40-live-edge-summary-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  a34-parent-upgrade-rehearsal:
+    name: A34 parent-package offline replacement and manual restore rehearsal
+    needs: [assemble-parent-candidate, smoke-parent-postgresql]
+    runs-on: windows-2025
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run A34 focused ownership and inventory tests
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: python -B -m unittest discover -s tools/tests -p "test_rehearse_windows_parent_candidate_upgrade_cloud.py"
+      - name: Download A31 verified non-release parent candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-2e20a1f5f907ae88e5f194d1c2196fe1657bc2e5
+          repository: ${{ github.repository }}
+          run-id: "40995913354"
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/plm-a34-old-candidate
+      - name: Download current same-run parent candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a34-current-candidate
+      - name: Rehearse package replacement and explicit manual recovery on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $oldDir = Join-Path $env:RUNNER_TEMP "plm-a34-old-candidate"
+          $newDir = Join-Path $env:RUNNER_TEMP "plm-a34-current-candidate"
+          $oldArchive = Get-ChildItem $oldDir -Filter "*.zip" | Select-Object -First 1
+          $currentArchive = Get-ChildItem $newDir -Filter "*.zip" | Select-Object -First 1
+          $oldSummary = Join-Path $oldDir "verification-summary.json"
+          $currentSummary = Join-Path $newDir "verification-summary.json"
+          if (-not $oldArchive -or -not $currentArchive -or -not (Test-Path $oldSummary) -or -not (Test-Path $currentSummary)) { throw "A34 candidate artifact is incomplete" }
+          $workRoot = Join-Path $env:RUNNER_TEMP ("plm-a34-run-" + $env:GITHUB_RUN_ID + "-" + [guid]::NewGuid().ToString("N"))
+          $summary = Join-Path $env:RUNNER_TEMP ("plm-a34-result-" + $env:GITHUB_RUN_ID + ".json")
+          python .\tools\rehearse_windows_parent_candidate_upgrade_cloud.py --old-archive $oldArchive.FullName --old-summary $oldSummary --current-archive $currentArchive.FullName --current-summary $currentSummary --work-root $workRoot | Tee-Object -FilePath $summary
+          if ($LASTEXITCODE -ne 0) { throw "A34 hosted parent-package upgrade rehearsal failed" }
+          if (-not (Test-Path $summary)) { throw "A34 bounded result summary missing" }
+      - name: Upload bounded A34 rehearsal evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a34-upgrade-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a34-result-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  a35-parent-artifact-handoff:
+    name: A35 bounded parent candidate handoff for Windows 11 verification
+    needs: [assemble-parent-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run bounded handoff tests on runner temp
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: python -B -m unittest discover -s tools/tests -p "test_transfer_parent_candidate_chunks.py" -v
+      - name: Download verified A31 parent candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-2e20a1f5f907ae88e5f194d1c2196fe1657bc2e5
+          repository: ${{ github.repository }}
+          run-id: "40995913354"
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/plm-a35-old-candidate
+      - name: Download current same-run parent candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a35-current-candidate
+      - name: Split candidates into digest-bound transfer chunks
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          RUNNER_TEMP: ${{ runner.temp }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $oldDir = Join-Path $env:RUNNER_TEMP "plm-a35-old-candidate"
+          $currentDir = Join-Path $env:RUNNER_TEMP "plm-a35-current-candidate"
+          python .\tools\transfer_parent_candidate_chunks.py split --input-dir $oldDir --output-dir (Join-Path $env:RUNNER_TEMP "plm-a35-old-chunks") --prefix old
+          if ($LASTEXITCODE -ne 0) { throw "A35 old candidate chunking failed" }
+          python .\tools\transfer_parent_candidate_chunks.py split --input-dir $currentDir --output-dir (Join-Path $env:RUNNER_TEMP "plm-a35-current-chunks") --prefix current
+          if ($LASTEXITCODE -ne 0) { throw "A35 current candidate chunking failed" }
+          $oldManifest = Get-Content (Join-Path $env:RUNNER_TEMP "plm-a35-old-chunks/chunk-manifest.json") -Raw | ConvertFrom-Json
+          $currentManifest = Get-Content (Join-Path $env:RUNNER_TEMP "plm-a35-current-chunks/chunk-manifest.json") -Raw | ConvertFrom-Json
+          if ($oldManifest.chunks.Count -ne 8 -or $currentManifest.chunks.Count -ne 8) { throw "A35 expected eight bounded chunks per candidate" }
+          if ($oldManifest.source_archive_sha256 -ne "f4d417998ba18bb340fb3d39d83a5c356ac73109a894c1f214852f6b72ed4d49") { throw "A35 A31 candidate ZIP digest changed" }
+          $oldSummary = Get-Content (Join-Path $env:RUNNER_TEMP "plm-a35-old-chunks/verification-summary.json") -Raw | ConvertFrom-Json
+          $currentSummary = Get-Content (Join-Path $env:RUNNER_TEMP "plm-a35-current-chunks/verification-summary.json") -Raw | ConvertFrom-Json
+          if ($oldSummary.source_commit -ne "2e20a1f5f907ae88e5f194d1c2196fe1657bc2e5" -or $oldSummary.workflow_run -ne "40995913354") { throw "A35 A31 provenance changed" }
+          if ($currentSummary.source_commit -ne $env:GITHUB_SHA -or $currentSummary.workflow_run -ne $env:GITHUB_RUN_ID) { throw "A35 current-run provenance mismatch" }
+      - name: Upload A35 old candidate part 00
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-00-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-00.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-01-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-01.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-02-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-02.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-03-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-03.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-04-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-04.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-05-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-05.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 06
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-06-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-06.bin
+          retention-days: 14
+      - name: Upload A35 old candidate part 07
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-old-07-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-old-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-old-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-old-chunks/old.part-07.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 00
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-00-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-00.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-01-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-01.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-02-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-02.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-03-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-03.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-04-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-04.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-05-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-05.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 06
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-06-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-06.bin
+          retention-days: 14
+      - name: Upload A35 current candidate part 07
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-p51-a35-current-07-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-a35-current-chunks/chunk-manifest.json
+            ${{ runner.temp }}/plm-a35-current-chunks/verification-summary.json
+            ${{ runner.temp }}/plm-a35-current-chunks/current.part-07.bin
+          retention-days: 14
+
+  run-out-p24-edge-create-ui:
+    name: P24 hosted Edge DOCX request UI contract
+    needs: [frontend]
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Download same-run frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p24-frontend
+      - name: Verify same-run frontend provenance and runner temp
+        shell: pwsh
+        run: |
+          $temp = (Resolve-Path $env:RUNNER_TEMP).Path
+          if ([IO.Path]::GetPathRoot($temp).TrimEnd('\\') -ne "D:") { throw "P24 requires D: runner temp" }
+          $dist = Join-Path $env:RUNNER_TEMP "plm-out-p24-frontend"
+          $manifest = Get-Content -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Raw | ConvertFrom-Json
+          if ($manifest.source_commit -ne $env:GITHUB_SHA -or [string]$manifest.workflow_run -ne $env:GITHUB_RUN_ID -or $manifest.release_eligible -ne $false) { throw "P24 Edge frontend artifact provenance mismatch" }
+          if (-not (Test-Path (Join-Path $dist "index.html"))) { throw "P24 frontend artifact incomplete" }
+          Remove-Item -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Force
+      - name: Verify P24 hosted Edge harness syntax
+        shell: pwsh
+        run: |
+          node --check validation/out-01-a01-p24-edge-create-ui/run.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P24 Edge harness syntax failed" }
+      - name: Run synthetic DOCX request flow in hosted Edge on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $summary = Join-Path $env:RUNNER_TEMP "plm-out-p24-edge-summary.json"
+          node validation/out-01-a01-p24-edge-create-ui/run.mjs --dist (Join-Path $env:RUNNER_TEMP "plm-out-p24-frontend") --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "P24 hosted Edge DOCX request UI contract failed" }
+      - name: Upload P24 synthetic Edge evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-out-p24-edge-create-ui-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p24-edge-summary.json
+          if-no-files-found: error
+          retention-days: 14
+
+
+  run-out-p39-edge-download:
+    name: P39 hosted Edge output history file download
+    needs: [frontend]
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Download same-run frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p39-frontend
+      - name: Verify same-run frontend provenance and runner temp
+        shell: pwsh
+        run: |
+          $temp = (Resolve-Path $env:RUNNER_TEMP).Path
+          if ([IO.Path]::GetPathRoot($temp).TrimEnd('\') -ne "D:") { throw "P39 requires D: runner temp" }
+          $dist = Join-Path $env:RUNNER_TEMP "plm-out-p39-frontend"
+          $manifest = Get-Content -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Raw | ConvertFrom-Json
+          if ($manifest.source_commit -ne $env:GITHUB_SHA -or [string]$manifest.workflow_run -ne $env:GITHUB_RUN_ID -or $manifest.release_eligible -ne $false) { throw "P39 Edge frontend artifact provenance mismatch" }
+          if (-not (Test-Path (Join-Path $dist "index.html"))) { throw "P39 frontend artifact incomplete" }
+          Remove-Item -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Force
+      - name: Verify P39 hosted Edge harness syntax
+        shell: pwsh
+        run: |
+          node --check validation/out-01-a01-p39-edge-download/run.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P39 Edge harness syntax failed" }
+      - name: Run synthetic download through hosted Edge on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $summary = Join-Path $env:RUNNER_TEMP "plm-out-p39-edge-summary.json"
+          $downloads = Join-Path $env:RUNNER_TEMP "plm-out-p39-edge-downloads"
+          node validation/out-01-a01-p39-edge-download/run.mjs --dist (Join-Path $env:RUNNER_TEMP "plm-out-p39-frontend") --summary-out $summary --download-dir $downloads
+          if ($LASTEXITCODE -ne 0) { throw "P39 hosted Edge download acceptance failed" }
+      - name: Upload P39 synthetic Edge evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-out-p39-edge-download-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p39-edge-summary.json
+          if-no-files-found: error
+          retention-days: 14
+  run-out-p25-real-http-edge:
+    name: P25 real Output Create HTTP failure closed in hosted Edge
+    needs: [frontend, rebuild-pg18-sidecar, assemble-parent-candidate]
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install backend dependencies with temporary paths on D
+        working-directory: apps/backend
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          PIP_CACHE_DIR: ${{ runner.temp }}/plm-p25-pip-cache
+        run: |
+          python -m pip install --disable-pip-version-check -e ".[test]"
+          if ($LASTEXITCODE -ne 0) { throw "P25 backend dependency setup failed" }
+      - name: Download same-run frontend production build
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p25-frontend
+      - name: Download same-run rebuilt PostgreSQL 18.6 sidecar
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-pg18-rebuilt-sidecar-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p25-pg-input
+      - name: Download same-run Windows parent candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-windows-parent-candidate-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-out-p25-parent-input
+      - name: Verify D-drive inputs and P25 harness syntax
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $temp = (Resolve-Path $env:RUNNER_TEMP).Path
+          if ([IO.Path]::GetPathRoot($temp).TrimEnd('\') -ne "D:") { throw "P25 requires D: runner temp" }
+          $dist = Join-Path $env:RUNNER_TEMP "plm-out-p25-frontend"
+          $manifestPath = Join-Path $dist "cloud-build-manifest.json"
+          $build = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          if ($build.source_commit -ne $env:GITHUB_SHA -or [string]$build.workflow_run -ne $env:GITHUB_RUN_ID -or $build.release_eligible -ne $false) { throw "P25 frontend provenance mismatch" }
+          if (-not (Test-Path (Join-Path $dist "index.html"))) { throw "P25 frontend build incomplete" }
+          Remove-Item -LiteralPath $manifestPath -Force
+          $pgInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-pg-input"
+          foreach ($name in @("NOT-FOR-RELEASE-windows-pg18-pgvector-runtime.zip", "sidecar-sha256.json", "pg18-rebuilt-summary.json")) {
+            if (-not (Test-Path (Join-Path $pgInput $name))) { throw "P25 same-run PG18 sidecar artifact incomplete" }
+          }
+          node --check validation/out-01-a01-p25-real-http-edge/run.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P25 Edge harness syntax failed" }
+          python -B -c "import ast,pathlib; ast.parse(pathlib.Path('validation/out-01-a01-p25-real-http-edge/run.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw "P25 HTTP harness syntax failed" }
+          python -B -c "import ast,pathlib; ast.parse(pathlib.Path('validation/out-01-a01-p25-real-http-edge/compare_parent_pg.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw "P25 parent PostgreSQL comparison syntax failed" }
+          $parentInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-parent-input"
+          if (-not (Test-Path (Join-Path $parentInput "verification-summary.json"))) { throw "P25 parent candidate summary missing" }
+      - name: Run established parent-package PG smoke inside the P25 job on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $parentInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-parent-input"
+          $parent = Get-ChildItem -LiteralPath $parentInput -Filter "NOT-FOR-RELEASE-windows-parent-*.zip" | Select-Object -First 1
+          $verification = Join-Path $parentInput "verification-summary.json"
+          if (-not $parent -or -not (Test-Path -LiteralPath $verification)) { throw "P25 same-job smoke candidate inputs are incomplete" }
+          $workRoot = Join-Path $env:RUNNER_TEMP ("plm-p25-parent-smoke-" + $env:GITHUB_RUN_ID)
+          $summary = Join-Path $env:RUNNER_TEMP ("plm-p25-parent-smoke-summary-" + $env:GITHUB_RUN_ID + ".json")
+          python -B .\tools\smoke_windows_parent_package_pg_cloud.py --archive $parent.FullName --verification-summary $verification --work-root $workRoot --summary-out $summary --p25-initdb-profile-diagnostic --retain-parent-extraction-for-p25
+          if ($LASTEXITCODE -ne 0) { throw "P25 same-job parent PostgreSQL smoke failed; stop before P25 initdb differential and HTTP/Edge" }
+          if (-not (Test-Path -LiteralPath $summary)) { throw "P25 same-job parent PostgreSQL smoke summary missing" }
+          Get-Content -LiteralPath $summary -Raw
+      - name: Compare same-run parent package PostgreSQL startup on D-drive temp
+        shell: pwsh
+        run: |
+          $parentInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-parent-input"
+          $parent = Get-ChildItem -LiteralPath $parentInput -Filter "NOT-FOR-RELEASE-windows-parent-*.zip" | Select-Object -First 1
+          if (-not $parent) { throw "P25 parent package candidate archive missing" }
+          $pgInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-pg-input"
+          $compare = Join-Path $env:RUNNER_TEMP ("plm-out-p25-parent-pg-" + $env:GITHUB_RUN_ID + ".json")
+          python -B validation/out-01-a01-p25-real-http-edge/compare_parent_pg.py --parent $parent.FullName --sidecar (Join-Path $pgInput "NOT-FOR-RELEASE-windows-pg18-pgvector-runtime.zip") --sidecar-sha (Join-Path $pgInput "sidecar-sha256.json") --output $compare --run-id $env:GITHUB_RUN_ID --source-commit $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { throw "P25 PostgreSQL differential comparison failed" }
+          Get-Content -LiteralPath $compare -Raw
+      - name: Run real Output HTTP and Edge failure-closed flow on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $summary = Join-Path $env:RUNNER_TEMP ("plm-out-p25-summary-" + $env:GITHUB_RUN_ID + ".json")
+          $pgInput = Join-Path $env:RUNNER_TEMP "plm-out-p25-pg-input"
+          $parentRoot = Join-Path $env:RUNNER_TEMP ("plm-p25-parent-smoke-" + $env:GITHUB_RUN_ID)
+          $parentSmoke = Join-Path $env:RUNNER_TEMP ("plm-p25-parent-smoke-summary-" + $env:GITHUB_RUN_ID + ".json")
+          python -B validation/out-01-a01-p25-real-http-edge/run.py --dist (Join-Path $env:RUNNER_TEMP "plm-out-p25-frontend") --sidecar (Join-Path $pgInput "NOT-FOR-RELEASE-windows-pg18-pgvector-runtime.zip") --sidecar-sha (Join-Path $pgInput "sidecar-sha256.json") --summary-out $summary --run-id $env:GITHUB_RUN_ID --source-commit $env:GITHUB_SHA --parent-package-root $parentRoot --parent-smoke-summary $parentSmoke
+          if ($LASTEXITCODE -ne 0) { throw "P25 real HTTP + hosted Edge failure-closed validation failed" }
+          if (-not (Test-Path $summary)) { throw "P25 bounded result summary missing" }
+      - name: Clean retained P25 parent package extraction on D-drive temp
+        if: always()
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $runner = (Resolve-Path -LiteralPath $env:RUNNER_TEMP).Path
+          if ([IO.Path]::GetPathRoot($runner).TrimEnd('\') -ne "D:") { throw "P25 cleanup requires D-drive RUNNER_TEMP" }
+          $leaf = "plm-p25-parent-smoke-" + $env:GITHUB_RUN_ID
+          $target = Join-Path $runner $leaf
+          if (Test-Path -LiteralPath $target) {
+            $item = Get-Item -LiteralPath $target -Force
+            $resolved = (Resolve-Path -LiteralPath $target).Path
+            if ($item.PSIsContainer -ne $true -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+                [IO.Path]::GetPathRoot($resolved).TrimEnd('\') -ne "D:" -or
+                [IO.Path]::GetDirectoryName($resolved) -ne $runner -or
+                [IO.Path]::GetFileName($resolved) -ne $leaf) { throw "P25 cleanup rejected an unexpected target" }
+            Remove-Item -LiteralPath $resolved -Recurse -Force
+          }
+      - name: Upload P25 real HTTP and Edge evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-out-p25-real-http-edge-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/plm-out-p25-summary-${{ github.run_id }}.json
+            ${{ runner.temp }}/plm-out-p25-parent-pg-${{ github.run_id }}.json
+            ${{ runner.temp }}/plm-p25-parent-smoke-summary-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  run-a50-edge-source-location:
+    name: A50 hosted Edge source navigation
+    needs: [frontend]
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Download same-run frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-frontend-dist-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a50-frontend
+      - name: Verify same-run frontend provenance
+        shell: pwsh
+        run: |
+          $dist = Join-Path $env:RUNNER_TEMP "plm-a50-frontend"
+          $manifest = Get-Content -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Raw | ConvertFrom-Json
+          if ($manifest.source_commit -ne $env:GITHUB_SHA -or [string]$manifest.workflow_run -ne $env:GITHUB_RUN_ID -or $manifest.release_eligible -ne $false) { throw "A50 Edge frontend artifact provenance mismatch" }
+          if (-not (Test-Path (Join-Path $dist "index.html"))) { throw "A50 Edge frontend artifact incomplete" }
+          Remove-Item -LiteralPath (Join-Path $dist "cloud-build-manifest.json") -Force
+      - name: Verify A50 harness syntax on hosted Node
+        shell: pwsh
+        run: |
+          node --check validation/hnd-action-source-location-edge/run.mjs
+          if ($LASTEXITCODE -ne 0) { throw "A50 hosted Edge harness syntax check failed" }
+      - name: Run synthetic Handover navigation in hosted Edge on D-drive temp
+        shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: |
+          $summary = Join-Path $env:RUNNER_TEMP "plm-a50-edge-summary.json"
+          node validation/hnd-action-source-location-edge/run.mjs --dist (Join-Path $env:RUNNER_TEMP "plm-a50-frontend") --summary-out $summary
+          if ($LASTEXITCODE -ne 0) { throw "A50 Edge source navigation acceptance failed" }
+      - name: Upload A50 Edge synthetic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: plm-a50-edge-source-navigation-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-a50-edge-summary.json
           if-no-files-found: error
           retention-days: 14

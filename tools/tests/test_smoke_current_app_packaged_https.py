@@ -55,16 +55,21 @@ class CurrentAppHttpsBoundaryTests(unittest.TestCase):
                 _prior_archive_attestation(candidate, "b" * 64, summary)
 
 
-    def test_parent_startup_diagnostic_is_excluded_from_app_projection_only(self) -> None:
-        parent_hashes = {
-            "payload/check-startup.ps1": "a" * 64,
-            "payload/runtime/python.exe": "b" * 64,
+    def test_parent_operation_resources_are_excluded_from_app_projection_only(self) -> None:
+        parent_paths = {
+            "payload/check-startup.ps1",
+            "payload/report-pilot-readiness.ps1",
+            "payload/tools/windows_pilot_readiness_report.py",
+            "payload/tools/validate_windows_pilot_input_register.py",
+            "payload/config/pilot-input-register.example.json",
         }
+        parent_hashes = {path: "a" * 64 for path in parent_paths}
+        parent_hashes["payload/runtime/python.exe"] = "b" * 64
         projected = _app_projection_hashes(parent_hashes)
         self.assertEqual(projected, {"payload/runtime/python.exe": "b" * 64})
-        self.assertEqual(len(parent_hashes), 2)
+        self.assertEqual(len(parent_hashes), 6)
         self.assertEqual(len(projected), 1)
-        self.assertIn("payload/check-startup.ps1", parent_hashes)
+        self.assertTrue(parent_paths.issubset(parent_hashes))
 
     def test_other_unmapped_parent_assets_remain_for_strict_rejection(self) -> None:
         parent_hashes = {

@@ -1,0 +1,120 @@
+# OUT-01-A01-P25 编码前检查：真实Harness复用完整父包PG运行根
+
+- 日期：2026-11-06
+- Change Request：CR-OUT-021
+- WBS：OUT-01-A01-P25
+- 结论：PASS_WITH_LIMITATION，允许实施一个可回滚的Hosted测试夹具布局修正；P25维持BLOCKED_DIAGNOSTIC。
+
+## 单一问题与证据
+
+run [42166973706](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42166973706) 在同一Hosted Windows Server 2025 job中，以相同P25 initdb profile和原始runner环境，在经完整性校验的父包提取根成功（exit 0，PG_VERSION=true）；现有compare的PG-only提取根及真实P25 Harness侧车提取均返回0xC0000135、零输出。父包/sidecar的1,627项PG payload路径与Hash完全一致。布局/加载上下文影响是证据支持的判断；尚未定位具体DLL。
+
+## 编码前检查与实施
+
+- 现有流程已同job下载、验签名/Hash并完整解包非发行父包，之后删除提取根；P25 Harness再次从同run PG sidecar独立解包，导致运行上下文不同。
+- 仅让P25 workflow使用parent-smoke helper的可选“保留提取根”flag；成功后保留完整包根，清除helper产生的合成PG临时数据。非P25调用保持原清理路径。
+- P25 Harness从保留根的 payload/pgsql 运行，并要求同run smoke摘要中的Run ID、Commit、PASS状态和完整根P25 initdb成功字段匹配；把sidecar逐文件hash与父包嵌入式PG树核验，避免错用或未经校验二进制。
+- Hosted workflow的P25步骤结束后执行always清理，仅允许本Run的D盘RUNNER_TEMP直系精确命名目录；Harness自身在finally也执行受路径约束清理。
+- 保留compare中的PG-only失败摘要作为原故障基线；不改变生产API、Schema、迁移、License/Publisher信任或默认挂载。
+
+## 验收与边界
+
+只在GitHub Hosted Windows Server 2025/D盘运行。合成数据库/Project、空Publisher manifest、无客户数据/外部API/插件/文件生成。若数据库不能安全停止或清理路径不匹配则失败并保留受限诊断。运行成功最多为PASS_SCOPE_LIMITED；不得推断Pilot/Gate/Release通过。
+
+回滚删除保留flag、完整根传递、复用验证和always清理代码，恢复sidecar PG-only解包方式。只记录退出/字节数/状态布尔，不输出环境值、原始错误文本、DB内容。Secret检查不提交客户数据/令牌/密码。
+
+## run 42170525215 后的下一轮编码前检查（2026-11-06）
+
+- 结果：完整父包P25 initdb profile成功、完整根复用和1,627项sidecar/嵌入式PG Hash匹配均通过；P25 Harness实际执行 initdb 后，错误明确为无法在父包根外的RUNNER_TEMP新建data目录（Permission denied）。PG_CTL因data目录不存在返回4；后续清理逻辑将该可恢复的“尚未创建数据库目录”状态包装成cleanup异常。P25从未启动PostgreSQL/API/Edge，14/15 workflow jobs成功，整体仍failure。
+- 证据支持优先把P25本次合成PG工作目录改为已验证父包根的直系子目录，使目录ACL继承与成功P25 profile所在完整根一致；不把permission denied进一步推断成产品缺陷。工作目录仅D盘/同run临时父包，具名为 p25-real-pg-<run-id>，由Harness在确认停止/未创建data后清理，workflow always cleanup父根兜底。
+- 单独修复Harness终结处理：pg_ctl返回4只有在pg_data确实不存在、pg_run确属当前保留父包根的精确直系子目录且无reparse点时，才允许移除空测试目录并让原始initdb异常向上报告；其他非3/运行态仍失败关闭。不得将状态4写成数据库已停止。
+- 范围保持不变：没有产品代码、API、DB、迁移或Publisher trust变化；保留run 421705为失败证据。Hosted独立复验后才可能关闭P25；成功上限仍PASS_SCOPE_LIMITED。用户本机/C盘不运行代码。
+
+
+## 目录权限调整实现候选（2026-11-06）
+
+- P25 Harness现将唯一的合成PostgreSQL工作目录放入同run、已验证完整父包根下的 p25-real-pg-<run-id>；该父包根内此前已由相同P25 initdb profile验证可建数据目录。PG runtime继续使用逐文件匹配sidecar的 payload/pgsql。没有改initdb flags、PATH过滤或HTTP流程。
+- finally逻辑允许pg_ctl status=4仅在data目录缺失、目录未变成reparse点、pg_run为根内精确命名直系子目录且该目录无其他内容时清理；否则仍保留并失败关闭。该分支只清理测试夹具目录，不把initdb失败变为通过。
+- 代码候选已同步到功能分支，尚未Hosted验收；P25仍BLOCKED_DIAGNOSTIC。
+
+
+## Run 42172719463 后诊断与单点修正编码前检查（2026-11-06）
+
+- 结果：同run父包/PG18.6/pgvector0.8.6、完整根及根内data启动、sidecar逐文件Hash和always清理通过；P25 Edge确实向真实Create HTTP组合发送一次POST，但Harness记录HTTP 500。页面展示安全的通用不可用/提交结果未确认提示，预设的精确验证文案没有出现。
+- 其余14/15 jobs成功，包括后端全量/wheel、前端测试/build、PG18/pgvector、父包/A17/A34/A35/P24/P39/A50等。整体Workflow失败。数据库前后快照未完成，不能宣称无写入；同一日志中的422事件未能关联到该POST。
+- 单一问题：现有Harness在UI文案等待失败时立即退出，并且没有保存安全错误码，丢失了后续DB复核及根因所需的最小证据。
+- 结论：PASS_WITH_LIMITATION，仅允许Harness诊断/控制流修正。Node从真实合成响应解析错误码但只保留固定允许的协议错误码，否则写UNRECOGNIZED；页面文本仅归类为有限枚举；即使预期文案缺失，也先写Node结构化摘要并让Python执行after snapshot，最终仍严格要求HTTP 422、预期安全UI类别、单POST、无回执/重试及数据库计数不变，任一不符退出失败。不得将500改判通过，不改产品逻辑，不记录响应正文/认证/异常原文。
+- 之后通过GitHub Hosted Windows/D盘全链验收。失败继续登记，不影响其他WBS；本机/C盘不运行项目代码。
+
+
+## Harness诊断候选实施记录（2026-11-06，待Hosted）
+
+- 按上述编码前检查，仅改P25 Node/Python验证器：错误Envelope只输出协议白名单码或UNRECOGNIZED；Edge alert归为固定类别；真实请求分支继续检查无回执/无自动重试，但不因预设文案未出现而提前异常退出。
+- Python读取Node摘要后先比较请求前后数据库快照，再联合严格判定HTTP 422、VALIDATION_FAILED、指定安全UI类别、单POST、无成功回执及计数不变。失败摘要最多保留HTTP状态、错误枚举、UI类别、请求次数、数据库相等/进程退出布尔；不包含原始正文/异常消息。
+- 仅GitHub分支改动；尚未Hosted验收，P25仍BLOCKED_DIAGNOSTIC。没有本机/C盘运行。
+
+
+## Run 42176547201后补充编码前检查（2026-11-06）
+
+- Hosted结果：PG真实初始化/启动、父包对照、Node Harness语法检查和always清理通过；P25 Node正常写出诊断。有限结果显示real_backend_posts=0、HTTP/error code为空、UI类别SAFE_SUBMISSION_UNCONFIRMED、数据库前后目标计数相同。no_status_receipt=false，而no_success_receipt=true。由此只能证明本轮选定表快照未变化，不能证明真实Create API已到达或拒绝。
+- 上轮run 421727的POST status=500没有本轮上游证据支持；不把它报告为Output HTTP响应。当前根因是UI动作到upstream桥的连通/路由仍待识别。
+- 结论PASS_WITH_LIMITATION：仅增加Harness-only path class/method/status摘要，限在realbackend动作时间窗且去掉UUID/query/header/body；并将成功回执验证限于成功文案/结果文本，不把非成功ARIA状态误作回执。下一轮仍严格要求一个真实upstream POST/HTTP422/VALIDATION_FAILED/无重试/无成功回执/DB不变，未满足继续失败关闭。
+- 只在GitHub Hosted Windows D盘验收，不在用户本机/C盘运行。
+
+
+## Path-class诊断候选实施记录（2026-11-06，待Hosted）
+
+- realbackend阶段现在截取本轮UI动作发生后的合成API请求，仅保留method、固定path class、status/upstream status及白名单错误码，最大20条；不输出UUID/查询参数/请求头/正文/错误消息。
+- 不再将任何ARIA status节点存在视为成功回执；只检查成功受理/创建语义，同时保留无自动重试检查。
+- Python继续先比较数据库前后快照，再严格判定真实后端POST/HTTP/错误码/UI/回执/计数合同。Harness退出及临时根D盘always清理条件不放宽。尚未Hosted验收，P25不PASS。
+
+
+## 42178693259后的代理异常类编码前检查（2026-11-06）
+
+- 请求轨迹已将路径定位为OUTPUT_REQUESTS_CREATE、method POST，Node自身status 500，backend_status/error code为空；数据库目标计数前后相同；前端安全提示为提交结果未确认。故请求确实到Node本地代理，但没有上游HTTP响应。当前Harness外层catch返回了原始错误字符串，既不安全也不利于区分故障阶段。
+- 结论PASS_WITH_LIMITATION：Node外层catch仅对本轮真实Output POST填固定proxy_failure_class：Fetch TypeError映射FETCH_TYPE_ERROR，其余映射PROXY_EXCEPTION；向Edge只返回固定SYSTEM_UNAVAILABLE 503，绝不回传异常message。请求方法/path class/status/upstream status/proxy class有限诊断保留。Node仍需成功产生摘要、Python先执行DB快照后严格判定；成功条件不放宽。
+- 只做Hosted Harness修正，不改真实产品代码。通过GitHub Hosted Windows/D盘验证；本机/C盘不运行。
+
+
+## 代理异常脱敏候选实施记录（2026-11-06，待Hosted）
+
+- 只修改Node Harness：Output POST代理异常映射固定类别；TypeError→FETCH_TYPE_ERROR，其他→PROXY_EXCEPTION；Edge得到固定503 SYSTEM_UNAVAILABLE Envelope，不再返回异常字符串。动作轨迹只包含方法/path class/status/upstream status/白名单error code/代理异常类别。
+- Python异常摘要也保留相同有限字段；严格成功判定不变，DB快照先执行。本候选尚未Hosted验证；不代表真实API通过。
+
+
+## Run 42180790760后底层错误指纹编码前检查（2026-11-06）
+
+- 新结果：真实UI Output Create POST到达Node，Node安全返回503，有限类别PROXY_EXCEPTION；没有backend_status/error_code。UI为SAFE_SERVICE_UNAVAILABLE，无成功状态/文案；请求前后数据库目标计数相同。Node/PG清理正常。P25仍未证明请求到达FastAPI。
+- 结论PASS_WITH_LIMITATION：仅增加代理错误指纹白名单（error.name固定分类与cause.code有限枚举），不记录任何错误message/stack/URL/环境变量。继续固定503，不再尝试猜测代理/端口根因；下轮证据决策。
+- 同run P39 CDP evaluation异常及A17 lockfile EBUSY为独立Harness问题，需分项记录，不与P25混淆。Hosted D盘继续执行；本机/C盘不运行。
+
+
+## Node代理底层错误指纹候选实施（2026-11-06，待Hosted）
+
+- 按CR-OUT-021仅在合成Node代理异常中记录error.name固定类别与cause.code白名单；其余映射UNKNOWN。经Python摘要透传仍只含有限码，不含Message/Stack/环境路径。代理异常返回固定503，不回显异常。
+- 真实HTTP成功条件与DB快照顺序保持严格；当前仅候选，需GitHub Hosted独立复验。
+
+
+## Run 42182842169后内存异常文本分类编码前检查（2026-11-06）
+
+- Hosted结论：Node捕获错误名OTHER、底层cause code UNKNOWN；代理安全返回503；真实后端无响应；DB快照一致；UI安全失败无回执。现有结构化指纹不足，不能确定是否为Node fetch连接/请求配置问题。
+- PASS_WITH_LIMITATION：仅在捕获异常的进程内以关键词映射固定类（FETCH_FAILED/CONNECTION_REFUSED/CONNECTION_RESET/TIMEOUT/DNS_FAILURE/SOCKET_ERROR/REQUEST_CONFIG/OTHER），只输出枚举，不记录message/stack。由下一Hosted运行报告真实上游响应是否仍缺失。其余严格验收不变；GitHub Hosted D盘运行。
+
+
+## P25异常消息内存归一候选实施记录（2026-11-06，待Hosted）
+
+- 只在Node代理异常处理内对原始message做固定关键词判别，输出FETCH_FAILED、CONNECTION_REFUSED、CONNECTION_RESET、TIMEOUT、DNS_FAILURE、SOCKET_ERROR、REQUEST_CONFIG或OTHER；原始值不保存，Edge仍只收到固定503 SYSTEM_UNAVAILABLE。
+- 摘要同时保留白名单cause code/name类、动作窗API方法/path class/status/上游状态和有限消息类别。未修改产品代码，未Hosted验收，不构成PASS。
+
+
+## Run 42184707119后连通性探针编码前检查（2026-11-06）
+
+- 当前有限字段连续两轮均为proxy异常OTHER/UNKNOWN，无真实upstream状态，但能确认浏览器POST到达Node并收到固定503；本轮其他15个作业全通过，含A17/A34。数据库snapshot一致，仍不是Output API负例验收。
+- PASS_WITH_LIMITATION：下一轮在同一Node Harness进程中对FastAPI /openapi.json作一次只读连通性GET，输出状态码及受限响应MIME标志/异常类别，响应正文直接取消且不解析。只用于区分网络/Node fetch与POST构造阶段；不计入业务请求。失败保持固定类别诊断，成功再检POST。产品代码不改，GitHub Hosted D盘运行。
+
+
+## Node→FastAPI OpenAPI探针实施记录（2026-11-06，Hosted待验证）
+
+- 在Node Harness同一进程中、启动Edge前GET真实Hosted临时FastAPI的/openapi.json；只保留HTTP状态、JSON MIME布尔和有限异常类别，立即取消正文流；不读取API schema内容，不计入Output Create请求次数。
+- Python要求preflight HTTP 200及JSON MIME并保留此诊断；失败时仍执行Node摘要后DB snapshot，再统一严格拒绝。真实Output POST成功验收仍422/VALIDATION_FAILED/无回执无重试/数据库不变。
+- 测试代码已同步，尚未Hosted验证；本机/C盘未运行。

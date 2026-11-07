@@ -74,6 +74,12 @@ class JobLeaseRepositoryPort(Protocol):
                              lease_seconds: int) -> ClaimedJob | None: ...
     def claim_next_rag_retrieval(self, transaction: object, *, worker_ref: str,
                                  lease_seconds: int) -> ClaimedJob | None: ...
+    def claim_next_plugin_package(self, transaction: object, *, worker_ref: str,
+                                  lease_seconds: int) -> ClaimedJob | None: ...
+    def claim_next_output(self, transaction: object, *, worker_ref: str,
+                          lease_seconds: int) -> ClaimedJob | None: ...
+    def check_output_claim(self, transaction: object, *, job_id: uuid.UUID,
+                           fencing_token: int, worker_ref: str) -> ClaimedJob: ...
     def heartbeat(self, transaction: object, *, job_id: uuid.UUID,
                   fencing_token: int, worker_ref: str, lease_seconds: int) -> None: ...
     def pulse_parse(self, transaction: object, *, job_id: uuid.UUID,
@@ -87,7 +93,7 @@ class JobLeaseRepositoryPort(Protocol):
 
 
 class JobLeaseService:
-    """Every method owns a short database transaction; no external work runs inside it."""
+    """Owns short lease transactions and exposes explicit caller-transaction checks."""
 
     def __init__(self, *, unit_of_work: Callable[[], object],
                  repository: JobLeaseRepositoryPort) -> None:
@@ -156,6 +162,62 @@ class JobLeaseService:
             )
             tx.commit()
             return result
+
+    def claim_next_plugin_package(self, *, worker_ref: str,
+                                  lease_seconds: int) -> ClaimedJob | None:
+        """Plugin-verification-only admission; never claim another Owner's work."""
+        self._validate_worker(worker_ref)
+        if not 1 <= lease_seconds <= 3600:
+            raise JobLeaseError("INVALID_LEASE_DURATION")
+        with self._unit_of_work() as tx:
+            result = self._repository.claim_next_plugin_package(
+                tx, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            )
+            tx.commit()
+            return result
+
+    def claim_next_output(self, *, worker_ref: str,
+                          lease_seconds: int) -> ClaimedJob | None:
+        """Output-generation-only admission; never claim another Owner's work."""
+        self._validate_worker(worker_ref)
+        if not 1 <= lease_seconds <= 3600:
+            raise JobLeaseError("INVALID_LEASE_DURATION")
+        with self._unit_of_work() as tx:
+            result = self._repository.claim_next_output(
+                tx, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            )
+            tx.commit()
+            return result
+
+    def check_output_claim(self, *, job_id: uuid.UUID, fencing_token: int,
+                           worker_ref: str) -> ClaimedJob:
+        with self._unit_of_work() as tx:
+            result = self.check_output_claim_in_transaction(
+                tx, job_id=job_id, fencing_token=fencing_token,
+                worker_ref=worker_ref,
+            )
+            tx.commit()
+            return result
+
+    def check_output_claim_in_transaction(
+        self, transaction: object, *, job_id: uuid.UUID,
+        fencing_token: int, worker_ref: str,
+    ) -> ClaimedJob:
+        """Validate a live output claim inside the caller's active transaction."""
+        self._validate_worker(worker_ref)
+        if transaction is None:
+            raise JobLeaseError("INCONSISTENT_LEASE")
+        if type(job_id) is not uuid.UUID or not job_id.int:
+            raise JobLeaseError("INVALID_JOB_ID")
+        if type(fencing_token) is not int or fencing_token < 1:
+            raise JobLeaseError("INVALID_FENCING_TOKEN")
+        result = self._repository.check_output_claim(
+            transaction, job_id=job_id, fencing_token=fencing_token,
+            worker_ref=worker_ref,
+        )
+        if type(result) is not ClaimedJob:
+            raise JobLeaseError("INCONSISTENT_LEASE")
+        return result
 
     def heartbeat(self, *, job_id: uuid.UUID, fencing_token: int,
                   worker_ref: str, lease_seconds: int) -> None:

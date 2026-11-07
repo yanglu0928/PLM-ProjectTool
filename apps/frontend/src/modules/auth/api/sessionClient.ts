@@ -230,6 +230,7 @@ export class SessionClient {
     | `/api/v1/projects/${string}/surveys/${string}/versions/${string}:validate`
     | `/api/v1/projects/${string}/surveys/${string}/versions/${string}:submit-review`
     | `/api/v1/projects/${string}/solution-outlines`
+    | `/api/v1/projects/${string}/output-requests`
     | `/api/v1/projects/${string}/plans`
     | `/api/v1/projects/${string}/plans/${string}/versions`
     | `/api/v1/projects/${string}/plans/${string}/versions/${string}:submit-review`
@@ -273,6 +274,11 @@ export class SessionClient {
       window.clearTimeout(timer);
       this.#busy = false;
     }
+  }
+
+  postProjectOutputRequestCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    return this.#postCommand(`/api/v1/projects/${projectId}/output-requests`, body, idempotencyKey, 8192);
   }
 
   postProjectCreate(body: string, idempotencyKey: string): Promise<Response> {

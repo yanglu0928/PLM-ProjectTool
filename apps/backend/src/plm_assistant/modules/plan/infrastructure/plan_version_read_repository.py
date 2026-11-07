@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import select
 
 from plm_assistant.modules.plan.application.read_plan_version import (
-    PlanVersionSnapshotView,
+    PlanVersionSnapshotView, PlanOutputSourceProjection,
 )
 from plm_assistant.modules.plan.infrastructure.create_repository import _session
 from plm_assistant.modules.plan.infrastructure.orm import (
@@ -27,6 +27,39 @@ def _date(value) -> str | None:
 
 
 class SqlAlchemyPlanVersionReadRepository:
+    def get_output_source(self, transaction: object, *, project_id: uuid.UUID,
+                          plan_version_id: uuid.UUID
+                          ) -> PlanOutputSourceProjection | None:
+        if any(type(value) is not uuid.UUID or value.int == 0 for value in (
+                project_id, plan_version_id)):
+            return None
+        session = _session(transaction)
+        root = session.execute(select(
+            PlanVersionRow.plan_id,
+        ).where(
+            PlanVersionRow.project_id == project_id,
+            PlanVersionRow.plan_version_id == plan_version_id,
+        ).with_for_update(read=True, of=PlanVersionRow)).scalar_one_or_none()
+        if root is None:
+            return None
+        view = self.get_current(
+            transaction, project_id=project_id, plan_id=root,
+            plan_version_id=plan_version_id,
+        )
+        if view is None:
+            return None
+        fields = {
+            "version_no": view.version_no,
+            "wbs_items": view.snapshot["wbs_items"],
+            "dependencies": view.snapshot["dependencies"],
+            "milestones": view.snapshot["milestones"],
+            "exclusions": view.snapshot["exclusions"],
+        }
+        return PlanOutputSourceProjection(
+            plan_version_id=view.plan_version_id, project_id=view.project_id,
+            version_state=view.version_state, fields=fields,
+        )
+
     def get_current(self, transaction: object, *, project_id: uuid.UUID,
                     plan_id: uuid.UUID,
                     plan_version_id: uuid.UUID) -> PlanVersionSnapshotView | None:

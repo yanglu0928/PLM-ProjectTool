@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import ctypes
 import hashlib
+import io
 import json
 import os
+import re
+import runpy
 import shutil
 import socket
 import sys
@@ -15,6 +19,8 @@ import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path, PurePosixPath
+
+ROOT = Path(__file__).resolve().parents[1]
 
 from stage_windows_parent_candidate_cloud import stage_candidate
 
@@ -124,6 +130,203 @@ def probe_packaged_production_entrypoint(root: Path) -> str:
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", port))
     return "FAIL_CLOSED_MISSING_ACCOUNT_DATABASE_CREDENTIAL"
+
+
+def probe_packaged_pilot_readiness_report(root: Path) -> dict:
+    import copy
+
+    payload = root / "payload"
+    wrapper = payload / "report-pilot-readiness.ps1"
+    template_path = payload / "config" / "pilot-input-register.example.json"
+    tool = payload / "tools" / "windows_pilot_readiness_report.py"
+    validator = payload / "tools" / "validate_windows_pilot_input_register.py"
+    manifest_path = root / "manifest.json"
+    sums_path = root / "payload-sha256sums.txt"
+    if any(not path.is_file() or path.is_symlink()
+           for path in (wrapper, template_path, tool, validator, manifest_path, sums_path)):
+        raise ValueError("packaged Pilot readiness report resources missing")
+    if not root.drive or root.drive.casefold() == "c:":
+        raise ValueError("readiness probe must stay outside C drive")
+    shell = shutil.which("powershell")
+    if not shell:
+        raise ValueError("Windows PowerShell unavailable on hosted runner")
+    before = (sha_file(manifest_path), sha_file(sums_path))
+    probe = root / "pilot-readiness-probe"
+    probe.mkdir()
+    template = json.loads(template_path.read_text(encoding="utf-8"))
+    incomplete_path = probe / "incomplete.json"
+    incomplete_path.write_text(json.dumps(template), encoding="utf-8")
+    env = {key: value for key, value in os.environ.items()
+           if not key.upper().startswith("PLM_")}
+    env.pop("PYTHONPATH", None)
+
+    def run(register_path: Path, *, readable: bool = False) -> subprocess.CompletedProcess[str]:
+        command = [shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(wrapper),
+                   "-RegisterPath", str(register_path)]
+        if readable:
+            command.append("-Readable")
+        return subprocess.run(command, cwd=str(root), capture_output=True, text=True,
+                              encoding="utf-8", errors="replace", timeout=90, env=env)
+
+    try:
+        incomplete = run(incomplete_path)
+        if not incomplete.stdout.strip():
+            diagnostic = (incomplete.stderr or "").casefold()
+            if "modulenotfounderror" in diagnostic or "no module named" in diagnostic:
+                category = "PYTHON_MODULE_IMPORT_FAILURE"
+            elif "unrecognized arguments" in diagnostic:
+                category = "REPORT_ARGUMENT_REJECTION"
+            elif "can't open file" in diagnostic or "cannot find the path" in diagnostic:
+                category = "REPORT_FILE_UNAVAILABLE"
+            elif "pilot readiness diagnostic inputs are unavailable." in diagnostic:
+                category = "WRAPPER_FIXED_INPUTS_UNAVAILABLE"
+            elif "commandnotfoundexception" in diagnostic or "not recognized as the name" in diagnostic:
+                category = "PYTHON_LAUNCH_FAILURE"
+            elif "traceback" in diagnostic or "exception" in diagnostic:
+                category = "PYTHON_RUNTIME_FAILURE"
+            else:
+                category = "NO_CLASSIFIED_OUTPUT"
+            raise ValueError(
+                "packaged readiness report emitted no JSON: "
+                f"exit={incomplete.returncode}; "
+                f"stdout_bytes={len(incomplete.stdout.encode('utf-8'))}; "
+                f"stderr_bytes={len(incomplete.stderr.encode('utf-8'))}; "
+                f"category={category}"
+            )
+        incomplete_report = json.loads(incomplete.stdout)
+        expected_missing = 9
+        if (incomplete.returncode != 1 or incomplete.stderr
+                or incomplete_report.get("input_register_status") != "INCOMPLETE"
+                or len(incomplete_report.get("input_register_missing_fields", [])) != expected_missing
+                or set(incomplete_report.get("input_register_guidance", {}))
+                   != set(incomplete_report.get("input_register_missing_fields", []))
+                or any(set(item) != {"label", "maintain", "source", "never", "owner_role", "next_step"}
+                       for item in incomplete_report.get("input_register_guidance", {}).values())
+                or [a.get("code") for a in incomplete_report.get("recommended_actions", [])]
+                   != ["TRUST_KEY_LICENSE", "DATABASE_SCOPE", "SERVICE_IDENTITY_ACL", "TLS_CHAIN_ENDPOINT"]
+                or incomplete_report.get("recommended_first_action")
+                   != incomplete_report.get("recommended_actions", [None])[0]
+                or incomplete_report.get("pilot_ready") is not False
+                or incomplete_report.get("launch_authorized") is not False):
+            raise ValueError("packaged readiness report incomplete-register contract differs")
+
+        readable = run(incomplete_path, readable=True)
+        expected_labels = (
+            "产品公钥 SHA-256", "License 核验记录", "Windows 服务身份",
+            "TLS 证书 Thumbprint", "TLS DNS 名称", "License 证据引用",
+            "服务 ACL 证据引用", "TLS 链与续期证据引用", "数据库凭据范围证据引用",
+        )
+        if (readable.returncode != 1 or readable.stderr
+                or "PLM Pilot 准备度检查" not in readable.stdout
+                or any(label not in readable.stdout for label in expected_labels)
+                or "参考来源：" not in readable.stdout or "请勿填写：" not in readable.stdout
+                or "建议责任角色：" not in readable.stdout or "下一步操作：" not in readable.stdout
+                or "建议处理顺序（只作提示" not in readable.stdout
+                or readable.stdout.index("建议先处理：") > readable.stdout.index("建议处理顺序（只作提示")
+                or readable.stdout.index("正式产品公钥与 License 信任") > readable.stdout.index("数据库凭据目标与权限范围")
+                or readable.stdout.index("数据库凭据目标与权限范围") > readable.stdout.index("Windows 服务身份与目录权限")
+                or readable.stdout.index("Windows 服务身份与目录权限") > readable.stdout.index("HTTPS 证书链、域名与续期")
+                or "\\n" in readable.stdout or readable.stdout.count("\n") < 20):
+            raise ValueError("packaged readiness readable mode omitted fixed guidance or changed status")
+
+        complete = copy.deepcopy(template)
+        complete["references"].update({
+            "product_public_key_sha256": "a" * 64,
+            "license_evidence_ref": "LIC-SYNTHETIC-01",
+            "service_identity_ref": r"NT SERVICE\PLMProjectTool",
+            "tls_certificate_thumbprint": "b" * 40,
+            "tls_dns_name": "pilot.example.com",
+        })
+        complete["evidence_refs"].update({
+            "license": "EVD-LIC-01", "service_acl": "EVD-ACL-01",
+            "tls_chain_renewal": "EVD-TLS-01", "database_scope": "EVD-DB-01",
+        })
+        complete_path = probe / "complete.json"
+        complete_path.write_text(json.dumps(complete), encoding="utf-8")
+        success = run(complete_path)
+        success_report = json.loads(success.stdout)
+        if (success.returncode != 0 or success.stderr
+                or success_report.get("input_register_status") != "COMPLETE_REQUIRES_INDEPENDENT_VERIFICATION"
+                or success_report.get("input_register_guidance") != {}
+                or success_report.get("pilot_ready") is not False
+                or success_report.get("launch_authorized") is not False
+                or not success_report.get("recommended_actions")):
+            raise ValueError("packaged readiness report complete-register fail-closed contract differs")
+        verified_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        verified_startup = verified_manifest["startup_preflight"]
+        for key in ("database_credential_reference_verified", "formal_license_trust_verified",
+                    "formal_startup_ready", "packaged_product_public_key_resource_present",
+                    "service_identity_acl_verified", "tls_certificate_configured",
+                    "tls_private_key_configured"):
+            verified_startup[key] = True
+        verified_startup["blocker_codes"] = []
+        verified_manifest_path = probe / "verified-no-blocker-manifest.json"
+        verified_manifest_path.write_text(json.dumps(verified_manifest), encoding="utf-8")
+        packaged_python = payload / "runtime" / "python.exe"
+        def run_verified_format(fmt: str) -> subprocess.CompletedProcess[str]:
+            command = [str(packaged_python)]
+            if fmt == "text":
+                command.extend(("-X", "utf8"))
+            command.extend(("-I", "-B", str(tool), "--format", fmt,
+                            "--manifest", str(verified_manifest_path),
+                            "--register", str(complete_path)))
+            return subprocess.run(command, cwd=str(root), capture_output=True, text=True,
+                                  encoding="utf-8", errors="replace", timeout=30, env=env)
+        verified_json = run_verified_format("json")
+        verified_report = json.loads(verified_json.stdout)
+        if (verified_json.returncode != 0 or verified_json.stderr
+                or verified_report.get("recommended_actions") != []
+                or verified_report.get("recommended_first_action") is not None
+                or verified_report.get("launch_authorized") is not False
+                or verified_report.get("pilot_ready") is not False
+                or verified_report.get("release_eligible") is not False
+                or verified_report.get("legal_clearance") is not False):
+            raise ValueError("complete register and zero blockers changed the non-authorizing JSON contract")
+        verified_text = run_verified_format("text")
+        if (verified_text.returncode != 0 or verified_text.stderr
+                or "建议处理顺序" in verified_text.stdout
+                or "建议先处理：" in verified_text.stdout
+                or "当前没有登记缺项；仍需独立核验。" not in verified_text.stdout
+                or "仍需独立核验" not in verified_text.stdout
+                or "启动授权：否" not in verified_text.stdout
+                or "发行资格：否" not in verified_text.stdout
+                or "pilot.example.com" in verified_text.stdout):
+            raise ValueError("zero-blocker readable report failed independent-verification boundary")
+
+        readable_complete = run(complete_path, readable=True)
+        if (readable_complete.returncode != 0 or readable_complete.stderr
+                or "登记完整，仍需独立核验" not in readable_complete.stdout
+                or "启动授权：否" not in readable_complete.stdout
+                or "发行资格：否" not in readable_complete.stdout
+                or "pilot.example.com" in readable_complete.stdout
+                or "LIC-SYNTHETIC-01" in readable_complete.stdout):
+            raise ValueError("packaged readiness readable mode authorized or echoed complete synthetic input")
+
+        invalid = copy.deepcopy(complete)
+        invalid["unexpected"] = "SYNTHETIC_SECRET_SENTINEL"
+        invalid_path = probe / "invalid.json"
+        invalid_path.write_text(json.dumps(invalid), encoding="utf-8")
+        rejected = run(invalid_path)
+        if (rejected.returncode != 2 or rejected.stderr
+                or "SYNTHETIC_SECRET_SENTINEL" in rejected.stdout
+                or "unexpected" in rejected.stdout):
+            raise ValueError("packaged readiness report echoed invalid register data")
+        readable_rejected = run(invalid_path, readable=True)
+        if (readable_rejected.returncode != 2 or readable_rejected.stderr
+                or "格式无效" not in readable_rejected.stdout
+                or "SYNTHETIC_SECRET_SENTINEL" in readable_rejected.stdout
+                or "unexpected" in readable_rejected.stdout):
+            raise ValueError("packaged readiness readable mode echoed invalid register data")
+        if before != (sha_file(manifest_path), sha_file(sums_path)):
+            raise ValueError("readiness report changed package manifest/checksum source")
+        return {"status": "PACKAGED_PILOT_READINESS_DIAGNOSTIC_PASS_LIMITED",
+                "incomplete_fields": expected_missing, "complete_still_not_authorized": True,
+                "invalid_input_value_echoed": False, "package_manifest_unchanged": True,
+                "complete_zero_blockers_still_not_authorized": True}
+    finally:
+        if probe.parent != root or probe.is_symlink():
+            raise RuntimeError("refusing to clean readiness probe outside smoke root")
+        shutil.rmtree(probe)
 
 
 def probe_packaged_startup_guard(root: Path) -> dict:
@@ -526,7 +729,12 @@ def main() -> int:
     parser.add_argument("--verification-summary", type=Path, required=True)
     parser.add_argument("--work-root", type=Path, required=True)
     parser.add_argument("--summary-out", type=Path, required=True)
+    parser.add_argument("--p25-initdb-profile-diagnostic", action="store_true")
+    parser.add_argument("--retain-parent-extraction-for-p25", action="store_true")
+    parser.add_argument("--prt-hosted-load", action="store_true")
     args = parser.parse_args()
+    if args.retain_parent_extraction_for_p25 and not args.p25_initdb_profile_diagnostic:
+        parser.error("--retain-parent-extraction-for-p25 requires the P25 diagnostic")
 
     runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
     root = args.work_root.resolve()
@@ -649,6 +857,7 @@ def main() -> int:
 
     try:
         startup_entrypoint_probe = probe_packaged_production_entrypoint(root)
+        pilot_readiness_report = probe_packaged_pilot_readiness_report(root)
         startup_guard_probe = probe_packaged_startup_guard(root)
         startup_manifest_tamper_matrix = probe_packaged_startup_guard_tamper_matrix(root)
         startup_preflight_diagnostic = probe_packaged_startup_diagnostic(root)
@@ -669,7 +878,42 @@ def main() -> int:
     port = port_sock.getsockname()[1]
     port_sock.close()
     result = {}
+    p25_initdb_profile_diagnostic = None
+    p41_source_validation = None
+    prt_load_validation = None
     try:
+        if args.p25_initdb_profile_diagnostic:
+            probe_root = root / "p25-initdb-profile-diagnostic"
+            probe_root.mkdir()
+            probe_data = probe_root / "data"
+            p25_command = [str(initdb), f"--pgdata={probe_data}", "--username=poc_admin",
+                           "--auth=trust", "--encoding=UTF8", "--locale=C"]
+            try:
+                p25_probe = subprocess.run(
+                    p25_command, env=os.environ.copy(), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    timeout=180, check=False)
+                p25_initdb_profile_diagnostic = {
+                    "profile": "P25",
+                    "timed_out": False,
+                    "exit_code": p25_probe.returncode,
+                    "stdout_bytes": len(p25_probe.stdout or b""),
+                    "stderr_bytes": len(p25_probe.stderr or b""),
+                    "pg_version_created": (probe_data / "PG_VERSION").is_file(),
+                }
+            except subprocess.TimeoutExpired as exc:
+                p25_initdb_profile_diagnostic = {
+                    "profile": "P25",
+                    "timed_out": True,
+                    "exit_code": None,
+                    "stdout_bytes": len(exc.stdout or b""),
+                    "stderr_bytes": len(exc.stderr or b""),
+                    "pg_version_created": (probe_data / "PG_VERSION").is_file(),
+                }
+            finally:
+                if probe_root.exists():
+                    if probe_root.parent != root or probe_root.is_symlink():
+                        raise RuntimeError("refusing to clean P25 initdb probe outside package root")
+                    shutil.rmtree(probe_root)
         init = run_checked([str(initdb), "-D", str(data_dir), "-U", "postgres",
                             "--auth-local=trust", "--auth-host=trust", "--no-locale", "-E", "UTF8"], 180)
         start_attempted = True
@@ -700,6 +944,241 @@ def main() -> int:
         vector_version = run_checked(
             psql_args + ["SELECT extversion FROM pg_extension WHERE extname='vector';"],
             60).stdout.strip()
+        migration_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p01-migration/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        migration_lifecycle = json.loads(migration_run.stdout.strip().splitlines()[-1])
+        if (migration_lifecycle.get("empty_database_upgrade") != "PASS"
+                or migration_lifecycle.get("empty_database_downgrade_reupgrade") != "PASS"
+                or migration_lifecycle.get("owner_migration_downgrade_reupgrade") != "PASS"
+                or migration_lifecycle.get("existing_synthetic_data_upgrade") != "PASS"):
+            raise RuntimeError("Output migration lifecycle validation failed")
+        p41_source_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p41-plan-source-pg18/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            300)
+        p41_source_validation = json.loads(p41_source_run.stdout.strip().splitlines()[-1])
+        if (p41_source_validation.get("status") != "PASS_SCOPE_LIMITED"
+                or p41_source_validation.get("exact_version_scope") != "PASS"
+                or p41_source_validation.get("cross_project_isolation") != "PASS"):
+            raise RuntimeError("PlanVersion Output source PG18 validation failed")
+        plugin_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/plg-01-a01-package-schema/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        plugin_validation = json.loads(plugin_run.stdout.strip().splitlines()[-1])
+        if plugin_validation.get("status") != "PASS_LIMITED":
+            raise RuntimeError("Plugin package schema validation failed")
+        registration_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/plg-01-a07-package-registration-owner/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        registration_validation = json.loads(registration_run.stdout.strip().splitlines()[-1])
+        if registration_validation.get("status") != "PASS_LIMITED":
+            raise RuntimeError("Plugin package registration owner validation failed")
+        plugin_disable_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/plg-02-a06-operation-disable/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        plugin_disable_validation = json.loads(plugin_disable_run.stdout.strip().splitlines()[-1])
+        if plugin_disable_validation.get("status") != "PASS_LIMITED":
+            raise RuntimeError("Plugin operation disable owner validation failed")
+        owner_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p02-owner/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        owner_validation = json.loads(owner_run.stdout.strip().splitlines()[-1])
+        if owner_validation.get("status") != "PASS_LIMITED":
+            raise RuntimeError("OutputRequest transactional owner validation failed")
+        cancel_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p17-cancel-owner/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        cancel_validation = json.loads(cancel_run.stdout.strip().splitlines()[-1])
+        if cancel_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("OutputRequest cancel Owner validation failed")
+        cancel_http_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p18-cancel-http/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        cancel_http_validation = json.loads(
+            cancel_http_run.stdout.strip().splitlines()[-1])
+        if cancel_http_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("OutputRequest cancel HTTP composition validation failed")
+        create_http_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p19-create-http/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        create_http_validation = json.loads(
+            create_http_run.stdout.strip().splitlines()[-1])
+        if create_http_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("OutputRequest create HTTP composition validation failed")
+        read_http_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p20-read-http/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        read_http_validation = json.loads(
+            read_http_run.stdout.strip().splitlines()[-1])
+        if read_http_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("OutputRequest read HTTP composition validation failed")
+        list_http_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p21-list-http/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        list_http_validation = json.loads(
+            list_http_run.stdout.strip().splitlines()[-1])
+        if list_http_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("OutputRequest list HTTP composition validation failed")
+        output_claim_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p26-output-job-claim/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_job_claim_validation = json.loads(
+            output_claim_run.stdout.strip().splitlines()[-1])
+        if output_job_claim_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output Job claim isolation validation failed")
+        output_admission_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p27-output-job-admission/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_job_admission_validation = json.loads(
+            output_admission_run.stdout.strip().splitlines()[-1])
+        if output_job_admission_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output Job admission validation failed")
+        output_lease_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p28-output-lease-proof/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_job_lease_validation = json.loads(
+            output_lease_run.stdout.strip().splitlines()[-1])
+        if output_job_lease_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output Job lease proof validation failed")
+        output_start_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p29-output-start/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_start_validation = json.loads(
+            output_start_run.stdout.strip().splitlines()[-1])
+        if output_start_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output generation start validation failed")
+        output_failure_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p30-output-failure/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_failure_validation = json.loads(
+            output_failure_run.stdout.strip().splitlines()[-1])
+        if output_failure_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output generation failure validation failed")
+        output_retry_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p31-output-retry/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_retry_validation = json.loads(
+            output_retry_run.stdout.strip().splitlines()[-1])
+        if output_retry_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output generation retry validation failed")
+        plugin_execution_schema_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/plg-03-a01-execution-schema/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        plugin_execution_schema_validation = json.loads(
+            plugin_execution_schema_run.stdout.strip().splitlines()[-1])
+        if plugin_execution_schema_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("PluginExecution persistence schema validation failed")
+        output_artifact_schema_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p32-output-artifact/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_artifact_schema_validation = json.loads(
+            output_artifact_schema_run.stdout.strip().splitlines()[-1])
+        if output_artifact_schema_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("OutputArtifact persistence schema validation failed")
+        output_completion_run = run_checked(
+            [sys.executable,
+             str(ROOT / "validation/out-01-a01-p33-output-completion/verify.py"),
+             "--port", str(port), "--run-id", os.environ.get("GITHUB_RUN_ID", "")],
+            1800)
+        output_completion_validation = json.loads(
+            output_completion_run.stdout.strip().splitlines()[-1])
+        if output_completion_validation.get("status") != "PASS_SCOPE_LIMITED":
+            raise RuntimeError("Output generation completion validation failed")
+        if args.prt_hosted_load:
+            prt_dir = ROOT / "validation/prt-01-a11-a05-p04-read-load"
+            sys.path.insert(0, str(prt_dir))
+            captured = io.StringIO()
+            previous_pg_source = os.environ.get("PLM_PRT_PG_SOURCE")
+            os.environ["PLM_PRT_PG_SOURCE"] = str(pg)
+            try:
+                prt = runpy.run_path(str(prt_dir / "verify.py"))
+                with contextlib.redirect_stdout(captured):
+                    prt_load_validation = prt["run"](
+                        reuse_postgres=("127.0.0.1", port, "postgres"),
+                        host_resource_diagnostic=True,
+                    )
+            except Exception:
+                print(captured.getvalue(), end="")
+                raise
+            finally:
+                if previous_pg_source is None:
+                    os.environ.pop("PLM_PRT_PG_SOURCE", None)
+                else:
+                    os.environ["PLM_PRT_PG_SOURCE"] = previous_pg_source
+                if sys.path and sys.path[0] == str(prt_dir):
+                    sys.path.pop(0)
+            output = captured.getvalue()
+            print(output, end="")
+            load_metrics = []
+            for entry in output.splitlines():
+                match = re.match(
+                    r"^PRT_A05_P04_READ_LOAD_SUMMARY mode=([A-Z0-9_]+) "
+                    r"(PROTOTYPE_[A-Z0-9_]+) median_round_p95_ms=([0-9]+(?:\.[0-9]+)?)$",
+                    entry,
+                )
+                if match:
+                    load_metrics.append({
+                        "mode": match.group(1), "measure": match.group(2),
+                        "median_round_p95_ms": float(match.group(3)),
+                    })
+            if len(load_metrics) < 2:
+                raise RuntimeError("Bounded Prototype load metrics missing")
+            resource_line = next(
+                (line.split("=", 1)[1] for line in output.splitlines()
+                 if line.startswith("PRT_HOST_RESOURCE_SUMMARY=")), None
+            )
+            resource_summary = json.loads(resource_line) if resource_line else None
+            if not resource_summary or resource_summary.get("status") != "AVAILABLE":
+                raise RuntimeError("Windows host resource summary missing or unavailable")
+            prt_load_validation = {
+                "wbs": "PRT-01-A11-A05-P04-P26",
+                "status": "PASS_LIMITED",
+                "scope": "synthetic Hosted Windows Server 2025; parent PG18 lifecycle",
+                "reuse_parent_pg18_service": True,
+                "isolated_prt_database": True,
+                "prototype_load_p95": load_metrics,
+                "resource_summary": resource_summary,
+                "performance_gate_passed": False,
+                "release_eligible": False,
+            }
         if version != "18.6" or vector_version != "0.8.6":
             raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
                              + version + "/" + vector_version)
@@ -707,7 +1186,26 @@ def main() -> int:
             "status": "PARENT_PG18_TEMP_LIFECYCLE_PASS_LIMITED",
             "source_commit": parent["source_commit"], "workflow_run": parent["workflow_run"],
             "parent_archive_sha256": parent["archive_sha256"],
+            "extraction_retained_for_p25": args.retain_parent_extraction_for_p25,
             "postgresql_version": version, "pgvector_version": vector_version,
+            "output_owner_validation": owner_validation,
+            "output_cancel_owner_validation": cancel_validation,
+            "output_cancel_http_validation": cancel_http_validation,
+            "output_create_http_validation": create_http_validation,
+            "output_read_http_validation": read_http_validation,
+            "output_list_http_validation": list_http_validation,
+            "output_job_claim_validation": output_job_claim_validation,
+            "output_job_admission_validation": output_job_admission_validation,
+            "output_job_lease_validation": output_job_lease_validation,
+            "output_generation_start_validation": output_start_validation,
+            "output_generation_failure_validation": output_failure_validation,
+            "output_generation_retry_validation": output_retry_validation,
+            "plugin_execution_schema_validation": plugin_execution_schema_validation,
+            "output_artifact_schema_validation": output_artifact_schema_validation,
+            "output_generation_completion_validation": output_completion_validation,
+            "plugin_package_schema_validation": plugin_validation,
+            "plugin_package_registration_validation": registration_validation,
+            "plugin_operation_disable_validation": plugin_disable_validation,
             "listen_host": "127.0.0.1", "temporary_database_only": True,
             "production_installation": False, "product_api_started": False,
             "license_trust_used": False, "runner_drive": root.drive,
@@ -715,10 +1213,15 @@ def main() -> int:
             "startup_preflight": startup,
             "candidate_staging": staging_result,
             "startup_entrypoint_probe": startup_entrypoint_probe,
+            "pilot_readiness_report": pilot_readiness_report,
             "startup_guard_probe": startup_guard_probe,
             "startup_manifest_tamper_matrix": startup_manifest_tamper_matrix,
             "startup_preflight_diagnostic": startup_preflight_diagnostic,
             "web_service_smoke": web_service_smoke,
+            "p25_initdb_profile_diagnostic": p25_initdb_profile_diagnostic,
+            "output_migration_lifecycle": migration_lifecycle,
+            "plan_output_source_pg18": p41_source_validation,
+            "prt_hosted_load": prt_load_validation,
         }
     finally:
         if start_attempted and data_dir.is_dir():
@@ -744,7 +1247,17 @@ def main() -> int:
         if root.exists():
             if root.parent != runner_temp or root.drive.casefold() == "c:":
                 raise RuntimeError("refusing to clean outside runner temp/non-C drive")
-            shutil.rmtree(root)
+            if args.retain_parent_extraction_for_p25:
+                for generated in (data_dir, log_path, root / "pgctl-start.txt"):
+                    if generated.exists():
+                        if generated.parent != root or generated.is_symlink():
+                            raise RuntimeError("refusing to clean generated parent smoke data outside extraction root")
+                        if generated.is_dir():
+                            shutil.rmtree(generated)
+                        else:
+                            generated.unlink()
+            else:
+                shutil.rmtree(root)
 
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)
     args.summary_out.write_text(json.dumps(result, sort_keys=True, indent=2) + "\n", encoding="utf-8")

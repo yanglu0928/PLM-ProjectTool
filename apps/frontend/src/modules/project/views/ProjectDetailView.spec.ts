@@ -55,18 +55,20 @@ describe("ProjectDetailView", () => {
     absent.wrapper.unmount();
     const restricted = await view(await session(true), `/projects/${id}`, fetcher as typeof fetch);
     expect(restricted.wrapper.text()).toContain("须先修改密码");
+    expect(restricted.wrapper.find('a[href="/projects/' + id + '/output-requests"]').exists()).toBe(false);
     expect(fetcher).not.toHaveBeenCalled();
     restricted.wrapper.unmount();
   });
 
   it("loads only server-confirmed detail for direct URL and escapes display text", async () => {
     const fetcher = vi.fn().mockResolvedValue(response({ ...project, name: "<img src=x>" }, project.etag));
-    const { wrapper } = await view(await session(), `/projects/${id}`, fetcher as typeof fetch);
+    const { wrapper } = await view(await session(false, true), `/projects/${id}`, fetcher as typeof fetch);
     expect(wrapper.text()).toContain("<img src=x>");
     expect(wrapper.find("img").exists()).toBe(false);
     expect(wrapper.get('dl[aria-label="当前授权项目详情"]')).toBeTruthy();
     expect(wrapper.get('a[href="/projects/' + id + '/members"]').text()).toContain("成员历史");
     expect(wrapper.get('a[href="/projects/' + id + '/ai"]').text()).toContain("AI任务");
+    expect(wrapper.get('a[href="/projects/' + id + '/output-requests"]').text()).toContain("输出请求历史");
     expect(wrapper.get('a[href="/projects/' + id + '/handover"]').text()).toContain("交接分析");
     expect(wrapper.get('a[href="/projects/' + id + '/handover-actions"]').text()).toContain("交接待办");
     expect(wrapper.get('a[href="/projects/' + id + '/surveys"]').text()).toContain("调研定义");

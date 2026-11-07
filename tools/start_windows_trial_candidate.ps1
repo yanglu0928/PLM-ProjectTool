@@ -1,4 +1,18 @@
 $ErrorActionPreference = "Stop"
+function Get-Sha256Hex([string]$path) {
+    $stream = $null
+    $algorithm = $null
+    try {
+        $stream = [System.IO.File]::OpenRead($path)
+        $algorithm = [System.Security.Cryptography.SHA256]::Create()
+        $digest = $algorithm.ComputeHash($stream)
+        return [System.BitConverter]::ToString($digest).Replace("-", "").ToLowerInvariant()
+    }
+    finally {
+        if ($null -ne $stream) { $stream.Dispose() }
+        if ($null -ne $algorithm) { $algorithm.Dispose() }
+    }
+}
 function Test-StrictJsonBoolean($value, [bool]$expected) {
     return ($null -ne $value -and $value.GetType() -eq [bool] -and $value -eq $expected)
 }
@@ -16,6 +30,7 @@ function Write-StartupFailure($manifest) {
             throw "diagnostic package input unavailable"
         }
         $failureStage = "HASH_CHECKSUM_FILE"
+        $checksumsDigest = Get-Sha256Hex $checksumsPath
         $failureStage = "CHECK_MANIFEST_HASH"
         if ($manifest.payload_sha256sums_sha256 -isnot [string] -or
             $manifest.payload_sha256sums_sha256 -cnotmatch "^[0-9a-f]{64}$" -or
@@ -28,7 +43,7 @@ function Write-StartupFailure($manifest) {
         if ($entries.Count -ne 1) { throw "diagnostic checksum entry rejected" }
         $expectedDigest = [regex]::Match($entries[0], "^([0-9a-f]{64})  payload/check-startup\.ps1$").Groups[1].Value
         $failureStage = "HASH_DIAGNOSTIC"
-        $actualDigest = (Get-FileHash -LiteralPath $diagnosticPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $actualDigest = Get-Sha256Hex $diagnosticPath
         if ($actualDigest -cne $expectedDigest) { throw "diagnostic script checksum mismatch" }
 
         $failureStage = "RESOLVE_PROCESS"

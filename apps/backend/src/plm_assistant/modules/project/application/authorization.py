@@ -96,6 +96,14 @@ POLICIES: dict[str, _Policy] = {
     "SOL_SECTION_VERSION_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_SECTION_VERSION_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "PROJECT_GET": _Policy(ALL_MEMBERS, False),
+    "OUTPUT_REQUEST_LIST": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER"}),
+        False, lock_reads=True,
+    ),
+    "OUTPUT_REQUEST_CREATE": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
+    ),
+    "OUTPUT_REQUEST_CANCEL": _Policy(MANAGERS, True),
     "WORKFLOW_START": _Policy(MANAGERS, True),
     "WORKFLOW_CHECKLIST_RECORD": _Policy(MANAGERS, True),
     "WORKFLOW_CHECKLIST_PREVIEW": _Policy(

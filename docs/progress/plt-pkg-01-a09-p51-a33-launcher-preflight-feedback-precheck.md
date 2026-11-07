@@ -52,3 +52,25 @@
 - 按纪律先记录本次失败，再只读核查实际校验输入、PowerShell匹配语义与打包脚本对应关系；随后提出更窄修复，保持清单哈希、逐文件哈希、非零退出、缺失/损坏回退及不启动服务条件。必须再次以同一托管路径验收。
 
 - 同一提交另一次独立重复运行 Run 41005586483 / job 123902482913 也以相同的 exit=1、stdout=0、stderr=108、VALIDATE_INPUT 失败；其余构建/投影工作继续成功。此重复证据排除一次性运行抖动，但不增加新的根因判断。
+
+
+## 2026-10-30 远端分支并发合并及恢复计划
+
+- 检查远端提交图发现 PR #60 在 2026-10-30 05:09:30 UTC 以 merge commit b659f8376e2954945632c05eccc90a85d974725a 进入 main；本自动化没有调用合并操作。合并的分支头 610e7af 尚缺下面的 `$checksumsDigest` 计算语句，阶段细分编辑导致的安全回退实现因此出现在 main。A33 验收仍失败关闭，未产生服务启动或数据写入；不得把合并解释为验收通过。
+- 原 feature 分支在合并后又有两次提交（文档记录与哈希语句恢复），但与 main 已分叉，不能强推覆盖。为保持只在正确功能分支开发，从最新 main HEAD b659f837 创建 `feature/p51-a33-launcher-checksum-recovery`。先在该分支登记本记录，再仅补回 `$checksumsDigest` 哈希赋值；保留清单/单文件双重校验、15秒界限和默认拒绝文案。完成后开新PR/托管复验，不直接改写 main。回滚仅恢复为固定拒绝文案入口，不移除启动守门。
+
+
+## 第七轮 hosted 偏差：修复漏项后清单哈希步骤回退（2026-10-30）
+
+- PR #61 / run 41007180355 / parent smoke job 123907131560：托管 Windows Server 2025、D:\\a\\_temp 清洁解包；后端、前端、PG18/pgvector、Python、embedded runtime、父候选装配/读回及A17候选投影均成功。实际 launcher 仍 exit=1、stdout=0、固定拒绝stderr，阶段码 HASH_CHECKSUM_FILE；未到诊断子进程，无启动/监听/敏感输出。
+- 新阶段码确认 `$checksumsDigest` 哈希计算语句已执行到达，但该操作或结果取值触发了launcher catch。不能据此推断具体异常，也不把完整流水线的其他通过结果当作A33通过。
+- 先记录，再在代码中将哈希调用与结果规范化拆分为两个静态阶段，或使用等价的受控 .NET SHA-256 流读取；不输出异常正文、文件内容或路径，不改变哈希算法、清单/单文件核验和启动拒绝。复验仍走hosted D盘 runner。
+
+
+## Final hosted acceptance (2026-10-30)
+
+- PR #61 / GitHub Actions run 41008231772 completed with all 10 jobs successful on hosted Windows Server 2025. PR head: 71fbd5b24db60abad3c00af27f4824929dfbf60d; workflow ran the PR merge ref 612bf987d423501161533a8430066cd565a89ada. Project candidate and service/database temp paths were on D: RUNNER_TEMP; no project code was executed on the user's machine.
+- Parent package smoke job 123910523879: clean extraction, 20,119 payload files, archive SHA-256 104b8559ccf018846774f6c527dc6f9c7141e1623669a2a9c8b191b824655cf6; PG18.6/pgvector0.8.6 temporary lifecycle passed. Launcher reports six expected BLOCKED codes as one valid JSON line, exits 1, then emits the fixed refusal; no listener, service or product API started. Missing-diagnostic and corrupt-manifest fallback cases both passed; manifest was unchanged. A29 seven-case startup tamper matrix and A30 four-case diagnostic tamper matrix remained passing.
+- Same-run A17 job 123910809501 succeeded: 29 packaged PlanVersion Edge/HTTPS/PostgreSQL API operations, state IN_REVIEW, WBS/requirement/validation=(2,2,1), Review/Round IN_REVIEW, decisions=0, synthetic identities=true. Candidate remains release_eligible=false and legal_clearance=false.
+- Hash calculation now uses a bounded .NET SHA-256 stream helper in Windows PowerShell 5.1 for both checksum inventory and diagnostic script; digest format and equality rules are unchanged. The omission introduced during stage instrumentation and subsequent HASH_CHECKSUM_FILE failure remain recorded above as historical deviations.
+- A33 is PASS_LIMITED for blocked-launch feedback in the hosted non-release candidate. This does not validate positive production launch, Windows 11 hardware, real License trust, service account/ACL/TLS, installation/upgrade, Gate, Pilot or formal Release.

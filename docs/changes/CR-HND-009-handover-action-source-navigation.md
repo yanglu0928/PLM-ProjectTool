@@ -1,0 +1,108 @@
+# CR-HND-009：交接待办固定来源导航
+
+- 日期：2026-11-02
+- 状态：已登记，按既有持续授权执行；不改变 Gate 结论
+- 关联 WBS：PLT-PKG-01-A09-P51-A50
+- 来源：A50 前置审查发现 Action GET 只返回不可变来源版本 ID 与问题 ID，但没有父 Analysis ID；现有详情页面因此不能构造精确、可授权的来源路由。Survey 的来源定位和 Handover 的 Evidence Viewer 已证明按项目权限读取固定来源可行。
+- 冲突/证据：冻结的 HND Action GET 投影没有 parent analysis identity；前端严格校验 DTO；HandOver 详情路由需要 Project + Analysis ID，固定版本只能通过 `fixedVersionId` 查询选择。不能从 action 的两个 ID 猜测父分析，也不能遍历项目分析列表或拼接本地路径。
+- 方案：
+  1. 改数据库/API Action GET 已有 DTO，增加父 Analysis ID：改动少，但会改变冻结响应形状并要求旧严格客户端兼容处理。
+  2. 新增只读 Action 来源子资源，按当前已授权 Action 解析不可变来源链，返回受控的 Analysis/Version/Item ID；现有读权限重新验证，不写 DB、不改旧 Operation/投影。
+  3. 不提供跳转，只展示来源 ID：安全但不满足用户已确认的待办直达原文位置诉求。
+- 选择：方案 2。新增可选只读子资源 `GET /api/v1/projects/{project_id}/handover-action-items/{action_item_id}/source-location`，要求 Action GET 同等 Session、License、Project/member 读取授权；服务端从同 Project 的 Action → Version → Analysis Item 关系解析，禁止客户端传入/覆盖目标 ID。HUMAN 来源返回受控 UNAVAILABLE，不推造文档锚点。前端导航只使用返回的固定版本与问题 ID；目标页面对 Project/Analysis/Version/Item 再授权和严格核对。
+- 差异与影响：新增一个可选、只读 V1 子资源及客户端交互；既有 Operation 和数据库 Schema 不变，无 Migration、依赖或配置变化。普通应用仍不挂载，只有显式 Handover Action read router 组合可用。
+- 安全风险与控制：越权/跨项目/已失效来源泄漏；通过同等现有 Project 权限、项目条件 SQL、固定父版本一致性检查、统一隐藏 404、no-store 和后续目标 GET 复核降低风险。不返回正文、Evidence Locator、文件路径或下载 URL。
+- 回滚：移除该只读子路由/客户端按钮和目标页的可选 source item 导航参数；既有 Action GET、业务记录和历史确认保持不变。
+- 验证计划：云端 Hosted Windows runner 上运行后端读 Owner/API/Windows Composition 定向与全量测试；前端客户端/Action 工作台/HandOver 详情定向与全量 typecheck/build；托管 Edge 合成测试验证同项目跳转、跨项目拒绝、HUMAN 安全退化、失效版本/不存在 item 错误、列表翻页定位和动作后状态不丢。无客户数据；不进行本机代码运行、正式安装、服务启动、外部数据发送或 Gate 推定。
+- 本次变更不替代真实 Windows 11 设备验收，不关闭 Gate 3、Pilot 或 Release。
+
+## 云端验证偏差记录（修复前）
+
+- 2026-11-02 hosted run 41390769460：前端 Vitest 200 个文件/2,075 项通过；TypeScript 检查发现新增 Handover 目标锚点测试在 `DOMWrapper` 上调用类型不提供的 `.exists()`，造成构建失败。这是验证断言与组件测试库 API 的不兼容，不是运行时产品功能缺陷。
+- 影响：仅阻断该提交的前端 typecheck/build；当前证据不能标记 A50 通过。后端全量验证仍进行中。
+- 修复：只改测试断言为读取定位元素的 `id` 属性并与合成来源 Item ID 比对；不改产品逻辑、API、Schema、权限或用户数据。回滚可恢复原测试文本；无需迁移。
+- 复验：记录此偏差后，提交测试修正，重跑 GitHub hosted Windows PR 完整流水线，要求全量前端 tests/typecheck/build 与后端全量测试/wheel 成功；保留失败 run 和修复后 run 链接。
+
+## 云端验证偏差记录（二）：后端组合路由清单
+
+- 2026-11-02 hosted run 41391080344：前端全量 2,075 项、TypeScript 检查和生产构建通过；后端全量 3,850 项中 3,849 项通过，唯一失败为 `test_composes_two_read_routes_with_dedicated_key` 仍将 Windows 显式组合根的预期路由固定为两个，未包含本次新增的只读 `/source-location` 路由。
+- 影响：这是既有组合根清单测试未随新增可选 Operation 更新；不表示运行时授权或业务逻辑失败。后端全量不能标 PASS，后续依赖包任务被工作流跳过。
+- 修复：仅更新该测试预期路由列表，纳入 `/api/v1/projects/{project_id}/handover-action-items/{action_item_id}/source-location`；产品代码、Schema、权限合同和数据均不变。无迁移；回滚仅恢复旧断言。
+- 复验：本条先于测试代码修复写入；随后重新运行 GitHub Hosted PR 全量流水线。要求后端全量、wheel、前端全量/typecheck/build以及工作流适用的云端检查通过后才能关闭 A50。该 Windows runner 是托管 Server 2025，不构成真实 Windows 11 设备验收。
+
+## 2026-11-02 云端复验结果与剩余证据
+
+- 修正提交 `ae1c0455f0fdb7c54d4f9fe6b7364c8a5ae37c12` 的 GitHub hosted run [41391544470](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41391544470) 全12 jobs成功。后端全量3,850项、前端2,075项（200文件）、前端 typecheck/build 成功；PG18.6/pgvector0.8.6临时生命周期、父包离线替换/手动恢复及既有 A17 Packaged PlanVersion Edge/HTTPS/PG（29次 API调用）通过。
+- 父候选包摘要 `24f37f60eb1f95a893af829b796926873c02b55e4f0b7d4762486f8dc6db3eda`，payload 20,122项。PG/安装演练仅用本轮临时数据，产品 API/services 均未启动；正式 License trust未使用，legal_clearance/release_eligible均false。
+- 范围边界：A17仅为PlanVersion浏览器流程，不构成待办来源导航的专项 Edge 证据；因此A50记录为PASS_LIMITED，下一WBS A50-E01为 hosted Windows Edge 合成来源导航验收。该补充任务完成前不把A50提升为完整PASS。
+- 本轮没有在用户本机或其C盘运行程序；hosted验收runner将仓库/临时数据放在D盘runner temp。托管Windows Server 2025不推定Windows11实机兼容；Gate 3、Pilot、正式Release不变。
+
+## A50-E01 工作流表达式偏差记录（修复前）
+
+- 2026-11-02 提交 `b175d799d207dd36163c9e49dfe9313f3e3b3600` 的只读复核发现，新增 GitHub Actions job 的 `${{ runner.temp }}`/`${{ github.sha }}` 模板表达式保留了转义反斜杠，产物路径和 Artifact 名称可能不符合 Actions 求值语法。
+- 影响：仅影响新加 A50-E01 hosted Edge job 的 YAML表达式；产品代码和既有 workflow jobs 未变。尚未把 E01 标记为通过。
+- 修复：先记录后将表达式恢复为标准 Actions token，补上云端 Node 语法检查步骤；不改产品行为、API或数据库，无迁移。
+- 验证：由随后 GitHub hosted PR workflow 在 Windows runner 执行 harness；若 job 未触发或YAML校验失败，继续按日志记录和修复。
+
+### A50-E01 工作流上下文偏差（二，修复前）
+
+- 2026-11-02 hosted run 41393864311 因新增job的 `env` 在job层引用仅适用于step层的 `runner.temp`，GitHub未创建任何job，不能记为代码验收失败或通过。
+- 修复：先记录后移除job级TEMP/TMP，把 `TEMP`/`TMP` 限定到启动Edge harness的step级 `env`；Artifact/下载路径仍用允许的 `runner.temp` 表达式。工作流不接触客户数据、生产信任或用户设备。
+- 复验：提交后从 Actions API 确认新run实际生成A50专用job，再依据该job及前端构建结果验收。
+
+
+### A50-E01 合成待办排序偏差（三，修复前）
+
+- 2026-11-02 hosted run 41394132945 的 A50 Edge 专项 job 已在 GitHub 托管 Windows Server 2025 上启动；前端构建产物来源校验和 Node harness 语法检查均通过。浏览器加载“交接待办”列表时，因严格 DTO 客户端拒绝合成列表，超时后展示受控不可用状态；请求未进入待办详情与来源定位步骤。
+- 根因：四个合成摘要具有相同 updated_at，fixture 按 Action ID 升序排列，而生产读取客户端在更新时间相同情况下要求 Action ID 严格倒序。它是验收夹具不符合既有只读 API 合同，不是产品运行时故障；本次浏览器结果不能验收 A50-E01。
+- 修复计划：本条先登记，然后仅反转合成摘要顺序以满足既有排序合同；不修改产品代码、API、数据库、权限或客户数据，无迁移。回滚仅恢复原 fixture 顺序。
+- 复验计划：重新运行同一 GitHub hosted PR workflow，确认列表/详情、固定版本跨页定位、HUMAN 安全退化、跨项目拒绝及失效来源状态保留全部通过；保留本失败 run 作为审计记录。
+
+
+### A50-E01 合成 Action UUID 偏差（四，修复前）
+
+- 排序调整后的 hosted run 41394653375 仍在加载待办摘要时触发相同的受控不可用提示，表明前一条排序解释不足；该 run 的 Edge 专项 job 失败，不能验收 E01。
+- 复核严格 DTO 校验发现，fixture 中四个 Action ID 的末段均只有 10 个十六进制字符，不符合标准 UUID 的 8-4-4-4-12 结构。读取客户端因此拒绝合成摘要，早于详情/来源导航步骤。排序条件同时保留并已按更新时间相同则 ID 倒序调整。
+- 修复计划：本条先登记，然后将四个合成 Action ID 补齐为合法 12 位末段，并同步其所有引用；只改 isolated synthetic browser harness，不触及产品代码/API/Schema/客户数据，无迁移。回滚仅恢复旧 fixture ID。
+- 复验计划：重跑 GitHub hosted Windows PR workflow，要求通过浏览器真实列表加载后完成 Analysis 来源固定版本跨页定位、HUMAN 无定位控件、跨项目来源拒绝和失效来源状态保留；保留两个失败 run 作为审计轨迹。
+
+
+### A50-E01 浏览器验收等待条件偏差（五，修复前）
+
+- 2026-11-02 hosted run 41395061115 中，合法 UUID 的摘要列表已成功渲染，浏览器也已发出待办详情 GET；脚本随后报告找不到“定位原始问题和文档位置”按钮，因此 E01 仍不能验收。
+- 根因：harness 等待条件同时检查待办标题与“已提交待验证”状态文案；该状态文案已在列表摘要中出现，不能证明异步详情面板已经加载，导致对话框/来源按钮查询发生在详情响应完成前。上述失败为自动化等待条件过早，不构成产品功能结论。
+- 修复计划：本条先登记，然后将等待条件改成详情独有的“原始来源”及“需要维护的信息”区域和标题；仅改合成浏览器 harness，无产品行为/API/DB变化，无迁移。回滚恢复原等待条件。
+- 复验计划：云端 Windows Edge 重跑，确认真正详情面板可见后完成全套来源导航与 fail-closed 场景；保留失败 run。
+
+
+### A50-E01 详情响应 ETag 夹具偏差（六，修复前）
+
+- 2026-11-02 hosted run 41395339278 的合成列表加载成功，浏览器请求了分析待办详情，但详情面板未出现，脚本超时。全流程仍未到来源定位阶段，E01 不通过。
+- 根因：既有只读详情客户端除严格校验 DTO 外，还要求响应 ETag header 与详情正文中的 etag 完全相同；合成服务器当前只回正文，漏设该响应头，详情因此按安全规则失败关闭。这是 mock 合同不完整，不代表服务端实际缺陷。
+- 修复计划：先登记后，仅在合成 Action detail GET 中添加与正文一致的 ETag header；不改产品代码/API/DB/权限及客户数据，无迁移。回滚移除该合成响应头。
+- 复验计划：重跑 hosted Windows Edge 浏览器验证，要求详情加载并完成固定版本跨页定位及三类安全退化；保留失败 run。
+
+
+### A50-E01 Analysis 详情 ETag 夹具偏差（七，修复前）
+
+- 2026-11-02 hosted run 41395665552 已成功加载 Action 列表/详情、来源子资源，并跳转到正确的固定 Version 与目标 Item URL；目标页面显示项目交接分析读取失败，E01 仍不通过。
+- 复核现有 HandOver 读取客户端契约，Analysis 详情响应同样要求 ETag header 与正文 etag 匹配；合成服务仅在正文设置 etag，遗漏 HTTP ETag header，导致目标页按安全规则拒绝 Analysis。请求无客户数据。
+- 修复计划：先记录后，仅给合成 Analysis GET 添加与正文一致的 ETag header；不改产品实现、API、数据库或权限，无迁移。回滚移除该 header。
+- 复验计划：在 GitHub hosted Windows Edge 上重跑固定版本 Analysis 详情和 201 项跨页定位，以及 HUMAN/跨项目/过期来源场景；保留失败 run。
+
+
+### A50-E01 合成问题卡片 DTO 偏差（八，修复前）
+
+- 2026-11-02 hosted run 41396022079 已成功读取 Analysis、版本和固定版本目标页，但问题列表按既有 DTO 严格校验失败，导致页面没有呈现目标问题；E01 仍不通过。
+- 根因：fixture 将条目声明为 NEED_CONFIRM 却未提供至少两个合法选项；同时 source_missing=false 但 evidence_refs 为空。现有 Handover 读取客户端明确拒绝这两种不一致，按 fail-closed 预期处理；这是合成问题夹具偏差。
+- 修复计划：先记录后为全部合成 NEED_CONFIRM 问题补两项有效选项及最小合成 Evidence 引用，并把版本摘要的 evidence 计数同步为 1；只改 isolated harness fixture，无产品/API/DB/客户数据修改、无迁移。回滚恢复旧 fixture。
+- 复验计划：hosted Windows Edge 重新执行完整固定版本跨页定位及 HUMAN/跨项目/失效来源场景，保留失败 run。
+
+
+## A50-E01 最终云端验收结果（2026-11-02）
+
+- 最终 run：[41396427656](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41396427656)，13/13 jobs成功。分支代码提交 `bfb94cfa0a401b391793e01cbd15200bd2a46073`，PR合并测试提交由GitHub托管工作流生成；产物均以同一run来源标识。
+- A50-E01 Edge证据摘要：PASS_LIMITED；Microsoft Edge headless，GitHub hosted Windows Server 2025，D盘runner temp；synthetic_data=true、customer_data=false、external_api_calls=0、formal_license_trust=false。四项通过：分析待办跳到固定版本且在第二页找到精确Item并滚动；HUMAN不显示定位且不发来源请求；跨项目目标被拒并保留Action状态；失效来源失败关闭并保留Action详情。共3次Analysis/cross-project/expired source-location请求、2页固定Item查询。
+- 同run产品回归：后端3,850 tests与wheel成功；前端2,075 tests/200 files、typecheck、production build成功。Windows父包候选SHA-256 `238d6a53db0f5e7e9955020e6caeecbb5a8d445a0f2025eadca081638ff83237`，20,122 payload文件；PG18.6/pgvector0.8.6临时生命周期、A34离线替换/显式手动恢复及A17 PlanVersion Edge/HTTPS/PG（29次API）成功。
+- 云端失败偏差均先记录后修复，已在上文列明：Actions表达式/runner上下文、合成Action排序及UUID、详情等待竞态、Action/Analysis强ETag、NEED_CONFIRM选项和Evidence合同。失败尝试只说明workflow/harness fixture未满足既有上下文或DTO合同；没有据此更改产品API/数据库或Gate结论。最终E01专用job与其上传的合成证据Artifact成功。
+- 边界：结果限于托管Windows Server 2025+D盘runner temp；不等同Windows11实机、用户本机运行、正式安装、正式License trust、Gate 3、Pilot或Release通过。未使用客户数据、外部AI/API、生产服务或正式凭据。
