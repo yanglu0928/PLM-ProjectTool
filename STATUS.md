@@ -1,3 +1,8 @@
+|Execution Note|2026-11-07 Hosted run [42364926754](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42364926754)：PLG-03-A08 PG18与Backend/Frontend通过；父包链在PLG-02拒绝降级后head诊断中未触发断言，说明0233预期下head保持检查通过，关闭该疑点。随后PLG-03 schema verifier源码仍要求head 0232，触发DDL constraints/guards/additive mismatch；先记录后仅改其当前head期望为0233复验。P40/P25未通过；SUR-07-A08仍为initdb与未应用TEMP探针均3221225781，按CR-EXEC-039停止。|
+|Current WBS|父包PG18共享迁移验收脚本更新：PLG-03 schema verifier当前head断言0232→0233。|
+|Current WBS Status|A08 PASS_SCOPE_LIMITED并复验；P40/P25等待全父包PG smoke通过。PLG-02 rollback保护在head=0233时通过；当前父包烟测因PLG-03下游验证器head过期而失败，不代表迁移DDL失败。SUR-07-A08独立环境阻塞，不复用失败TEMP探针。|
+|Next WBS|更新validation/plg-03-a01-execution-schema/verify.py升级后head期望为20261106_0233，保留head前后约束检查；Hosted smoke全链验证，随后返回STATUS原路线。|
+
 |Execution Note|2026-11-07 Hosted run [42363588328](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42363588328)：PLG-03-A08 job 128378836416再次成功，A17 packaged PlanVersion成功；Backend/wheel、Frontend/build、PG18/runtime/父包组装成功。父包PG smoke在PLG-02 rollback refusal 后head检查失败；此前以0232旧期望解释，但已将期望改为0233仍复现，实际revision未打印，根因未定。已先记录只加synthetic PG18有限revision诊断，再按证据决定，禁止放松降级保护。SUR-07-A08因initdb.exe 3221225781且TEMP探针同错未应用，按CR-EXEC-039维持停止。|
 |Current WBS|PLG-03-A08 PASS_SCOPE_LIMITED；当前独立推进P40父包PG smoke rollback/head诊断，不把父包/P40标PASS。|
 |Current WBS Status|A08 PG18 marker重复通过；P40父包PG smoke仍未通过，PLG-02拒绝降级后的实际Alembic revision未知。SUR-07-A08 Windows环境路径独立失败；其它平台链未据此推定。|
