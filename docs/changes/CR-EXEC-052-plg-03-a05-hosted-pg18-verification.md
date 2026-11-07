@@ -48,3 +48,8 @@ Hosted run [42326604885](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## 首轮 Hosted 验收偏差（修正前记录）
 
 Hosted run [42329871400](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42329871400) 的新增A05 job在PG初始化前失败：复用的parent staging helper要求提取目标为RUNNER_TEMP的直接子目录，而首轮脚本将其放在本run根目录下的子目录。失败发生于路径边界检查，没有启动PG、没有调用Owner、没有产品代码副作用或外发数据。修正为同一个run拥有的D盘RUNNER_TEMP两个直接子目录（受校验包暂存目录、PG运行目录），并对二者分别验证边界后清理；随后重新Hosted复验。
+
+
+## 第二轮 Hosted 验收偏差（修正前记录）
+
+Hosted run [42330769351](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42330769351) 已通过路径暂存边界并校验父包，随后 packaged initdb.exe 返回非零，stdout/stderr均为空；PG尚未启动、数据库尚未创建，因此Owner未被调用。现有验证辅助函数只回显空输出，遗漏numeric process exit code，无法区分原生加载失败与其他初始化拒绝。此失败属于新建验收器/运行输入诊断，未证明产品Owner失败。实施前记录诊断调整：固定输出子进程basename与数值exit code，将该步骤Stage写入仅合成摘要；不回显任意环境或用户内容，不改产品代码。之后Hosted D盘重跑。

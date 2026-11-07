@@ -3011,3 +3011,5 @@
 - 2026-11-07 CR-EXEC-052 已先记录A05 PG18证据缺口与验证方案；本提交新增独立PG18验收器/job，使用同run受校验父包的PG18，仅合成身份和Output admission port，不调用ProcessHost或生产Worker。本机/C盘未运行。
 
 - 2026-11-07 A05首次独立Hosted验收 job在PG启动前因父包staging目标不是RUNNER_TEMP直接子目录而安全拒绝（run [42329871400](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42329871400)）；未执行Owner、未触碰项目/客户数据。已按CR-EXEC-052先记录路径边界复核，当前WBS仍未完成。
+
+- 2026-11-07 第二轮A05 PG18 job(run [42330769351](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42330769351))通过候选暂存后，packaged initdb.exe退出非零且无stdout/stderr；验收脚本遗漏exit code，故数据库未启动、Admission Owner未调用。先记CR-EXEC-052，需补受限进程阶段/数值退出码诊断后再复验；WBS仍未完成。
