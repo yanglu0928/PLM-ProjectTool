@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import ctypes
 import hashlib
+import io
 import json
 import os
+import re
+import runpy
 import shutil
 import socket
 import sys
@@ -727,6 +731,7 @@ def main() -> int:
     parser.add_argument("--summary-out", type=Path, required=True)
     parser.add_argument("--p25-initdb-profile-diagnostic", action="store_true")
     parser.add_argument("--retain-parent-extraction-for-p25", action="store_true")
+    parser.add_argument("--prt-hosted-load", action="store_true")
     args = parser.parse_args()
     if args.retain_parent_extraction_for_p25 and not args.p25_initdb_profile_diagnostic:
         parser.error("--retain-parent-extraction-for-p25 requires the P25 diagnostic")
@@ -875,6 +880,7 @@ def main() -> int:
     result = {}
     p25_initdb_profile_diagnostic = None
     p41_source_validation = None
+    prt_load_validation = None
     try:
         if args.p25_initdb_profile_diagnostic:
             probe_root = root / "p25-initdb-profile-diagnostic"
@@ -1116,6 +1122,63 @@ def main() -> int:
             output_completion_run.stdout.strip().splitlines()[-1])
         if output_completion_validation.get("status") != "PASS_SCOPE_LIMITED":
             raise RuntimeError("Output generation completion validation failed")
+        if args.prt_hosted_load:
+            prt_dir = ROOT / "validation/prt-01-a11-a05-p04-read-load"
+            sys.path.insert(0, str(prt_dir))
+            captured = io.StringIO()
+            previous_pg_source = os.environ.get("PLM_PRT_PG_SOURCE")
+            os.environ["PLM_PRT_PG_SOURCE"] = str(pg)
+            try:
+                prt = runpy.run_path(str(prt_dir / "verify.py"))
+                with contextlib.redirect_stdout(captured):
+                    prt_load_validation = prt["run"](
+                        reuse_postgres=("127.0.0.1", port, "postgres"),
+                        host_resource_diagnostic=True,
+                    )
+            except Exception:
+                print(captured.getvalue(), end="")
+                raise
+            finally:
+                if previous_pg_source is None:
+                    os.environ.pop("PLM_PRT_PG_SOURCE", None)
+                else:
+                    os.environ["PLM_PRT_PG_SOURCE"] = previous_pg_source
+                if sys.path and sys.path[0] == str(prt_dir):
+                    sys.path.pop(0)
+            output = captured.getvalue()
+            print(output, end="")
+            load_metrics = []
+            for entry in output.splitlines():
+                match = re.match(
+                    r"^PRT_A05_P04_READ_LOAD_SUMMARY mode=([A-Z0-9_]+) "
+                    r"(PROTOTYPE_[A-Z0-9_]+) median_round_p95_ms=([0-9]+(?:\.[0-9]+)?)$",
+                    entry,
+                )
+                if match:
+                    load_metrics.append({
+                        "mode": match.group(1), "measure": match.group(2),
+                        "median_round_p95_ms": float(match.group(3)),
+                    })
+            if len(load_metrics) < 2:
+                raise RuntimeError("Bounded Prototype load metrics missing")
+            resource_line = next(
+                (line.split("=", 1)[1] for line in output.splitlines()
+                 if line.startswith("PRT_HOST_RESOURCE_SUMMARY=")), None
+            )
+            resource_summary = json.loads(resource_line) if resource_line else None
+            if not resource_summary or resource_summary.get("status") != "AVAILABLE":
+                raise RuntimeError("Windows host resource summary missing or unavailable")
+            prt_load_validation = {
+                "wbs": "PRT-01-A11-A05-P04-P26",
+                "status": "PASS_LIMITED",
+                "scope": "synthetic Hosted Windows Server 2025; parent PG18 lifecycle",
+                "reuse_parent_pg18_service": True,
+                "isolated_prt_database": True,
+                "prototype_load_p95": load_metrics,
+                "resource_summary": resource_summary,
+                "performance_gate_passed": False,
+                "release_eligible": False,
+            }
         if version != "18.6" or vector_version != "0.8.6":
             raise ValueError("PostgreSQL/pgvector runtime identity mismatch: "
                              + version + "/" + vector_version)
@@ -1158,6 +1221,7 @@ def main() -> int:
             "p25_initdb_profile_diagnostic": p25_initdb_profile_diagnostic,
             "output_migration_lifecycle": migration_lifecycle,
             "plan_output_source_pg18": p41_source_validation,
+            "prt_hosted_load": prt_load_validation,
         }
     finally:
         if start_attempted and data_dir.is_dir():

@@ -129,6 +129,7 @@ workflow_fixture = runpy.run_path(str(
 connect, seed_dependencies = base["connect"], base["seed_dependencies"]
 seed_user, insert_evidence = base["seed_user"], base["insert_evidence"]
 Guard, CSRF = base["Guard"], base["CSRF"]
+HOST, PORT, USER = "127.0.0.1", 55434, "poc_admin"
 ORIGIN = "http://localhost"
 ITEMS = ("REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE")
 
@@ -149,8 +150,8 @@ def main(*, after_prototype=None, include_second: bool = False,
     runtime = None
     try:
         url = URL.create(
-            "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
-            port=55434, database=database,
+            "postgresql+psycopg", username=USER, host=HOST,
+            port=PORT, database=database,
         )
         cfg = create_migration_config(url)
         command.upgrade(cfg, "head")

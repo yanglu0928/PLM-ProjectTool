@@ -743,147 +743,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  prt-a05-p25-hosted-load:
-    name: PRT Prototype 20-concurrent load with bounded host metrics
-    needs: [backend, rebuild-pg18-sidecar]
-    runs-on: windows-2025
-    timeout-minutes: 120
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: pip
-          cache-dependency-path: apps/backend/pyproject.toml
-      - name: Install backend and test dependencies
-        working-directory: apps/backend
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[test]"
-      - name: Download same-run rebuilt PostgreSQL 18 sidecar
-        uses: actions/download-artifact@v4
-        with:
-          name: plm-pg18-rebuilt-sidecar-${{ github.sha }}
-          path: ${{ runner.temp }}/plm-prt-p25-sidecar
-      - name: Run bounded 20-concurrent Prototype verifier
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $tempRoot = [IO.Path]::GetFullPath($env:RUNNER_TEMP)
-          $workspace = [IO.Path]::GetFullPath($env:GITHUB_WORKSPACE)
-          if ([IO.Path]::GetPathRoot($tempRoot) -cne "D:\" -or [IO.Path]::GetPathRoot($workspace) -cne "D:\") { throw "PRT validation must remain on runner D drive" }
-          $owned = Join-Path $tempRoot ("plm-prt-p25-" + $env:GITHUB_RUN_ID)
-          $report = Join-Path $tempRoot ("plm-prt-p25-summary-" + $env:GITHUB_RUN_ID + ".json")
-          if (Test-Path -LiteralPath $owned) { throw "Owned PRT temp root already exists" }
-          New-Item -ItemType Directory -Path $owned | Out-Null
-          try {
-            $sidecarRoot = Join-Path $tempRoot "plm-prt-p25-sidecar"
-            $archive = Get-ChildItem -LiteralPath $sidecarRoot -Filter "NOT-FOR-RELEASE-windows-pg18-pgvector-runtime.zip" | Select-Object -First 1
-            $hashFile = Join-Path $sidecarRoot "sidecar-sha256.json"
-            if (-not $archive -or -not (Test-Path -LiteralPath $hashFile)) { throw "Same-run PG18 sidecar evidence missing" }
-            $expectedHash = (Get-Content -LiteralPath $hashFile -Raw | ConvertFrom-Json).Hash
-            $actualHash = (Get-FileHash -LiteralPath $archive.FullName -Algorithm SHA256).Hash
-            if ($actualHash -cne $expectedHash) { throw "Same-run PG18 sidecar hash mismatch" }
-            $extract = Join-Path $owned "sidecar"
-            Expand-Archive -LiteralPath $archive.FullName -DestinationPath $extract
-            $manifest = Get-Content -LiteralPath (Join-Path $extract "manifest.json") -Raw | ConvertFrom-Json
-            if ($manifest.kind -ne "WINDOWS_PG18_PGVECTOR_RUNTIME_NON_RELEASE_REBUILT" -or $manifest.postgresql_version -ne "18.6" -or $manifest.pgvector_version -ne "0.8.6" -or $manifest.release_eligible -ne $false) { throw "PG18 sidecar manifest is not the expected non-release candidate" }
-            $pg = Join-Path $extract "payload\pgsql"
-            if (-not (Test-Path -LiteralPath (Join-Path $pg "bin\initdb.exe")) -or -not (Test-Path -LiteralPath (Join-Path $pg "lib\vector.dll"))) { throw "PG18/pgvector payload is incomplete" }
-            $env:PLM_PRT_PG_SOURCE = $pg
-            $env:TEMP = $tempRoot
-            $env:TMP = $tempRoot
-            $raw = Join-Path $owned "bounded-verifier-output.txt"
-            Push-Location $workspace
-            try {
-              python -B validation/prt-01-a11-a05-p04-read-load/verify.py --host-resource-diagnostic *> $raw
-              $exit = $LASTEXITCODE
-            } finally {
-              Pop-Location
-            }
-            $rawLines = @(Get-Content -LiteralPath $raw)
-            if ($exit -ne 0) {
-              $exceptionClass = "UNKNOWN"
-              foreach ($entry in $rawLines) {
-                if ($entry -match "^([A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))(?::|$)") { $exceptionClass = $Matches[1]; break }
-              }
-              $failedCommand = ""
-              $processExitCode = $null
-              $failureClass = "UNKNOWN"
-              foreach ($entry in $rawLines) {
-                if ($entry -match "isolated PostgreSQL command failed: ([A-Za-z0-9_.-]+) exit_code=(-?[0-9]+) failure_class=([A-Z0-9_]+)") {
-                  $failedCommand = $Matches[1]
-                  $processExitCode = [long]$Matches[2]
-                  $failureClass = $Matches[3]
-                  break
-                }
-              }
-              $frames = @()
-              foreach ($entry in $rawLines) {
-                if ($entry -match 'File "([^"]+)", line ([0-9]+)') {
-                  $frames += (([IO.Path]::GetFileName($Matches[1])) + ":" + $Matches[2])
-                  if ($frames.Count -ge 8) { break }
-                }
-              }
-              $markerNames = @()
-              foreach ($entry in $rawLines) {
-                if ($entry -match "^((?:PRT|REQ)_[A-Z0-9_]+)") { $markerNames += $Matches[1] }
-              }
-              $failure = @{
-                wbs = "PRT-01-A11-A05-P04-P25"
-                status = "FAILURE_DIAGNOSTIC"
-                exit_code = [int]$exit
-                exception_class = $exceptionClass
-                failed_command = $failedCommand
-                process_exit_code = $processExitCode
-                failure_class = $failureClass
-                source_frames = $frames
-                marker_names = $markerNames
-                raw_output_uploaded = $false
-              }
-              $failureJson = $failure | ConvertTo-Json -Depth 5 -Compress
-              Set-Content -LiteralPath $report -Value $failureJson -Encoding utf8
-              Write-Output ("PRT_P25_FAILURE_SUMMARY=" + $failureJson)
-              throw "PRT 20-concurrent verifier failed; see bounded summary"
-            }
-            $line = Select-String -LiteralPath $raw -Pattern "^PRT_HOST_RESOURCE_SUMMARY=" | Select-Object -Last 1
-            if (-not $line) { throw "Bounded resource summary missing" }
-            $metrics = $line.Line.Substring("PRT_HOST_RESOURCE_SUMMARY=".Length) | ConvertFrom-Json
-            if ($metrics.status -ne "AVAILABLE" -or $metrics.sample_count -lt 2) { throw "Windows host counters unavailable or insufficient" }
-            if (-not (Select-String -LiteralPath $raw -Pattern "REQ_01_A12_A05_WORKFLOW_PG_PASS" -Quiet)) { throw "Prototype workflow success marker missing" }
-            $loadMetrics = @()
-            foreach ($entry in $rawLines) {
-              if ($entry -match "^PRT_A05_P04_READ_LOAD_SUMMARY mode=([A-Z0-9_]+) (PROTOTYPE_[A-Z0-9_]+) median_round_p95_ms=([0-9]+(?:\.[0-9]+)?)$") {
-                $loadMetrics += @{ mode = $Matches[1]; measure = $Matches[2]; median_round_p95_ms = [double]$Matches[3] }
-              }
-            }
-            if ($loadMetrics.Count -lt 2) { throw "Bounded Prototype load metrics missing" }
-            @{
-              wbs = "PRT-01-A11-A05-P04-P25"
-              status = "PASS_LIMITED"
-              scope = "synthetic Hosted Windows Server 2025"
-              verifier_success = $true
-              resource_summary = $metrics
-              prototype_load_p95 = $loadMetrics
-              performance_gate_passed = $false
-              release_eligible = $false
-            } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $report -Encoding utf8
-            Write-Output "PRT_P25_HOSTED_20_CONCURRENT_PASS_LIMITED"
-            Write-Output ("PRT_HOST_RESOURCE_SUMMARY=" + ($metrics | ConvertTo-Json -Compress))
-          } finally {
-            $rootPrefix = $tempRoot.TrimEnd("\") + "\"
-            if ($owned.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $owned)) { Remove-Item -LiteralPath $owned -Recurse -Force }
-          }
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: prt-p25-hosted-resource-summary-${{ github.sha }}
-          path: ${{ runner.temp }}/plm-prt-p25-summary-${{ github.run_id }}.json
-          if-no-files-found: error
-          retention-days: 14
-
   smoke-parent-postgresql:
-    name: Clean extraction, PG18 lifecycle, and P40 live Edge download
+    name: Clean extraction, PG18 lifecycle, PRT load, and P40 live Edge
     needs: [assemble-parent-candidate, frontend]
     runs-on: windows-2025
     timeout-minutes: 60
@@ -905,15 +766,17 @@ jobs:
         with:
           name: plm-frontend-dist-${{ github.sha }}
           path: ${{ runner.temp }}/plm-out-p40-frontend
-      - name: Install minimal migration verification dependencies
+      - name: Install backend and verification dependencies
+        working-directory: apps/backend
         shell: pwsh
         env:
           PIP_CACHE_DIR: ${{ runner.temp }}/plm-migration-pip-cache
           TEMP: ${{ runner.temp }}
           TMP: ${{ runner.temp }}
         run: |
-          python -m pip install --disable-pip-version-check "Alembic==1.20.0" "SQLAlchemy==2.0.54" "psycopg[binary]==3.3.5" "pgvector==0.5.0" "fastapi==0.141.1" "cryptography==50.0.1" "uvicorn==0.53.0"
-          if ($LASTEXITCODE -ne 0) { throw "Migration verifier dependency install failed" }
+          python -m pip install --disable-pip-version-check --upgrade pip
+          python -m pip install -e ".[test]"
+          if ($LASTEXITCODE -ne 0) { throw "Parent PG/PRT verification dependency install failed" }
       - name: Verify P40 same-run frontend provenance on D-drive
         shell: pwsh
         run: |
@@ -926,8 +789,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "P39/P40 Edge harness syntax failed" }
           python -B -c "import ast,pathlib; ast.parse(pathlib.Path('validation/out_01_a01_p40_live_edge_download/verify.py').read_text(encoding='utf-8')); ast.parse(pathlib.Path('validation/out-01-a01-p33-output-completion/verify.py').read_text(encoding='utf-8'))"
           if ($LASTEXITCODE -ne 0) { throw "P40 Python harness syntax failed" }
-      - name: Extract on runner temp and smoke PostgreSQL/pgvector
+      - name: Extract on runner temp, smoke PostgreSQL/pgvector, and measure PRT load
         shell: pwsh
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
         run: |
           $env:PLM_P40_EDGE_DIST = Join-Path $env:RUNNER_TEMP "plm-out-p40-frontend"
           $work = Join-Path $env:RUNNER_TEMP ("plm-parent-pg-smoke-" + $env:GITHUB_RUN_ID)
@@ -935,7 +801,7 @@ jobs:
           $archive = Get-ChildItem (Join-Path $env:RUNNER_TEMP "plm-parent-smoke-input") -Filter "*.zip" | Select-Object -First 1
           $summary = Join-Path $env:RUNNER_TEMP "plm-parent-smoke-input/verification-summary.json"
           if (-not $archive -or -not (Test-Path $summary)) { throw "Parent candidate artifact is incomplete" }
-          python .\tools\smoke_windows_parent_package_pg_cloud.py --archive $archive.FullName --verification-summary $summary --work-root $work --summary-out (Join-Path $out "pg-smoke.json")
+          python .\tools\smoke_windows_parent_package_pg_cloud.py --archive $archive.FullName --verification-summary $summary --work-root $work --summary-out (Join-Path $out "pg-smoke.json") --prt-hosted-load
           if ($LASTEXITCODE -ne 0) { throw "Parent package PostgreSQL smoke failed" }
       - name: Upload bounded PostgreSQL smoke and P40 Edge evidence
         uses: actions/upload-artifact@v4

@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（PRT负载接入父包 PG18 生命周期；验证待完成）
+
+- 按 CR-PRT-007 将 PRT 20 并发 Prototype 负载安排在父包 Hosted PostgreSQL 18 生命周期内执行，每次创建专属临时数据库并保留固定性能门槛。
+- PRT 不再独立调用 initdb；workflow 合并进父包 smoke job。代码已同步，Hosted 验收未完成，性能 Gate 仍未通过，Gate 3/Pilot/Release 状态不变。
+
 ## Unreleased · 2026-11-07（Gate 3 当前证据重排；非发行版本）
 
 - 新增GATE-3-A03证据重排：Gate 3保持BLOCKED，Pilot保持NOT_READY。run 42374803790为20/22 jobs成功；PRT完整负载未执行、P95无新值，独立SUR-07-A08 initdb失败；同轮父包PG18/P40仅按范围通过。
@@ -96,7 +101,10 @@
 - Hosted run [42350824543](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42350824543) A06专项PG18 job、Backend全量/wheel及前端构建通过；A06恢复验收PASS_SCOPE_LIMITED，workflow其他独立作业未据此宣称全绿。
 - 下一项PLG-03-A07，按CR-EXEC-054预检实施共享事务不可重试失败原子终态。
 
-## Unreleased · 2026-11-07（CR-EXEC-055：恢复A06验收实现）\n- 发现 481e4bf 删除了A06验收代码与专用Hosted job，但保留历史PASS记录；先恢复已验收源提交内容并在GitHub Hosted复验，再继续A07。\n\n## Unreleased · 2026-11-07（CR-EXEC-053：PLG-03-A06 PENDING→RUNNING）
+## Unreleased · 2026-11-07（CR-EXEC-055：恢复A06验收实现）
+- 发现 481e4bf 删除了A06验收代码与专用Hosted job，但保留历史PASS记录；先恢复已验收源提交内容并在GitHub Hosted复验，再继续A07。
+
+## Unreleased · 2026-11-07（CR-EXEC-053：PLG-03-A06 PENDING→RUNNING）
 - PLG-03-A06 PASS_SCOPE_LIMITED：有效Job fencing下，PluginExecution状态/事件/Audit同一PG18 UoW原子写；Audit故障回滚；精确输出请求/上下文绑定，重放与失效claim拒绝验证通过。
 - Hosted run [42348507961](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42348507961) Backend/wheel、Frontend/build、P40、A34、A06通过；A08仍因initdb 3221225781独立失败。无插件/Worker/API/Schema/Migration，不能宣称Pilot或Release通过。
 - 下一项 PLG-03-A07 先处理不可重试 PluginExecution failure 与 Output/Jobs 的同事务终态。
@@ -605,7 +613,8 @@
 
 - OUT-01-A01-P29 按 CR-OUT-025 新增内部Output生成启动Owner：同事务验证当前Output lease，并将精确绑定的QUEUED请求转为GENERATING、设置execution ref/lock_version及SYSTEM Audit；同执行重放幂等。并发锁顺序已按CR记录统一为Output→Jobs。
 - 新增Owner单测与隔离PostgreSQL hosted verifier；不新增Schema/Migration/API/default挂载，不运行Worker/插件、不生成文件。变更限GitHub hosted Windows 2025 D盘runner，未在用户本机或C盘运行。
-- 首轮 hosted run 41948211782：后端4036 tests/wheel、前端/build、PG18/pgvector通过；父包 smoke 在P29 verifier前因结果字典字面量\\n语法错误失败。已记录CR-OUT-025并修复工具脚本，等待完整重验；此结果不代表P29通过。
+- 首轮 hosted run 41948211782：后端4036 tests/wheel、前端/build、PG18/pgvector通过；父包 smoke 在P29 verifier前因结果字典字面量\
+语法错误失败。已记录CR-OUT-025并修复工具脚本，等待完整重验；此结果不代表P29通过。
 - 第二轮 hosted run 41949611412 的PG smoke verifier在启动业务断言前因2个合成fixture被按5个变量解包失败；偏差已记CR并修复，等待完整复验。
 - 第三轮 hosted run 41951315834进入真实PG18断言后发现旧token用例仍传当前ClaimedJob；偏差已记CR并修复为实际过期/重领以产生前序正token，等待完整复验。
 - OUT-01-A01-P29最终按PASS_SCOPE_LIMITED完成，证据为完整Hosted run [41953529123](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/41953529123)。PG18验证有效绑定原子启动、错worker/旧token/错request拒绝、同执行幂等、SYSTEM Audit身份和Audit失败回滚；父包PG smoke、A17、A34、A35、A50成功。后端4036 tests/wheel、前端/build、PG18/pgvector通过。

@@ -44,3 +44,9 @@ B. 在新的独立 WBS 中，让 PRT 只在父包 PG18 服务运行期间创建�
 ## 实施授权
 
 此项属于用户 2026-09-24 起持续自主开发授权下，已记录的最小可回滚验收 harness 调整。记录同步至 GitHub 后可按 PRT-01-A11-A05-P04-P26 实施，无需重复等待普通任务批准。所有通过结论必须限定于实际证据。
+
+## 实施记录（2026-11-07）
+
+- PRT verifier 增加受控 loopback 父 PostgreSQL 复用模式；Requirement 回调的数据库和应用连接参数继承当前 Hosted smoke 的本轮端口/角色。
+- PRT 与父烟测共享临时 PG 服务，但业务负载仍在 Requirement verifier 创建的唯一数据库中；复用模式跳过 initdb 与 pg_ctl 停止/清理，仅清理本任务拥有的文件目录，数据库由 Requirement verifier 的 finally 删除。
+- GitHub Actions 将 PRT load 移入父包 PG18/P40 同 runner smoke job，并安装 backend 测试依赖。首次 Hosted 验收待本次代码提交后进行；以上为实现内容，不代表通过。

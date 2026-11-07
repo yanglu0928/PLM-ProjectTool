@@ -16,6 +16,30 @@ approved = runpy.run_path(str(
 ))
 
 
+def run(*, reuse_postgres: tuple[str, int, str],
+        host_resource_diagnostic: bool = True) -> dict:
+    observer = ResourceObserver() if host_resource_diagnostic else None
+    if observer is not None:
+        observer.start()
+    try:
+        approved["main"](
+            read_load=True,
+            network_load=True,
+            external_client=True,
+            external_pool_comparison=True,
+            reuse_postgres=reuse_postgres,
+        )
+    finally:
+        metrics = observer.stop() if observer is not None else {"status": "NOT_REQUESTED"}
+        if observer is not None:
+            print(
+                "PRT_HOST_RESOURCE_SUMMARY="
+                + json.dumps(metrics, sort_keys=True, separators=(",", ":"))
+            )
+    return {"status": "PASS_LIMITED", "resource_summary": metrics,
+            "release_eligible": False, "performance_gate_passed": False}
+
+
 if __name__ == "__main__":
     allowed = {
         (), ("--sql-diagnostic",), ("--network",), ("--phase-diagnostic",),
