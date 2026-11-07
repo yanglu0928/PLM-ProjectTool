@@ -1,3 +1,8 @@
+## Unreleased · 2026-11-07（CR-EXEC-048：定位 Windows suspended-start 标志）
+
+- Hosted run [42319306937](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42319306937) 的安全诊断均为 `stage=thread_resume;native=0`。原因是 CPython subprocess 未导出 `CREATE_SUSPENDED`，原默认值表达式退化为 0，子进程实际未暂停。
+- 已把根因和实施修正先记入 CR-EXEC-048。下一次提交显式使用 Win32 标志值 `0x00000004`，再验证 Job Object 归属及 descendant 超时清理；PLG-03-A02 仍 INCOMPLETE。
+
 ## Unreleased · 2026-11-07（CR-EXEC-048：Windows 插件启动 containment 首轮失败）
 
 - Hosted Windows 首轮复验 [42318583193](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42318583193) 中，新增 descendant containment 调整导致 7 项 Host 测试有 5 failures、2 errors，均在 Windows 进程启动路径返回固定 `PLUGIN_PROCESS_START_FAILED`；PLG-03-A02 暂不通过。
