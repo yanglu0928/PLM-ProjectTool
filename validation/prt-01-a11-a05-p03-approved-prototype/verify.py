@@ -1504,10 +1504,6 @@ def main(*, mixed_not_required: bool = False,
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
         if probe.connect_ex(("127.0.0.1", PORT)) == 0:
             raise RuntimeError("port 55434 is occupied; existing PostgreSQL untouched")
-    temp_root = Path(tempfile.gettempdir()).resolve(strict=True)
-    scratch = Path(tempfile.mkdtemp(prefix="plm-prt-a05-p03-", dir=temp_root)).resolve()
-    if not scratch.is_relative_to(temp_root) or not str(scratch).isascii():
-        raise RuntimeError("isolated ASCII temporary PostgreSQL path required")
     install = PG_SOURCE.resolve(strict=True)
     if not install.is_dir() or install.is_symlink() or not install.is_relative_to(ROOT.resolve()):
         raise RuntimeError("verified PostgreSQL runtime must remain inside the repository fixture root")
@@ -1523,7 +1519,12 @@ def main(*, mixed_not_required: bool = False,
         raise RuntimeError("verified PostgreSQL/pgvector runtime files are incomplete")
     if not any(extension_dir.glob("vector--*.sql")):
         raise RuntimeError("verified pgvector SQL extension scripts are missing")
+    temp_root = Path(tempfile.gettempdir()).resolve(strict=True)
+    scratch = Path(tempfile.mkdtemp(prefix="plm-prt-a05-p03-", dir=temp_root)).resolve()
+    if not scratch.is_relative_to(temp_root) or not str(scratch).isascii():
+        raise RuntimeError("isolated ASCII temporary PostgreSQL path required")
     data, log = scratch / "data", scratch / "postgres.log"
+    try:
         _run([str(binaries / "initdb.exe"), "-D", str(data), "-U", "poc_admin",
               "-A", "trust", "--no-locale", "-E", "UTF8"])
         _run([str(binaries / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
