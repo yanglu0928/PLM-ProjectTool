@@ -2,7 +2,7 @@
 
 - 日期：2026-11-07
 - 阶段/WBS：Phase 2 Platform Core / PLG-03-A06 recovery
-- 状态：偏差及恢复方案预先登记；恢复与Hosted复验待执行
+- 状态：恢复及Hosted专项复验 PASS_SCOPE_LIMITED
 - 发现提交：481e4bf335ea20b716144a075654398246f134da
 - 受影响基线：CR-EXEC-053、A06结果记录、验收源提交 e51389455c165e5081a9d72f61b800c13dbe549a
 
@@ -28,3 +28,9 @@ Schema/API/Migration/默认Worker/ProcessHost/生产信任：不变。
 - 先恢复A06实现、测试、验证器和Hosted job原文；保留481e4bf之后其余PR内容。
 - Hosted A06与全量回归复验通过后，继续已完成预检查的PLG-03-A07；若失败先记录证据并修复A06恢复本身。
 - 不运行本机项目代码；所有验收只用GitHub Hosted合成数据。
+
+## 恢复验收结果（2026-11-07）
+
+- 恢复提交 1bf3eb8e19d72ed4b37ca64c305eb35709296791 按源提交 e51389455c165e5081a9d72f61b800c13dbe549a 恢复 A06 Owner、Repository、单测、PG18 verifier 与 workflow job；保留恢复提交之前PR树中其他内容。恢复源码与该源提交对应文件一致。
+- GitHub Hosted run [42350824543](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42350824543) 的 A06 job [128340182737](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42350824543)成功，PG18.6真实事务marker为 PLG_03_A06_PG18_PASS；Backend全量测试/wheel、Frontend/build也成功。A06恢复验收结论 PASS_SCOPE_LIMITED。
+- 该workflow其余独立任务当时仍在运行；因此不记录整run全绿。A08仍为独立未通过项。无Schema/API/Migration/Worker/ProcessHost或trust变化；仅Hosted Windows Server 2025/D盘。
