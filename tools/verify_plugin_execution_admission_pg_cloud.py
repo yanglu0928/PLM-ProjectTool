@@ -16,7 +16,7 @@ import psycopg
 from sqlalchemy import URL, create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "apps/backend/src"))
 
 from plm_assistant.modules.audit.application.audit_service import AuditService
@@ -69,7 +69,7 @@ def _checked(args: list[str], timeout: int = 180) -> str:
 def _seed(engine, *, user_id: uuid.UUID, project_id: uuid.UUID,
           job_id: uuid.UUID, context_id: uuid.UUID, request_id: uuid.UUID,
           package_id: uuid.UUID, install_id: uuid.UUID, trace_id: uuid.UUID,
-          worker: str, operation: str) -> None:
+          worker: str, operation: str, seed_plugin: bool) -> None:
     token = 19
     with engine.begin() as conn:
         conn.execute(text(
@@ -118,33 +118,34 @@ def _seed(engine, *, user_id: uuid.UUID, project_id: uuid.UUID,
         ), {"id": request_id, "project": project_id, "template": uuid.uuid4(),
             "operation": operation, "context": context_id, "job": job_id,
             "key": "plg03-a05-output-" + job_id.hex, "trace": trace_id, "user": user_id})
-        conn.execute(text(
-            "INSERT INTO plm.plg_packages "
-            "(plugin_package_id,plugin_id_normalized,plugin_version,package_sha256,"
-            "manifest_snapshot,signature,signer_key_ref,compatibility_policy_ref,"
-            "package_state,verified_at) "
-            "VALUES (:id,'synthetic.admission','1.0.0',decode(repeat('4c',32),'hex'),"
-            "'{\"schema_version\":1}'::jsonb,decode('01','hex'),'synthetic-only',"
-            "'synthetic.compat.v1','VERIFIED',statement_timestamp())"
-        ), {"id": package_id})
-        conn.execute(text(
-            "INSERT INTO plm.plg_manifest_operations "
-            "(plugin_package_id,operation_id,output_types,plugin_api_version) "
-            "VALUES (:package,:operation,'[\"DOCX\"]'::jsonb,'1')"
-        ), {"package": package_id, "operation": operation})
-        conn.execute(text(
-            "INSERT INTO plm.plg_installations "
-            "(plugin_installation_id,plugin_package_id,plugin_id_normalized,"
-            "installation_state,validated_runtime_snapshot,installed_by,enabled_by,"
-            "enabled_at,created_by,updated_by) "
-            "VALUES (:id,:package,'synthetic.admission','ENABLED','{}'::jsonb,"
-            ":user,:user,statement_timestamp(),:user,:user)"
-        ), {"id": install_id, "package": package_id, "user": user_id})
-        conn.execute(text(
-            "INSERT INTO plm.plg_enabled_operations "
-            "(plugin_installation_id,operation_id,plugin_package_id,plugin_id_normalized) "
-            "VALUES (:install,:operation,:package,'synthetic.admission')"
-        ), {"install": install_id, "operation": operation, "package": package_id})
+        if seed_plugin:
+            conn.execute(text(
+                "INSERT INTO plm.plg_packages "
+                "(plugin_package_id,plugin_id_normalized,plugin_version,package_sha256,"
+                "manifest_snapshot,signature,signer_key_ref,compatibility_policy_ref,"
+                "package_state,verified_at) "
+                "VALUES (:id,'synthetic.admission','1.0.0',decode(repeat('4c',32),'hex'),"
+                "'{\"schema_version\":1}'::jsonb,decode('01','hex'),'synthetic-only',"
+                "'synthetic.compat.v1','VERIFIED',statement_timestamp())"
+            ), {"id": package_id})
+            conn.execute(text(
+                "INSERT INTO plm.plg_manifest_operations "
+                "(plugin_package_id,operation_id,output_types,plugin_api_version) "
+                "VALUES (:package,:operation,'[\"DOCX\"]'::jsonb,'1')"
+            ), {"package": package_id, "operation": operation})
+            conn.execute(text(
+                "INSERT INTO plm.plg_installations "
+                "(plugin_installation_id,plugin_package_id,plugin_id_normalized,"
+                "installation_state,validated_runtime_snapshot,installed_by,enabled_by,"
+                "enabled_at,created_by,updated_by) "
+                "VALUES (:id,:package,'synthetic.admission','ENABLED','{}'::jsonb,"
+                ":user,:user,statement_timestamp(),:user,:user)"
+            ), {"id": install_id, "package": package_id, "user": user_id})
+            conn.execute(text(
+                "INSERT INTO plm.plg_enabled_operations "
+                "(plugin_installation_id,operation_id,plugin_package_id,plugin_id_normalized) "
+                "VALUES (:install,:operation,:package,'synthetic.admission')"
+            ), {"install": install_id, "operation": operation, "package": package_id})
 
 
 def _admission(*, job_id: uuid.UUID, project_id: uuid.UUID,
@@ -160,9 +161,9 @@ def _admission(*, job_id: uuid.UUID, project_id: uuid.UUID,
     )
 
 
-def _count(engine, sql: str, values: dict) -> int:
+def _count(engine, sql: str, values: dict | None = None) -> int:
     with engine.connect() as conn:
-        return conn.execute(text(sql), values).scalar_one()
+        return conn.execute(text(sql), values or {}).scalar_one()
 
 
 def main() -> int:
@@ -234,14 +235,17 @@ def main() -> int:
         operation = "synthetic.admission.generate"
         worker = "synthetic.worker"
         cases = []
+        shared_package_id, shared_install_id = uuid.uuid4(), uuid.uuid4()
         for suffix in ("success", "rollback"):
             ids = {key: uuid.uuid4() for key in
-                   ("user", "project", "job", "context", "request", "package", "install", "trace")}
+                   ("user", "project", "job", "context", "request", "trace")}
+            ids["package"] = shared_package_id
+            ids["install"] = shared_install_id
             _seed(engine, user_id=ids["user"], project_id=ids["project"],
                   job_id=ids["job"], context_id=ids["context"],
                   request_id=ids["request"], package_id=ids["package"],
                   install_id=ids["install"], trace_id=ids["trace"],
-                  worker=worker, operation=operation)
+                  worker=worker, operation=operation, seed_plugin=(suffix == "success"))
             claim = ClaimedJob(
                 job_id=ids["job"], job_type="OUTPUT_GENERATE", scope="PROJECT",
                 project_id=ids["project"], payload_refs={}, trace_id=str(ids["trace"]),
