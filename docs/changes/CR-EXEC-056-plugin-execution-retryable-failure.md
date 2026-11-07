@@ -1,3 +1,11 @@
+
+## Hosted Backend 首轮偏差与修正计划（2026-11-07）
+
+- GitHub Hosted run [42359578240](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42359578240) 的Backend全量套件执行4,127项，4,126项通过，1项失败。失败为 `unit.test_migration_contract.MigrationContractTests.test_configuration_revision_follows_platform_baseline` 仍将唯一head固定断言为 `20261105_0232`；当前实际head为本CR新增的 `20261106_0233`，并非迁移运行或业务Owner失败。
+- 根因：首轮同步更新了同名测试的非unit路径 `apps/backend/tests/test_migration_contract.py`，而Hosted unittest发现并执行的是 `apps/backend/tests/unit/test_migration_contract.py`；后者的动态head和revision父链断言遗漏更新。产品迁移和业务代码尚无该失败导致的修订。
+- 已先记录偏差；纠正范围仅为将实际执行的unit测试预期head改为 `20261106_0233`，并将该revision的 `down_revision` 期望为 `20261105_0232`。不改变产品行为、迁移内容、Schema或业务验收。
+- 后续在GitHub Hosted重新执行Backend全量/wheel及A08 PostgreSQL 18.6独立验证；只有对应断言/marker和完整迁移验收通过才关闭A08。当前A08仍未通过。测试在本机/C盘未运行。
+
 # CR-EXEC-056：PLG-03-A08 PluginExecution 可重试失败与逐 attempt 持久化
 
 - 日期：2026-11-07
