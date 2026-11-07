@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（PLG-03-A08 PASS_SCOPE_LIMITED）
+- GitHub Hosted run [42362550450](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42362550450) job 128375724422输出 `PLG_03_A08_PG18_PASS`。PG18.6验证按attempt的独立PluginExecution、原子暂态重试/耗尽、idempotency与事件历史、Audit失败整体回滚、fencing负例、多attempt安全阻止down及单attempt迁移往返。
+- Backend全量/wheel、Frontend/build及A05/A06/A07同轮通过；Windows内嵌父包组装成功。A08为PASS_SCOPE_LIMITED，非正式插件信任/Worker/发行能力。
+- 父包PG smoke在PLG-02子验证器的rollback head断言仍写0232处失败；先记录后改为当前head 0233并Hosted复验，不能将整轮或P40标成通过。
+
+
 ## Unreleased · 2026-11-07（CR-EXEC-056：第三轮 Hosted verifier 偏差）
 - Hosted A08已验证PG18 attempt1重试、attempt2独立启动/耗尽和两条历史保留；仅末尾版本表查询漏限定plm schema。先记偏差，下一修正仅改为plm.alembic_version。
 - 父包 smoke继续进入PLG-01 schema verifier后受HEAD常量0232阻断（数据库head已为0233）；作为另一处共享验收脚本陈旧基线先记录，更新常量后复验。
