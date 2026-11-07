@@ -39,3 +39,12 @@
 - RUNNING重放返回`changed=false`，不重复事件或Audit；终态、不匹配/过期fencing与Audit异常走固定拒绝。
 - 新增单元测试和 `tools/verify_plugin_execution_start_pg_cloud.py`，并新增Hosted Windows Server 2025 PG18验收Job。仅合成数据。
 - 生产调用/Worker/ProcessHost均未接线；代码和新测试尚未由Hosted workflow执行，任务保持Incomplete直到取得结果。
+
+## 实现复核发现：OutputRequest 与 Context 绑定（2026-11-07，修正前登记）
+
+在首次 Hosted 验收开始前，单元/代码复核发现 start Repository 仅按 Job/Project/attempt 锁定 PluginExecution root；虽然生产 JobLease 会返回实际 Job claim，Owner仍应对 Execution 所保存的 OutputRequest 与 ContextSnapshot 执行显式精确绑定，避免依赖仅由 A05 建立的上游不变量。此为本 WBS 内的 fail-closed 加固，不改变冻结模型与任务边界。
+
+- 修正：Start facts 承载并由 Owner 比对 OutputRequest/ContextSnapshot UUID；SQLAlchemy lock/update 查询均同时匹配这两个绑定；claim 必须具有且仅具有两个规范 UUID payload refs。
+- 验收增加：绑定不匹配时在状态、事件及Audit写入前拒绝；PG18验收验证零状态/事件/Audit变化。
+- 风险/回滚：无新增风险面及数据库变化；若新校验导致合法 A05 事实被拒绝，先根据固定错误与合成 PG18 行定位。回滚仅撤销新增绑定检查与测试。
+- 该发现先记录于此，之后才修改实现；旧提交 558aad9 在该项修正/Hosted验收完成前不视为 A06 通过。
