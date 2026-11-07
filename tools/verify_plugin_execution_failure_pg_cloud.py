@@ -31,6 +31,24 @@ from plm_assistant.modules.jobs.application.lease import (
 )
 from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
 from plm_assistant.modules.output.application.job_admission import OutputExecutionAdmission
+from plm_assistant.modules.output.application.fail_generation import (
+    OutputGenerationFailureOwner,
+)
+from plm_assistant.modules.output.application.start_generation import (
+    OutputGenerationStartOwner,
+)
+from plm_assistant.modules.output.infrastructure.fail_generation_repository import (
+    SqlAlchemyOutputGenerationFailureRepository,
+)
+from plm_assistant.modules.output.infrastructure.start_generation_repository import (
+    SqlAlchemyOutputGenerationStartRepository,
+)
+from plm_assistant.modules.plugin.application.execution_failure import (
+    PluginExecutionFailureError, PluginExecutionFailureOwner,
+)
+from plm_assistant.modules.plugin.infrastructure.execution_failure_repository import (
+    SqlAlchemyPluginExecutionFailureRepository,
+)
 from plm_assistant.modules.platform.infrastructure.database import SqlAlchemyUnitOfWork
 from plm_assistant.modules.platform.infrastructure.migration import upgrade_database
 from plm_assistant.modules.plugin.application.execution_admission import (
