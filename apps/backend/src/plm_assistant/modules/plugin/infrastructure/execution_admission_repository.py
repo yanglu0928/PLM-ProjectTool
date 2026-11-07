@@ -42,7 +42,6 @@ class SqlAlchemyPluginExecutionAdmissionRepository:
             )
             .where(PluginManifestOperationRow.operation_id == operation_id)
             .limit(2)
-            .with_for_update(of=[PluginManifestOperationRow, PluginPackageRow])
         ).all()
         if len(rows) != 1:
             return None
