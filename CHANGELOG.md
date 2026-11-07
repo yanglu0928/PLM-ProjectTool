@@ -1,3 +1,9 @@
+## Unreleased · 2026-11-07（CR-EXEC-048：Windows 插件启动 containment 首轮失败）
+
+- Hosted Windows 首轮复验 [42318583193](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42318583193) 中，新增 descendant containment 调整导致 7 项 Host 测试有 5 failures、2 errors，均在 Windows 进程启动路径返回固定 `PLUGIN_PROCESS_START_FAILED`；PLG-03-A02 暂不通过。
+- 前端、PG18 sidecar、A17 harness、P39、P24、A50 作业成功。尚未有证据判断具体 Win32 API 步骤，下一步只输出固定阶段与整数 Win32 错误码，禁止输出原始日志/请求/环境。
+- 偏差已先记录于 `docs/changes/CR-EXEC-048-plugin-process-start-containment.md`。继续仅用 Hosted D 盘 synthetic child；无真实插件执行或生产接线。
+
 ## Unreleased · 2026-11-07（CR-EXEC-046：PLG-03-A01 JSON-RPC 子进程 Host）
 
 - 新增最小进程传输层与 7 项单测，覆盖 JSON-RPC 单请求/单响应、包入口边界、环境过滤、敏感参数拒绝、错误脱敏、超时、输出/请求上限、崩溃及工作目录清理；不接生产 Output，不执行真实插件。
