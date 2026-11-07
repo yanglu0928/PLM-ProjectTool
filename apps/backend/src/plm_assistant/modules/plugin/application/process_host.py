@@ -8,6 +8,7 @@ SAFE_ENV=frozenset({"COMSPEC","LANG","PATH","PATHEXT","SYSTEMDRIVE","SYSTEMROOT"
 SECRET_FIELDS=frozenset({"api_key","apikey","database_url","connection_string","credential","credentials","private_key","license_private_key","secret"})
 CHUNK=4096
 MAX_TIMEOUT=300.0
+_WINDOWS_CREATE_SUSPENDED=0x00000004
 
 class PluginProcessHostError(RuntimeError):
     """Sanitized failure without request data or child text."""
@@ -198,7 +199,7 @@ class PluginProcessHost:
                 except OSError: pass
         try:
             flags=0; kwargs={}
-            if os.name=="nt": flags=getattr(subprocess,"CREATE_NO_WINDOW",0)|getattr(subprocess,"CREATE_NEW_PROCESS_GROUP",0)|getattr(subprocess,"CREATE_SUSPENDED",0)
+            if os.name=="nt": flags=getattr(subprocess,"CREATE_NO_WINDOW",0)|getattr(subprocess,"CREATE_NEW_PROCESS_GROUP",0)|_WINDOWS_CREATE_SUSPENDED
             elif os.name=="posix": kwargs["start_new_session"]=True
             env={k:v for k,v in os.environ.items() if k.upper() in SAFE_ENV and type(v) is str}
             env.update({"TEMP":str(work),"TMP":str(work),"PYTHONIOENCODING":"utf-8","PYTHONUTF8":"1",
