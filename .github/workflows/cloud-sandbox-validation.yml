@@ -810,6 +810,15 @@ jobs:
               foreach ($entry in $rawLines) {
                 if ($entry -match "^([A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))(?::|$)") { $exceptionClass = $Matches[1]; break }
               }
+              $failedCommand = ""
+              $processExitCode = $null
+              foreach ($entry in $rawLines) {
+                if ($entry -match "isolated PostgreSQL command failed: ([A-Za-z0-9_.-]+) exit_code=(-?[0-9]+)") {
+                  $failedCommand = $Matches[1]
+                  $processExitCode = [long]$Matches[2]
+                  break
+                }
+              }
               $frames = @()
               foreach ($entry in $rawLines) {
                 if ($entry -match 'File "([^"]+)", line ([0-9]+)') {
@@ -826,6 +835,8 @@ jobs:
                 status = "FAILURE_DIAGNOSTIC"
                 exit_code = [int]$exit
                 exception_class = $exceptionClass
+                failed_command = $failedCommand
+                process_exit_code = $processExitCode
                 source_frames = $frames
                 marker_names = $markerNames
                 raw_output_uploaded = $false
