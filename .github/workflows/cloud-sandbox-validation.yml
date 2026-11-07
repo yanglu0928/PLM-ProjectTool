@@ -743,6 +743,97 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  prt-a05-p25-hosted-load:
+    name: PRT Prototype 20-concurrent load with bounded host metrics
+    needs: [backend, rebuild-pg18-sidecar]
+    runs-on: windows-2025
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: apps/backend/pyproject.toml
+      - name: Install backend and test dependencies
+        working-directory: apps/backend
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test]"
+      - name: Download same-run rebuilt PostgreSQL 18 sidecar
+        uses: actions/download-artifact@v4
+        with:
+          name: plm-pg18-rebuilt-sidecar-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-prt-p25-sidecar
+      - name: Run bounded 20-concurrent Prototype verifier
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tempRoot = [IO.Path]::GetFullPath($env:RUNNER_TEMP)
+          $workspace = [IO.Path]::GetFullPath($env:GITHUB_WORKSPACE)
+          if ([IO.Path]::GetPathRoot($tempRoot) -cne "D:\" -or [IO.Path]::GetPathRoot($workspace) -cne "D:\") { throw "PRT validation must remain on runner D drive" }
+          $owned = Join-Path $tempRoot ("plm-prt-p25-" + $env:GITHUB_RUN_ID)
+          $repoArtifacts = Join-Path $workspace "artifacts\poc-02\windows"
+          $report = Join-Path $tempRoot ("plm-prt-p25-summary-" + $env:GITHUB_RUN_ID + ".json")
+          if (Test-Path -LiteralPath $owned) { throw "Owned PRT temp root already exists" }
+          if (Test-Path -LiteralPath $repoArtifacts) { throw "PRT source staging path is not fresh" }
+          New-Item -ItemType Directory -Path $owned | Out-Null
+          try {
+            $archive = Get-ChildItem -LiteralPath (Join-Path $tempRoot "plm-prt-p25-sidecar") -Filter "NOT-FOR-RELEASE-windows-pg18-pgvector-runtime.zip" | Select-Object -First 1
+            if (-not $archive) { throw "Same-run PG18 sidecar archive missing" }
+            $extract = Join-Path $owned "sidecar"
+            Expand-Archive -LiteralPath $archive.FullName -DestinationPath $extract
+            $pg = Join-Path $extract "payload\pgsql"
+            if (-not (Test-Path -LiteralPath (Join-Path $pg "bin\initdb.exe")) -or -not (Test-Path -LiteralPath (Join-Path $pg "lib\vector.dll"))) { throw "PG18/pgvector payload is incomplete" }
+            $runtimeTarget = Join-Path $repoArtifacts "runtime\postgresql-18.6\pgsql"
+            $vectorTarget = Join-Path $repoArtifacts "source\pgvector-0.8.6"
+            New-Item -ItemType Directory -Path $runtimeTarget -Force | Out-Null
+            New-Item -ItemType Directory -Path $vectorTarget -Force | Out-Null
+            Copy-Item -Path (Join-Path $pg "*") -Destination $runtimeTarget -Recurse -Force
+            Copy-Item -LiteralPath (Join-Path $runtimeTarget "lib\vector.dll") -Destination $vectorTarget
+            $extensionDir = Join-Path $runtimeTarget "share\extension"
+            Copy-Item -LiteralPath (Join-Path $extensionDir "vector.control") -Destination $vectorTarget
+            Get-ChildItem -LiteralPath $extensionDir -Filter "vector--*.sql" | Copy-Item -Destination $vectorTarget
+            $env:TEMP = $tempRoot
+            $env:TMP = $tempRoot
+            $raw = Join-Path $owned "bounded-verifier-output.txt"
+            Push-Location $workspace
+            try {
+              python -B validation/prt-01-a11-a05-p04-read-load/verify.py --host-resource-diagnostic *> $raw
+              $exit = $LASTEXITCODE
+            } finally {
+              Pop-Location
+            }
+            if ($exit -ne 0) { throw "PRT 20-concurrent verifier failed" }
+            $line = Select-String -LiteralPath $raw -Pattern "^PRT_HOST_RESOURCE_SUMMARY=" | Select-Object -Last 1
+            if (-not $line) { throw "Bounded resource summary missing" }
+            $metrics = $line.Line.Substring("PRT_HOST_RESOURCE_SUMMARY=".Length) | ConvertFrom-Json
+            if ($metrics.status -ne "AVAILABLE" -or $metrics.sample_count -lt 2) { throw "Windows host counters unavailable or insufficient" }
+            if (-not (Select-String -LiteralPath $raw -Pattern "REQ_01_A12_A05_WORKFLOW_PG_PASS" -Quiet)) { throw "Prototype workflow success marker missing" }
+            @{
+              wbs = "PRT-01-A11-A05-P04-P25"
+              status = "PASS_LIMITED"
+              scope = "synthetic Hosted Windows Server 2025"
+              verifier_success = $true
+              resource_summary = $metrics
+              performance_gate_passed = $false
+              release_eligible = $false
+            } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $report -Encoding utf8
+            Write-Output "PRT_P25_HOSTED_20_CONCURRENT_PASS_LIMITED"
+            Write-Output ("PRT_HOST_RESOURCE_SUMMARY=" + ($metrics | ConvertTo-Json -Compress))
+          } finally {
+            $rootPrefix = $tempRoot.TrimEnd("\") + "\"
+            if ($owned.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $owned)) { Remove-Item -LiteralPath $owned -Recurse -Force }
+            $workspacePrefix = $workspace.TrimEnd("\") + "\"
+            if ($repoArtifacts.StartsWith($workspacePrefix, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $repoArtifacts)) { Remove-Item -LiteralPath $repoArtifacts -Recurse -Force }
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prt-p25-hosted-resource-summary-${{ github.sha }}
+          path: ${{ runner.temp }}/plm-prt-p25-summary-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
   smoke-parent-postgresql:
     name: Clean extraction, PG18 lifecycle, and P40 live Edge download
     needs: [assemble-parent-candidate, frontend]
