@@ -48,3 +48,8 @@ Hosted run [42372561151](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## Runtime复用修正后的静态边界复核
 
 切换到完整runtime后，首次patch静态复核发现原PG lifecycle try/finally的缩进边界尚未随复制块调整，且源目录检查位于scratch创建后；尚未运行或解析执行。先记录后将源目录/必要文件验证移到scratch创建之前，并保留PG启动、验证与清理逻辑在同一try/finally内，避免失败时留下临时目录。
+
+
+## 完整runtime复用后的initdb普通错误（2026-11-07）
+
+Hosted run [42373351663](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42373351663) 的PRT job 128406629804已越过Windows loader错误，但完整runtime上的initdb返回1；当前摘要仅有命令/exit code/源位置，stderr被有意省略。因此完整Prototype负载仍未执行，性能仍未判定。先记录后从stderr仅映射有限错误类别：权限拒绝、目录已存在、目录创建/路径拒绝、locale/编码、参数错误或OTHER；禁止输出异常/错误文本与路径。只做一次Hosted复验；如果类目指向用户/产品目录或账户权限问题，不调整服务权限或数据根，保留阻塞并转其他任务。
