@@ -169,7 +169,7 @@ class PluginExecutionStartOwnerTests(unittest.TestCase):
         self.assertEqual(repo.events, [])
         self.assertEqual(audit.events, [])
 
-    def test_terminal_and_wrong_attempt_are_rejected(self):
+    def test_terminal_state_is_rejected(self):
         claim, facts = fixtures()
         terminal = replace(facts, execution_state="FAILED")
         owner, _uow, _jobs, repo, audit = self.create(claim, terminal)
@@ -179,13 +179,34 @@ class PluginExecutionStartOwnerTests(unittest.TestCase):
         self.assertEqual(repo.events, [])
         self.assertEqual(audit.events, [])
 
+    def test_attempt_two_starts_its_independent_execution(self):
+        claim, facts = fixtures()
         retry = replace(claim, attempt_no=2)
-        owner, _uow, _jobs, repo, audit = self.create(retry, facts)
-        with self.assertRaises(PluginExecutionStartError):
-            owner.start(StartPluginExecutionCommand(retry, "worker-1"))
-        self.assertEqual(repo.transactions, [])
-        self.assertEqual(repo.start_calls, [])
-        self.assertEqual(audit.events, [])
+        retry_facts = replace(
+            facts, plugin_execution_id=uuid.uuid4(), attempt_no=2,
+        )
+        owner, uow, _jobs, repo, audit = self.create(retry, retry_facts)
+        result = owner.start(StartPluginExecutionCommand(retry, "worker-1"))
+        self.assertTrue(result.changed)
+        self.assertEqual(result.plugin_execution_id, retry_facts.plugin_execution_id)
+        self.assertEqual(result.execution_state, "RUNNING")
+        self.assertEqual(len(repo.start_calls), 1)
+        self.assertEqual(len(repo.events), 1)
+        self.assertEqual(len(audit.events), 1)
+        self.assertTrue(uow.tx.committed)
+
+    def test_nonpositive_attempt_is_rejected_before_repository_access(self):
+        claim, facts = fixtures()
+        for attempt_no in (0, -1):
+            with self.subTest(attempt_no=attempt_no):
+                invalid = replace(claim, attempt_no=attempt_no)
+                owner, _uow, _jobs, repo, audit = self.create(invalid, facts)
+                with self.assertRaises(PluginExecutionStartError):
+                    owner.start(StartPluginExecutionCommand(invalid, "worker-1"))
+                self.assertEqual(repo.transactions, [])
+                self.assertEqual(repo.start_calls, [])
+                self.assertEqual(repo.events, [])
+                self.assertEqual(audit.events, [])
 
     def test_audit_failure_surfaces_fixed_error_and_uow_rolls_back(self):
         claim, facts = fixtures()
