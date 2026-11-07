@@ -43,3 +43,8 @@ PRT job 128402481517现已保留安全摘要：RuntimeError，调用帧为验证
 Hosted run [42372561151](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42372561151) 的受限摘要确定：失败命令initdb.exe，exit code 3221225781 (0xC0000135)，调用帧落在PRT验证器将本轮runtime复制到scratch之后的初始化步骤。该run同轮PG18 sidecar构建成功，前轮父包 smoke 也已从完整候选包启动隔离PG18成功。证据差异是 PRT 验证器复制 bin/lib/share 后使用副本，而父包直接使用已校验包布局；不改变TEMP/TMP或Loader搜索假设。
 
 选择的最小方案：PRT只读复用由本轮固定摘要旁包解压并校验的完整PG18/pgvector运行目录，数据库 data/log仍仅放置本run D盘scratch；启动前检查必需二进制/扩展文件，缺失立即停止。删除PG目录复制和二次复制vector扩展。该变更仅验证Harness布局，回滚为恢复原copytree行为；不改产品/DB/API/性能门槛。完整Hosted PRT验收复跑，若仍0xC0000135则停止本运行路径，不尝试TEMP/PATH猜测。
+
+
+## Runtime复用修正后的静态边界复核
+
+切换到完整runtime后，首次patch静态复核发现原PG lifecycle try/finally的缩进边界尚未随复制块调整，且源目录检查位于scratch创建后；尚未运行或解析执行。先记录后将源目录/必要文件验证移到scratch创建之前，并保留PG启动、验证与清理逻辑在同一try/finally内，避免失败时留下临时目录。
