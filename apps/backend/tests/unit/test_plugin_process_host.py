@@ -20,9 +20,14 @@ class PluginProcessHostTests(unittest.TestCase):
     def script(self,text):
         (self.package/"entry.py").write_text(text,encoding="utf-8"); return "entry.py"
     def invoke(self,entry,*,timeout=2.0,params=None):
-        return self.host.invoke(executable=Path(sys.executable).resolve(strict=True),package_root=self.package,
-            entry_point=entry,work_root=self.work,plugin_id="synthetic.plugin-host-probe",
-            api_version="1",method="probe",params=params or {},timeout_seconds=timeout)
+        try:
+            return self.host.invoke(executable=Path(sys.executable).resolve(strict=True),package_root=self.package,
+                entry_point=entry,work_root=self.work,plugin_id="synthetic.plugin-host-probe",
+                api_version="1",method="probe",params=params or {},timeout_seconds=timeout)
+        except PluginProcessHostError as exc:
+            if exc.stage:
+                print(f"PLUGIN_PROCESS_HOST_SAFE_DIAG stage={exc.stage};native={exc.native_code}")
+            raise
     def test_round_trip_and_workdir_cleanup(self):
         entry=self.script("""
 import json, os, sys
