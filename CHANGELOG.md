@@ -1,3 +1,7 @@
+## Unreleased · 2026-11-07（CR-EXEC-054：A07 Harness port 对齐）
+- 只读定位 Output start/failure Owner 要求事务内 Lease Repository，Harness误传了会另开UoW的JobLeaseService；P30已通过的Harness直接用Repository。已记录并仅修验收器依赖组合，不改claim或产品校验。
+- A07等待重跑，仍未通过。
+
 ## Unreleased · 2026-11-07（CR-EXEC-054：A07 第二轮验收偏差）
 - PG18验收器的手工构造Claim被既有Output start Owner以固定码拒绝；A07 Failure Owner未调用。先记录后只读比较P30真实lease claim fixture，修正Harness，不放宽产品校验。
 - A07未通过，等待后续Hosted复验。

@@ -46,3 +46,8 @@
 - run 42353151341 的A07专项job 128347507564中，PG18 fixture已准备，补齐导入后进入既有 OutputGenerationStartOwner，但其固定错误码 OUTPUT_START_NOT_ELIGIBLE 拒绝当前验收claim。A07 Failure Owner尚未调用，不能据此判定A07产品实现通过或失败。
 - 源码与Harness对照发现：验收器手工构造 ClaimedJob，而生产Output start前置应验证 Jobs Repository签发的当前claim。具体拒绝原因尚未由固定错误暴露，不能假定插件/Output产品缺陷。
 - 修复计划：只读核实 P30 已通过的PG18 Harness如何取得并传递 claim，以及 Output start 的校验条件；在已登记范围内对齐合成fixture到真实Jobs claim_next_output返回值，然后从干净PG18临时库重跑A07。不得放宽Owner校验或伪造lease字段。A07仍未通过。
+### Read-only diagnosis and corrected remediation plan (2026-11-07)
+
+- `OutputGenerationStartOwner` and `OutputGenerationFailureOwner` consume the transaction-scoped `check_output_claim(transaction, ...)` / `retry_or_fail(transaction, ...)` port. The verifier passed `JobLeaseService`, whose public methods open their own UoW and do not accept a transaction argument; the resulting TypeError is intentionally normalized to OUTPUT_START_NOT_ELIGIBLE. P30's passing harness passes `SqlAlchemyJobLeaseRepository` directly.
+- The manual claim itself is not shown invalid: PLG-03-A06 already used the same `_seed` plus canonical UUID claim shape and the live Job lease proof passed. The earlier proposal to replace it with a second Jobs claim API is therefore superseded.
+- Correction: instantiate one `SqlAlchemyJobLeaseRepository`; pass that repository to Output start/failure Owners, and retain `JobLeaseService` for Plugin admission/start Owners that require transaction-scoped Application methods. No Output/Jobs/Plugin contract or validation is loosened. Then rerun from a fresh hosted PG18 fixture.
