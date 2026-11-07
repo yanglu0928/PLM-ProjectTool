@@ -35,3 +35,8 @@ Hosted run [42326604885](https://github.com/yanglu0928/PLM-ProjectTool/actions/r
 ## 实现前静态复核记录（2026-11-07）
 
 针对性验收器首次提交后、Hosted执行前复核发现测试夹具自身三项问题：tools/下脚本的仓库根目录层级计算多了一层；两个合成请求重复创建同一插件版本/启用安装，违反唯一约束且会令target查询歧义；计数辅助函数在无参数查询时缺少默认参数。均为验证器缺陷，尚未声称PG验收失败或通过。修复前先记录：将根路径改为仓库根、两请求共享一个合成安装目标、计数查询默认空参数，并在修正后由新Hosted提交复验；产品Owner代码不因本记录改动。
+
+
+## Hosted fixture与记录格式复核（2026-11-07，修正前记录）
+
+进一步检查冻结Plugin Installation迁移发现ENABLED installation/operation fixture受 plm.plugin_installation_owner_write 事务GUC保护。验收器必须仅在新建的合成PG数据库fixture写入事务内通过事务本地GUC准备安装事实；随后实际Admission Owner使用独立UoW并自行设置plm.plugin_execution_owner_write。此fixture办法只为建立合成输入，不验证/冒充安装Owner或正式trust。另发现上次文件写入把两个换行标记成字面反斜线n，导致CR和STATUS局部Markdown不整洁；本次修复前先记录，将恢复为真实换行且不改记录内容。
