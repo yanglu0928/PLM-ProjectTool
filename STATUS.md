@@ -1,3 +1,8 @@
+|Execution Note|2026-11-07 Hosted run [42363588328](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42363588328)：PLG-03-A08 job 128378836416再次成功，A17 packaged PlanVersion成功；Backend/wheel、Frontend/build、PG18/runtime/父包组装成功。父包PG smoke在PLG-02 rollback refusal 后head检查失败；此前以0232旧期望解释，但已将期望改为0233仍复现，实际revision未打印，根因未定。已先记录只加synthetic PG18有限revision诊断，再按证据决定，禁止放松降级保护。SUR-07-A08因initdb.exe 3221225781且TEMP探针同错未应用，按CR-EXEC-039维持停止。|
+|Current WBS|PLG-03-A08 PASS_SCOPE_LIMITED；当前独立推进P40父包PG smoke rollback/head诊断，不把父包/P40标PASS。|
+|Current WBS Status|A08 PG18 marker重复通过；P40父包PG smoke仍未通过，PLG-02拒绝降级后的实际Alembic revision未知。SUR-07-A08 Windows环境路径独立失败；其它平台链未据此推定。|
+|Next WBS|Hosted合成PG18 verifier仅增加失败时的实际revision安全输出，复验后依据值和Migration transaction边界决定修复点；同时独立记录SUR-07-A08 0xC0000135阻塞并转向不受其影响的任务。|
+
 |Execution Note|2026-11-07 PLG-03-A08以PASS_SCOPE_LIMITED关闭：Hosted run [42362550450](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42362550450)，job 128375724422 marker PLG_03_A08_PG18_PASS。真实PG18.6通过空/既有库0232→0233迁移、down/up及多attempt down保护；attempt1暂态失败排队，attempt2独立Execution启动并耗尽失败；事件/Audit幂等/回滚，stale fence/worker/错误码零写拒绝。Backend/wheel、Frontend、A05/A06/A07亦成功。仅Hosted Windows Server 2025 D盘合成环境，不接Worker、不执行插件；正式trust/W11/Pilot/Gate/Release不变。|
 |Current WBS|PLG-03-A08：PASS_SCOPE_LIMITED，见CR-EXEC-056。|
 |Current WBS Status|A08专用PG18验收及同轮Backend/Frontend通过。整体workflow仍非全绿：父包PG smoke在PLG-02子验证器中因rollback后当前head预期仍为0232、实际0233而失败；A08业务与迁移独立验收已通过，父包/P40不据此标PASS。|
