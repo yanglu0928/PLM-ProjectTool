@@ -1,5 +1,5 @@
 from __future__ import annotations
-import os,sys,tempfile,unittest
+import os,sys,tempfile,time,unittest
 from pathlib import Path
 from plm_assistant.modules.plugin.application.process_host import PluginProcessHost,PluginProcessHostError
 
@@ -89,6 +89,23 @@ print(json.dumps({"jsonrpc":"2.0","id":r["id"],"error":{"code":1,"message":"SENS
                 entry_point=entry,work_root=self.work,plugin_id="synthetic.plugin-host-probe",
                 api_version="1",method="probe",params={},timeout_seconds=2)
         self.assertEqual("PLUGIN_OUTPUT_TOO_LARGE",e.exception.code)
+    def test_timeout_kills_descendant_before_it_can_write(self):
+        started=self.root/"descendant-started.marker"
+        late=self.root/"descendant-late.marker"
+        entry=self.script("""
+import json, subprocess, sys, time
+r=json.loads(sys.stdin.readline())
+code="import pathlib,sys,time; pathlib.Path(sys.argv[1]).write_text('started'); time.sleep(1.5); pathlib.Path(sys.argv[2]).write_text('escaped')"
+subprocess.Popen([sys.executable, "-c", code, r["params"]["started"], r["params"]["late"]], close_fds=True)
+time.sleep(5)
+""")
+        with self.assertRaises(PluginProcessHostError) as e:
+            self.invoke(entry,timeout=0.8,params={"started":str(started),"late":str(late)})
+        self.assertEqual("PLUGIN_TIMEOUT",e.exception.code)
+        self.assertTrue(started.exists(),"synthetic descendant did not start; containment assertion is inconclusive")
+        time.sleep(1.8)
+        self.assertFalse(late.exists(),"descendant escaped process-tree termination")
+
     def test_crash_and_request_size_fail_closed(self):
         with self.assertRaises(PluginProcessHostError) as e:
             self.invoke(self.script("import sys\nsys.stderr.write('SECRET-DIAG')\nsys.exit(9)\n"))
