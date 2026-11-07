@@ -7,6 +7,7 @@ import concurrent.futures
 import hashlib
 import json
 import math
+import os
 import re
 import runpy
 import shutil
@@ -1505,8 +1506,14 @@ def main(*, mixed_not_required: bool = False,
         if probe.connect_ex(("127.0.0.1", PORT)) == 0:
             raise RuntimeError("port 55434 is occupied; existing PostgreSQL untouched")
     install = PG_SOURCE.resolve(strict=True)
-    if not install.is_dir() or install.is_symlink() or not install.is_relative_to(ROOT.resolve()):
-        raise RuntimeError("verified PostgreSQL runtime must remain inside the repository fixture root")
+    temp_root = Path(tempfile.gettempdir()).resolve(strict=True)
+    source_override = bool(os.environ.get("PLM_PRT_PG_SOURCE"))
+    allowed_source = (
+        install.is_relative_to(temp_root) and str(install).isascii() and install.name == "pgsql"
+        if source_override else install.is_relative_to(ROOT.resolve())
+    )
+    if not install.is_dir() or install.is_symlink() or not allowed_source:
+        raise RuntimeError("verified PostgreSQL runtime is outside the allowed fixture root")
     binaries = install / "bin"
     extension_dir = install / "share" / "extension"
     required_runtime_files = (
@@ -1519,7 +1526,6 @@ def main(*, mixed_not_required: bool = False,
         raise RuntimeError("verified PostgreSQL/pgvector runtime files are incomplete")
     if not any(extension_dir.glob("vector--*.sql")):
         raise RuntimeError("verified pgvector SQL extension scripts are missing")
-    temp_root = Path(tempfile.gettempdir()).resolve(strict=True)
     scratch = Path(tempfile.mkdtemp(prefix="plm-prt-a05-p03-", dir=temp_root)).resolve()
     if not scratch.is_relative_to(temp_root) or not str(scratch).isascii():
         raise RuntimeError("isolated ASCII temporary PostgreSQL path required")
