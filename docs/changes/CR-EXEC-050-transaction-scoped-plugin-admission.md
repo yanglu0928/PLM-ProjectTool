@@ -2,7 +2,7 @@
 
 - 日期：2026-11-07
 - Phase/WBS：Phase 2 Platform Core / PLG-03-A04
-- 状态：编码前检查完成，待实现与 Hosted 验收
+- 状态：PASS_SCOPE_LIMITED；实现与后端Hosted全量/wheel验收完成，整条workflow仍有独立集成项运行中
 - 基线：冻结 Jobs Lease 与 Output Request application contracts；CR-EXEC-049；CR-PLG-014；ADR-005。
 - 类型：内部 Application Interface 可组合性调整；无外部 API、DB Schema、Migration 或信任策略变更。
 
@@ -36,3 +36,12 @@
 - 仅 GitHub Hosted Windows Server 2025 D 盘验收；不在本机/C盘运行。用合成值，不执行插件或外部 API。
 - 验收失败则先记录实际失败，再作最小修复；不将未通过结果标 PASS。
 - 当前 Production Output/Worker、Publisher trust、Gate 3、Pilot、Release 和 Windows 11 实机结论均不改变。
+
+## 实施与Hosted验收（2026-11-07）
+
+- 代码提交：`b2d77789cf308e4a21aa16abea8b497a38d840c6`。
+- `JobLeaseService.check_output_claim_in_transaction(transaction,...)` 执行现有 worker、job id、fencing token 校验，并把原样 transaction 传给 Jobs repository；原有 `check_output_claim(...)` 保留自有 UoW/commit 行为并委托新入口。
+- `OutputJobExecutionAdmissionOwner.admit_in_transaction(transaction, claim)` 保留原绑定/指纹/capability/错误处理，完全复用调用方事务；原 `admit(claim)` 保留自有 UoW 包装并委托新入口。
+- 新增测试覆盖同一 transaction 对象传递、无嵌套 UoW、非法租约和缺少 transaction 拒绝。无 DB/API/Migration 变化。
+- GitHub Hosted run [42324011767](https://github.com/yanglu0928/PLM-ProjectTool/actions/runs/42324011767)：Backend 4,099 tests、wheel、Frontend/build、PG18 sidecar、parent assembly、A17 candidate 与 A35 成功。记录本 CR 时 P25/A08/A17集成 job仍在运行，故整条run尚未判定。测试在Hosted环境，不在用户本机或C盘执行。
+- 结论仅限内部 transaction-scoped application 接口组合性；不表示PluginExecution Owner、签名信任、Production Output/Worker、Gate、Pilot、Windows 11或Release已通过。
